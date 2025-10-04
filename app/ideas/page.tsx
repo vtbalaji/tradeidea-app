@@ -135,29 +135,29 @@ export default function IdeasHubPage() {
       <Navigation />
 
       {/* Header */}
-      <div className="p-5 pt-8">
-        <h1 className="text-4xl font-bold text-white mb-2">Trading Ideas Hub</h1>
-        <p className="text-[#8b949e]">Discover and share trading opportunities with the community</p>
+      <div className="p-5 pt-5 pb-3">
+        <h1 className="text-3xl font-bold text-white mb-1">Trading Ideas Hub</h1>
+        <p className="text-sm text-[#8b949e]">Discover and share trading opportunities</p>
       </div>
 
       {/* Search Bar */}
-      <div className="px-5 mb-4">
-        <div className="flex gap-3">
+      <div className="px-5 mb-3">
+        <div className="flex gap-2">
           <input
             type="text"
-            placeholder="Search by symbol, title, or description..."
+            placeholder="Search by symbol, title..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="flex-1 bg-[#1c2128] border border-[#30363d] rounded-lg px-4 py-3 text-white placeholder-[#8b949e] outline-none focus:border-[#ff8c42] transition-colors"
+            className="flex-1 bg-[#1c2128] border border-[#30363d] rounded-lg px-3 py-2 text-sm text-white placeholder-[#8b949e] outline-none focus:border-[#ff8c42] transition-colors"
           />
-          <button className="px-5 py-3 bg-[#1c2128] border border-[#30363d] rounded-lg text-[#8b949e] font-semibold hover:bg-[#30363d] transition-colors">
-            🔍 Filters
+          <button className="px-3 py-2 bg-[#1c2128] border border-[#30363d] rounded-lg text-[#8b949e] text-sm font-semibold hover:bg-[#30363d] transition-colors">
+            🔍
           </button>
         </div>
       </div>
 
       {/* Tabs */}
-      <div className="px-5 mb-5">
+      <div className="px-5 mb-4">
         <div className="flex gap-2 overflow-x-auto pb-1">
           <button
             onClick={() => setActiveTab('all')}

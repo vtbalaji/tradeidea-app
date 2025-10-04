@@ -16,8 +16,31 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "TradeIdea - Community Driven",
-  description: "Trading ideas and portfolio management platform",
+  title: "TradeIdea - Community Driven Trading Ideas",
+  description: "Discover and share trading opportunities with the community. Track your portfolio and follow the best trading ideas.",
+  openGraph: {
+    title: "TradeIdea - Community Driven Trading Ideas",
+    description: "Discover and share trading opportunities with the community. Track your portfolio and follow the best trading ideas.",
+    url: "https://tradeidea.co.in",
+    siteName: "TradeIdea",
+    images: [
+      {
+        url: "/icon.svg",
+        width: 64,
+        height: 64,
+        alt: "TradeIdea Logo",
+      },
+    ],
+    locale: "en_IN",
+    type: "website",
+  },
+  twitter: {
+    card: "summary",
+    title: "TradeIdea - Community Driven Trading Ideas",
+    description: "Discover and share trading opportunities with the community",
+    images: ["/icon.svg"],
+  },
+  metadataBase: new URL("https://tradeidea.co.in"),
 };
 
 export default function RootLayout({
