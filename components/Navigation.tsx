@@ -11,6 +11,7 @@ export default function Navigation() {
   const router = useRouter();
   const { user, logout } = useAuth();
   const [showProfileMenu, setShowProfileMenu] = useState(false);
+  const [showMobileMenu, setShowMobileMenu] = useState(false);
 
   const handleLogout = async () => {
     try {
@@ -29,14 +30,11 @@ export default function Navigation() {
           <div className="w-10 h-10 rounded-lg bg-[#ff8c42] flex items-center justify-center">
             <MyPortfolioIcon size={24} />
           </div>
-          <div>
-            <div className="text-base font-bold text-white leading-tight">TradeIdea</div>
-            <div className="text-xs text-[#8b949e] leading-tight">Portfolio Manager</div>
-          </div>
+          <div className="text-base font-bold text-white leading-tight">TradeIdea</div>
         </Link>
 
-        {/* Center - Nav Items */}
-        <div className="flex gap-2">
+        {/* Center - Nav Items - Desktop Only */}
+        <div className="hidden md:flex gap-2">
           <Link
             href="/ideas"
             className={`flex items-center gap-1.5 px-4 py-2 rounded-md ${
@@ -70,7 +68,15 @@ export default function Navigation() {
 
         {/* Right - User Menu */}
         <div className="flex items-center gap-2">
-          <button className="w-9 h-9 rounded-full bg-[#30363d] flex items-center justify-center text-base hover:bg-[#3c444d] transition-colors">
+          {/* Mobile Menu Button */}
+          <button
+            onClick={() => setShowMobileMenu(!showMobileMenu)}
+            className="md:hidden w-9 h-9 rounded-md bg-[#30363d] flex items-center justify-center text-white hover:bg-[#3c444d] transition-colors"
+          >
+            {showMobileMenu ? '✕' : '☰'}
+          </button>
+
+          <button className="hidden md:flex w-9 h-9 rounded-full bg-[#30363d] items-center justify-center text-base hover:bg-[#3c444d] transition-colors">
             🔔
           </button>
 
@@ -122,6 +128,55 @@ export default function Navigation() {
           </div>
         </div>
       </div>
+
+      {/* Mobile Menu Drawer */}
+      {showMobileMenu && (
+        <>
+          {/* Backdrop */}
+          <div
+            className="fixed inset-0 bg-black/70 z-40 md:hidden"
+            onClick={() => setShowMobileMenu(false)}
+          />
+
+          {/* Menu Drawer */}
+          <div className="fixed top-[57px] left-0 right-0 bg-[#1c2128] border-b border-[#30363d] z-50 md:hidden">
+            <div className="flex flex-col p-4 space-y-2">
+              <Link
+                href="/ideas"
+                onClick={() => setShowMobileMenu(false)}
+                className={`flex items-center gap-3 px-4 py-3 rounded-md ${
+                  pathname === '/ideas' ? 'bg-[#30363d] text-white' : 'text-[#8b949e]'
+                } font-semibold text-sm hover:bg-[#30363d] hover:text-white transition-colors`}
+              >
+                <IdeaIcon size={20} />
+                <span>Ideas Hub</span>
+              </Link>
+
+              <Link
+                href="/ideas/new"
+                onClick={() => setShowMobileMenu(false)}
+                className={`flex items-center gap-3 px-4 py-3 rounded-md ${
+                  pathname === '/ideas/new' ? 'bg-[#30363d] text-white' : 'text-[#8b949e]'
+                } font-semibold text-sm hover:bg-[#30363d] hover:text-white transition-colors`}
+              >
+                <SparklesIcon size={20} />
+                <span>New Idea</span>
+              </Link>
+
+              <Link
+                href="/portfolio"
+                onClick={() => setShowMobileMenu(false)}
+                className={`flex items-center gap-3 px-4 py-3 rounded-md ${
+                  pathname === '/portfolio' ? 'bg-[#30363d] text-white' : 'text-[#8b949e]'
+                } font-semibold text-sm hover:bg-[#30363d] hover:text-white transition-colors`}
+              >
+                <TrendingIcon size={20} />
+                <span>My Portfolio</span>
+              </Link>
+            </div>
+          </div>
+        </>
+      )}
     </nav>
   );
 }

@@ -25,8 +25,19 @@ export default function IdeasHubPage() {
     );
   }
 
+  // Apply tab filters
   if (activeTab === 'following') {
     filteredIdeas = filteredIdeas.filter(idea => idea.followers?.includes(user?.uid || ''));
+  } else if (activeTab === 'trending') {
+    // Sort by likes (most liked first)
+    filteredIdeas = [...filteredIdeas].sort((a, b) => (b.likes || 0) - (a.likes || 0));
+  } else if (activeTab === 'recent') {
+    // Sort by creation date (newest first)
+    filteredIdeas = [...filteredIdeas].sort((a, b) => {
+      const dateA = a.createdAt?.toDate ? a.createdAt.toDate().getTime() : 0;
+      const dateB = b.createdAt?.toDate ? b.createdAt.toDate().getTime() : 0;
+      return dateB - dateA;
+    });
   }
 
   // Group ideas by status
@@ -149,10 +160,10 @@ export default function IdeasHubPage() {
 
       {/* Tabs */}
       <div className="px-5 mb-5">
-        <div className="flex gap-3">
+        <div className="flex gap-2 overflow-x-auto pb-1">
           <button
             onClick={() => setActiveTab('all')}
-            className={`px-4 py-2 rounded-md text-sm font-semibold transition-colors ${
+            className={`px-3 py-1.5 rounded-md text-xs font-semibold transition-colors whitespace-nowrap ${
               activeTab === 'all'
                 ? 'bg-[#ff8c42] text-white'
                 : 'bg-[#1c2128] text-[#8b949e] hover:bg-[#30363d]'
@@ -162,7 +173,7 @@ export default function IdeasHubPage() {
           </button>
           <button
             onClick={() => setActiveTab('trending')}
-            className={`px-4 py-2 rounded-md text-sm font-semibold transition-colors ${
+            className={`px-3 py-1.5 rounded-md text-xs font-semibold transition-colors whitespace-nowrap ${
               activeTab === 'trending'
                 ? 'bg-[#ff8c42] text-white'
                 : 'bg-[#1c2128] text-[#8b949e] hover:bg-[#30363d]'
@@ -172,7 +183,7 @@ export default function IdeasHubPage() {
           </button>
           <button
             onClick={() => setActiveTab('recent')}
-            className={`px-4 py-2 rounded-md text-sm font-semibold transition-colors ${
+            className={`px-3 py-1.5 rounded-md text-xs font-semibold transition-colors whitespace-nowrap ${
               activeTab === 'recent'
                 ? 'bg-[#ff8c42] text-white'
                 : 'bg-[#1c2128] text-[#8b949e] hover:bg-[#30363d]'
@@ -182,13 +193,13 @@ export default function IdeasHubPage() {
           </button>
           <button
             onClick={() => setActiveTab('following')}
-            className={`px-4 py-2 rounded-md text-sm font-semibold transition-colors ${
+            className={`px-3 py-1.5 rounded-md text-xs font-semibold transition-colors whitespace-nowrap flex items-center gap-1 ${
               activeTab === 'following'
                 ? 'bg-[#ff8c42] text-white'
                 : 'bg-[#1c2128] text-[#8b949e] hover:bg-[#30363d]'
             }`}
           >
-            <HeartIcon size={16} /> Following
+            <HeartIcon size={14} /> Following
           </button>
         </div>
       </div>

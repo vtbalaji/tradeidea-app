@@ -16,7 +16,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "TradeIdea - Portfolio Manager",
+  title: "TradeIdea - Community Driven",
   description: "Trading ideas and portfolio management platform",
 };
 
