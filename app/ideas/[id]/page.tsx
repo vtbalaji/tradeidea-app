@@ -204,15 +204,22 @@ export default function IdeaDetailPage() {
           <div className="flex gap-2">
             <button
               onClick={handleLike}
-              className="px-4 py-2 bg-[#1c2128] hover:bg-[#30363d] border border-[#30363d] rounded-lg text-white text-sm transition-colors"
+              className="px-3 py-1.5 bg-[#1c2128] hover:bg-[#30363d] border border-[#30363d] rounded-lg text-white text-sm flex items-center gap-1.5 transition-colors"
             >
-              <HeartIcon size={20} /> {idea.likes || 0}
+              <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor">
+                <path d="M8 14s-6-4.5-6-8c0-2.5 2-4 4-4 1.5 0 2 1 2 1s.5-1 2-1c2 0 4 1.5 4 4 0 3.5-6 8-6 8z"/>
+              </svg>
+              {idea.likes || 0}
             </button>
             <button
               onClick={handleFollow}
-              className="px-4 py-2 bg-[#1c2128] hover:bg-[#30363d] border border-[#30363d] rounded-lg text-white text-sm transition-colors"
+              className="px-3 py-1.5 bg-[#1c2128] hover:bg-[#30363d] border border-[#30363d] rounded-lg text-white text-sm flex items-center gap-1.5 transition-colors"
             >
-              <EyeIcon size={20} /> Follow
+              <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
+                <path d="M1 8s2-4 7-4 7 4 7 4-2 4-7 4-7-4-7-4z"/>
+                <circle cx="8" cy="8" r="2"/>
+              </svg>
+              {idea.followers?.includes(user?.uid || '') ? 'Following' : 'Follow'}
             </button>
             {isOwner && (
               <>
@@ -228,13 +235,13 @@ export default function IdeaDetailPage() {
                     });
                     setShowEditModal(true);
                   }}
-                  className="px-4 py-2 bg-blue-500/20 hover:bg-blue-500/30 border border-blue-500 rounded-lg text-blue-400 text-sm transition-colors"
+                  className="px-3 py-1.5 bg-blue-500/20 hover:bg-blue-500/30 border border-blue-500 rounded-lg text-blue-400 text-sm transition-colors"
                 >
                   ✏️ Edit
                 </button>
                 <button
                   onClick={handleDeleteIdea}
-                  className="px-4 py-2 bg-red-500/20 hover:bg-red-500/30 border border-red-500 rounded-lg text-red-400 text-sm transition-colors"
+                  className="px-3 py-1.5 bg-red-500/20 hover:bg-red-500/30 border border-red-500 rounded-lg text-red-400 text-sm transition-colors"
                 >
                   🗑️ Delete
                 </button>

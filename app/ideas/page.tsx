@@ -114,7 +114,12 @@ export default function IdeasHubPage() {
         {/* Footer */}
         <div className="flex justify-between items-center pt-3 border-t border-[#30363d]">
           <div className="flex gap-3 text-xs text-[#8b949e]">
-            <span className="flex items-center gap-1"><HeartIcon size={16} /> {idea.likes}</span>
+            <span className="flex items-center gap-1">
+              <svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor">
+                <path d="M8 14s-6-4.5-6-8c0-2.5 2-4 4-4 1.5 0 2 1 2 1s.5-1 2-1c2 0 4 1.5 4 4 0 3.5-6 8-6 8z"/>
+              </svg>
+              {idea.likes}
+            </span>
             <span>💬 {idea.commentCount}</span>
             <span>📅 {idea.createdAt?.toDate ? idea.createdAt.toDate().toLocaleDateString() : 'Recent'}</span>
           </div>
@@ -199,7 +204,10 @@ export default function IdeasHubPage() {
                 : 'bg-[#1c2128] text-[#8b949e] hover:bg-[#30363d]'
             }`}
           >
-            <HeartIcon size={14} /> Following
+            <svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor">
+              <path d="M8 14s-6-4.5-6-8c0-2.5 2-4 4-4 1.5 0 2 1 2 1s.5-1 2-1c2 0 4 1.5 4 4 0 3.5-6 8-6 8z"/>
+            </svg>
+            Following
           </button>
         </div>
       </div>
