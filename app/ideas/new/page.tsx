@@ -1,16 +1,25 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Navigation from '../../../components/Navigation';
 import { useTrading } from '../../../contexts/TradingContext';
+import { useAuth } from '../../../contexts/AuthContext';
 import { TargetIcon, SparklesIcon } from '@/components/icons';
 
 export default function ShareIdeaPage() {
   const router = useRouter();
+  const { user } = useAuth();
   const { createIdea } = useTrading();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+
+  // Check email verification
+  useEffect(() => {
+    if (user && !user.emailVerified) {
+      router.push('/verify');
+    }
+  }, [user, router]);
 
   const [formData, setFormData] = useState({
     symbol: '',

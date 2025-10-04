@@ -18,7 +18,12 @@ export default function LoginPage() {
 
   useEffect(() => {
     if (user) {
-      router.push('/ideas');
+      // Redirect based on verification status
+      if (user.emailVerified) {
+        router.push('/ideas');
+      } else {
+        router.push('/verify');
+      }
     }
   }, [user, router]);
 
@@ -39,10 +44,23 @@ export default function LoginPage() {
     try {
       if (isSignUp) {
         await register(email, password, displayName, userMobileNo, '');
+        // Show success message - user needs to verify email
+        setError('');
+        alert('Registration successful! Please check your email to verify your account before logging in.');
+        setIsSignUp(false);
+        setEmail('');
+        setPassword('');
+        setDisplayName('');
+        setUserMobileNo('');
       } else {
-        await login(email, password);
+        const result = await login(email, password);
+        // Check if email is verified
+        if (!result.user.emailVerified) {
+          setError('Please verify your email before logging in. Check your inbox for the verification link.');
+          return;
+        }
+        router.push('/ideas');
       }
-      router.push('/ideas');
     } catch (error: any) {
       setError(error.message || (isSignUp ? 'Sign up failed' : 'Login failed'));
     }
@@ -53,7 +71,9 @@ export default function LoginPage() {
     setLoading(true);
     setError('');
     try {
-      await signInWithGoogle();
+      const result = await signInWithGoogle();
+      // Google sign-in doesn't require email verification
+      // as Google has already verified the email
       router.push('/ideas');
     } catch (error: any) {
       setError(error.message || 'Google Sign-In failed');

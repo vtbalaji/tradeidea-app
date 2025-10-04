@@ -1,11 +1,22 @@
 'use client';
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import Navigation from '../../components/Navigation';
 import { useTrading } from '../../contexts/TradingContext';
+import { useAuth } from '../../contexts/AuthContext';
 import { TrendingIcon, ChartIcon, TargetIcon, EntryIcon } from '@/components/icons';
 export default function PortfolioPage() {
+  const router = useRouter();
+  const { user } = useAuth();
   const { myPortfolio, exitTrade, addTransaction } = useTrading();
   const [activeTab, setActiveTab] = useState('open');
+
+  // Check email verification
+  useEffect(() => {
+    if (user && !user.emailVerified) {
+      router.push('/verify');
+    }
+  }, [user, router]);
   const [showExitModal, setShowExitModal] = useState(false);
   const [showTransactionModal, setShowTransactionModal] = useState(false);
   const [selectedPosition, setSelectedPosition] = useState<any>(null);

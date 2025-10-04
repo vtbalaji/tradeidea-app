@@ -18,6 +18,13 @@ export default function IdeaDetailPage() {
   const [commentText, setCommentText] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+
+  // Check email verification
+  useEffect(() => {
+    if (user && !user.emailVerified) {
+      router.push('/verify');
+    }
+  }, [user, router]);
   const [replyingTo, setReplyingTo] = useState<string | null>(null);
   const [replyText, setReplyText] = useState('');
   const [showTradeModal, setShowTradeModal] = useState(false);

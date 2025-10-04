@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Navigation from '../../components/Navigation';
 import { useTrading } from '../../contexts/TradingContext';
@@ -13,6 +13,13 @@ export default function IdeasHubPage() {
   const { user } = useAuth();
   const [searchQuery, setSearchQuery] = useState('');
   const [activeTab, setActiveTab] = useState('all');
+
+  // Check email verification
+  useEffect(() => {
+    if (user && !user.emailVerified) {
+      router.push('/verify');
+    }
+  }, [user, router]);
 
   // Filter ideas based on search and tab
   let filteredIdeas = ideas;

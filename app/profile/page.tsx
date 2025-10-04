@@ -1,12 +1,21 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { useAuth } from '../../contexts/AuthContext';
 import Navigation from '../../components/Navigation';
 
 export default function ProfilePage() {
+  const router = useRouter();
   const { user, userData, updateUserProfile, logout } = useAuth();
   const [isEditing, setIsEditing] = useState(false);
+
+  // Check email verification
+  useEffect(() => {
+    if (user && !user.emailVerified) {
+      router.push('/verify');
+    }
+  }, [user, router]);
   const [formData, setFormData] = useState({
     displayName: userData?.displayName || '',
     email: user?.email || '',

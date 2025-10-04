@@ -8,6 +8,7 @@ import {
   signOut,
   GoogleAuthProvider,
   signInWithPopup,
+  sendEmailVerification,
   User
 } from 'firebase/auth';
 import { doc, setDoc, getDoc, Timestamp } from 'firebase/firestore';
@@ -84,6 +85,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     try {
       const result = await createUserWithEmailAndPassword(auth, email, password);
 
+      // Send email verification
+      await sendEmailVerification(result.user);
+
       // Save user data to Firestore
       await setDoc(doc(db, 'users', result.user.uid), {
         email: email,
@@ -93,6 +97,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         createdAt: Timestamp.now(),
         updatedAt: Timestamp.now()
       });
+
+      // Sign out user until they verify email
+      await signOut(auth);
 
       return result;
     } catch (error) {
