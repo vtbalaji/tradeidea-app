@@ -1,0 +1,542 @@
+'use client';
+
+import React, { createContext, useState, useContext, useEffect, ReactNode } from 'react';
+import {
+  collection,
+  addDoc,
+  updateDoc,
+  deleteDoc,
+  doc,
+  getDocs,
+  getDoc,
+  query,
+  where,
+  orderBy,
+  onSnapshot,
+  serverTimestamp,
+  Timestamp
+} from 'firebase/firestore';
+import { db } from '../lib/firebase';
+import { useAuth } from './AuthContext';
+
+interface TradingIdea {
+  id: string;
+  symbol: string;
+  title: string;
+  analysis: string;
+  visibility: string;
+  tradeType: string;
+  timeframe: string;
+  riskLevel: string;
+  entryPrice: number;
+  stopLoss: number;
+  target1: number;
+  target2?: number | null;
+  target3?: number | null;
+  analysisType: string;
+  tags: string[];
+  status: string;
+  userId: string;
+  userEmail: string;
+  userName: string;
+  likes: number;
+  likedBy: string[];
+  followers: string[];
+  commentCount: number;
+  createdAt: Timestamp;
+  updatedAt: Timestamp;
+}
+
+interface Transaction {
+  type: 'buy' | 'sell';
+  quantity: number;
+  price: number;
+  date: string;
+  totalValue: number;
+  timestamp: Timestamp;
+}
+
+interface PortfolioPosition {
+  id: string;
+  ideaId: string;
+  userId: string;
+  symbol: string;
+  tradeType: string;
+  entryPrice: number;
+  currentPrice: number;
+  target1: number;
+  stopLoss: number;
+  quantity: number;
+  totalValue: number;
+  status: 'open' | 'closed';
+  createdAt: Timestamp;
+  updatedAt: Timestamp;
+  closedAt?: Timestamp;
+  exitPrice?: number;
+  exitDate?: string;
+  transactions: Transaction[];
+}
+
+interface Comment {
+  id: string;
+  ideaId: string;
+  userId: string;
+  userEmail: string;
+  userName: string;
+  text: string;
+  likes: number;
+  createdAt: Timestamp;
+}
+
+interface TradingContextType {
+  ideas: TradingIdea[];
+  myPortfolio: PortfolioPosition[];
+  loading: boolean;
+  createIdea: (ideaData: Partial<TradingIdea>) => Promise<string>;
+  updateIdea: (ideaId: string, updates: Partial<TradingIdea>) => Promise<void>;
+  deleteIdea: (ideaId: string) => Promise<void>;
+  toggleLike: (ideaId: string) => Promise<void>;
+  toggleFollow: (ideaId: string) => Promise<void>;
+  addComment: (ideaId: string, commentText: string) => Promise<void>;
+  getComments: (ideaId: string) => Promise<Comment[]>;
+  addToPortfolio: (ideaId: string, positionData: Partial<PortfolioPosition>) => Promise<string>;
+  updatePosition: (positionId: string, updates: Partial<PortfolioPosition>) => Promise<void>;
+  closePosition: (positionId: string, closeData: Partial<PortfolioPosition>) => Promise<void>;
+  addTransaction: (positionId: string, transaction: Omit<Transaction, 'timestamp'>) => Promise<void>;
+  exitTrade: (positionId: string, exitPrice: number, exitDate: string) => Promise<void>;
+}
+
+const TradingContext = createContext<TradingContextType | undefined>(undefined);
+
+export const useTrading = () => {
+  const context = useContext(TradingContext);
+  if (!context) {
+    throw new Error('useTrading must be used within a TradingProvider');
+  }
+  return context;
+};
+
+interface TradingProviderProps {
+  children: ReactNode;
+}
+
+export const TradingProvider: React.FC<TradingProviderProps> = ({ children }) => {
+  const { user } = useAuth();
+  const [ideas, setIdeas] = useState<TradingIdea[]>([]);
+  const [myPortfolio, setMyPortfolio] = useState<PortfolioPosition[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  // Fetch all trading ideas
+  useEffect(() => {
+    if (!user) {
+      setIdeas([]);
+      setLoading(false);
+      return;
+    }
+
+    const ideasRef = collection(db, 'tradingIdeas');
+    const q = query(ideasRef, orderBy('createdAt', 'desc'));
+
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const ideasData = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      })) as TradingIdea[];
+      setIdeas(ideasData);
+      setLoading(false);
+    }, (error) => {
+      console.error('Error fetching ideas:', error);
+      setLoading(false);
+    });
+
+    return () => unsubscribe();
+  }, [user]);
+
+  // Fetch user's portfolio
+  useEffect(() => {
+    if (!user) {
+      setMyPortfolio([]);
+      return;
+    }
+
+    const portfolioRef = collection(db, 'portfolios');
+    const q = query(portfolioRef, where('userId', '==', user.uid));
+
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const portfolioData = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      })) as PortfolioPosition[];
+      setMyPortfolio(portfolioData);
+    }, (error) => {
+      console.error('Error fetching portfolio:', error);
+    });
+
+    return () => unsubscribe();
+  }, [user]);
+
+  // Create a new trading idea
+  const createIdea = async (ideaData: Partial<TradingIdea>): Promise<string> => {
+    if (!user) throw new Error('User must be logged in');
+
+    try {
+      const ideasRef = collection(db, 'tradingIdeas');
+      const newIdea = {
+        ...ideaData,
+        userId: user.uid,
+        userEmail: user.email,
+        userName: user.displayName || user.email,
+        likes: 0,
+        likedBy: [],
+        followers: [],
+        commentCount: 0,
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp()
+      };
+
+      const docRef = await addDoc(ideasRef, newIdea);
+      return docRef.id;
+    } catch (error) {
+      console.error('Error creating idea:', error);
+      throw error;
+    }
+  };
+
+  // Update an existing idea
+  const updateIdea = async (ideaId: string, updates: Partial<TradingIdea>): Promise<void> => {
+    if (!user) throw new Error('User must be logged in');
+
+    try {
+      const ideaRef = doc(db, 'tradingIdeas', ideaId);
+      await updateDoc(ideaRef, {
+        ...updates,
+        updatedAt: serverTimestamp()
+      });
+    } catch (error) {
+      console.error('Error updating idea:', error);
+      throw error;
+    }
+  };
+
+  // Delete an idea
+  const deleteIdea = async (ideaId: string): Promise<void> => {
+    if (!user) throw new Error('User must be logged in');
+
+    try {
+      const ideaRef = doc(db, 'tradingIdeas', ideaId);
+      await deleteDoc(ideaRef);
+    } catch (error) {
+      console.error('Error deleting idea:', error);
+      throw error;
+    }
+  };
+
+  // Like/Unlike an idea
+  const toggleLike = async (ideaId: string): Promise<void> => {
+    if (!user) throw new Error('User must be logged in');
+
+    try {
+      const ideaRef = doc(db, 'tradingIdeas', ideaId);
+      const ideaDoc = await getDoc(ideaRef);
+
+      if (ideaDoc.exists()) {
+        const ideaData = ideaDoc.data();
+        const likedBy = ideaData.likedBy || [];
+        const hasLiked = likedBy.includes(user.uid);
+
+        if (hasLiked) {
+          // Unlike
+          await updateDoc(ideaRef, {
+            likes: (ideaData.likes || 1) - 1,
+            likedBy: likedBy.filter((id: string) => id !== user.uid)
+          });
+        } else {
+          // Like
+          await updateDoc(ideaRef, {
+            likes: (ideaData.likes || 0) + 1,
+            likedBy: [...likedBy, user.uid]
+          });
+        }
+      }
+    } catch (error) {
+      console.error('Error toggling like:', error);
+      throw error;
+    }
+  };
+
+  // Follow/Unfollow an idea
+  const toggleFollow = async (ideaId: string): Promise<void> => {
+    if (!user) throw new Error('User must be logged in');
+
+    try {
+      const ideaRef = doc(db, 'tradingIdeas', ideaId);
+      const ideaDoc = await getDoc(ideaRef);
+
+      if (ideaDoc.exists()) {
+        const ideaData = ideaDoc.data();
+        const followers = ideaData.followers || [];
+        const isFollowing = followers.includes(user.uid);
+
+        if (isFollowing) {
+          // Unfollow
+          await updateDoc(ideaRef, {
+            followers: followers.filter((id: string) => id !== user.uid)
+          });
+        } else {
+          // Follow
+          await updateDoc(ideaRef, {
+            followers: [...followers, user.uid]
+          });
+        }
+      }
+    } catch (error) {
+      console.error('Error toggling follow:', error);
+      throw error;
+    }
+  };
+
+  // Add a comment to an idea
+  const addComment = async (ideaId: string, commentText: string): Promise<void> => {
+    if (!user) throw new Error('User must be logged in');
+
+    try {
+      const commentsRef = collection(db, 'comments');
+      const newComment = {
+        ideaId,
+        userId: user.uid,
+        userEmail: user.email,
+        userName: user.displayName || user.email,
+        text: commentText,
+        likes: 0,
+        createdAt: serverTimestamp()
+      };
+
+      console.log('💬 Adding comment:', newComment);
+      const docRef = await addDoc(commentsRef, newComment);
+      console.log('✅ Comment added with ID:', docRef.id);
+
+      // Update comment count on idea
+      const ideaRef = doc(db, 'tradingIdeas', ideaId);
+      const ideaDoc = await getDoc(ideaRef);
+      if (ideaDoc.exists()) {
+        const newCount = (ideaDoc.data().commentCount || 0) + 1;
+        await updateDoc(ideaRef, {
+          commentCount: newCount
+        });
+        console.log('✅ Updated comment count to:', newCount);
+      }
+    } catch (error) {
+      console.error('❌ Error adding comment:', error);
+      throw error;
+    }
+  };
+
+  // Get comments for an idea
+  const getComments = async (ideaId: string): Promise<Comment[]> => {
+    try {
+      const commentsRef = collection(db, 'comments');
+      const q = query(
+        commentsRef,
+        where('ideaId', '==', ideaId)
+      );
+
+      const snapshot = await getDocs(q);
+      const comments = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      })) as Comment[];
+
+      // Sort by createdAt in memory (newest first)
+      comments.sort((a, b) => {
+        const aTime = a.createdAt?.toMillis?.() || 0;
+        const bTime = b.createdAt?.toMillis?.() || 0;
+        return bTime - aTime;
+      });
+
+      console.log('📝 Fetched comments for idea', ideaId, ':', comments.length);
+      return comments;
+    } catch (error) {
+      console.error('❌ Error fetching comments:', error);
+      throw error;
+    }
+  };
+
+  // Add a position to portfolio (I Took This Trade)
+  const addToPortfolio = async (ideaId: string, positionData: Partial<PortfolioPosition>): Promise<string> => {
+    if (!user) throw new Error('User must be logged in');
+
+    try {
+      const portfoliosRef = collection(db, 'portfolios');
+
+      // Create initial buy transaction
+      const initialTransaction = {
+        type: 'buy' as const,
+        quantity: positionData.quantity || 0,
+        price: positionData.entryPrice || 0,
+        date: positionData.dateTaken || new Date().toISOString().split('T')[0],
+        totalValue: (positionData.quantity || 0) * (positionData.entryPrice || 0),
+        timestamp: serverTimestamp()
+      };
+
+      const newPosition = {
+        ...positionData,
+        ideaId,
+        userId: user.uid,
+        status: 'open',
+        transactions: [initialTransaction],
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp()
+      };
+
+      const docRef = await addDoc(portfoliosRef, newPosition);
+      return docRef.id;
+    } catch (error) {
+      console.error('Error adding to portfolio:', error);
+      throw error;
+    }
+  };
+
+  // Update a portfolio position
+  const updatePosition = async (positionId: string, updates: Partial<PortfolioPosition>): Promise<void> => {
+    if (!user) throw new Error('User must be logged in');
+
+    try {
+      const positionRef = doc(db, 'portfolios', positionId);
+      await updateDoc(positionRef, {
+        ...updates,
+        updatedAt: serverTimestamp()
+      });
+    } catch (error) {
+      console.error('Error updating position:', error);
+      throw error;
+    }
+  };
+
+  // Close a position
+  const closePosition = async (positionId: string, closeData: Partial<PortfolioPosition>): Promise<void> => {
+    if (!user) throw new Error('User must be logged in');
+
+    try {
+      const positionRef = doc(db, 'portfolios', positionId);
+      await updateDoc(positionRef, {
+        ...closeData,
+        status: 'closed',
+        closedAt: serverTimestamp(),
+        updatedAt: serverTimestamp()
+      });
+    } catch (error) {
+      console.error('Error closing position:', error);
+      throw error;
+    }
+  };
+
+  // Add a buy/sell transaction to an existing position
+  const addTransaction = async (positionId: string, transaction: Omit<Transaction, 'timestamp'>): Promise<void> => {
+    if (!user) throw new Error('User must be logged in');
+
+    try {
+      const positionRef = doc(db, 'portfolios', positionId);
+      const positionDoc = await getDoc(positionRef);
+
+      if (!positionDoc.exists()) {
+        throw new Error('Position not found');
+      }
+
+      const positionData = positionDoc.data() as PortfolioPosition;
+      const transactions = positionData.transactions || [];
+
+      const newTransaction = {
+        ...transaction,
+        timestamp: serverTimestamp()
+      };
+
+      // Calculate new average price and quantity
+      let totalQuantity = positionData.quantity;
+      let totalInvested = positionData.entryPrice * positionData.quantity;
+
+      if (transaction.type === 'buy') {
+        totalQuantity += transaction.quantity;
+        totalInvested += transaction.totalValue;
+      } else {
+        totalQuantity -= transaction.quantity;
+      }
+
+      const newAvgPrice = totalQuantity > 0 ? totalInvested / totalQuantity : positionData.entryPrice;
+
+      await updateDoc(positionRef, {
+        transactions: [...transactions, newTransaction],
+        quantity: totalQuantity,
+        entryPrice: newAvgPrice,
+        totalValue: totalQuantity * positionData.currentPrice,
+        updatedAt: serverTimestamp()
+      });
+    } catch (error) {
+      console.error('Error adding transaction:', error);
+      throw error;
+    }
+  };
+
+  // Exit a trade with exit price
+  const exitTrade = async (positionId: string, exitPrice: number, exitDate: string): Promise<void> => {
+    if (!user) throw new Error('User must be logged in');
+
+    try {
+      const positionRef = doc(db, 'portfolios', positionId);
+      const positionDoc = await getDoc(positionRef);
+
+      if (!positionDoc.exists()) {
+        throw new Error('Position not found');
+      }
+
+      const positionData = positionDoc.data() as PortfolioPosition;
+      const transactions = positionData.transactions || [];
+
+      // Create exit transaction
+      const exitTransaction = {
+        type: 'sell' as const,
+        quantity: positionData.quantity,
+        price: exitPrice,
+        date: exitDate,
+        totalValue: exitPrice * positionData.quantity,
+        timestamp: serverTimestamp()
+      };
+
+      await updateDoc(positionRef, {
+        status: 'closed',
+        exitPrice,
+        exitDate,
+        currentPrice: exitPrice,
+        transactions: [...transactions, exitTransaction],
+        closedAt: serverTimestamp(),
+        updatedAt: serverTimestamp()
+      });
+    } catch (error) {
+      console.error('Error exiting trade:', error);
+      throw error;
+    }
+  };
+
+  const value: TradingContextType = {
+    ideas,
+    myPortfolio,
+    loading,
+    createIdea,
+    updateIdea,
+    deleteIdea,
+    toggleLike,
+    toggleFollow,
+    addComment,
+    getComments,
+    addToPortfolio,
+    updatePosition,
+    closePosition,
+    addTransaction,
+    exitTrade
+  };
+
+  return (
+    <TradingContext.Provider value={value}>
+      {children}
+    </TradingContext.Provider>
+  );
+};
