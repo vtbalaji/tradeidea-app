@@ -191,14 +191,13 @@ export default function IdeaDetailPage() {
           </button>
 
           <div className="mb-5">
-            <div className="flex items-center gap-3 mb-3">
+            <div className="flex items-center gap-3">
               <h1 className="text-4xl font-bold text-white">{idea.symbol}</h1>
               <span className="px-3 py-1 bg-purple-500/20 text-purple-400 text-sm font-semibold rounded">
                 {idea.status}
               </span>
               <IdeaIcon size={24} />
             </div>
-            <h2 className="text-xl font-semibold text-[#8b949e]">{idea.title}</h2>
           </div>
 
           <div className="flex gap-2">
@@ -277,7 +276,9 @@ export default function IdeaDetailPage() {
             </span>
           </div>
 
-          <p className="text-base text-[#c9d1d9] leading-relaxed">{idea.analysis}</p>
+          <div className="bg-[#0f1419] border border-[#30363d] rounded-lg p-4">
+            <p className="text-base text-[#c9d1d9] leading-relaxed whitespace-pre-wrap">{idea.analysis}</p>
+          </div>
         </div>
 
         {/* Trade Setup */}

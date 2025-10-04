@@ -158,9 +158,10 @@ export default function ShareIdeaPage() {
                 placeholder="Provide detailed analysis, reasoning, and research behind this trade idea..."
                 value={formData.analysis}
                 onChange={(e) => setFormData({ ...formData, analysis: e.target.value })}
-                rows={4}
-                className="w-full bg-[#0f1419] border border-[#30363d] rounded-lg px-3 py-3 text-white placeholder-[#8b949e] outline-none focus:border-[#ff8c42] transition-colors resize-none"
+                rows={8}
+                className="w-full bg-[#0f1419] border border-[#30363d] rounded-lg px-4 py-3 text-white placeholder-[#8b949e] outline-none focus:border-[#ff8c42] transition-colors resize-y leading-relaxed"
               />
+              <p className="text-xs text-[#8b949e] mt-1">{formData.analysis.length} characters</p>
             </div>
           </div>
 

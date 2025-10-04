@@ -1,0 +1,19 @@
+<svg width="64" height="64" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background -->
+  <rect width="64" height="64" rx="12" fill="#ff8c42"/>
+
+  <!-- Portfolio briefcase icon -->
+  <g transform="translate(16, 16)">
+    <!-- Handle -->
+    <rect x="12" y="4" width="8" height="4" rx="2" fill="white"/>
+
+    <!-- Main briefcase body -->
+    <rect x="4" y="8" width="24" height="16" rx="2" fill="white"/>
+
+    <!-- Lock/clasp -->
+    <rect x="14" y="14" width="4" height="6" rx="1" fill="#ff8c42"/>
+
+    <!-- Bottom accent -->
+    <rect x="4" y="22" width="24" height="2" rx="1" fill="#e07838"/>
+  </g>
+</svg>

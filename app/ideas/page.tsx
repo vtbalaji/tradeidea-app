@@ -59,20 +59,12 @@ export default function IdeasHubPage() {
         onClick={() => router.push(`/ideas/${idea.id}`)}
       >
         {/* Header */}
-        <div className="flex justify-between items-start mb-3">
-          <div className="flex-1">
-            <h3 className="text-xl font-bold text-white mb-2">{idea.symbol}</h3>
-            <div className="flex gap-2">
-              <span className="px-2 py-1 bg-purple-500/20 text-purple-400 text-xs font-semibold rounded">
-                {idea.status}
-              </span>
-            </div>
-          </div>
-          <IdeaIcon size={24} />
+        <div className="flex justify-between items-center mb-3">
+          <h3 className="text-xl font-bold text-white">{idea.symbol}</h3>
+          <span className="px-2 py-1 bg-purple-500/20 text-purple-400 text-xs font-semibold rounded">
+            {idea.status}
+          </span>
         </div>
-
-        {/* Title */}
-        <h4 className="text-base font-semibold text-white mb-3">{idea.title}</h4>
 
         {/* Tags */}
         <div className="flex flex-wrap gap-2 mb-3">
@@ -88,7 +80,9 @@ export default function IdeasHubPage() {
         </div>
 
         {/* Analysis */}
-        <p className="text-sm text-[#8b949e] mb-4 line-clamp-2">{idea.analysis}</p>
+        <div className="bg-[#0f1419] border border-[#30363d] rounded-lg p-3 mb-4">
+          <p className="text-sm text-[#8b949e] leading-relaxed line-clamp-3 whitespace-pre-wrap">{idea.analysis}</p>
+        </div>
 
         {/* Trade Details */}
         <div className="space-y-2 mb-4 pt-4 border-t border-[#30363d]">
