@@ -213,13 +213,13 @@ export default function IdeasHubPage() {
             <p className="text-[#8b949e] text-lg">Loading ideas...</p>
           </div>
         ) : (
-          <div className="space-y-8">
+          <div className="space-y-4">
             {/* Cooking Ideas Section */}
             {cookingIdeas.length > 0 && (
               <div>
-                <div className="flex items-center gap-3 mb-4">
-                  <h2 className="text-2xl font-bold text-white">🍳 Cooking Ideas</h2>
-                  <span className="px-3 py-1 bg-orange-500/20 text-orange-400 text-sm font-semibold rounded-full">
+                <div className="flex items-center gap-2 mb-2">
+                  <h2 className="text-xl font-bold text-white">🍳 Cooking Ideas</h2>
+                  <span className="px-2 py-0.5 bg-orange-500/20 text-orange-400 text-xs font-semibold rounded-full">
                     {cookingIdeas.length}
                   </span>
                 </div>
@@ -232,9 +232,9 @@ export default function IdeasHubPage() {
             {/* Active Ideas Section */}
             {activeIdeas.length > 0 && (
               <div>
-                <div className="flex items-center gap-3 mb-4">
-                  <h2 className="text-2xl font-bold text-white">🟢 Active Ideas</h2>
-                  <span className="px-3 py-1 bg-green-500/20 text-green-400 text-sm font-semibold rounded-full">
+                <div className="flex items-center gap-2 mb-2">
+                  <h2 className="text-xl font-bold text-white">🟢 Active Ideas</h2>
+                  <span className="px-2 py-0.5 bg-green-500/20 text-green-400 text-xs font-semibold rounded-full">
                     {activeIdeas.length}
                   </span>
                 </div>
@@ -247,9 +247,9 @@ export default function IdeasHubPage() {
             {/* Hit Target Ideas Section */}
             {hitTargetIdeas.length > 0 && (
               <div>
-                <div className="flex items-center gap-3 mb-4">
-                  <h2 className="text-2xl font-bold text-white">🎯 Hit Target</h2>
-                  <span className="px-3 py-1 bg-green-500/20 text-green-400 text-sm font-semibold rounded-full">
+                <div className="flex items-center gap-2 mb-2">
+                  <h2 className="text-xl font-bold text-white">🎯 Hit Target</h2>
+                  <span className="px-2 py-0.5 bg-green-500/20 text-green-400 text-xs font-semibold rounded-full">
                     {hitTargetIdeas.length}
                   </span>
                 </div>
@@ -262,9 +262,9 @@ export default function IdeasHubPage() {
             {/* Hit Stop Loss Ideas Section */}
             {hitSLIdeas.length > 0 && (
               <div>
-                <div className="flex items-center gap-3 mb-4">
-                  <h2 className="text-2xl font-bold text-white">🛑 Hit Stop Loss</h2>
-                  <span className="px-3 py-1 bg-red-500/20 text-red-400 text-sm font-semibold rounded-full">
+                <div className="flex items-center gap-2 mb-2">
+                  <h2 className="text-xl font-bold text-white">🛑 Hit Stop Loss</h2>
+                  <span className="px-2 py-0.5 bg-red-500/20 text-red-400 text-xs font-semibold rounded-full">
                     {hitSLIdeas.length}
                   </span>
                 </div>
@@ -277,9 +277,9 @@ export default function IdeasHubPage() {
             {/* Cancelled Ideas Section */}
             {cancelledIdeas.length > 0 && (
               <div>
-                <div className="flex items-center gap-3 mb-4">
-                  <h2 className="text-2xl font-bold text-white">❌ Cancelled</h2>
-                  <span className="px-3 py-1 bg-gray-500/20 text-gray-400 text-sm font-semibold rounded-full">
+                <div className="flex items-center gap-2 mb-2">
+                  <h2 className="text-xl font-bold text-white">❌ Cancelled</h2>
+                  <span className="px-2 py-0.5 bg-gray-500/20 text-gray-400 text-xs font-semibold rounded-full">
                     {cancelledIdeas.length}
                   </span>
                 </div>

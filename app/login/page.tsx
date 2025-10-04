@@ -7,9 +7,12 @@ import { MyPortfolioIcon } from '@/components/icons';
 
 export default function LoginPage() {
   const router = useRouter();
-  const { login, signInWithGoogle, user } = useAuth();
+  const { login, register, signInWithGoogle, user } = useAuth();
+  const [isSignUp, setIsSignUp] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [displayName, setDisplayName] = useState('');
+  const [userMobileNo, setUserMobileNo] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -19,9 +22,14 @@ export default function LoginPage() {
     }
   }, [user, router]);
 
-  const handleLogin = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email || !password) {
+      setError('Please fill in all fields');
+      return;
+    }
+
+    if (isSignUp && (!displayName || !userMobileNo)) {
       setError('Please fill in all fields');
       return;
     }
@@ -29,10 +37,14 @@ export default function LoginPage() {
     setLoading(true);
     setError('');
     try {
-      await login(email, password);
+      if (isSignUp) {
+        await register(email, password, displayName, userMobileNo, '');
+      } else {
+        await login(email, password);
+      }
       router.push('/ideas');
     } catch (error: any) {
-      setError(error.message || 'Login failed');
+      setError(error.message || (isSignUp ? 'Sign up failed' : 'Login failed'));
     }
     setLoading(false);
   };
@@ -64,7 +76,7 @@ export default function LoginPage() {
           Welcome to TradeIdea
         </h1>
         <p className="text-[#8b949e] text-center mb-8">
-          Sign in to continue
+          {isSignUp ? 'Create your account' : 'Sign in to continue'}
         </p>
 
         {/* Error Message */}
@@ -91,8 +103,28 @@ export default function LoginPage() {
           <div className="flex-1 h-px bg-[#30363d]"></div>
         </div>
 
-        {/* Login Form */}
-        <form onSubmit={handleLogin}>
+        {/* Login/Signup Form */}
+        <form onSubmit={handleSubmit}>
+          {/* Display Name - Only for Sign Up */}
+          {isSignUp && (
+            <div className="mb-4">
+              <label className="block text-sm font-semibold text-[#8b949e] mb-2">
+                Full Name
+              </label>
+              <div className="flex items-center bg-[#0f1419] border border-[#30363d] rounded-lg px-4 py-3 focus-within:border-[#ff8c42] transition-colors">
+                <span className="text-lg mr-2">👤</span>
+                <input
+                  type="text"
+                  placeholder="Your name"
+                  value={displayName}
+                  onChange={(e) => setDisplayName(e.target.value)}
+                  className="flex-1 bg-transparent text-white outline-none placeholder-[#8b949e]"
+                  disabled={loading}
+                />
+              </div>
+            </div>
+          )}
+
           {/* Email Input */}
           <div className="mb-4">
             <label className="block text-sm font-semibold text-[#8b949e] mb-2">
@@ -110,6 +142,26 @@ export default function LoginPage() {
               />
             </div>
           </div>
+
+          {/* Mobile Number - Only for Sign Up */}
+          {isSignUp && (
+            <div className="mb-4">
+              <label className="block text-sm font-semibold text-[#8b949e] mb-2">
+                Mobile Number
+              </label>
+              <div className="flex items-center bg-[#0f1419] border border-[#30363d] rounded-lg px-4 py-3 focus-within:border-[#ff8c42] transition-colors">
+                <span className="text-lg mr-2">📱</span>
+                <input
+                  type="tel"
+                  placeholder="Your mobile number"
+                  value={userMobileNo}
+                  onChange={(e) => setUserMobileNo(e.target.value)}
+                  className="flex-1 bg-transparent text-white outline-none placeholder-[#8b949e]"
+                  disabled={loading}
+                />
+              </div>
+            </div>
+          )}
 
           {/* Password Input */}
           <div className="mb-6">
@@ -129,23 +181,35 @@ export default function LoginPage() {
             </div>
           </div>
 
-          {/* Sign In Button */}
+          {/* Submit Button */}
           <button
             type="submit"
             disabled={loading}
             className="w-full bg-[#ff8c42] hover:bg-[#ff9a58] text-white font-semibold py-3 px-4 rounded-lg transition-colors disabled:opacity-60 disabled:cursor-not-allowed mb-5"
           >
-            {loading ? 'Signing in...' : 'Sign in'}
+            {loading ? (isSignUp ? 'Creating account...' : 'Signing in...') : (isSignUp ? 'Sign up' : 'Sign in')}
           </button>
         </form>
 
         {/* Footer Links */}
         <div className="flex justify-between items-center text-sm">
-          <button className="text-[#8b949e] hover:text-white transition-colors">
-            Forgot password?
-          </button>
-          <button className="text-[#8b949e] hover:text-white transition-colors">
-            Need an account? <span className="font-semibold text-white">Sign up</span>
+          {!isSignUp && (
+            <button className="text-[#8b949e] hover:text-white transition-colors">
+              Forgot password?
+            </button>
+          )}
+          <button
+            onClick={() => {
+              setIsSignUp(!isSignUp);
+              setError('');
+            }}
+            className="text-[#8b949e] hover:text-white transition-colors ml-auto"
+          >
+            {isSignUp ? (
+              <>Already have an account? <span className="font-semibold text-white">Sign in</span></>
+            ) : (
+              <>Need an account? <span className="font-semibold text-white">Sign up</span></>
+            )}
           </button>
         </div>
       </div>
