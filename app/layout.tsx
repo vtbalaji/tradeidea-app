@@ -4,6 +4,7 @@ import "./globals.css";
 import { AuthProvider } from "../contexts/AuthContext";
 import { TradingProvider } from "../contexts/TradingContext";
 import { SymbolsProvider } from "../contexts/SymbolsContext";
+import { ThemeProvider } from "../contexts/ThemeContext";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -49,17 +50,38 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
+      <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              (function() {
+                try {
+                  const theme = localStorage.getItem('theme') || 'system';
+                  const isDark = theme === 'dark' || (theme === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+                  if (isDark) {
+                    document.documentElement.classList.add('dark');
+                  } else {
+                    document.documentElement.classList.remove('dark');
+                  }
+                } catch (e) {}
+              })();
+            `,
+          }}
+        />
+      </head>
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased bg-[#0f1419]`}
+        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <AuthProvider>
-          <SymbolsProvider>
-            <TradingProvider>
-              {children}
-            </TradingProvider>
-          </SymbolsProvider>
-        </AuthProvider>
+        <ThemeProvider>
+          <AuthProvider>
+            <SymbolsProvider>
+              <TradingProvider>
+                {children}
+              </TradingProvider>
+            </SymbolsProvider>
+          </AuthProvider>
+        </ThemeProvider>
       </body>
     </html>
   );

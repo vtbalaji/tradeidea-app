@@ -4,33 +4,36 @@ import React, { useState } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useAuth } from '../contexts/AuthContext';
+import { useTheme } from '../contexts/ThemeContext';
 import { IdeaIcon, SparklesIcon, TrendingIcon, MyPortfolioIcon } from '@/components/icons';
 
 export default function Navigation() {
   const pathname = usePathname();
   const router = useRouter();
   const { user, logout } = useAuth();
+  const { theme, setTheme } = useTheme();
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const [showMobileMenu, setShowMobileMenu] = useState(false);
+  const [showThemeMenu, setShowThemeMenu] = useState(false);
 
   const handleLogout = async () => {
     try {
       await logout();
-      router.push('/login');
+      router.push('/');
     } catch (error) {
       console.error('Logout error:', error);
     }
   };
 
   return (
-    <nav className="bg-[#1c2128] border-b border-[#30363d] px-5 py-3">
+    <nav className="bg-white dark:bg-[#1c2128] border-b border-gray-200 dark:border-[#30363d] px-5 py-3">
       <div className="flex justify-between items-center">
         {/* Left - Brand */}
         <Link href="/ideas" className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-lg bg-[#ff8c42] flex items-center justify-center">
             <MyPortfolioIcon size={24} />
           </div>
-          <div className="text-base font-bold text-white leading-tight">TradeIdea</div>
+          <div className="text-base font-bold text-gray-900 dark:text-white leading-tight">TradeIdea</div>
         </Link>
 
         {/* Center - Nav Items - Desktop Only */}
@@ -38,8 +41,8 @@ export default function Navigation() {
           <Link
             href="/ideas"
             className={`flex items-center gap-1.5 px-4 py-2 rounded-md ${
-              pathname === '/ideas' ? 'bg-[#30363d] text-white' : 'text-[#8b949e]'
-            } font-semibold text-sm hover:bg-[#30363d] hover:text-white transition-colors`}
+              pathname === '/ideas' ? 'bg-gray-100 dark:bg-[#30363d] text-gray-900 dark:text-white' : 'text-gray-600 dark:text-[#8b949e]'
+            } font-semibold text-sm hover:bg-gray-100 dark:hover:bg-[#30363d] hover:text-gray-900 dark:hover:text-white transition-colors`}
           >
             <IdeaIcon size={18} />
             <span>Ideas Hub</span>
@@ -48,8 +51,8 @@ export default function Navigation() {
           <Link
             href="/ideas/new"
             className={`flex items-center gap-1.5 px-4 py-2 rounded-md ${
-              pathname === '/ideas/new' ? 'bg-[#30363d] text-white' : 'text-[#8b949e]'
-            } font-semibold text-sm hover:bg-[#30363d] hover:text-white transition-colors`}
+              pathname === '/ideas/new' ? 'bg-gray-100 dark:bg-[#30363d] text-gray-900 dark:text-white' : 'text-gray-600 dark:text-[#8b949e]'
+            } font-semibold text-sm hover:bg-gray-100 dark:hover:bg-[#30363d] hover:text-gray-900 dark:hover:text-white transition-colors`}
           >
             <SparklesIcon size={18} />
             <span>New Idea</span>
@@ -58,8 +61,8 @@ export default function Navigation() {
           <Link
             href="/portfolio"
             className={`flex items-center gap-1.5 px-4 py-2 rounded-md ${
-              pathname === '/portfolio' ? 'bg-[#30363d] text-white' : 'text-[#8b949e]'
-            } font-semibold text-sm hover:bg-[#30363d] hover:text-white transition-colors`}
+              pathname === '/portfolio' ? 'bg-gray-100 dark:bg-[#30363d] text-gray-900 dark:text-white' : 'text-gray-600 dark:text-[#8b949e]'
+            } font-semibold text-sm hover:bg-gray-100 dark:hover:bg-[#30363d] hover:text-gray-900 dark:hover:text-white transition-colors`}
           >
             <TrendingIcon size={18} />
             <span>My Portfolio</span>
@@ -71,12 +74,66 @@ export default function Navigation() {
           {/* Mobile Menu Button */}
           <button
             onClick={() => setShowMobileMenu(!showMobileMenu)}
-            className="md:hidden w-9 h-9 rounded-md bg-[#30363d] flex items-center justify-center text-white hover:bg-[#3c444d] transition-colors"
+            className="md:hidden w-9 h-9 rounded-md bg-gray-200 dark:bg-[#30363d] flex items-center justify-center text-gray-900 dark:text-white hover:bg-gray-300 dark:hover:bg-[#3c444d] transition-colors"
           >
             {showMobileMenu ? '✕' : '☰'}
           </button>
 
-          <button className="hidden md:flex w-9 h-9 rounded-full bg-[#30363d] items-center justify-center text-base hover:bg-[#3c444d] transition-colors">
+          {/* Theme Toggle */}
+          <div className="relative">
+            <button
+              onClick={() => setShowThemeMenu(!showThemeMenu)}
+              className="w-9 h-9 rounded-full bg-gray-200 dark:bg-[#30363d] flex items-center justify-center text-base hover:bg-gray-300 dark:hover:bg-[#3c444d] transition-colors"
+            >
+              {theme === 'light' ? '☀️' : theme === 'dark' ? '🌙' : '💻'}
+            </button>
+
+            {showThemeMenu && (
+              <>
+                <div
+                  className="fixed inset-0 z-40"
+                  onClick={() => setShowThemeMenu(false)}
+                />
+                <div className="absolute top-12 right-0 bg-white dark:bg-[#1c2128] border border-gray-200 dark:border-[#30363d] rounded-lg min-w-[140px] shadow-xl z-50">
+                  <button
+                    onClick={() => {
+                      console.log('Setting theme to light');
+                      setTheme('light');
+                      setShowThemeMenu(false);
+                    }}
+                    className={`w-full flex items-center gap-3 px-4 py-3 hover:bg-gray-100 dark:hover:bg-[#30363d] transition-colors ${theme === 'light' ? 'bg-gray-50 dark:bg-[#30363d]' : ''}`}
+                  >
+                    <span className="text-lg">☀️</span>
+                    <span className="text-sm font-semibold text-gray-900 dark:text-white">Light</span>
+                  </button>
+                  <button
+                    onClick={() => {
+                      console.log('Setting theme to dark');
+                      setTheme('dark');
+                      setShowThemeMenu(false);
+                    }}
+                    className={`w-full flex items-center gap-3 px-4 py-3 hover:bg-gray-100 dark:hover:bg-[#30363d] transition-colors ${theme === 'dark' ? 'bg-gray-50 dark:bg-[#30363d]' : ''}`}
+                  >
+                    <span className="text-lg">🌙</span>
+                    <span className="text-sm font-semibold text-gray-900 dark:text-white">Dark</span>
+                  </button>
+                  <button
+                    onClick={() => {
+                      console.log('Setting theme to system');
+                      setTheme('system');
+                      setShowThemeMenu(false);
+                    }}
+                    className={`w-full flex items-center gap-3 px-4 py-3 hover:bg-gray-100 dark:hover:bg-[#30363d] transition-colors ${theme === 'system' ? 'bg-gray-50 dark:bg-[#30363d]' : ''}`}
+                  >
+                    <span className="text-lg">💻</span>
+                    <span className="text-sm font-semibold text-gray-900 dark:text-white">System</span>
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
+
+          <button className="hidden md:flex w-9 h-9 rounded-full bg-gray-200 dark:bg-[#30363d] items-center justify-center text-base hover:bg-gray-300 dark:hover:bg-[#3c444d] transition-colors">
             🔔
           </button>
 
@@ -98,29 +155,29 @@ export default function Navigation() {
                 />
 
                 {/* Dropdown Menu */}
-                <div className="absolute top-12 right-0 bg-[#1c2128] border border-[#30363d] rounded-lg min-w-[180px] shadow-xl z-50">
+                <div className="absolute top-12 right-0 bg-white dark:bg-[#1c2128] border border-gray-200 dark:border-[#30363d] rounded-lg min-w-[180px] shadow-xl z-50">
                   <button
                     onClick={() => {
                       setShowProfileMenu(false);
                       router.push('/profile');
                     }}
-                    className="w-full flex items-center gap-3 px-4 py-3 hover:bg-[#30363d] transition-colors"
+                    className="w-full flex items-center gap-3 px-4 py-3 hover:bg-gray-100 dark:hover:bg-[#30363d] transition-colors"
                   >
                     <span className="text-lg">👤</span>
-                    <span className="text-sm font-semibold text-white">Profile</span>
+                    <span className="text-sm font-semibold text-gray-900 dark:text-white">Profile</span>
                   </button>
 
-                  <div className="h-px bg-[#30363d] mx-2" />
+                  <div className="h-px bg-gray-200 dark:bg-[#30363d] mx-2" />
 
                   <button
                     onClick={() => {
                       setShowProfileMenu(false);
                       handleLogout();
                     }}
-                    className="w-full flex items-center gap-3 px-4 py-3 hover:bg-[#30363d] transition-colors"
+                    className="w-full flex items-center gap-3 px-4 py-3 hover:bg-gray-100 dark:hover:bg-[#30363d] transition-colors"
                   >
                     <span className="text-lg">🚪</span>
-                    <span className="text-sm font-semibold text-white">Logout</span>
+                    <span className="text-sm font-semibold text-gray-900 dark:text-white">Logout</span>
                   </button>
                 </div>
               </>
@@ -139,14 +196,14 @@ export default function Navigation() {
           />
 
           {/* Menu Drawer */}
-          <div className="fixed top-[57px] left-0 right-0 bg-[#1c2128] border-b border-[#30363d] z-50 md:hidden">
+          <div className="fixed top-[57px] left-0 right-0 bg-white dark:bg-[#1c2128] border-b border-gray-200 dark:border-[#30363d] z-50 md:hidden">
             <div className="flex flex-col p-4 space-y-2">
               <Link
                 href="/ideas"
                 onClick={() => setShowMobileMenu(false)}
                 className={`flex items-center gap-3 px-4 py-3 rounded-md ${
-                  pathname === '/ideas' ? 'bg-[#30363d] text-white' : 'text-[#8b949e]'
-                } font-semibold text-sm hover:bg-[#30363d] hover:text-white transition-colors`}
+                  pathname === '/ideas' ? 'bg-gray-100 dark:bg-[#30363d] text-gray-900 dark:text-white' : 'text-gray-600 dark:text-[#8b949e]'
+                } font-semibold text-sm hover:bg-gray-100 dark:hover:bg-[#30363d] hover:text-gray-900 dark:hover:text-white transition-colors`}
               >
                 <IdeaIcon size={20} />
                 <span>Ideas Hub</span>
@@ -156,8 +213,8 @@ export default function Navigation() {
                 href="/ideas/new"
                 onClick={() => setShowMobileMenu(false)}
                 className={`flex items-center gap-3 px-4 py-3 rounded-md ${
-                  pathname === '/ideas/new' ? 'bg-[#30363d] text-white' : 'text-[#8b949e]'
-                } font-semibold text-sm hover:bg-[#30363d] hover:text-white transition-colors`}
+                  pathname === '/ideas/new' ? 'bg-gray-100 dark:bg-[#30363d] text-gray-900 dark:text-white' : 'text-gray-600 dark:text-[#8b949e]'
+                } font-semibold text-sm hover:bg-gray-100 dark:hover:bg-[#30363d] hover:text-gray-900 dark:hover:text-white transition-colors`}
               >
                 <SparklesIcon size={20} />
                 <span>New Idea</span>
@@ -167,8 +224,8 @@ export default function Navigation() {
                 href="/portfolio"
                 onClick={() => setShowMobileMenu(false)}
                 className={`flex items-center gap-3 px-4 py-3 rounded-md ${
-                  pathname === '/portfolio' ? 'bg-[#30363d] text-white' : 'text-[#8b949e]'
-                } font-semibold text-sm hover:bg-[#30363d] hover:text-white transition-colors`}
+                  pathname === '/portfolio' ? 'bg-gray-100 dark:bg-[#30363d] text-gray-900 dark:text-white' : 'text-gray-600 dark:text-[#8b949e]'
+                } font-semibold text-sm hover:bg-gray-100 dark:hover:bg-[#30363d] hover:text-gray-900 dark:hover:text-white transition-colors`}
               >
                 <TrendingIcon size={20} />
                 <span>My Portfolio</span>

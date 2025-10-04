@@ -82,8 +82,8 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#0f1419] flex items-center justify-center px-4">
-      <div className="bg-[#1c2128] rounded-xl p-8 w-full max-w-md border border-[#30363d]">
+    <div className="min-h-screen bg-gray-50 dark:bg-[#0f1419] flex items-center justify-center px-4">
+      <div className="bg-white dark:bg-[#1c2128] rounded-xl p-8 w-full max-w-md border border-gray-200 dark:border-[#30363d]">
         {/* Logo */}
         <div className="flex justify-center mb-6">
           <div className="w-20 h-20 rounded-full bg-[#ff8c42] flex items-center justify-center">
@@ -92,10 +92,10 @@ export default function LoginPage() {
         </div>
 
         {/* Title */}
-        <h1 className="text-3xl font-bold text-white text-center mb-2">
+        <h1 className="text-3xl font-bold text-gray-900 dark:text-white text-center mb-2">
           Welcome to TradeIdea
         </h1>
-        <p className="text-[#8b949e] text-center mb-8">
+        <p className="text-gray-600 dark:text-[#8b949e] text-center mb-8">
           {isSignUp ? 'Create your account' : 'Sign in to continue'}
         </p>
 
@@ -110,7 +110,7 @@ export default function LoginPage() {
         <button
           onClick={handleGoogleSignIn}
           disabled={loading}
-          className="w-full flex items-center justify-center gap-3 bg-white hover:bg-gray-100 text-gray-800 font-semibold py-3 px-4 rounded-lg border border-gray-300 transition-colors disabled:opacity-60 disabled:cursor-not-allowed mb-6"
+          className="w-full flex items-center justify-center gap-3 bg-white dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-800 dark:text-white font-semibold py-3 px-4 rounded-lg border border-gray-300 dark:border-gray-600 transition-colors disabled:opacity-60 disabled:cursor-not-allowed mb-6"
         >
           <span className="text-xl font-bold text-blue-600">G</span>
           <span>Continue with Google</span>
@@ -118,9 +118,9 @@ export default function LoginPage() {
 
         {/* Divider */}
         <div className="flex items-center gap-4 mb-6">
-          <div className="flex-1 h-px bg-[#30363d]"></div>
-          <span className="text-[#8b949e] text-sm font-medium">OR</span>
-          <div className="flex-1 h-px bg-[#30363d]"></div>
+          <div className="flex-1 h-px bg-gray-200 dark:bg-[#30363d]"></div>
+          <span className="text-gray-600 dark:text-[#8b949e] text-sm font-medium">OR</span>
+          <div className="flex-1 h-px bg-gray-200 dark:bg-[#30363d]"></div>
         </div>
 
         {/* Login/Signup Form */}
@@ -128,17 +128,17 @@ export default function LoginPage() {
           {/* Display Name - Only for Sign Up */}
           {isSignUp && (
             <div className="mb-4">
-              <label className="block text-sm font-semibold text-[#8b949e] mb-2">
+              <label className="block text-sm font-semibold text-gray-600 dark:text-[#8b949e] mb-2">
                 Full Name
               </label>
-              <div className="flex items-center bg-[#0f1419] border border-[#30363d] rounded-lg px-4 py-3 focus-within:border-[#ff8c42] transition-colors">
+              <div className="flex items-center bg-gray-50 dark:bg-[#0f1419] border border-gray-200 dark:border-[#30363d] rounded-lg px-4 py-3 focus-within:border-[#ff8c42] transition-colors">
                 <span className="text-lg mr-2">👤</span>
                 <input
                   type="text"
                   placeholder="Your name"
                   value={displayName}
                   onChange={(e) => setDisplayName(e.target.value)}
-                  className="flex-1 bg-transparent text-white outline-none placeholder-[#8b949e]"
+                  className="flex-1 bg-transparent text-gray-900 dark:text-white outline-none placeholder-gray-400 dark:placeholder-[#8b949e]"
                   disabled={loading}
                 />
               </div>
@@ -147,17 +147,17 @@ export default function LoginPage() {
 
           {/* Email Input */}
           <div className="mb-4">
-            <label className="block text-sm font-semibold text-[#8b949e] mb-2">
+            <label className="block text-sm font-semibold text-gray-600 dark:text-[#8b949e] mb-2">
               Email
             </label>
-            <div className="flex items-center bg-[#0f1419] border border-[#30363d] rounded-lg px-3 py-3">
+            <div className="flex items-center bg-gray-50 dark:bg-[#0f1419] border border-gray-200 dark:border-[#30363d] rounded-lg px-3 py-3">
               <span className="text-lg mr-2">✉️</span>
               <input
                 type="email"
                 placeholder="you@example.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="flex-1 bg-transparent text-white outline-none placeholder-[#8b949e]"
+                className="flex-1 bg-transparent text-gray-900 dark:text-white outline-none placeholder-gray-400 dark:placeholder-[#8b949e]"
                 disabled={loading}
               />
             </div>
@@ -166,17 +166,17 @@ export default function LoginPage() {
           {/* Mobile Number - Only for Sign Up */}
           {isSignUp && (
             <div className="mb-4">
-              <label className="block text-sm font-semibold text-[#8b949e] mb-2">
+              <label className="block text-sm font-semibold text-gray-600 dark:text-[#8b949e] mb-2">
                 Mobile Number
               </label>
-              <div className="flex items-center bg-[#0f1419] border border-[#30363d] rounded-lg px-4 py-3 focus-within:border-[#ff8c42] transition-colors">
+              <div className="flex items-center bg-gray-50 dark:bg-[#0f1419] border border-gray-200 dark:border-[#30363d] rounded-lg px-4 py-3 focus-within:border-[#ff8c42] transition-colors">
                 <span className="text-lg mr-2">📱</span>
                 <input
                   type="tel"
                   placeholder="Your mobile number"
                   value={userMobileNo}
                   onChange={(e) => setUserMobileNo(e.target.value)}
-                  className="flex-1 bg-transparent text-white outline-none placeholder-[#8b949e]"
+                  className="flex-1 bg-transparent text-gray-900 dark:text-white outline-none placeholder-gray-400 dark:placeholder-[#8b949e]"
                   disabled={loading}
                 />
               </div>
@@ -185,17 +185,17 @@ export default function LoginPage() {
 
           {/* Password Input */}
           <div className="mb-6">
-            <label className="block text-sm font-semibold text-[#8b949e] mb-2">
+            <label className="block text-sm font-semibold text-gray-600 dark:text-[#8b949e] mb-2">
               Password
             </label>
-            <div className="flex items-center bg-[#0f1419] border border-[#30363d] rounded-lg px-3 py-3">
+            <div className="flex items-center bg-gray-50 dark:bg-[#0f1419] border border-gray-200 dark:border-[#30363d] rounded-lg px-3 py-3">
               <span className="text-lg mr-2">🔒</span>
               <input
                 type="password"
                 placeholder="••••••••"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="flex-1 bg-transparent text-white outline-none placeholder-[#8b949e]"
+                className="flex-1 bg-transparent text-gray-900 dark:text-white outline-none placeholder-gray-400 dark:placeholder-[#8b949e]"
                 disabled={loading}
               />
             </div>
@@ -214,7 +214,7 @@ export default function LoginPage() {
         {/* Footer Links */}
         <div className="flex justify-between items-center text-sm">
           {!isSignUp && (
-            <button className="text-[#8b949e] hover:text-white transition-colors">
+            <button className="text-gray-600 dark:text-[#8b949e] hover:text-gray-900 dark:hover:text-white transition-colors">
               Forgot password?
             </button>
           )}
@@ -223,12 +223,12 @@ export default function LoginPage() {
               setIsSignUp(!isSignUp);
               setError('');
             }}
-            className="text-[#8b949e] hover:text-white transition-colors ml-auto"
+            className="text-gray-600 dark:text-[#8b949e] hover:text-gray-900 dark:hover:text-white transition-colors ml-auto"
           >
             {isSignUp ? (
-              <>Already have an account? <span className="font-semibold text-white">Sign in</span></>
+              <>Already have an account? <span className="font-semibold text-gray-900 dark:text-white">Sign in</span></>
             ) : (
-              <>Need an account? <span className="font-semibold text-white">Sign up</span></>
+              <>Need an account? <span className="font-semibold text-gray-900 dark:text-white">Sign up</span></>
             )}
           </button>
         </div>

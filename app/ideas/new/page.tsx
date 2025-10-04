@@ -97,13 +97,13 @@ export default function ShareIdeaPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#0f1419]">
+    <div className="min-h-screen bg-white dark:bg-[#0f1419]">
       <Navigation />
 
       {/* Header */}
-      <div className="p-5 pt-8 pb-5 border-b border-[#30363d]">
-        <h1 className="text-3xl font-bold text-white mb-2">Share Trading Idea</h1>
-        <p className="text-[#8b949e]">Create a detailed trading recommendation</p>
+      <div className="p-5 pt-8 pb-5 border-b border-gray-200 dark:border-[#30363d]">
+        <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">Share Trading Idea</h1>
+        <p className="text-gray-600 dark:text-[#8b949e]">Create a detailed trading recommendation</p>
       </div>
 
       {/* Form Container - Fully Scrollable */}
@@ -117,31 +117,31 @@ export default function ShareIdeaPage() {
           )}
 
           {/* Basic Information */}
-          <div className="bg-[#1c2128] border border-[#30363d] rounded-xl p-5">
-            <h2 className="text-xl font-bold text-white mb-5">Basic Information</h2>
+          <div className="bg-gray-50 dark:bg-[#1c2128] border border-gray-200 dark:border-[#30363d] rounded-xl p-5">
+            <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-5">Basic Information</h2>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
               <div>
-                <label className="block text-sm font-semibold text-[#8b949e] mb-2">Stock Symbol *</label>
+                <label className="block text-sm font-semibold text-gray-600 dark:text-[#8b949e] mb-2">Stock Symbol *</label>
                 <input
                   type="text"
                   placeholder="e.g., RELIANCE, HDFCBANK"
                   value={formData.symbol}
                   onChange={(e) => setFormData({ ...formData, symbol: e.target.value })}
-                  className="w-full bg-[#0f1419] border border-[#30363d] rounded-lg px-3 py-3 text-white placeholder-[#8b949e] outline-none focus:border-[#ff8c42] transition-colors"
+                  className="w-full bg-white dark:bg-[#0f1419] border border-gray-200 dark:border-[#30363d] rounded-lg px-3 py-3 text-gray-900 dark:text-white placeholder-[#8b949e] outline-none focus:border-[#ff8c42] transition-colors"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-semibold text-[#8b949e] mb-2">Visibility</label>
-                <div className="flex bg-[#0f1419] rounded-lg p-1">
+                <label className="block text-sm font-semibold text-gray-600 dark:text-[#8b949e] mb-2">Visibility</label>
+                <div className="flex bg-white dark:bg-[#0f1419] rounded-lg p-1">
                   <button
                     type="button"
                     onClick={() => setFormData({ ...formData, visibility: 'public' })}
                     className={`flex-1 py-2 rounded-md text-sm font-semibold transition-colors ${
                       formData.visibility === 'public'
-                        ? 'bg-[#30363d] text-white'
-                        : 'text-[#8b949e]'
+                        ? 'bg-[#30363d] text-gray-900 dark:text-white'
+                        : 'text-gray-600 dark:text-[#8b949e]'
                     }`}
                   >
                     Public
@@ -151,8 +151,8 @@ export default function ShareIdeaPage() {
                     onClick={() => setFormData({ ...formData, visibility: 'private' })}
                     className={`flex-1 py-2 rounded-md text-sm font-semibold transition-colors ${
                       formData.visibility === 'private'
-                        ? 'bg-[#30363d] text-white'
-                        : 'text-[#8b949e]'
+                        ? 'bg-[#30363d] text-gray-900 dark:text-white'
+                        : 'text-gray-600 dark:text-[#8b949e]'
                     }`}
                   >
                     Private
@@ -162,26 +162,26 @@ export default function ShareIdeaPage() {
             </div>
 
             <div>
-              <label className="block text-sm font-semibold text-[#8b949e] mb-2">Analysis & Rationale *</label>
+              <label className="block text-sm font-semibold text-gray-600 dark:text-[#8b949e] mb-2">Analysis & Rationale *</label>
               <textarea
                 placeholder="Provide detailed analysis, reasoning, and research behind this trade idea..."
                 value={formData.analysis}
                 onChange={(e) => setFormData({ ...formData, analysis: e.target.value })}
                 rows={8}
-                className="w-full bg-[#0f1419] border border-[#30363d] rounded-lg px-4 py-3 text-white placeholder-[#8b949e] outline-none focus:border-[#ff8c42] transition-colors resize-y leading-relaxed"
+                className="w-full bg-white dark:bg-[#0f1419] border border-gray-200 dark:border-[#30363d] rounded-lg px-4 py-3 text-gray-900 dark:text-white placeholder-[#8b949e] outline-none focus:border-[#ff8c42] transition-colors resize-y leading-relaxed"
               />
-              <p className="text-xs text-[#8b949e] mt-1">{formData.analysis.length} characters</p>
+              <p className="text-xs text-gray-600 dark:text-[#8b949e] mt-1">{formData.analysis.length} characters</p>
             </div>
           </div>
 
           {/* Trade Details */}
-          <div className="bg-[#1c2128] border border-[#30363d] rounded-xl p-5">
-            <h2 className="text-xl font-bold text-white mb-5 flex items-center gap-2"><TargetIcon size={24} /> Trade Details</h2>
+          <div className="bg-gray-50 dark:bg-[#1c2128] border border-gray-200 dark:border-[#30363d] rounded-xl p-5">
+            <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-5 flex items-center gap-2"><TargetIcon size={24} /> Trade Details</h2>
 
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
               <div>
-                <label className="block text-sm font-semibold text-[#8b949e] mb-2">Timeframe</label>
+                <label className="block text-sm font-semibold text-gray-600 dark:text-[#8b949e] mb-2">Timeframe</label>
                 <div className="flex gap-2">
                   {["short term", "long term"].map((tf) => (
                     <button
@@ -190,8 +190,8 @@ export default function ShareIdeaPage() {
                       onClick={() => setFormData({ ...formData, timeframe: tf })}
                       className={`flex-1 py-2 px-3 rounded-md text-sm font-semibold transition-colors ${
                         formData.timeframe === tf
-                          ? "bg-[#ff8c42] text-white border-[#ff8c42]"
-                          : "bg-[#0f1419] text-[#8b949e] border-[#30363d]"
+                          ? "bg-[#ff8c42] text-gray-900 dark:text-white border-[#ff8c42]"
+                          : "bg-white dark:bg-[#0f1419] text-gray-600 dark:text-[#8b949e] border-gray-200 dark:border-[#30363d]"
                       } border`}
                     >
                       {tf.charAt(0).toUpperCase() + tf.slice(1)}
@@ -202,7 +202,7 @@ export default function ShareIdeaPage() {
 
 
               <div>
-                <label className="block text-sm font-semibold text-[#8b949e] mb-2">Risk Level</label>
+                <label className="block text-sm font-semibold text-gray-600 dark:text-[#8b949e] mb-2">Risk Level</label>
                 <div className="flex gap-2">
                   {['low', 'medium', 'high'].map((risk) => (
                     <button
@@ -211,8 +211,8 @@ export default function ShareIdeaPage() {
                       onClick={() => setFormData({ ...formData, riskLevel: risk })}
                       className={`flex-1 py-2 px-2 rounded-md text-xs font-semibold transition-colors ${
                         formData.riskLevel === risk
-                          ? 'bg-[#ff8c42] text-white border-[#ff8c42]'
-                          : 'bg-[#0f1419] text-[#8b949e] border-[#30363d]'
+                          ? 'bg-[#ff8c42] text-gray-900 dark:text-white border-[#ff8c42]'
+                          : 'bg-white dark:bg-[#0f1419] text-gray-600 dark:text-[#8b949e] border-gray-200 dark:border-[#30363d]'
                       } border`}
                     >
                       {risk.charAt(0).toUpperCase() + risk.slice(1)}
@@ -224,32 +224,32 @@ export default function ShareIdeaPage() {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
               <div>
-                <label className="block text-sm font-semibold text-[#8b949e] mb-2">Entry Price *</label>
+                <label className="block text-sm font-semibold text-gray-600 dark:text-[#8b949e] mb-2">Entry Price *</label>
                 <input
                   type="number"
                   step="0.01"
                   placeholder="0.00"
                   value={formData.entryPrice}
                   onChange={(e) => setFormData({ ...formData, entryPrice: e.target.value })}
-                  className="w-full bg-[#0f1419] border border-[#30363d] rounded-lg px-3 py-3 text-white placeholder-[#8b949e] outline-none focus:border-[#ff8c42] transition-colors"
+                  className="w-full bg-white dark:bg-[#0f1419] border border-gray-200 dark:border-[#30363d] rounded-lg px-3 py-3 text-gray-900 dark:text-white placeholder-[#8b949e] outline-none focus:border-[#ff8c42] transition-colors"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-semibold text-[#8b949e] mb-2">Stop Loss *</label>
+                <label className="block text-sm font-semibold text-gray-600 dark:text-[#8b949e] mb-2">Stop Loss *</label>
                 <input
                   type="number"
                   step="0.01"
                   placeholder="0.00"
                   value={formData.stopLoss}
                   onChange={(e) => setFormData({ ...formData, stopLoss: e.target.value })}
-                  className="w-full bg-[#0f1419] border border-[#30363d] rounded-lg px-3 py-3 text-white placeholder-[#8b949e] outline-none focus:border-[#ff8c42] transition-colors"
+                  className="w-full bg-white dark:bg-[#0f1419] border border-gray-200 dark:border-[#30363d] rounded-lg px-3 py-3 text-gray-900 dark:text-white placeholder-[#8b949e] outline-none focus:border-[#ff8c42] transition-colors"
                 />
               </div>
             </div>
 
             <div>
-              <label className="block text-sm font-semibold text-[#8b949e] mb-2">Target Prices</label>
+              <label className="block text-sm font-semibold text-gray-600 dark:text-[#8b949e] mb-2">Target Prices</label>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <input
                   type="number"
@@ -257,7 +257,7 @@ export default function ShareIdeaPage() {
                   placeholder="Target 1 *"
                   value={formData.target1}
                   onChange={(e) => setFormData({ ...formData, target1: e.target.value })}
-                  className="w-full bg-[#0f1419] border border-[#30363d] rounded-lg px-3 py-3 text-white placeholder-[#8b949e] outline-none focus:border-[#ff8c42] transition-colors"
+                  className="w-full bg-white dark:bg-[#0f1419] border border-gray-200 dark:border-[#30363d] rounded-lg px-3 py-3 text-gray-900 dark:text-white placeholder-[#8b949e] outline-none focus:border-[#ff8c42] transition-colors"
                 />
                 <input
                   type="number"
@@ -265,7 +265,7 @@ export default function ShareIdeaPage() {
                   placeholder="Target 2 (optional)"
                   value={formData.target2}
                   onChange={(e) => setFormData({ ...formData, target2: e.target.value })}
-                  className="w-full bg-[#0f1419] border border-[#30363d] rounded-lg px-3 py-3 text-white placeholder-[#8b949e] outline-none focus:border-[#ff8c42] transition-colors"
+                  className="w-full bg-white dark:bg-[#0f1419] border border-gray-200 dark:border-[#30363d] rounded-lg px-3 py-3 text-gray-900 dark:text-white placeholder-[#8b949e] outline-none focus:border-[#ff8c42] transition-colors"
                 />
                 <input
                   type="number"
@@ -273,18 +273,18 @@ export default function ShareIdeaPage() {
                   placeholder="Target 3 (optional)"
                   value={formData.target3}
                   onChange={(e) => setFormData({ ...formData, target3: e.target.value })}
-                  className="w-full bg-[#0f1419] border border-[#30363d] rounded-lg px-3 py-3 text-white placeholder-[#8b949e] outline-none focus:border-[#ff8c42] transition-colors"
+                  className="w-full bg-white dark:bg-[#0f1419] border border-gray-200 dark:border-[#30363d] rounded-lg px-3 py-3 text-gray-900 dark:text-white placeholder-[#8b949e] outline-none focus:border-[#ff8c42] transition-colors"
                 />
               </div>
             </div>
           </div>
 
           {/* Additional Details */}
-          <div className="bg-[#1c2128] border border-[#30363d] rounded-xl p-5">
-            <h2 className="text-xl font-bold text-white mb-5 flex items-center gap-2"><SparklesIcon size={24} /> Additional Details</h2>
+          <div className="bg-gray-50 dark:bg-[#1c2128] border border-gray-200 dark:border-[#30363d] rounded-xl p-5">
+            <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-5 flex items-center gap-2"><SparklesIcon size={24} /> Additional Details</h2>
 
             <div className="mb-4">
-              <label className="block text-sm font-semibold text-[#8b949e] mb-2">Analysis Type</label>
+              <label className="block text-sm font-semibold text-gray-600 dark:text-[#8b949e] mb-2">Analysis Type</label>
               <div className="flex gap-2">
                 {['technical', 'fundamental', 'both'].map((type) => (
                   <button
@@ -293,8 +293,8 @@ export default function ShareIdeaPage() {
                     onClick={() => setFormData({ ...formData, analysisType: type })}
                     className={`flex-1 py-2 px-3 rounded-md text-sm font-semibold transition-colors ${
                       formData.analysisType === type
-                        ? 'bg-[#ff8c42] text-white border-[#ff8c42]'
-                        : 'bg-[#0f1419] text-[#8b949e] border-[#30363d]'
+                        ? 'bg-[#ff8c42] text-gray-900 dark:text-white border-[#ff8c42]'
+                        : 'bg-white dark:bg-[#0f1419] text-gray-600 dark:text-[#8b949e] border-gray-200 dark:border-[#30363d]'
                     } border`}
                   >
                     {type.charAt(0).toUpperCase() + type.slice(1)}
@@ -304,13 +304,13 @@ export default function ShareIdeaPage() {
             </div>
 
             <div>
-              <label className="block text-sm font-semibold text-[#8b949e] mb-2">Tags (up to 5)</label>
+              <label className="block text-sm font-semibold text-gray-600 dark:text-[#8b949e] mb-2">Tags (up to 5)</label>
               <input
                 type="text"
                 placeholder="e.g., energy, tech, growth (comma separated)"
                 value={formData.tags}
                 onChange={(e) => setFormData({ ...formData, tags: e.target.value })}
-                className="w-full bg-[#0f1419] border border-[#30363d] rounded-lg px-3 py-3 text-white placeholder-[#8b949e] outline-none focus:border-[#ff8c42] transition-colors"
+                className="w-full bg-white dark:bg-[#0f1419] border border-gray-200 dark:border-[#30363d] rounded-lg px-3 py-3 text-gray-900 dark:text-white placeholder-[#8b949e] outline-none focus:border-[#ff8c42] transition-colors"
               />
             </div>
           </div>
@@ -319,7 +319,7 @@ export default function ShareIdeaPage() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-[#ff8c42] hover:bg-[#ff9a58] text-white font-bold py-4 px-4 rounded-lg transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+            className="w-full bg-[#ff8c42] hover:bg-[#ff9a58] text-gray-900 dark:text-white font-bold py-4 px-4 rounded-lg transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
           >
             {loading ? 'Creating Idea...' : 'Publish Trading Idea'}
           </button>

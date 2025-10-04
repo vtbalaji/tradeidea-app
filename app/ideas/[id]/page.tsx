@@ -170,10 +170,10 @@ export default function IdeaDetailPage() {
 
   if (!idea) {
     return (
-      <div className="min-h-screen bg-[#0f1419]">
+      <div className="min-h-screen bg-white dark:bg-[#0f1419]">
         <Navigation />
         <div className="text-center py-16">
-          <p className="text-[#8b949e] text-lg">Loading...</p>
+          <p className="text-gray-600 dark:text-[#8b949e] text-lg">Loading...</p>
         </div>
       </div>
     );
@@ -184,7 +184,7 @@ export default function IdeaDetailPage() {
     : 0;
 
   return (
-    <div className="min-h-screen bg-[#0f1419]">
+    <div className="min-h-screen bg-white dark:bg-[#0f1419]">
       <Navigation />
 
       <div className="max-w-5xl mx-auto p-5">
@@ -199,7 +199,7 @@ export default function IdeaDetailPage() {
 
           <div className="mb-5">
             <div className="flex items-center gap-3">
-              <h1 className="text-4xl font-bold text-white">{idea.symbol}</h1>
+              <h1 className="text-4xl font-bold text-gray-900 dark:text-white">{idea.symbol}</h1>
               <span className="px-3 py-1 bg-purple-500/20 text-purple-400 text-sm font-semibold rounded">
                 {idea.status}
               </span>
@@ -210,7 +210,7 @@ export default function IdeaDetailPage() {
           <div className="flex gap-2">
             <button
               onClick={handleLike}
-              className="px-3 py-1.5 bg-[#1c2128] hover:bg-[#30363d] border border-[#30363d] rounded-lg text-white text-sm flex items-center gap-1.5 transition-colors"
+              className="px-3 py-1.5 bg-gray-50 dark:bg-[#1c2128] hover:bg-[#30363d] border border-gray-200 dark:border-[#30363d] rounded-lg text-gray-900 dark:text-white text-sm flex items-center gap-1.5 transition-colors"
             >
               <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor">
                 <path d="M8 14s-6-4.5-6-8c0-2.5 2-4 4-4 1.5 0 2 1 2 1s.5-1 2-1c2 0 4 1.5 4 4 0 3.5-6 8-6 8z"/>
@@ -219,7 +219,7 @@ export default function IdeaDetailPage() {
             </button>
             <button
               onClick={handleFollow}
-              className="px-3 py-1.5 bg-[#1c2128] hover:bg-[#30363d] border border-[#30363d] rounded-lg text-white text-sm flex items-center gap-1.5 transition-colors"
+              className="px-3 py-1.5 bg-gray-50 dark:bg-[#1c2128] hover:bg-[#30363d] border border-gray-200 dark:border-[#30363d] rounded-lg text-gray-900 dark:text-white text-sm flex items-center gap-1.5 transition-colors"
             >
               <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
                 <path d="M1 8s2-4 7-4 7 4 7 4-2 4-7 4-7-4-7-4z"/>
@@ -264,34 +264,34 @@ export default function IdeaDetailPage() {
         )}
 
         {/* Analysis Section */}
-        <div className="bg-[#1c2128] border border-[#30363d] rounded-xl p-5 mb-5">
+        <div className="bg-gray-50 dark:bg-[#1c2128] border border-gray-200 dark:border-[#30363d] rounded-xl p-5 mb-5">
           <div className="flex justify-between items-center mb-4">
             <div className="flex items-center gap-2 flex-wrap">
-              <h3 className="text-xl font-bold text-white">Analysis & Rationale</h3>
-              <span className="px-3 py-1 bg-yellow-500/20 text-[#8b949e] text-sm font-semibold rounded-full">
+              <h3 className="text-xl font-bold text-gray-900 dark:text-white">Analysis & Rationale</h3>
+              <span className="px-3 py-1 bg-yellow-500/20 text-gray-600 dark:text-[#8b949e] text-sm font-semibold rounded-full">
                 {idea.riskLevel} risk
               </span>
-              <span className="px-3 py-1 bg-blue-500/20 text-[#8b949e] text-sm font-semibold rounded-full">
+              <span className="px-3 py-1 bg-blue-500/20 text-gray-600 dark:text-[#8b949e] text-sm font-semibold rounded-full">
                 {idea.timeframe}
               </span>
-              <span className="px-3 py-1 bg-gray-500/20 text-[#8b949e] text-sm font-semibold rounded-full">
+              <span className="px-3 py-1 bg-gray-500/20 text-gray-600 dark:text-[#8b949e] text-sm font-semibold rounded-full">
                 {idea.analysisType}
               </span>
             </div>
-            <span className="text-sm text-[#8b949e]">
+            <span className="text-sm text-gray-600 dark:text-[#8b949e]">
               {idea.createdAt?.toDate ? idea.createdAt.toDate().toLocaleDateString() : 'Recent'}
             </span>
           </div>
 
-          <div className="bg-[#0f1419] border border-[#30363d] rounded-lg p-4">
+          <div className="bg-white dark:bg-[#0f1419] border border-gray-200 dark:border-[#30363d] rounded-lg p-4">
             <p className="text-base text-[#c9d1d9] leading-relaxed whitespace-pre-wrap">{idea.analysis}</p>
           </div>
         </div>
 
         {/* Trade Setup */}
-        <div className="bg-[#1c2128] border border-[#30363d] rounded-xl p-5 mb-5">
+        <div className="bg-gray-50 dark:bg-[#1c2128] border border-gray-200 dark:border-[#30363d] rounded-xl p-5 mb-5">
           <div className="flex justify-between items-center mb-4">
-            <h3 className="text-xl font-bold text-white flex items-center gap-2">
+            <h3 className="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
               <TargetIcon size={24} /> Trade Setup
             </h3>
             <button
@@ -302,7 +302,7 @@ export default function IdeaDetailPage() {
                 });
                 setShowTradeModal(true);
               }}
-              className="bg-[#ff8c42] hover:bg-[#ff9a58] text-white font-semibold py-2 px-4 rounded-lg transition-colors text-sm"
+              className="bg-[#ff8c42] hover:bg-[#ff9a58] text-gray-900 dark:text-white font-semibold py-2 px-4 rounded-lg transition-colors text-sm"
             >
               ✅ I Took This Trade
             </button>
@@ -312,14 +312,14 @@ export default function IdeaDetailPage() {
             {/* Entry Price and Stop Loss on same line */}
             <div className="grid grid-cols-2 gap-4">
               <div className="bg-blue-500/10 rounded-lg p-3 border-l-4 border-blue-500">
-                <span className="text-sm text-[#8b949e] flex items-center gap-2 mb-1">
+                <span className="text-sm text-gray-600 dark:text-[#8b949e] flex items-center gap-2 mb-1">
                   <EntryIcon size={16} /> Entry Price
                 </span>
-                <span className="text-lg font-semibold text-white">₹{idea.entryPrice}</span>
+                <span className="text-lg font-semibold text-gray-900 dark:text-white">₹{idea.entryPrice}</span>
               </div>
 
               <div className="bg-red-500/10 rounded-lg p-3 border-l-4 border-red-500">
-                <span className="text-sm text-[#8b949e] flex items-center gap-2 mb-1">
+                <span className="text-sm text-gray-600 dark:text-[#8b949e] flex items-center gap-2 mb-1">
                   <EntryIcon size={16} /> Stop Loss
                 </span>
                 <span className="text-lg font-semibold text-red-500">₹{idea.stopLoss}</span>
@@ -328,7 +328,7 @@ export default function IdeaDetailPage() {
 
             {/* Targets on next line */}
             <div className="bg-green-500/10 rounded-lg p-3 border-l-4 border-green-500">
-              <span className="text-sm text-[#8b949e] flex items-center gap-2 mb-1">
+              <span className="text-sm text-gray-600 dark:text-[#8b949e] flex items-center gap-2 mb-1">
                 <TargetIcon size={16} /> Targets
               </span>
               <div className="text-lg font-semibold text-green-500">
@@ -339,8 +339,8 @@ export default function IdeaDetailPage() {
         </div>
 
         {/* Discussion Section */}
-        <div className="bg-[#1c2128] border border-[#30363d] rounded-xl p-5">
-          <h3 className="text-xl font-bold text-white mb-4">💬 Discussion ({comments.length})</h3>
+        <div className="bg-gray-50 dark:bg-[#1c2128] border border-gray-200 dark:border-[#30363d] rounded-xl p-5">
+          <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-4">💬 Discussion ({comments.length})</h3>
 
           <form onSubmit={handleAddComment} className="mb-5">
             <textarea
@@ -348,47 +348,47 @@ export default function IdeaDetailPage() {
               value={commentText}
               onChange={(e) => setCommentText(e.target.value)}
               rows={3}
-              className="w-full bg-[#0f1419] border border-[#30363d] rounded-lg px-3 py-3 text-white placeholder-[#8b949e] outline-none focus:border-[#ff8c42] transition-colors resize-none mb-3"
+              className="w-full bg-white dark:bg-[#0f1419] border border-gray-200 dark:border-[#30363d] rounded-lg px-3 py-3 text-gray-900 dark:text-white placeholder-[#8b949e] outline-none focus:border-[#ff8c42] transition-colors resize-none mb-3"
             />
             <button
               type="submit"
               disabled={loading}
-              className="bg-[#ff8c42] hover:bg-[#ff9a58] text-white font-semibold py-3 px-6 rounded-lg transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+              className="bg-[#ff8c42] hover:bg-[#ff9a58] text-gray-900 dark:text-white font-semibold py-3 px-6 rounded-lg transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
             >
               Post Comment
             </button>
           </form>
 
           {comments.map((comment) => (
-            <div key={comment.id} className="bg-[#0f1419] rounded-lg p-4 mb-3">
+            <div key={comment.id} className="bg-white dark:bg-[#0f1419] rounded-lg p-4 mb-3">
               <div className="flex items-center gap-3 mb-3">
-                <div className="w-9 h-9 rounded-full bg-[#ff8c42] flex items-center justify-center text-white font-bold">
+                <div className="w-9 h-9 rounded-full bg-[#ff8c42] flex items-center justify-center text-gray-900 dark:text-white font-bold">
                   {comment.userName?.charAt(0).toUpperCase() || '?'}
                 </div>
                 <div>
-                  <div className="text-sm font-semibold text-white">{comment.userName || 'Trader'}</div>
-                  <div className="text-xs text-[#8b949e]">
+                  <div className="text-sm font-semibold text-gray-900 dark:text-white">{comment.userName || 'Trader'}</div>
+                  <div className="text-xs text-gray-600 dark:text-[#8b949e]">
                     {comment.createdAt?.toDate ? comment.createdAt.toDate().toLocaleString() : 'Just now'}
                   </div>
                 </div>
               </div>
               <p className="text-sm text-[#c9d1d9] mb-3">{comment.text}</p>
               <div className="flex gap-4 text-xs">
-                <button onClick={() => setReplyingTo(comment.id)} className="text-[#8b949e] hover:text-white transition-colors">↩️ Reply</button>
+                <button onClick={() => setReplyingTo(comment.id)} className="text-gray-600 dark:text-[#8b949e] hover:text-gray-900 dark:text-white transition-colors">↩️ Reply</button>
               </div>
 
               {replyingTo === comment.id && (
-                <div className="mt-3 pl-6 border-l-2 border-[#30363d]">
+                <div className="mt-3 pl-6 border-l-2 border-gray-200 dark:border-[#30363d]">
                   <textarea
                     placeholder={`Reply to ${comment.userName}...`}
                     value={replyText}
                     onChange={(e) => setReplyText(e.target.value)}
                     rows={2}
-                    className="w-full bg-[#1c2128] border border-[#30363d] rounded-lg px-3 py-2 text-sm text-white placeholder-[#8b949e] outline-none focus:border-[#ff8c42] transition-colors resize-none mb-2"
+                    className="w-full bg-gray-50 dark:bg-[#1c2128] border border-gray-200 dark:border-[#30363d] rounded-lg px-3 py-2 text-sm text-gray-900 dark:text-white placeholder-[#8b949e] outline-none focus:border-[#ff8c42] transition-colors resize-none mb-2"
                   />
                   <div className="flex gap-2">
-                    <button onClick={() => handleReply(comment.id)} disabled={loading} className="bg-[#ff8c42] hover:bg-[#ff9a58] text-white text-xs font-semibold py-2 px-4 rounded-lg transition-colors disabled:opacity-60">Reply</button>
-                    <button onClick={() => { setReplyingTo(null); setReplyText(''); }} className="bg-[#30363d] hover:bg-[#3c444d] text-white text-xs font-semibold py-2 px-4 rounded-lg transition-colors">Cancel</button>
+                    <button onClick={() => handleReply(comment.id)} disabled={loading} className="bg-[#ff8c42] hover:bg-[#ff9a58] text-gray-900 dark:text-white text-xs font-semibold py-2 px-4 rounded-lg transition-colors disabled:opacity-60">Reply</button>
+                    <button onClick={() => { setReplyingTo(null); setReplyText(''); }} className="bg-[#30363d] hover:bg-[#3c444d] text-gray-900 dark:text-white text-xs font-semibold py-2 px-4 rounded-lg transition-colors">Cancel</button>
                   </div>
                 </div>
               )}
@@ -403,15 +403,15 @@ export default function IdeaDetailPage() {
             onClick={() => setShowTradeModal(false)}
           >
             <div
-              className="bg-[#1c2128] border border-[#30363d] rounded-xl p-6 w-full max-w-md mx-4"
+              className="bg-gray-50 dark:bg-[#1c2128] border border-gray-200 dark:border-[#30363d] rounded-xl p-6 w-full max-w-md mx-4"
               onClick={(e) => e.stopPropagation()}
             >
               {/* Modal Header */}
               <div className="flex justify-between items-center mb-6">
-                <h3 className="text-xl font-bold text-white">Add Trade to Portfolio</h3>
+                <h3 className="text-xl font-bold text-gray-900 dark:text-white">Add Trade to Portfolio</h3>
                 <button
                   onClick={() => setShowTradeModal(false)}
-                  className="text-[#8b949e] hover:text-white transition-colors text-2xl"
+                  className="text-gray-600 dark:text-[#8b949e] hover:text-gray-900 dark:text-white transition-colors text-2xl"
                 >
                   ×
                 </button>
@@ -420,7 +420,7 @@ export default function IdeaDetailPage() {
               {/* Modal Body */}
               <div className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-[#8b949e] mb-2">
+                  <label className="block text-sm font-medium text-gray-600 dark:text-[#8b949e] mb-2">
                     Quantity
                   </label>
                   <input
@@ -431,12 +431,12 @@ export default function IdeaDetailPage() {
                     }
                     placeholder="Enter quantity"
                     required
-                    className="w-full bg-[#0f1419] border border-[#30363d] rounded-lg px-3 py-2 text-white placeholder-[#8b949e] outline-none focus:border-[#ff8c42] transition-colors"
+                    className="w-full bg-white dark:bg-[#0f1419] border border-gray-200 dark:border-[#30363d] rounded-lg px-3 py-2 text-gray-900 dark:text-white placeholder-[#8b949e] outline-none focus:border-[#ff8c42] transition-colors"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-[#8b949e] mb-2">
+                  <label className="block text-sm font-medium text-gray-600 dark:text-[#8b949e] mb-2">
                     Entry Price Taken
                   </label>
                   <input
@@ -447,12 +447,12 @@ export default function IdeaDetailPage() {
                     }
                     placeholder="Enter entry price"
                     required
-                    className="w-full bg-[#0f1419] border border-[#30363d] rounded-lg px-3 py-2 text-white placeholder-[#8b949e] outline-none focus:border-[#ff8c42] transition-colors"
+                    className="w-full bg-white dark:bg-[#0f1419] border border-gray-200 dark:border-[#30363d] rounded-lg px-3 py-2 text-gray-900 dark:text-white placeholder-[#8b949e] outline-none focus:border-[#ff8c42] transition-colors"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-[#8b949e] mb-2">
+                  <label className="block text-sm font-medium text-gray-600 dark:text-[#8b949e] mb-2">
                     Date Taken
                   </label>
                   <input
@@ -461,7 +461,7 @@ export default function IdeaDetailPage() {
                     onChange={(e) =>
                       setTradeDetails({ ...tradeDetails, dateTaken: e.target.value })
                     }
-                    className="w-full bg-[#0f1419] border border-[#30363d] rounded-lg px-3 py-2 text-white placeholder-[#8b949e] outline-none focus:border-[#ff8c42] transition-colors"
+                    className="w-full bg-white dark:bg-[#0f1419] border border-gray-200 dark:border-[#30363d] rounded-lg px-3 py-2 text-gray-900 dark:text-white placeholder-[#8b949e] outline-none focus:border-[#ff8c42] transition-colors"
                   />
                 </div>
               </div>
@@ -470,14 +470,14 @@ export default function IdeaDetailPage() {
               <div className="flex gap-3 mt-6">
                 <button
                   onClick={() => setShowTradeModal(false)}
-                  className="flex-1 bg-[#30363d] hover:bg-[#3e4651] text-white font-semibold py-3 rounded-lg transition-colors"
+                  className="flex-1 bg-[#30363d] hover:bg-[#3e4651] text-gray-900 dark:text-white font-semibold py-3 rounded-lg transition-colors"
                 >
                   Cancel
                 </button>
                 <button
                   onClick={handleTakeTrade}
                   disabled={loading}
-                  className="flex-1 bg-[#ff8c42] hover:bg-[#ff9a58] text-white font-semibold py-3 rounded-lg transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+                  className="flex-1 bg-[#ff8c42] hover:bg-[#ff9a58] text-gray-900 dark:text-white font-semibold py-3 rounded-lg transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
                 >
                   Add to Portfolio
                 </button>
@@ -493,14 +493,14 @@ export default function IdeaDetailPage() {
             onClick={() => setShowEditModal(false)}
           >
             <div
-              className="bg-[#1c2128] border border-[#30363d] rounded-xl p-6 w-full max-w-2xl mx-4 max-h-[90vh] overflow-y-auto"
+              className="bg-gray-50 dark:bg-[#1c2128] border border-gray-200 dark:border-[#30363d] rounded-xl p-6 w-full max-w-2xl mx-4 max-h-[90vh] overflow-y-auto"
               onClick={(e) => e.stopPropagation()}
             >
               <div className="flex justify-between items-center mb-6">
-                <h3 className="text-xl font-bold text-white">Edit Idea</h3>
+                <h3 className="text-xl font-bold text-gray-900 dark:text-white">Edit Idea</h3>
                 <button
                   onClick={() => setShowEditModal(false)}
-                  className="text-[#8b949e] hover:text-white transition-colors text-2xl"
+                  className="text-gray-600 dark:text-[#8b949e] hover:text-gray-900 dark:text-white transition-colors text-2xl"
                 >
                   ×
                 </button>
@@ -508,7 +508,7 @@ export default function IdeaDetailPage() {
 
               <div className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-[#8b949e] mb-2">
+                  <label className="block text-sm font-medium text-gray-600 dark:text-[#8b949e] mb-2">
                     Title
                   </label>
                   <input
@@ -517,12 +517,12 @@ export default function IdeaDetailPage() {
                     onChange={(e) =>
                       setEditFormData({ ...editFormData, title: e.target.value })
                     }
-                    className="w-full bg-[#0f1419] border border-[#30363d] rounded-lg px-3 py-2 text-white placeholder-[#8b949e] outline-none focus:border-[#ff8c42] transition-colors"
+                    className="w-full bg-white dark:bg-[#0f1419] border border-gray-200 dark:border-[#30363d] rounded-lg px-3 py-2 text-gray-900 dark:text-white placeholder-[#8b949e] outline-none focus:border-[#ff8c42] transition-colors"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-[#8b949e] mb-2">
+                  <label className="block text-sm font-medium text-gray-600 dark:text-[#8b949e] mb-2">
                     Analysis
                   </label>
                   <textarea
@@ -531,13 +531,13 @@ export default function IdeaDetailPage() {
                       setEditFormData({ ...editFormData, analysis: e.target.value })
                     }
                     rows={6}
-                    className="w-full bg-[#0f1419] border border-[#30363d] rounded-lg px-3 py-2 text-white placeholder-[#8b949e] outline-none focus:border-[#ff8c42] transition-colors resize-none"
+                    className="w-full bg-white dark:bg-[#0f1419] border border-gray-200 dark:border-[#30363d] rounded-lg px-3 py-2 text-gray-900 dark:text-white placeholder-[#8b949e] outline-none focus:border-[#ff8c42] transition-colors resize-none"
                   />
                 </div>
 
                 <div className="grid grid-cols-3 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-[#8b949e] mb-2">
+                    <label className="block text-sm font-medium text-gray-600 dark:text-[#8b949e] mb-2">
                       Entry Price
                     </label>
                     <input
@@ -547,12 +547,12 @@ export default function IdeaDetailPage() {
                       onChange={(e) =>
                         setEditFormData({ ...editFormData, entryPrice: parseFloat(e.target.value) })
                       }
-                      className="w-full bg-[#0f1419] border border-[#30363d] rounded-lg px-3 py-2 text-white placeholder-[#8b949e] outline-none focus:border-[#ff8c42] transition-colors"
+                      className="w-full bg-white dark:bg-[#0f1419] border border-gray-200 dark:border-[#30363d] rounded-lg px-3 py-2 text-gray-900 dark:text-white placeholder-[#8b949e] outline-none focus:border-[#ff8c42] transition-colors"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-[#8b949e] mb-2">
+                    <label className="block text-sm font-medium text-gray-600 dark:text-[#8b949e] mb-2">
                       Target 1
                     </label>
                     <input
@@ -562,12 +562,12 @@ export default function IdeaDetailPage() {
                       onChange={(e) =>
                         setEditFormData({ ...editFormData, target1: parseFloat(e.target.value) })
                       }
-                      className="w-full bg-[#0f1419] border border-[#30363d] rounded-lg px-3 py-2 text-white placeholder-[#8b949e] outline-none focus:border-[#ff8c42] transition-colors"
+                      className="w-full bg-white dark:bg-[#0f1419] border border-gray-200 dark:border-[#30363d] rounded-lg px-3 py-2 text-gray-900 dark:text-white placeholder-[#8b949e] outline-none focus:border-[#ff8c42] transition-colors"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-[#8b949e] mb-2">
+                    <label className="block text-sm font-medium text-gray-600 dark:text-[#8b949e] mb-2">
                       Stop Loss
                     </label>
                     <input
@@ -577,13 +577,13 @@ export default function IdeaDetailPage() {
                       onChange={(e) =>
                         setEditFormData({ ...editFormData, stopLoss: parseFloat(e.target.value) })
                       }
-                      className="w-full bg-[#0f1419] border border-[#30363d] rounded-lg px-3 py-2 text-white placeholder-[#8b949e] outline-none focus:border-[#ff8c42] transition-colors"
+                      className="w-full bg-white dark:bg-[#0f1419] border border-gray-200 dark:border-[#30363d] rounded-lg px-3 py-2 text-gray-900 dark:text-white placeholder-[#8b949e] outline-none focus:border-[#ff8c42] transition-colors"
                     />
                   </div>
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-[#8b949e] mb-2">
+                  <label className="block text-sm font-medium text-gray-600 dark:text-[#8b949e] mb-2">
                     Status
                   </label>
                   <select
@@ -591,7 +591,7 @@ export default function IdeaDetailPage() {
                     onChange={(e) =>
                       setEditFormData({ ...editFormData, status: e.target.value })
                     }
-                    className="w-full bg-[#0f1419] border border-[#30363d] rounded-lg px-3 py-2 text-white outline-none focus:border-[#ff8c42] transition-colors"
+                    className="w-full bg-white dark:bg-[#0f1419] border border-gray-200 dark:border-[#30363d] rounded-lg px-3 py-2 text-gray-900 dark:text-white outline-none focus:border-[#ff8c42] transition-colors"
                   >
                     <option value="active">Active</option>
                     <option value="hit target">Hit Target</option>
@@ -604,14 +604,14 @@ export default function IdeaDetailPage() {
               <div className="flex gap-3 mt-6">
                 <button
                   onClick={() => setShowEditModal(false)}
-                  className="flex-1 bg-[#30363d] hover:bg-[#3e4651] text-white font-semibold py-3 rounded-lg transition-colors"
+                  className="flex-1 bg-[#30363d] hover:bg-[#3e4651] text-gray-900 dark:text-white font-semibold py-3 rounded-lg transition-colors"
                 >
                   Cancel
                 </button>
                 <button
                   onClick={handleEditIdea}
                   disabled={loading}
-                  className="flex-1 bg-blue-500 hover:bg-blue-600 text-white font-semibold py-3 rounded-lg transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+                  className="flex-1 bg-blue-500 hover:bg-blue-600 text-gray-900 dark:text-white font-semibold py-3 rounded-lg transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
                 >
                   {loading ? 'Saving...' : 'Save Changes'}
                 </button>

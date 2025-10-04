@@ -62,12 +62,12 @@ export default function IdeasHubPage() {
     return (
       <div
         key={idea.id}
-        className="bg-[#1c2128] border border-[#30363d] rounded-xl p-4 hover:border-[#ff8c42] transition-colors cursor-pointer"
+        className="bg-gray-50 dark:bg-[#1c2128] border border-gray-200 dark:border-[#30363d] rounded-xl p-4 hover:border-[#ff8c42] transition-colors cursor-pointer"
         onClick={() => router.push(`/ideas/${idea.id}`)}
       >
         {/* Header */}
         <div className="flex justify-between items-center mb-3">
-          <h3 className="text-xl font-bold text-white">{idea.symbol}</h3>
+          <h3 className="text-xl font-bold text-gray-900 dark:text-white">{idea.symbol}</h3>
           <span className="px-2 py-1 bg-purple-500/20 text-purple-400 text-xs font-semibold rounded">
             {idea.status}
           </span>
@@ -75,45 +75,45 @@ export default function IdeasHubPage() {
 
         {/* Tags */}
         <div className="flex flex-wrap gap-2 mb-3">
-          <span className="px-2.5 py-1 bg-yellow-500/20 text-[#8b949e] text-xs font-semibold rounded-full">
+          <span className="px-2.5 py-1 bg-yellow-500/20 text-gray-600 dark:text-[#8b949e] text-xs font-semibold rounded-full">
             {idea.riskLevel}
           </span>
-          <span className="px-2.5 py-1 bg-blue-500/20 text-[#8b949e] text-xs font-semibold rounded-full">
+          <span className="px-2.5 py-1 bg-blue-500/20 text-gray-600 dark:text-[#8b949e] text-xs font-semibold rounded-full">
             {idea.timeframe}
           </span>
-          <span className="px-2.5 py-1 bg-gray-500/20 text-[#8b949e] text-xs font-semibold rounded-full">
+          <span className="px-2.5 py-1 bg-gray-500/20 text-gray-600 dark:text-[#8b949e] text-xs font-semibold rounded-full">
             {idea.analysisType}
           </span>
         </div>
 
         {/* Analysis */}
-        <div className="bg-[#0f1419] border border-[#30363d] rounded-lg p-3 mb-4">
-          <p className="text-sm text-[#8b949e] leading-relaxed line-clamp-3 whitespace-pre-wrap">{idea.analysis}</p>
+        <div className="bg-white dark:bg-[#0f1419] border border-gray-200 dark:border-[#30363d] rounded-lg p-3 mb-4">
+          <p className="text-sm text-gray-600 dark:text-[#8b949e] leading-relaxed line-clamp-3 whitespace-pre-wrap">{idea.analysis}</p>
         </div>
 
         {/* Trade Details */}
-        <div className="grid grid-cols-3 gap-3 mb-4 pt-4 border-t border-[#30363d]">
+        <div className="grid grid-cols-3 gap-3 mb-4 pt-4 border-t border-gray-200 dark:border-[#30363d]">
           <div className="text-center">
-            <div className="text-xs text-[#8b949e] mb-1">Entry</div>
-            <div className="text-sm font-semibold text-white">
+            <div className="text-xs text-gray-600 dark:text-[#8b949e] mb-1">Entry</div>
+            <div className="text-sm font-semibold text-gray-900 dark:text-white">
               {typeof idea.entryPrice === 'number' ? `₹${idea.entryPrice}` : idea.entryPrice}
             </div>
           </div>
           <div className="text-center">
-            <div className="text-xs text-[#8b949e] mb-1">Target</div>
+            <div className="text-xs text-gray-600 dark:text-[#8b949e] mb-1">Target</div>
             <div className="text-sm font-semibold text-green-500">
               ₹{idea.target1} {target1Percent && <span className="text-xs text-green-400">+{target1Percent}%</span>}
             </div>
           </div>
           <div className="text-center">
-            <div className="text-xs text-[#8b949e] mb-1">Stop Loss</div>
+            <div className="text-xs text-gray-600 dark:text-[#8b949e] mb-1">Stop Loss</div>
             <div className="text-sm font-semibold text-red-500">₹{idea.stopLoss}</div>
           </div>
         </div>
 
         {/* Footer */}
-        <div className="flex justify-between items-center pt-3 border-t border-[#30363d]">
-          <div className="flex gap-3 text-xs text-[#8b949e]">
+        <div className="flex justify-between items-center pt-3 border-t border-gray-200 dark:border-[#30363d]">
+          <div className="flex gap-3 text-xs text-gray-600 dark:text-[#8b949e]">
             <span className="flex items-center gap-1">
               <svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor">
                 <path d="M8 14s-6-4.5-6-8c0-2.5 2-4 4-4 1.5 0 2 1 2 1s.5-1 2-1c2 0 4 1.5 4 4 0 3.5-6 8-6 8z"/>
@@ -138,13 +138,13 @@ export default function IdeasHubPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#0f1419]">
+    <div className="min-h-screen bg-white dark:bg-[#0f1419]">
       <Navigation />
 
       {/* Header */}
       <div className="p-5 pt-5 pb-3">
-        <h1 className="text-3xl font-bold text-white mb-1">Trading Ideas Hub</h1>
-        <p className="text-sm text-[#8b949e]">Discover and share trading opportunities</p>
+        <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-1">Trading Ideas Hub</h1>
+        <p className="text-sm text-gray-600 dark:text-[#8b949e]">Discover and share trading opportunities</p>
       </div>
 
       {/* Search Bar */}
@@ -155,9 +155,9 @@ export default function IdeasHubPage() {
             placeholder="Search by symbol, title..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="flex-1 bg-[#1c2128] border border-[#30363d] rounded-lg px-3 py-2 text-sm text-white placeholder-[#8b949e] outline-none focus:border-[#ff8c42] transition-colors"
+            className="flex-1 bg-gray-50 dark:bg-[#1c2128] border border-gray-200 dark:border-[#30363d] rounded-lg px-3 py-2 text-sm text-gray-900 dark:text-white placeholder-[#8b949e] outline-none focus:border-[#ff8c42] transition-colors"
           />
-          <button className="px-3 py-2 bg-[#1c2128] border border-[#30363d] rounded-lg text-[#8b949e] text-sm font-semibold hover:bg-[#30363d] transition-colors">
+          <button className="px-3 py-2 bg-gray-50 dark:bg-[#1c2128] border border-gray-200 dark:border-[#30363d] rounded-lg text-gray-600 dark:text-[#8b949e] text-sm font-semibold hover:bg-[#30363d] transition-colors">
             🔍
           </button>
         </div>
@@ -170,8 +170,8 @@ export default function IdeasHubPage() {
             onClick={() => setActiveTab('all')}
             className={`px-3 py-1.5 rounded-md text-xs font-semibold transition-colors whitespace-nowrap ${
               activeTab === 'all'
-                ? 'bg-[#ff8c42] text-white'
-                : 'bg-[#1c2128] text-[#8b949e] hover:bg-[#30363d]'
+                ? 'bg-[#ff8c42] text-gray-900 dark:text-white'
+                : 'bg-gray-50 dark:bg-[#1c2128] text-gray-600 dark:text-[#8b949e] hover:bg-[#30363d]'
             }`}
           >
             All Ideas
@@ -180,8 +180,8 @@ export default function IdeasHubPage() {
             onClick={() => setActiveTab('trending')}
             className={`px-3 py-1.5 rounded-md text-xs font-semibold transition-colors whitespace-nowrap ${
               activeTab === 'trending'
-                ? 'bg-[#ff8c42] text-white'
-                : 'bg-[#1c2128] text-[#8b949e] hover:bg-[#30363d]'
+                ? 'bg-[#ff8c42] text-gray-900 dark:text-white'
+                : 'bg-gray-50 dark:bg-[#1c2128] text-gray-600 dark:text-[#8b949e] hover:bg-[#30363d]'
             }`}
           >
             🔥 Trending
@@ -190,8 +190,8 @@ export default function IdeasHubPage() {
             onClick={() => setActiveTab('recent')}
             className={`px-3 py-1.5 rounded-md text-xs font-semibold transition-colors whitespace-nowrap ${
               activeTab === 'recent'
-                ? 'bg-[#ff8c42] text-white'
-                : 'bg-[#1c2128] text-[#8b949e] hover:bg-[#30363d]'
+                ? 'bg-[#ff8c42] text-gray-900 dark:text-white'
+                : 'bg-gray-50 dark:bg-[#1c2128] text-gray-600 dark:text-[#8b949e] hover:bg-[#30363d]'
             }`}
           >
             ⏰ Recent
@@ -200,8 +200,8 @@ export default function IdeasHubPage() {
             onClick={() => setActiveTab('following')}
             className={`px-3 py-1.5 rounded-md text-xs font-semibold transition-colors whitespace-nowrap flex items-center gap-1 ${
               activeTab === 'following'
-                ? 'bg-[#ff8c42] text-white'
-                : 'bg-[#1c2128] text-[#8b949e] hover:bg-[#30363d]'
+                ? 'bg-[#ff8c42] text-gray-900 dark:text-white'
+                : 'bg-gray-50 dark:bg-[#1c2128] text-gray-600 dark:text-[#8b949e] hover:bg-[#30363d]'
             }`}
           >
             <svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor">
@@ -217,7 +217,7 @@ export default function IdeasHubPage() {
         {loading ? (
           <div className="text-center py-16">
             <div className="inline-block w-12 h-12 border-4 border-[#ff8c42] border-t-transparent rounded-full animate-spin mb-4"></div>
-            <p className="text-[#8b949e] text-lg">Loading ideas...</p>
+            <p className="text-gray-600 dark:text-[#8b949e] text-lg">Loading ideas...</p>
           </div>
         ) : (
           <div className="space-y-4">
@@ -225,7 +225,7 @@ export default function IdeasHubPage() {
             {cookingIdeas.length > 0 && (
               <div>
                 <div className="flex items-center gap-2 mb-2">
-                  <h2 className="text-xl font-bold text-white">🍳 Cooking Ideas</h2>
+                  <h2 className="text-xl font-bold text-gray-900 dark:text-white">🍳 Cooking Ideas</h2>
                   <span className="px-2 py-0.5 bg-orange-500/20 text-orange-400 text-xs font-semibold rounded-full">
                     {cookingIdeas.length}
                   </span>
@@ -240,7 +240,7 @@ export default function IdeasHubPage() {
             {activeIdeas.length > 0 && (
               <div>
                 <div className="flex items-center gap-2 mb-2">
-                  <h2 className="text-xl font-bold text-white">🟢 Active Ideas</h2>
+                  <h2 className="text-xl font-bold text-gray-900 dark:text-white">🟢 Active Ideas</h2>
                   <span className="px-2 py-0.5 bg-green-500/20 text-green-400 text-xs font-semibold rounded-full">
                     {activeIdeas.length}
                   </span>
@@ -255,7 +255,7 @@ export default function IdeasHubPage() {
             {hitTargetIdeas.length > 0 && (
               <div>
                 <div className="flex items-center gap-2 mb-2">
-                  <h2 className="text-xl font-bold text-white">🎯 Hit Target</h2>
+                  <h2 className="text-xl font-bold text-gray-900 dark:text-white">🎯 Hit Target</h2>
                   <span className="px-2 py-0.5 bg-green-500/20 text-green-400 text-xs font-semibold rounded-full">
                     {hitTargetIdeas.length}
                   </span>
@@ -270,7 +270,7 @@ export default function IdeasHubPage() {
             {hitSLIdeas.length > 0 && (
               <div>
                 <div className="flex items-center gap-2 mb-2">
-                  <h2 className="text-xl font-bold text-white">🛑 Hit Stop Loss</h2>
+                  <h2 className="text-xl font-bold text-gray-900 dark:text-white">🛑 Hit Stop Loss</h2>
                   <span className="px-2 py-0.5 bg-red-500/20 text-red-400 text-xs font-semibold rounded-full">
                     {hitSLIdeas.length}
                   </span>
@@ -285,7 +285,7 @@ export default function IdeasHubPage() {
             {cancelledIdeas.length > 0 && (
               <div>
                 <div className="flex items-center gap-2 mb-2">
-                  <h2 className="text-xl font-bold text-white">❌ Cancelled</h2>
+                  <h2 className="text-xl font-bold text-gray-900 dark:text-white">❌ Cancelled</h2>
                   <span className="px-2 py-0.5 bg-gray-500/20 text-gray-400 text-xs font-semibold rounded-full">
                     {cancelledIdeas.length}
                   </span>
@@ -300,8 +300,8 @@ export default function IdeasHubPage() {
             {cookingIdeas.length === 0 && activeIdeas.length === 0 && hitTargetIdeas.length === 0 && hitSLIdeas.length === 0 && cancelledIdeas.length === 0 && (
               <div className="text-center py-16">
                 <div className="text-6xl mb-4">💡</div>
-                <h3 className="text-xl font-semibold text-white mb-2">No ideas found</h3>
-                <p className="text-[#8b949e]">Try adjusting your search or filters</p>
+                <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">No ideas found</h3>
+                <p className="text-gray-600 dark:text-[#8b949e]">Try adjusting your search or filters</p>
               </div>
             )}
           </div>

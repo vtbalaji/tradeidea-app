@@ -45,18 +45,18 @@ export default function ProfilePage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#0f1419]">
+    <div className="min-h-screen bg-white dark:bg-[#0f1419]">
       <Navigation />
 
       <div className="max-w-4xl mx-auto px-4 py-8">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-white mb-2">Profile Settings</h1>
-          <p className="text-[#8b949e]">Manage your account and trading preferences</p>
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">Profile Settings</h1>
+          <p className="text-gray-600 dark:text-[#8b949e]">Manage your account and trading preferences</p>
         </div>
 
         {/* Profile Card */}
-        <div className="bg-[#1c2128] rounded-xl border border-[#30363d] overflow-hidden">
+        <div className="bg-gray-50 dark:bg-[#1c2128] rounded-xl border border-gray-200 dark:border-[#30363d] overflow-hidden">
           {/* Profile Header */}
           <div className="bg-gradient-to-r from-[#ff8c42] to-[#ff6b1a] p-8">
             <div className="flex items-center gap-6">
@@ -64,15 +64,15 @@ export default function ProfilePage() {
                 👤
               </div>
               <div className="flex-1">
-                <h2 className="text-2xl font-bold text-white mb-1">
+                <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-1">
                   {userData?.displayName || user?.email?.split('@')[0] || 'Trader'}
                 </h2>
-                <p className="text-white/80">{user?.email}</p>
+                <p className="text-gray-900 dark:text-white/80">{user?.email}</p>
               </div>
               {!isEditing && (
                 <button
                   onClick={() => setIsEditing(true)}
-                  className="px-6 py-2 bg-white/20 hover:bg-white/30 text-white rounded-lg border border-white/30 transition-colors"
+                  className="px-6 py-2 bg-white/20 hover:bg-white/30 text-gray-900 dark:text-white rounded-lg border border-white/30 transition-colors"
                 >
                   ✏️ Edit Profile
                 </button>
@@ -94,7 +94,7 @@ export default function ProfilePage() {
 
             {/* Display Name */}
             <div className="mb-6">
-              <label className="block text-sm font-semibold text-[#8b949e] mb-2">
+              <label className="block text-sm font-semibold text-gray-600 dark:text-[#8b949e] mb-2">
                 Display Name
               </label>
               {isEditing ? (
@@ -102,11 +102,11 @@ export default function ProfilePage() {
                   type="text"
                   value={formData.displayName}
                   onChange={(e) => setFormData({ ...formData, displayName: e.target.value })}
-                  className="w-full bg-[#0f1419] border border-[#30363d] rounded-lg px-4 py-3 text-white outline-none focus:border-[#ff8c42] transition-colors"
+                  className="w-full bg-white dark:bg-[#0f1419] border border-gray-200 dark:border-[#30363d] rounded-lg px-4 py-3 text-gray-900 dark:text-white outline-none focus:border-[#ff8c42] transition-colors"
                   placeholder="Enter your display name"
                 />
               ) : (
-                <p className="text-white text-lg">
+                <p className="text-gray-900 dark:text-white text-lg">
                   {userData?.displayName || 'Not set'}
                 </p>
               )}
@@ -114,26 +114,26 @@ export default function ProfilePage() {
 
             {/* Email (Read-only) */}
             <div className="mb-6">
-              <label className="block text-sm font-semibold text-[#8b949e] mb-2">
+              <label className="block text-sm font-semibold text-gray-600 dark:text-[#8b949e] mb-2">
                 Email Address
               </label>
-              <p className="text-white text-lg">{user?.email}</p>
+              <p className="text-gray-900 dark:text-white text-lg">{user?.email}</p>
             </div>
 
             {/* Bio */}
             <div className="mb-6">
-              <label className="block text-sm font-semibold text-[#8b949e] mb-2">
+              <label className="block text-sm font-semibold text-gray-600 dark:text-[#8b949e] mb-2">
                 Bio
               </label>
               {isEditing ? (
                 <textarea
                   value={formData.bio}
                   onChange={(e) => setFormData({ ...formData, bio: e.target.value })}
-                  className="w-full bg-[#0f1419] border border-[#30363d] rounded-lg px-4 py-3 text-white outline-none focus:border-[#ff8c42] transition-colors min-h-[100px]"
+                  className="w-full bg-white dark:bg-[#0f1419] border border-gray-200 dark:border-[#30363d] rounded-lg px-4 py-3 text-gray-900 dark:text-white outline-none focus:border-[#ff8c42] transition-colors min-h-[100px]"
                   placeholder="Tell us about yourself..."
                 />
               ) : (
-                <p className="text-white text-lg">
+                <p className="text-gray-900 dark:text-white text-lg">
                   {userData?.bio || 'No bio added yet'}
                 </p>
               )}
@@ -141,14 +141,14 @@ export default function ProfilePage() {
 
             {/* Trading Experience */}
             <div className="mb-6">
-              <label className="block text-sm font-semibold text-[#8b949e] mb-2">
+              <label className="block text-sm font-semibold text-gray-600 dark:text-[#8b949e] mb-2">
                 Trading Experience
               </label>
               {isEditing ? (
                 <select
                   value={formData.tradingExperience}
                   onChange={(e) => setFormData({ ...formData, tradingExperience: e.target.value })}
-                  className="w-full bg-[#0f1419] border border-[#30363d] rounded-lg px-4 py-3 text-white outline-none focus:border-[#ff8c42] transition-colors"
+                  className="w-full bg-white dark:bg-[#0f1419] border border-gray-200 dark:border-[#30363d] rounded-lg px-4 py-3 text-gray-900 dark:text-white outline-none focus:border-[#ff8c42] transition-colors"
                 >
                   <option value="">Select experience level</option>
                   <option value="beginner">Beginner (0-1 years)</option>
@@ -157,7 +157,7 @@ export default function ProfilePage() {
                   <option value="expert">Expert (5+ years)</option>
                 </select>
               ) : (
-                <p className="text-white text-lg capitalize">
+                <p className="text-gray-900 dark:text-white text-lg capitalize">
                   {userData?.tradingExperience || 'Not specified'}
                 </p>
               )}
@@ -165,7 +165,7 @@ export default function ProfilePage() {
 
             {/* Favorite Strategies */}
             <div className="mb-6">
-              <label className="block text-sm font-semibold text-[#8b949e] mb-2">
+              <label className="block text-sm font-semibold text-gray-600 dark:text-[#8b949e] mb-2">
                 Favorite Trading Strategies
               </label>
               {isEditing ? (
@@ -173,11 +173,11 @@ export default function ProfilePage() {
                   type="text"
                   value={formData.favoriteStrategies}
                   onChange={(e) => setFormData({ ...formData, favoriteStrategies: e.target.value })}
-                  className="w-full bg-[#0f1419] border border-[#30363d] rounded-lg px-4 py-3 text-white outline-none focus:border-[#ff8c42] transition-colors"
+                  className="w-full bg-white dark:bg-[#0f1419] border border-gray-200 dark:border-[#30363d] rounded-lg px-4 py-3 text-gray-900 dark:text-white outline-none focus:border-[#ff8c42] transition-colors"
                   placeholder="e.g., Swing Trading, Day Trading, Options"
                 />
               ) : (
-                <p className="text-white text-lg">
+                <p className="text-gray-900 dark:text-white text-lg">
                   {userData?.favoriteStrategies || 'Not specified'}
                 </p>
               )}
@@ -189,7 +189,7 @@ export default function ProfilePage() {
                 <button
                   onClick={handleSave}
                   disabled={loading}
-                  className="flex-1 bg-[#ff8c42] hover:bg-[#ff9a58] text-white font-semibold py-3 px-6 rounded-lg transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+                  className="flex-1 bg-[#ff8c42] hover:bg-[#ff9a58] text-gray-900 dark:text-white font-semibold py-3 px-6 rounded-lg transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
                 >
                   {loading ? 'Saving...' : '💾 Save Changes'}
                 </button>
@@ -205,7 +205,7 @@ export default function ProfilePage() {
                     });
                     setMessage('');
                   }}
-                  className="px-6 py-3 bg-[#30363d] hover:bg-[#3d444d] text-white rounded-lg transition-colors"
+                  className="px-6 py-3 bg-[#30363d] hover:bg-[#3d444d] text-gray-900 dark:text-white rounded-lg transition-colors"
                 >
                   Cancel
                 </button>
@@ -216,9 +216,9 @@ export default function ProfilePage() {
 
         {/* Account Stats */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-8">
-          <div className="bg-[#1c2128] rounded-xl border border-[#30363d] p-6">
-            <div className="text-[#8b949e] text-sm font-semibold mb-1">Member Since</div>
-            <div className="text-white text-2xl font-bold">
+          <div className="bg-gray-50 dark:bg-[#1c2128] rounded-xl border border-gray-200 dark:border-[#30363d] p-6">
+            <div className="text-gray-600 dark:text-[#8b949e] text-sm font-semibold mb-1">Member Since</div>
+            <div className="text-gray-900 dark:text-white text-2xl font-bold">
               {userData?.createdAt?.toDate ?
                 new Date(userData.createdAt.toDate()).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })
                 : 'Recently'
@@ -226,14 +226,14 @@ export default function ProfilePage() {
             </div>
           </div>
 
-          <div className="bg-[#1c2128] rounded-xl border border-[#30363d] p-6">
-            <div className="text-[#8b949e] text-sm font-semibold mb-1">Trading Ideas</div>
-            <div className="text-white text-2xl font-bold">0</div>
+          <div className="bg-gray-50 dark:bg-[#1c2128] rounded-xl border border-gray-200 dark:border-[#30363d] p-6">
+            <div className="text-gray-600 dark:text-[#8b949e] text-sm font-semibold mb-1">Trading Ideas</div>
+            <div className="text-gray-900 dark:text-white text-2xl font-bold">0</div>
           </div>
 
-          <div className="bg-[#1c2128] rounded-xl border border-[#30363d] p-6">
-            <div className="text-[#8b949e] text-sm font-semibold mb-1">Followers</div>
-            <div className="text-white text-2xl font-bold">0</div>
+          <div className="bg-gray-50 dark:bg-[#1c2128] rounded-xl border border-gray-200 dark:border-[#30363d] p-6">
+            <div className="text-gray-600 dark:text-[#8b949e] text-sm font-semibold mb-1">Followers</div>
+            <div className="text-gray-900 dark:text-white text-2xl font-bold">0</div>
           </div>
         </div>
       </div>

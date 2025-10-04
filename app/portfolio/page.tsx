@@ -90,8 +90,8 @@ export default function PortfolioPage() {
       return (
         <div className="text-center py-16">
           <div className="text-6xl mb-4">📂</div>
-          <h3 className="text-xl font-semibold text-white mb-2">No holdings found</h3>
-          <p className="text-[#8b949e]">Your {activeTab} positions will appear here</p>
+          <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">No holdings found</h3>
+          <p className="text-gray-600 dark:text-[#8b949e]">Your {activeTab} positions will appear here</p>
         </div>
       );
     }
@@ -100,15 +100,15 @@ export default function PortfolioPage() {
       <div className="overflow-x-auto">
         <table className="w-full min-w-[900px] border-collapse">
           <thead>
-            <tr className="border-b border-[#30363d]">
-              <th className="text-left py-3 px-4 text-sm font-semibold text-[#8b949e]">Stock</th>
-              <th className="text-right py-3 px-4 text-sm font-semibold text-[#8b949e]">Qty</th>
-              <th className="text-right py-3 px-4 text-sm font-semibold text-[#8b949e]">Avg Buy Price</th>
-              <th className="text-right py-3 px-4 text-sm font-semibold text-[#8b949e]">Invested Amount</th>
-              <th className="text-right py-3 px-4 text-sm font-semibold text-[#8b949e]">LTP</th>
-              <th className="text-right py-3 px-4 text-sm font-semibold text-[#8b949e]">Current Value</th>
-              <th className="text-right py-3 px-4 text-sm font-semibold text-[#8b949e]">P&L</th>
-              <th className="text-right py-3 px-4 text-sm font-semibold text-[#8b949e]">Actions</th>
+            <tr className="border-b border-gray-200 dark:border-[#30363d]">
+              <th className="text-left py-3 px-4 text-sm font-semibold text-gray-600 dark:text-[#8b949e]">Stock</th>
+              <th className="text-right py-3 px-4 text-sm font-semibold text-gray-600 dark:text-[#8b949e]">Qty</th>
+              <th className="text-right py-3 px-4 text-sm font-semibold text-gray-600 dark:text-[#8b949e]">Avg Buy Price</th>
+              <th className="text-right py-3 px-4 text-sm font-semibold text-gray-600 dark:text-[#8b949e]">Invested Amount</th>
+              <th className="text-right py-3 px-4 text-sm font-semibold text-gray-600 dark:text-[#8b949e]">LTP</th>
+              <th className="text-right py-3 px-4 text-sm font-semibold text-gray-600 dark:text-[#8b949e]">Current Value</th>
+              <th className="text-right py-3 px-4 text-sm font-semibold text-gray-600 dark:text-[#8b949e]">P&L</th>
+              <th className="text-right py-3 px-4 text-sm font-semibold text-gray-600 dark:text-[#8b949e]">Actions</th>
             </tr>
           </thead>
           <tbody>
@@ -122,13 +122,13 @@ export default function PortfolioPage() {
               return (
                 <tr
                   key={position.id}
-                  className="border-b border-[#30363d] hover:bg-[#1c2128] transition-colors"
+                  className="border-b border-gray-200 dark:border-[#30363d] hover:bg-gray-50 dark:bg-[#1c2128] transition-colors"
                 >
                   <td className="py-3 px-4">
                     <div>
-                      <p className="text-base font-semibold text-white">{position.symbol}</p>
+                      <p className="text-base font-semibold text-gray-900 dark:text-white">{position.symbol}</p>
                       <div className="flex gap-2 mt-1">
-                        <span className="px-2 py-0.5 bg-blue-500/20 text-[#8b949e] text-xs font-semibold rounded">
+                        <span className="px-2 py-0.5 bg-blue-500/20 text-gray-600 dark:text-[#8b949e] text-xs font-semibold rounded">
                           {position.tradeType}
                         </span>
                         <span className={`px-2 py-0.5 text-xs font-semibold rounded ${
@@ -139,11 +139,11 @@ export default function PortfolioPage() {
                       </div>
                     </div>
                   </td>
-                  <td className="py-3 px-4 text-right text-white font-medium">{position.quantity}</td>
-                  <td className="py-3 px-4 text-right text-white font-medium">₹{position.entryPrice.toFixed(2)}</td>
-                  <td className="py-3 px-4 text-right text-white font-medium">₹{investedAmount.toFixed(2)}</td>
-                  <td className="py-3 px-4 text-right text-white font-medium">₹{position.currentPrice.toFixed(2)}</td>
-                  <td className="py-3 px-4 text-right text-white font-medium">₹{currentValue.toFixed(2)}</td>
+                  <td className="py-3 px-4 text-right text-gray-900 dark:text-white font-medium">{position.quantity}</td>
+                  <td className="py-3 px-4 text-right text-gray-900 dark:text-white font-medium">₹{position.entryPrice.toFixed(2)}</td>
+                  <td className="py-3 px-4 text-right text-gray-900 dark:text-white font-medium">₹{investedAmount.toFixed(2)}</td>
+                  <td className="py-3 px-4 text-right text-gray-900 dark:text-white font-medium">₹{position.currentPrice.toFixed(2)}</td>
+                  <td className="py-3 px-4 text-right text-gray-900 dark:text-white font-medium">₹{currentValue.toFixed(2)}</td>
                   <td className="py-3 px-4 text-right">
                     <div className={`font-semibold ${isProfit ? 'text-green-500' : 'text-red-500'}`}>
                       <p>{isProfit ? '+' : ''}₹{pnl.toFixed(2)}</p>
@@ -177,7 +177,7 @@ export default function PortfolioPage() {
                         </button>
                       </div>
                     ) : (
-                      <span className="text-xs text-[#8b949e]">Closed</span>
+                      <span className="text-xs text-gray-600 dark:text-[#8b949e]">Closed</span>
                     )}
                   </td>
                 </tr>
@@ -189,40 +189,40 @@ export default function PortfolioPage() {
     );
   };
   return (
-    <div className="min-h-screen bg-[#0f1419]">
+    <div className="min-h-screen bg-white dark:bg-[#0f1419]">
       <Navigation />
       {/* Header */}
       <div className="p-5 pt-8">
-        <h1 className="text-4xl font-bold text-white mb-2">My Portfolio</h1>
-        <p className="text-[#8b949e]">Track your positions and portfolio performance</p>
+        <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-2">My Portfolio</h1>
+        <p className="text-gray-600 dark:text-[#8b949e]">Track your positions and portfolio performance</p>
       </div>
       {/* Metrics Cards */}
       <div className="px-5 mb-5 overflow-x-auto">
         <div className="flex gap-4 min-w-max pb-2">
-          <div className="bg-[#1c2128] border border-[#30363d] rounded-lg p-3 min-w-[180px]">
-            <p className="text-xs text-[#8b949e] mb-0.5">Portfolio Value</p>
-            <p className="text-xl font-bold text-white">₹{portfolioValue.toFixed(2)}</p>
+          <div className="bg-gray-50 dark:bg-[#1c2128] border border-gray-200 dark:border-[#30363d] rounded-lg p-3 min-w-[180px]">
+            <p className="text-xs text-gray-600 dark:text-[#8b949e] mb-0.5">Portfolio Value</p>
+            <p className="text-xl font-bold text-gray-900 dark:text-white">₹{portfolioValue.toFixed(2)}</p>
           </div>
-          <div className="bg-[#1c2128] border border-[#30363d] rounded-lg p-3 min-w-[180px]">
-            <p className="text-xs text-[#8b949e] mb-0.5">Total P&L</p>
+          <div className="bg-gray-50 dark:bg-[#1c2128] border border-gray-200 dark:border-[#30363d] rounded-lg p-3 min-w-[180px]">
+            <p className="text-xs text-gray-600 dark:text-[#8b949e] mb-0.5">Total P&L</p>
             <p className={`text-xl font-bold ${totalPnL >= 0 ? 'text-green-500' : 'text-red-500'}`}>
               {totalPnL >= 0 ? '+' : ''}₹{totalPnL.toFixed(2)}
             </p>
           </div>
-          <div className="bg-[#1c2128] border border-[#30363d] rounded-lg p-3 min-w-[180px]">
-            <p className="text-xs text-[#8b949e] mb-0.5">Open Positions</p>
-            <p className="text-xl font-bold text-white">{openPositions.length}</p>
+          <div className="bg-gray-50 dark:bg-[#1c2128] border border-gray-200 dark:border-[#30363d] rounded-lg p-3 min-w-[180px]">
+            <p className="text-xs text-gray-600 dark:text-[#8b949e] mb-0.5">Open Positions</p>
+            <p className="text-xl font-bold text-gray-900 dark:text-white">{openPositions.length}</p>
           </div>
-          <div className="bg-[#1c2128] border border-[#30363d] rounded-lg p-3 min-w-[180px]">
-            <p className="text-xs text-[#8b949e] mb-0.5">Closed Trades</p>
-            <p className="text-xl font-bold text-white">{closedPositions.length}</p>
+          <div className="bg-gray-50 dark:bg-[#1c2128] border border-gray-200 dark:border-[#30363d] rounded-lg p-3 min-w-[180px]">
+            <p className="text-xs text-gray-600 dark:text-[#8b949e] mb-0.5">Closed Trades</p>
+            <p className="text-xl font-bold text-gray-900 dark:text-white">{closedPositions.length}</p>
           </div>
         </div>
       </div>
       {/* Positions Section */}
       <div className="px-5">
         <div className="mb-4">
-          <h2 className="text-2xl font-bold text-white">Positions</h2>
+          <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Positions</h2>
         </div>
         {/* Tabs */}
         <div className="flex gap-3 mb-5">
@@ -230,8 +230,8 @@ export default function PortfolioPage() {
             onClick={() => setActiveTab('open')}
             className={`px-5 py-2.5 rounded-lg text-sm font-semibold transition-colors ${
               activeTab === 'open'
-                ? 'bg-[#ff8c42] text-white border-[#ff8c42]'
-                : 'bg-[#1c2128] text-[#8b949e] border-[#30363d]'
+                ? 'bg-[#ff8c42] text-gray-900 dark:text-white border-[#ff8c42]'
+                : 'bg-gray-50 dark:bg-[#1c2128] text-gray-600 dark:text-[#8b949e] border-gray-200 dark:border-[#30363d]'
             } border`}
           >
             Open ({openPositions.length})
@@ -240,8 +240,8 @@ export default function PortfolioPage() {
             onClick={() => setActiveTab('closed')}
             className={`px-5 py-2.5 rounded-lg text-sm font-semibold transition-colors ${
               activeTab === 'closed'
-                ? 'bg-[#ff8c42] text-white border-[#ff8c42]'
-                : 'bg-[#1c2128] text-[#8b949e] border-[#30363d]'
+                ? 'bg-[#ff8c42] text-gray-900 dark:text-white border-[#ff8c42]'
+                : 'bg-gray-50 dark:bg-[#1c2128] text-gray-600 dark:text-[#8b949e] border-gray-200 dark:border-[#30363d]'
             } border`}
           >
             Closed ({closedPositions.length})
@@ -260,14 +260,14 @@ export default function PortfolioPage() {
           onClick={() => setShowExitModal(false)}
         >
           <div
-            className="bg-[#1c2128] border border-[#30363d] rounded-xl p-6 w-full max-w-md mx-4"
+            className="bg-gray-50 dark:bg-[#1c2128] border border-gray-200 dark:border-[#30363d] rounded-xl p-6 w-full max-w-md mx-4"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex justify-between items-center mb-6">
-              <h3 className="text-xl font-bold text-white">Exit Trade - {selectedPosition.symbol}</h3>
+              <h3 className="text-xl font-bold text-gray-900 dark:text-white">Exit Trade - {selectedPosition.symbol}</h3>
               <button
                 onClick={() => setShowExitModal(false)}
-                className="text-[#8b949e] hover:text-white transition-colors text-2xl"
+                className="text-gray-600 dark:text-[#8b949e] hover:text-gray-900 dark:text-white transition-colors text-2xl"
               >
                 ×
               </button>
@@ -275,7 +275,7 @@ export default function PortfolioPage() {
 
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-[#8b949e] mb-2">
+                <label className="block text-sm font-medium text-gray-600 dark:text-[#8b949e] mb-2">
                   Exit Price
                 </label>
                 <input
@@ -287,12 +287,12 @@ export default function PortfolioPage() {
                   }
                   placeholder="Enter exit price"
                   required
-                  className="w-full bg-[#0f1419] border border-[#30363d] rounded-lg px-3 py-2 text-white placeholder-[#8b949e] outline-none focus:border-[#ff8c42] transition-colors"
+                  className="w-full bg-white dark:bg-[#0f1419] border border-gray-200 dark:border-[#30363d] rounded-lg px-3 py-2 text-gray-900 dark:text-white placeholder-[#8b949e] outline-none focus:border-[#ff8c42] transition-colors"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-[#8b949e] mb-2">
+                <label className="block text-sm font-medium text-gray-600 dark:text-[#8b949e] mb-2">
                   Exit Date
                 </label>
                 <input
@@ -301,7 +301,7 @@ export default function PortfolioPage() {
                   onChange={(e) =>
                     setExitDetails({ ...exitDetails, exitDate: e.target.value })
                   }
-                  className="w-full bg-[#0f1419] border border-[#30363d] rounded-lg px-3 py-2 text-white placeholder-[#8b949e] outline-none focus:border-[#ff8c42] transition-colors"
+                  className="w-full bg-white dark:bg-[#0f1419] border border-gray-200 dark:border-[#30363d] rounded-lg px-3 py-2 text-gray-900 dark:text-white placeholder-[#8b949e] outline-none focus:border-[#ff8c42] transition-colors"
                 />
               </div>
             </div>
@@ -309,13 +309,13 @@ export default function PortfolioPage() {
             <div className="flex gap-3 mt-6">
               <button
                 onClick={() => setShowExitModal(false)}
-                className="flex-1 bg-[#30363d] hover:bg-[#3e4651] text-white font-semibold py-3 rounded-lg transition-colors"
+                className="flex-1 bg-[#30363d] hover:bg-[#3e4651] text-gray-900 dark:text-white font-semibold py-3 rounded-lg transition-colors"
               >
                 Cancel
               </button>
               <button
                 onClick={handleExitTrade}
-                className="flex-1 bg-red-500 hover:bg-red-600 text-white font-semibold py-3 rounded-lg transition-colors"
+                className="flex-1 bg-red-500 hover:bg-red-600 text-gray-900 dark:text-white font-semibold py-3 rounded-lg transition-colors"
               >
                 Exit Trade
               </button>
@@ -331,14 +331,14 @@ export default function PortfolioPage() {
           onClick={() => setShowTransactionModal(false)}
         >
           <div
-            className="bg-[#1c2128] border border-[#30363d] rounded-xl p-6 w-full max-w-md mx-4"
+            className="bg-gray-50 dark:bg-[#1c2128] border border-gray-200 dark:border-[#30363d] rounded-xl p-6 w-full max-w-md mx-4"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex justify-between items-center mb-6">
-              <h3 className="text-xl font-bold text-white">Add Transaction - {selectedPosition.symbol}</h3>
+              <h3 className="text-xl font-bold text-gray-900 dark:text-white">Add Transaction - {selectedPosition.symbol}</h3>
               <button
                 onClick={() => setShowTransactionModal(false)}
-                className="text-[#8b949e] hover:text-white transition-colors text-2xl"
+                className="text-gray-600 dark:text-[#8b949e] hover:text-gray-900 dark:text-white transition-colors text-2xl"
               >
                 ×
               </button>
@@ -346,7 +346,7 @@ export default function PortfolioPage() {
 
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-[#8b949e] mb-2">
+                <label className="block text-sm font-medium text-gray-600 dark:text-[#8b949e] mb-2">
                   Transaction Type
                 </label>
                 <div className="flex gap-3">
@@ -354,8 +354,8 @@ export default function PortfolioPage() {
                     onClick={() => setTransactionDetails({ ...transactionDetails, type: 'buy' })}
                     className={`flex-1 py-2 rounded-lg font-semibold transition-colors ${
                       transactionDetails.type === 'buy'
-                        ? 'bg-green-500 text-white'
-                        : 'bg-[#30363d] text-[#8b949e] hover:bg-[#3e4651]'
+                        ? 'bg-green-500 text-gray-900 dark:text-white'
+                        : 'bg-[#30363d] text-gray-600 dark:text-[#8b949e] hover:bg-[#3e4651]'
                     }`}
                   >
                     Buy
@@ -364,8 +364,8 @@ export default function PortfolioPage() {
                     onClick={() => setTransactionDetails({ ...transactionDetails, type: 'sell' })}
                     className={`flex-1 py-2 rounded-lg font-semibold transition-colors ${
                       transactionDetails.type === 'sell'
-                        ? 'bg-red-500 text-white'
-                        : 'bg-[#30363d] text-[#8b949e] hover:bg-[#3e4651]'
+                        ? 'bg-red-500 text-gray-900 dark:text-white'
+                        : 'bg-[#30363d] text-gray-600 dark:text-[#8b949e] hover:bg-[#3e4651]'
                     }`}
                   >
                     Sell
@@ -374,7 +374,7 @@ export default function PortfolioPage() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-[#8b949e] mb-2">
+                <label className="block text-sm font-medium text-gray-600 dark:text-[#8b949e] mb-2">
                   Quantity
                 </label>
                 <input
@@ -385,12 +385,12 @@ export default function PortfolioPage() {
                   }
                   placeholder="Enter quantity"
                   required
-                  className="w-full bg-[#0f1419] border border-[#30363d] rounded-lg px-3 py-2 text-white placeholder-[#8b949e] outline-none focus:border-[#ff8c42] transition-colors"
+                  className="w-full bg-white dark:bg-[#0f1419] border border-gray-200 dark:border-[#30363d] rounded-lg px-3 py-2 text-gray-900 dark:text-white placeholder-[#8b949e] outline-none focus:border-[#ff8c42] transition-colors"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-[#8b949e] mb-2">
+                <label className="block text-sm font-medium text-gray-600 dark:text-[#8b949e] mb-2">
                   Price
                 </label>
                 <input
@@ -402,12 +402,12 @@ export default function PortfolioPage() {
                   }
                   placeholder="Enter price"
                   required
-                  className="w-full bg-[#0f1419] border border-[#30363d] rounded-lg px-3 py-2 text-white placeholder-[#8b949e] outline-none focus:border-[#ff8c42] transition-colors"
+                  className="w-full bg-white dark:bg-[#0f1419] border border-gray-200 dark:border-[#30363d] rounded-lg px-3 py-2 text-gray-900 dark:text-white placeholder-[#8b949e] outline-none focus:border-[#ff8c42] transition-colors"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-[#8b949e] mb-2">
+                <label className="block text-sm font-medium text-gray-600 dark:text-[#8b949e] mb-2">
                   Date
                 </label>
                 <input
@@ -416,7 +416,7 @@ export default function PortfolioPage() {
                   onChange={(e) =>
                     setTransactionDetails({ ...transactionDetails, date: e.target.value })
                   }
-                  className="w-full bg-[#0f1419] border border-[#30363d] rounded-lg px-3 py-2 text-white placeholder-[#8b949e] outline-none focus:border-[#ff8c42] transition-colors"
+                  className="w-full bg-white dark:bg-[#0f1419] border border-gray-200 dark:border-[#30363d] rounded-lg px-3 py-2 text-gray-900 dark:text-white placeholder-[#8b949e] outline-none focus:border-[#ff8c42] transition-colors"
                 />
               </div>
             </div>
@@ -424,7 +424,7 @@ export default function PortfolioPage() {
             <div className="flex gap-3 mt-6">
               <button
                 onClick={() => setShowTransactionModal(false)}
-                className="flex-1 bg-[#30363d] hover:bg-[#3e4651] text-white font-semibold py-3 rounded-lg transition-colors"
+                className="flex-1 bg-[#30363d] hover:bg-[#3e4651] text-gray-900 dark:text-white font-semibold py-3 rounded-lg transition-colors"
               >
                 Cancel
               </button>
@@ -432,8 +432,8 @@ export default function PortfolioPage() {
                 onClick={handleAddTransaction}
                 className={`flex-1 font-semibold py-3 rounded-lg transition-colors ${
                   transactionDetails.type === 'buy'
-                    ? 'bg-green-500 hover:bg-green-600 text-white'
-                    : 'bg-red-500 hover:bg-red-600 text-white'
+                    ? 'bg-green-500 hover:bg-green-600 text-gray-900 dark:text-white'
+                    : 'bg-red-500 hover:bg-red-600 text-gray-900 dark:text-white'
                 }`}
               >
                 Add {transactionDetails.type === 'buy' ? 'Buy' : 'Sell'}
