@@ -85,23 +85,22 @@ export default function IdeasHubPage() {
         </div>
 
         {/* Trade Details */}
-        <div className="space-y-2 mb-4 pt-4 border-t border-[#30363d]">
-          <div className="flex justify-between items-center">
-            <span className="text-sm text-[#8b949e] flex items-center gap-1"><EntryIcon size={16} /> Entry:</span>
-            <span className="text-sm font-semibold text-white">
+        <div className="grid grid-cols-3 gap-3 mb-4 pt-4 border-t border-[#30363d]">
+          <div className="text-center">
+            <div className="text-xs text-[#8b949e] mb-1">Entry</div>
+            <div className="text-sm font-semibold text-white">
               {typeof idea.entryPrice === 'number' ? `₹${idea.entryPrice}` : idea.entryPrice}
-            </span>
+            </div>
           </div>
-          <div className="flex justify-between items-center">
-            <span className="text-sm text-[#8b949e] flex items-center gap-1"><TargetIcon size={16} /> Target 1:</span>
-            <span className="text-sm font-semibold text-green-500">
-              ₹{idea.target1}
-              {target1Percent && <span className="text-xs ml-1">+{target1Percent}%</span>}
-            </span>
+          <div className="text-center">
+            <div className="text-xs text-[#8b949e] mb-1">Target</div>
+            <div className="text-sm font-semibold text-green-500">
+              ₹{idea.target1} {target1Percent && <span className="text-xs text-green-400">+{target1Percent}%</span>}
+            </div>
           </div>
-          <div className="flex justify-between items-center">
-            <span className="text-sm text-[#8b949e] flex items-center gap-1"><EntryIcon size={16} /> Stop Loss:</span>
-            <span className="text-sm font-semibold text-red-500">₹{idea.stopLoss}</span>
+          <div className="text-center">
+            <div className="text-xs text-[#8b949e] mb-1">Stop Loss</div>
+            <div className="text-sm font-semibold text-red-500">₹{idea.stopLoss}</div>
           </div>
         </div>
 
