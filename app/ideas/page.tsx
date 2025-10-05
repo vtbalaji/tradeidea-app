@@ -86,10 +86,13 @@ export default function IdeasHubPage() {
           </span>
         </div>
 
-        {/* Analysis */}
-        <div className="bg-white dark:bg-[#0f1419] border border-gray-200 dark:border-[#30363d] rounded-lg p-3 mb-4">
-          <p className="text-sm text-gray-600 dark:text-[#8b949e] leading-relaxed line-clamp-3 whitespace-pre-wrap">{idea.analysis}</p>
-        </div>
+        {/* When to Enter */}
+        {idea.whenToEnter && (
+          <div className="bg-white dark:bg-[#0f1419] border border-gray-200 dark:border-[#30363d] rounded-lg p-3 mb-3">
+            <div className="text-xs font-semibold text-[#ff8c42] mb-1">📥 When to Enter</div>
+            <p className="text-sm text-gray-600 dark:text-[#8b949e] leading-relaxed line-clamp-2 whitespace-pre-wrap">{idea.whenToEnter}</p>
+          </div>
+        )}
 
         {/* Trade Details */}
         <div className="grid grid-cols-3 gap-3 mb-4 pt-4 border-t border-gray-200 dark:border-[#30363d]">

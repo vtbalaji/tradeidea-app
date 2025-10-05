@@ -283,8 +283,24 @@ export default function IdeaDetailPage() {
             </span>
           </div>
 
-          <div className="bg-white dark:bg-[#0f1419] border border-gray-200 dark:border-[#30363d] rounded-lg p-4">
+          <div className="bg-white dark:bg-[#0f1419] border border-gray-200 dark:border-[#30363d] rounded-lg p-4 mb-4">
             <p className="text-base text-[#c9d1d9] leading-relaxed whitespace-pre-wrap">{idea.analysis}</p>
+          </div>
+
+          {/* Entry/Exit Timing */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {idea.whenToEnter && (
+              <div className="bg-white dark:bg-[#0f1419] border border-gray-200 dark:border-[#30363d] rounded-lg p-4">
+                <div className="text-sm font-semibold text-[#ff8c42] mb-2">📥 When to Enter</div>
+                <p className="text-sm text-[#c9d1d9] leading-relaxed whitespace-pre-wrap">{idea.whenToEnter}</p>
+              </div>
+            )}
+            {idea.whenToExit && (
+              <div className="bg-white dark:bg-[#0f1419] border border-gray-200 dark:border-[#30363d] rounded-lg p-4">
+                <div className="text-sm font-semibold text-[#ff8c42] mb-2">📤 When to Exit</div>
+                <p className="text-sm text-[#c9d1d9] leading-relaxed whitespace-pre-wrap">{idea.whenToExit}</p>
+              </div>
+            )}
           </div>
         </div>
 

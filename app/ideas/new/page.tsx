@@ -24,6 +24,8 @@ export default function ShareIdeaPage() {
   const [formData, setFormData] = useState({
     symbol: '',
     analysis: '',
+    whenToEnter: '',
+    whenToExit: '',
     visibility: 'public',
     timeframe: 'short term',
     riskLevel: 'medium',
@@ -75,6 +77,8 @@ export default function ShareIdeaPage() {
         symbol: formData.symbol.toUpperCase(),
         title: `${formData.symbol.toUpperCase()} Trade Idea`,
         analysis: formData.analysis,
+        whenToEnter: formData.whenToEnter,
+        whenToExit: formData.whenToExit,
         visibility: formData.visibility,
         timeframe: formData.timeframe,
         riskLevel: formData.riskLevel,
@@ -161,7 +165,7 @@ export default function ShareIdeaPage() {
               </div>
             </div>
 
-            <div>
+            <div className="mb-4">
               <label className="block text-sm font-semibold text-gray-600 dark:text-[#8b949e] mb-2">Analysis & Rationale *</label>
               <textarea
                 placeholder="Provide detailed analysis, reasoning, and research behind this trade idea..."
@@ -171,6 +175,30 @@ export default function ShareIdeaPage() {
                 className="w-full bg-white dark:bg-[#0f1419] border border-gray-200 dark:border-[#30363d] rounded-lg px-4 py-3 text-gray-900 dark:text-white placeholder-[#8b949e] outline-none focus:border-[#ff8c42] transition-colors resize-y leading-relaxed"
               />
               <p className="text-xs text-gray-600 dark:text-[#8b949e] mt-1">{formData.analysis.length} characters</p>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-semibold text-gray-600 dark:text-[#8b949e] mb-2">When to Enter *</label>
+                <textarea
+                  placeholder="e.g., Wait for breakout above 1250, or when RSI crosses 50..."
+                  value={formData.whenToEnter}
+                  onChange={(e) => setFormData({ ...formData, whenToEnter: e.target.value })}
+                  rows={4}
+                  className="w-full bg-white dark:bg-[#0f1419] border border-gray-200 dark:border-[#30363d] rounded-lg px-4 py-3 text-gray-900 dark:text-white placeholder-[#8b949e] outline-none focus:border-[#ff8c42] transition-colors resize-y leading-relaxed"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-gray-600 dark:text-[#8b949e] mb-2">When to Exit *</label>
+                <textarea
+                  placeholder="e.g., Exit at target levels or if price falls below support..."
+                  value={formData.whenToExit}
+                  onChange={(e) => setFormData({ ...formData, whenToExit: e.target.value })}
+                  rows={4}
+                  className="w-full bg-white dark:bg-[#0f1419] border border-gray-200 dark:border-[#30363d] rounded-lg px-4 py-3 text-gray-900 dark:text-white placeholder-[#8b949e] outline-none focus:border-[#ff8c42] transition-colors resize-y leading-relaxed"
+                />
+              </div>
             </div>
           </div>
 
