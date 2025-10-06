@@ -83,9 +83,20 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-[#0f1419] flex items-center justify-center px-4">
-      <div className="bg-white dark:bg-[#1c2128] rounded-xl p-8 w-full max-w-md border border-gray-200 dark:border-[#30363d]">
+      <div className="bg-white dark:bg-[#1c2128] rounded-xl p-8 w-full max-w-md border border-gray-200 dark:border-[#30363d] relative">
+        {/* Back Button */}
+        <button
+          onClick={() => router.push('/')}
+          className="absolute top-4 left-4 text-gray-600 dark:text-[#8b949e] hover:text-gray-900 dark:hover:text-white transition-colors flex items-center gap-1"
+        >
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <path d="M19 12H5M12 19l-7-7 7-7"/>
+          </svg>
+          <span className="text-sm font-semibold">Back</span>
+        </button>
+
         {/* Logo */}
-        <div className="flex justify-center mb-6">
+        <div className="flex justify-center mb-6 mt-4">
           <div className="w-20 h-20 rounded-full bg-[#ff8c42] flex items-center justify-center">
             <MyPortfolioIcon size={48} />
           </div>

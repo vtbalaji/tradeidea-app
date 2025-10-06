@@ -14,8 +14,12 @@ export default function IdeasHubPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [activeTab, setActiveTab] = useState('all');
 
-  // Check email verification
+  // Check authentication and email verification
   useEffect(() => {
+    if (!user) {
+      router.push('/login');
+      return;
+    }
     if (user && !user.emailVerified) {
       router.push('/verify');
     }

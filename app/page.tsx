@@ -105,10 +105,10 @@ export default function Home() {
           {/* Feature 2 */}
           <div className="bg-gray-50 dark:bg-[#1c2128] border border-gray-200 dark:border-[#30363d] rounded-xl p-6 text-center">
             <div className="text-5xl mb-4">📊</div>
-            <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-3">Track Your Portfolio</h3>
+            <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-3">Real-time Technical Analysis</h3>
             <p className="text-gray-600 dark:text-[#8b949e]">
-              Add ideas to your portfolio and track performance in real-time.
-              Monitor your wins, losses, and overall returns.
+              Automated technical indicators including 50 EMA/200 MA crossovers, Golden Cross,
+              RSI, MACD, and Bollinger Bands for every stock.
             </p>
           </div>
 
@@ -120,6 +120,47 @@ export default function Home() {
               Discover and follow successful traders. Get notified when they share
               new ideas and learn from the best.
             </p>
+          </div>
+        </div>
+      </section>
+
+      {/* Coming Soon - Smart Alerts */}
+      <section className="max-w-7xl mx-auto px-6 py-16">
+        <div className="bg-gradient-to-r from-[#ff8c42]/10 to-purple-500/10 border-2 border-[#ff8c42] dark:border-[#ff8c42] rounded-2xl p-12 text-center relative overflow-hidden">
+          <div className="absolute top-4 right-4 px-4 py-1 bg-[#ff8c42] text-white text-sm font-bold rounded-full">
+            Coming Soon
+          </div>
+          <div className="text-6xl mb-6">🔔</div>
+          <h2 className="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mb-4">
+            Smart Signal Alerts
+          </h2>
+          <p className="text-lg text-gray-600 dark:text-[#8b949e] mb-6 max-w-3xl mx-auto">
+            Set your buy/sell parameters based on technical, fundamental, and sentiment analysis.
+            Our system will automatically scan the market and notify you when opportunities match your criteria.
+            <strong className="block mt-2 text-gray-900 dark:text-white">No more manual tracking!</strong>
+          </p>
+          <div className="grid md:grid-cols-3 gap-6 mt-8 max-w-4xl mx-auto">
+            <div className="bg-white dark:bg-[#1c2128] border border-gray-200 dark:border-[#30363d] rounded-lg p-4">
+              <div className="text-2xl mb-2">📈</div>
+              <h4 className="font-bold text-gray-900 dark:text-white mb-1">Technical Signals</h4>
+              <p className="text-sm text-gray-600 dark:text-[#8b949e]">
+                EMA crossovers, RSI levels, MACD divergence, volume breakouts
+              </p>
+            </div>
+            <div className="bg-white dark:bg-[#1c2128] border border-gray-200 dark:border-[#30363d] rounded-lg p-4">
+              <div className="text-2xl mb-2">💼</div>
+              <h4 className="font-bold text-gray-900 dark:text-white mb-1">Fundamental Filters</h4>
+              <p className="text-sm text-gray-600 dark:text-[#8b949e]">
+                P/E ratio, market cap, revenue growth, profit margins
+              </p>
+            </div>
+            <div className="bg-white dark:bg-[#1c2128] border border-gray-200 dark:border-[#30363d] rounded-lg p-4">
+              <div className="text-2xl mb-2">💬</div>
+              <h4 className="font-bold text-gray-900 dark:text-white mb-1">Sentiment Analysis</h4>
+              <p className="text-sm text-gray-600 dark:text-[#8b949e]">
+                News sentiment, social media buzz, analyst ratings
+              </p>
+            </div>
           </div>
         </div>
       </section>
