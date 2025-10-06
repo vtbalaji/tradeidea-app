@@ -5,16 +5,13 @@ import { collection, query, where, getDocs, orderBy, limit } from 'firebase/fire
 import { db } from '@/lib/firebase';
 
 export interface Symbol {
-  id: string;
-  symbol: string;
-  name: string;
-  exchange: 'NSE' | 'BSE';
-  sector?: string;
-  industry?: string;
-  marketCap?: number;
-  currency: string;
-  isin?: string;
-  isActive: boolean;
+  id: string;          // NS_{SYMBOL}
+  symbol: string;      // RELIANCE
+  name: string;        // Reliance Industries Ltd
+  exchange: string;    // NSE
+  yahooSymbol: string; // RELIANCE.NS
+  active: boolean;
+  addedAt?: any;
 }
 
 interface SymbolsContextType {
@@ -45,38 +42,24 @@ export const SymbolsProvider: React.FC<{ children: React.ReactNode }> = ({ child
       const symbolsRef = collection(db, 'symbols');
       const searchTerm = searchQuery.toUpperCase();
 
-      // Search by symbol (exact match or starts with)
+      // Simplified query - just search by symbol (no compound index needed)
       const symbolQuery = query(
         symbolsRef,
         where('symbol', '>=', searchTerm),
         where('symbol', '<=', searchTerm + '\uf8ff'),
-        where('isActive', '==', true),
         orderBy('symbol'),
         limit(maxResults)
       );
 
       const snapshot = await getDocs(symbolQuery);
-      const results = snapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
-      })) as Symbol[];
 
-      // If no results, try searching by name
-      if (results.length === 0) {
-        const nameQuery = query(
-          symbolsRef,
-          where('searchName', '>=', searchTerm),
-          where('searchName', '<=', searchTerm + '\uf8ff'),
-          where('isActive', '==', true),
-          limit(maxResults)
-        );
-
-        const nameSnapshot = await getDocs(nameQuery);
-        return nameSnapshot.docs.map(doc => ({
+      // Filter active symbols client-side
+      const results = snapshot.docs
+        .map(doc => ({
           id: doc.id,
           ...doc.data()
-        })) as Symbol[];
-      }
+        }) as Symbol)
+        .filter(symbol => symbol.active !== false);
 
       return results;
     } catch (error) {

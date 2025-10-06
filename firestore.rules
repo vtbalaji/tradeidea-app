@@ -1,1 +1,47 @@
-/Volumes/ssd-backup/git/SmartFarm/myportfolio-web/scripts/nse-symbols-curated.csv
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Helper functions
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    // Symbols collection - READ ONLY for all authenticated users
+    match /symbols/{symbolId} {
+      allow read: if isSignedIn();
+      allow write: if false;
+    }
+
+    // Technicals collection - READ ONLY for all authenticated users
+    match /technicals/{symbolId} {
+      allow read: if isSignedIn();
+      allow write: if false;
+    }
+
+    // Users collection
+    match /users/{userId} {
+      allow read: if isSignedIn();
+      allow write: if isOwner(userId);
+    }
+
+    // Ideas collection
+    match /ideas/{ideaId} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn();
+      allow update, delete: if isSignedIn() &&
+        resource.data.userId == request.auth.uid;
+    }
+
+    // Portfolio collection
+    match /portfolio/{positionId} {
+      allow read, write: if isSignedIn() &&
+        resource.data.userId == request.auth.uid;
+      allow create: if isSignedIn();
+    }
+  }
+}

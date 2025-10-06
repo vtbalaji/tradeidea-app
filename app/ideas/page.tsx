@@ -86,11 +86,39 @@ export default function IdeasHubPage() {
           </span>
         </div>
 
+        {/* Technical Signals */}
+        {idea.technicals && (
+          <div className="flex flex-wrap gap-2 mb-3">
+            {idea.technicals.signals?.priceCrossSMA200 === 'above' && (
+              <span className="px-2 py-1 bg-green-500/20 text-green-400 text-xs font-semibold rounded-full flex items-center gap-1">
+                📈 Above 200 MA
+              </span>
+            )}
+            {idea.technicals.signals?.priceCrossEMA50 === 'above' && (
+              <span className="px-2 py-1 bg-blue-500/20 text-blue-400 text-xs font-semibold rounded-full flex items-center gap-1">
+                📊 Above 50 EMA
+              </span>
+            )}
+            {idea.technicals.signals?.ema50CrossSMA200 === 'above' && (
+              <span className="px-2 py-1 bg-purple-500/20 text-purple-400 text-xs font-semibold rounded-full flex items-center gap-1">
+                🔥 50 EMA/200 MA Cross
+              </span>
+            )}
+            {idea.technicals.signals?.goldenCross && (
+              <span className="px-2 py-1 bg-yellow-500/20 text-yellow-400 text-xs font-semibold rounded-full flex items-center gap-1">
+                ⭐ Golden Cross
+              </span>
+            )}
+          </div>
+        )}
+
         {/* When to Enter */}
         {idea.whenToEnter && (
           <div className="bg-white dark:bg-[#0f1419] border border-gray-200 dark:border-[#30363d] rounded-lg p-3 mb-3">
-            <div className="text-xs font-semibold text-[#ff8c42] mb-1">📥 When to Enter</div>
-            <p className="text-sm text-gray-600 dark:text-[#8b949e] leading-relaxed line-clamp-2 whitespace-pre-wrap">{idea.whenToEnter}</p>
+            <p className="text-sm text-gray-600 dark:text-[#8b949e] leading-relaxed whitespace-pre-wrap">
+              <span className="font-semibold text-[#ff8c42]">📥 When to Enter: </span>
+              {idea.whenToEnter}
+            </p>
           </div>
         )}
 

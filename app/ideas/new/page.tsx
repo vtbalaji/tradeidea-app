@@ -5,14 +5,19 @@ import { useRouter } from 'next/navigation';
 import Navigation from '../../../components/Navigation';
 import { useTrading } from '../../../contexts/TradingContext';
 import { useAuth } from '../../../contexts/AuthContext';
+import { useSymbols, Symbol } from '../../../contexts/SymbolsContext';
 import { TargetIcon, SparklesIcon } from '@/components/icons';
 
 export default function ShareIdeaPage() {
   const router = useRouter();
   const { user } = useAuth();
   const { createIdea } = useTrading();
+  const { searchSymbols } = useSymbols();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [symbolSuggestions, setSymbolSuggestions] = useState<Symbol[]>([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [selectedSymbol, setSelectedSymbol] = useState<Symbol | null>(null);
 
   // Check email verification
   useEffect(() => {
@@ -37,6 +42,27 @@ export default function ShareIdeaPage() {
     analysisType: 'both',
     tags: '',
   });
+
+  // Handle symbol search
+  const handleSymbolSearch = async (value: string) => {
+    setFormData({ ...formData, symbol: value });
+
+    if (value.length >= 1) {
+      const results = await searchSymbols(value, 8);
+      setSymbolSuggestions(results);
+      setShowSuggestions(true);
+    } else {
+      setSymbolSuggestions([]);
+      setShowSuggestions(false);
+    }
+  };
+
+  // Handle symbol selection
+  const handleSymbolSelect = (symbol: Symbol) => {
+    setFormData({ ...formData, symbol: symbol.symbol });
+    setSelectedSymbol(symbol);
+    setShowSuggestions(false);
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -125,15 +151,50 @@ export default function ShareIdeaPage() {
             <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-5">Basic Information</h2>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-              <div>
+              <div className="relative">
                 <label className="block text-sm font-semibold text-gray-600 dark:text-[#8b949e] mb-2">Stock Symbol *</label>
                 <input
                   type="text"
                   placeholder="e.g., RELIANCE, HDFCBANK"
                   value={formData.symbol}
-                  onChange={(e) => setFormData({ ...formData, symbol: e.target.value })}
+                  onChange={(e) => handleSymbolSearch(e.target.value)}
+                  onFocus={() => formData.symbol && setShowSuggestions(true)}
                   className="w-full bg-white dark:bg-[#0f1419] border border-gray-200 dark:border-[#30363d] rounded-lg px-3 py-3 text-gray-900 dark:text-white placeholder-[#8b949e] outline-none focus:border-[#ff8c42] transition-colors"
+                  autoComplete="off"
                 />
+
+                {/* Autocomplete Dropdown */}
+                {showSuggestions && symbolSuggestions.length > 0 && (
+                  <>
+                    <div
+                      className="fixed inset-0 z-10"
+                      onClick={() => setShowSuggestions(false)}
+                    />
+                    <div className="absolute top-full left-0 right-0 mt-1 bg-white dark:bg-[#1c2128] border border-gray-200 dark:border-[#30363d] rounded-lg shadow-xl max-h-60 overflow-y-auto z-20">
+                      {symbolSuggestions.map((symbol) => (
+                        <button
+                          key={symbol.id}
+                          type="button"
+                          onClick={() => handleSymbolSelect(symbol)}
+                          className="w-full flex items-center justify-between px-4 py-3 hover:bg-gray-50 dark:hover:bg-[#30363d] transition-colors text-left border-b border-gray-100 dark:border-[#30363d] last:border-0"
+                        >
+                          <div className="flex-1">
+                            <div className="font-semibold text-gray-900 dark:text-white">{symbol.symbol}</div>
+                            <div className="text-xs text-gray-600 dark:text-[#8b949e] truncate">{symbol.name}</div>
+                          </div>
+                          <div className="text-xs text-[#ff8c42] ml-2">{symbol.exchange}</div>
+                        </button>
+                      ))}
+                    </div>
+                  </>
+                )}
+
+                {/* Selected Symbol Info */}
+                {selectedSymbol && (
+                  <div className="mt-2 text-xs text-gray-600 dark:text-[#8b949e]">
+                    ✓ {selectedSymbol.name}
+                  </div>
+                )}
               </div>
 
               <div>
