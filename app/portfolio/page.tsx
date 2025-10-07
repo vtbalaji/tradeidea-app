@@ -326,7 +326,16 @@ export default function PortfolioPage() {
             >
               {/* Header */}
               <div className="flex justify-between items-start mb-4">
-                <h3 className="text-2xl font-bold text-gray-900 dark:text-white">{position.symbol}</h3>
+                <div className="flex items-center gap-2">
+                  <h3 className="text-2xl font-bold text-gray-900 dark:text-white">{position.symbol}</h3>
+                  <span className={`px-2 py-0.5 text-xs font-semibold rounded ${
+                    position.tradeType === 'Long'
+                      ? 'bg-green-500/20 text-green-400'
+                      : 'bg-red-500/20 text-red-400'
+                  }`}>
+                    {position.tradeType || 'Long'}
+                  </span>
+                </div>
                 <div className={`text-right ${isProfit ? 'text-green-500' : 'text-red-500'}`}>
                   <p className="text-xl font-bold">{isProfit ? '+' : ''}₹{pnl.toFixed(2)}</p>
                   <p className="text-sm">({isProfit ? '+' : ''}{pnlPercent.toFixed(2)}%)</p>
