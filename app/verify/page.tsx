@@ -42,16 +42,28 @@ export default function VerifyEmailPage() {
     if (!user) return;
 
     setChecking(true);
-    await user.reload();
 
-    if (user.emailVerified) {
-      setVerified(true);
-      setTimeout(() => {
-        router.push('/ideas');
-      }, 2000);
-    } else {
+    try {
+      // Force reload the user from Firebase
+      await user.reload();
+
+      // Get fresh user object from auth
+      const auth = user.auth;
+      const currentUser = auth.currentUser;
+
+      if (currentUser?.emailVerified) {
+        setVerified(true);
+        setTimeout(() => {
+          router.push('/ideas');
+        }, 2000);
+      } else {
+        setChecking(false);
+        alert('Email not verified yet. Please check your inbox and click the verification link.');
+      }
+    } catch (error) {
+      console.error('Error checking verification:', error);
       setChecking(false);
-      alert('Email not verified yet. Please check your inbox and click the verification link.');
+      alert('Error checking verification. Please try again.');
     }
   };
 

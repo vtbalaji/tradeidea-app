@@ -6,6 +6,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
 import { IdeaIcon, SparklesIcon, TrendingIcon, MyPortfolioIcon } from '@/components/icons';
+import NotificationBell from './NotificationBell';
 
 export default function Navigation() {
   const pathname = usePathname();
@@ -133,10 +134,10 @@ export default function Navigation() {
             )}
           </div>
 
-          <button className="hidden md:flex w-9 h-9 rounded-full bg-gray-200 dark:bg-[#30363d] items-center justify-center text-base hover:bg-gray-300 dark:hover:bg-[#3c444d] transition-colors">
-            🔔
-          </button>
-
+          {/* Notification Bell */}
+          <div className="hidden md:block">
+            <NotificationBell />
+          </div>
 
           <div className="relative">
             <button

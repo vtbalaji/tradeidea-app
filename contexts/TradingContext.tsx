@@ -126,9 +126,24 @@ interface Comment {
   createdAt: Timestamp;
 }
 
+interface Notification {
+  id: string;
+  userId: string;
+  type: 'new_idea' | 'idea_update' | 'new_follower';
+  fromUserId: string;
+  fromUserName: string;
+  ideaId?: string;
+  ideaSymbol?: string;
+  message: string;
+  read: boolean;
+  createdAt: Timestamp;
+}
+
 interface TradingContextType {
   ideas: TradingIdea[];
   myPortfolio: PortfolioPosition[];
+  notifications: Notification[];
+  unreadCount: number;
   loading: boolean;
   createIdea: (ideaData: Partial<TradingIdea>) => Promise<string>;
   updateIdea: (ideaId: string, updates: Partial<TradingIdea>) => Promise<void>;
@@ -142,6 +157,8 @@ interface TradingContextType {
   closePosition: (positionId: string, closeData: Partial<PortfolioPosition>) => Promise<void>;
   addTransaction: (positionId: string, transaction: Omit<Transaction, 'timestamp'>) => Promise<void>;
   exitTrade: (positionId: string, exitPrice: number, exitDate: string, exitReason?: string) => Promise<void>;
+  markNotificationAsRead: (notificationId: string) => Promise<void>;
+  markAllNotificationsAsRead: () => Promise<void>;
 }
 
 const TradingContext = createContext<TradingContextType | undefined>(undefined);
@@ -162,6 +179,8 @@ export const TradingProvider: React.FC<TradingProviderProps> = ({ children }) =>
   const { user } = useAuth();
   const [ideas, setIdeas] = useState<TradingIdea[]>([]);
   const [myPortfolio, setMyPortfolio] = useState<PortfolioPosition[]>([]);
+  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [unreadCount, setUnreadCount] = useState(0);
   const [loading, setLoading] = useState(true);
 
   // Fetch all trading ideas
@@ -213,6 +232,42 @@ export const TradingProvider: React.FC<TradingProviderProps> = ({ children }) =>
     return () => unsubscribe();
   }, [user]);
 
+  // Fetch user's notifications
+  useEffect(() => {
+    if (!user) {
+      setNotifications([]);
+      setUnreadCount(0);
+      return;
+    }
+
+    const notificationsRef = collection(db, 'notifications');
+    const q = query(
+      notificationsRef,
+      where('userId', '==', user.uid)
+    );
+
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const notificationsData = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      })) as Notification[];
+
+      // Sort by createdAt in memory (newest first)
+      notificationsData.sort((a, b) => {
+        const aTime = a.createdAt?.toMillis?.() || 0;
+        const bTime = b.createdAt?.toMillis?.() || 0;
+        return bTime - aTime;
+      });
+
+      setNotifications(notificationsData);
+      setUnreadCount(notificationsData.filter(n => !n.read).length);
+    }, (error) => {
+      console.error('Error fetching notifications:', error);
+    });
+
+    return () => unsubscribe();
+  }, [user]);
+
   // Create a new trading idea
   const createIdea = async (ideaData: Partial<TradingIdea>): Promise<string> => {
     if (!user) throw new Error('User must be logged in');
@@ -233,6 +288,47 @@ export const TradingProvider: React.FC<TradingProviderProps> = ({ children }) =>
       };
 
       const docRef = await addDoc(ideasRef, newIdea);
+
+      // Find all users who follow this trader's ideas
+      // Get all ideas by this user and collect unique followers
+      const userIdeasQuery = query(
+        collection(db, 'tradingIdeas'),
+        where('userId', '==', user.uid)
+      );
+      const userIdeasSnapshot = await getDocs(userIdeasQuery);
+
+      const followerIds = new Set<string>();
+      userIdeasSnapshot.docs.forEach(doc => {
+        const data = doc.data();
+        if (data.followers && Array.isArray(data.followers)) {
+          data.followers.forEach((followerId: string) => {
+            if (followerId !== user.uid) { // Don't notify yourself
+              followerIds.add(followerId);
+            }
+          });
+        }
+      });
+
+      // Create notifications for all followers
+      const notificationsRef = collection(db, 'notifications');
+      const notificationPromises = Array.from(followerIds).map(followerId => {
+        const notification = {
+          userId: followerId,
+          type: 'new_idea' as const,
+          fromUserId: user.uid,
+          fromUserName: user.displayName || user.email || 'A trader',
+          ideaId: docRef.id,
+          ideaSymbol: ideaData.symbol || '',
+          message: 'posted a new trading idea:',
+          read: false,
+          createdAt: serverTimestamp()
+        };
+        return addDoc(notificationsRef, notification);
+      });
+
+      await Promise.all(notificationPromises);
+      console.log(`✅ Created ${notificationPromises.length} notifications for new idea`);
+
       return docRef.id;
     } catch (error) {
       console.error('Error creating idea:', error);
@@ -560,9 +656,43 @@ export const TradingProvider: React.FC<TradingProviderProps> = ({ children }) =>
     }
   };
 
+  // Mark a notification as read
+  const markNotificationAsRead = async (notificationId: string): Promise<void> => {
+    if (!user) throw new Error('User must be logged in');
+
+    try {
+      const notificationRef = doc(db, 'notifications', notificationId);
+      await updateDoc(notificationRef, {
+        read: true
+      });
+    } catch (error) {
+      console.error('Error marking notification as read:', error);
+      throw error;
+    }
+  };
+
+  // Mark all notifications as read
+  const markAllNotificationsAsRead = async (): Promise<void> => {
+    if (!user) throw new Error('User must be logged in');
+
+    try {
+      const unreadNotifications = notifications.filter(n => !n.read);
+      const updatePromises = unreadNotifications.map(notification => {
+        const notificationRef = doc(db, 'notifications', notification.id);
+        return updateDoc(notificationRef, { read: true });
+      });
+      await Promise.all(updatePromises);
+    } catch (error) {
+      console.error('Error marking all notifications as read:', error);
+      throw error;
+    }
+  };
+
   const value: TradingContextType = {
     ideas,
     myPortfolio,
+    notifications,
+    unreadCount,
     loading,
     createIdea,
     updateIdea,
@@ -575,7 +705,9 @@ export const TradingProvider: React.FC<TradingProviderProps> = ({ children }) =>
     updatePosition,
     closePosition,
     addTransaction,
-    exitTrade
+    exitTrade,
+    markNotificationAsRead,
+    markAllNotificationsAsRead
   };
 
   return (

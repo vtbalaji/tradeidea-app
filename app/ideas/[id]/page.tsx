@@ -307,13 +307,13 @@ export default function IdeaDetailPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {idea.whenToEnter && (
               <div className="bg-white dark:bg-[#0f1419] border border-gray-200 dark:border-[#30363d] rounded-lg p-4">
-                <div className="text-sm font-semibold text-[#ff8c42] mb-2">📥 When to Enter</div>
+                <div className="text-sm font-semibold text-[#ff8c42] mb-2">When to Enter</div>
                 <p className="text-sm text-[#c9d1d9] leading-relaxed whitespace-pre-wrap">{idea.whenToEnter}</p>
               </div>
             )}
             {idea.whenToExit && (
               <div className="bg-white dark:bg-[#0f1419] border border-gray-200 dark:border-[#30363d] rounded-lg p-4">
-                <div className="text-sm font-semibold text-[#ff8c42] mb-2">📤 When to Exit</div>
+                <div className="text-sm font-semibold text-[#ff8c42] mb-2">When to Exit</div>
                 <p className="text-sm text-[#c9d1d9] leading-relaxed whitespace-pre-wrap">{idea.whenToExit}</p>
               </div>
             )}
@@ -336,7 +336,7 @@ export default function IdeaDetailPage() {
               }}
               className="bg-[#ff8c42] hover:bg-[#ff9a58] text-gray-900 dark:text-white font-semibold py-2 px-4 rounded-lg transition-colors text-sm"
             >
-              ✅ I Took This Trade
+              Add to Portfolio
             </button>
           </div>
 

@@ -96,22 +96,22 @@ export default function IdeasHubPage() {
           <div className="flex flex-wrap gap-2 mb-3">
             {idea.technicals.signals?.priceCrossSMA200 === 'above' && (
               <span className="px-2 py-1 bg-green-500/20 text-green-400 text-xs font-semibold rounded-full flex items-center gap-1">
-                📈 Above 200 MA
+                Above 200 MA
               </span>
             )}
             {idea.technicals.signals?.priceCrossEMA50 === 'above' && (
               <span className="px-2 py-1 bg-blue-500/20 text-blue-400 text-xs font-semibold rounded-full flex items-center gap-1">
-                📊 Above 50 EMA
+                Above 50 EMA
               </span>
             )}
             {idea.technicals.signals?.ema50CrossSMA200 === 'above' && (
               <span className="px-2 py-1 bg-purple-500/20 text-purple-400 text-xs font-semibold rounded-full flex items-center gap-1">
-                🔥 50 EMA/200 MA Cross
+                50 EMA/200 MA Cross
               </span>
             )}
             {idea.technicals.signals?.goldenCross && (
               <span className="px-2 py-1 bg-yellow-500/20 text-yellow-400 text-xs font-semibold rounded-full flex items-center gap-1">
-                ⭐ Golden Cross
+                Golden Cross
               </span>
             )}
           </div>
@@ -121,7 +121,7 @@ export default function IdeasHubPage() {
         {idea.whenToEnter && (
           <div className="bg-white dark:bg-[#0f1419] border border-gray-200 dark:border-[#30363d] rounded-lg p-3 mb-3">
             <p className="text-sm text-gray-600 dark:text-[#8b949e] leading-relaxed whitespace-pre-wrap">
-              <span className="font-semibold text-[#ff8c42]">📥 When to Enter: </span>
+              <span className="font-semibold text-[#ff8c42]">When to Enter: </span>
               {idea.whenToEnter}
             </p>
           </div>
@@ -257,11 +257,11 @@ export default function IdeasHubPage() {
           </div>
         ) : (
           <div className="space-y-4">
-            {/* Cooking Ideas Section */}
+            {/* Brewing Ideas Section */}
             {cookingIdeas.length > 0 && (
               <div>
                 <div className="flex items-center gap-2 mb-2">
-                  <h2 className="text-xl font-bold text-gray-900 dark:text-white">🍳 Cooking Ideas</h2>
+                  <h2 className="text-xl font-bold text-gray-900 dark:text-white">☕ Brewing Ideas</h2>
                   <span className="px-2 py-0.5 bg-orange-500/20 text-orange-400 text-xs font-semibold rounded-full">
                     {cookingIdeas.length}
                   </span>
