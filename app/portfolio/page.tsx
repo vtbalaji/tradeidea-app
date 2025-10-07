@@ -194,19 +194,7 @@ export default function PortfolioPage() {
             >
               {/* Header */}
               <div className="flex justify-between items-start mb-4">
-                <div>
-                  <h3 className="text-2xl font-bold text-gray-900 dark:text-white">{position.symbol}</h3>
-                  <div className="flex gap-2 mt-2">
-                    <span className="px-2.5 py-1 bg-blue-500/20 text-blue-400 text-xs font-semibold rounded">
-                      {position.tradeType}
-                    </span>
-                    <span className={`px-2.5 py-1 text-xs font-semibold rounded ${
-                      position.status === 'open' ? 'bg-green-500/20 text-green-400' : 'bg-gray-500/20 text-gray-400'
-                    }`}>
-                      {position.status}
-                    </span>
-                  </div>
-                </div>
+                <h3 className="text-2xl font-bold text-gray-900 dark:text-white">{position.symbol}</h3>
                 <div className={`text-right ${isProfit ? 'text-green-500' : 'text-red-500'}`}>
                   <p className="text-xl font-bold">{isProfit ? '+' : ''}₹{pnl.toFixed(2)}</p>
                   <p className="text-sm">({isProfit ? '+' : ''}{pnlPercent.toFixed(2)}%)</p>
@@ -216,17 +204,7 @@ export default function PortfolioPage() {
               {/* Exit Reason for Closed */}
               {position.exitReason && position.status === 'closed' && (
                 <div className="mb-3 px-3 py-2 bg-orange-500/20 border border-orange-500/30 rounded-lg">
-                  <p className="text-xs text-orange-400">📤 {position.exitReason}</p>
-                </div>
-              )}
-
-              {/* Exit Criteria Badges */}
-              {position.exitCriteria && position.status === 'open' && (
-                <div className="flex flex-wrap gap-1.5 mb-3">
-                  {position.exitCriteria.exitBelow50EMA && <span className="px-2 py-1 bg-blue-500/20 text-blue-400 text-xs font-semibold rounded">📉 50 EMA</span>}
-                  {position.exitCriteria.exitBelowPrice && <span className="px-2 py-1 bg-purple-500/20 text-purple-400 text-xs font-semibold rounded">📉 ₹{position.exitCriteria.exitBelowPrice}</span>}
-                  {position.exitCriteria.exitAtStopLoss && <span className="px-2 py-1 bg-red-500/20 text-red-400 text-xs font-semibold rounded">🛑 SL</span>}
-                  {position.exitCriteria.exitAtTarget && <span className="px-2 py-1 bg-green-500/20 text-green-400 text-xs font-semibold rounded">🎯 Target</span>}
+                  <p className="text-sm text-orange-400 font-semibold">📤 Exited: {position.exitReason}</p>
                 </div>
               )}
 
@@ -236,7 +214,7 @@ export default function PortfolioPage() {
                   {alerts.map((alert, idx) => (
                     <div
                       key={idx}
-                      className={`px-3 py-2 rounded-lg text-xs font-semibold ${
+                      className={`px-3 py-2 rounded-lg text-sm font-semibold ${
                         alert.type === 'critical'
                           ? 'bg-red-500/20 text-red-400 border border-red-500/30'
                           : alert.type === 'warning'
