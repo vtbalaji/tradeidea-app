@@ -104,6 +104,16 @@ export default function IdeasHubPage() {
                 Above 50 EMA
               </span>
             )}
+            {idea.technicals.signals?.supertrendBullish && (
+              <span className="px-2 py-1 bg-emerald-500/20 text-emerald-400 text-xs font-semibold rounded-full flex items-center gap-1">
+                Supertrend Bullish
+              </span>
+            )}
+            {idea.technicals.signals?.supertrendBearish && (
+              <span className="px-2 py-1 bg-red-500/20 text-red-400 text-xs font-semibold rounded-full flex items-center gap-1">
+                Supertrend Bearish
+              </span>
+            )}
             {idea.technicals.signals?.ema50CrossSMA200 === 'above' && (
               <span className="px-2 py-1 bg-purple-500/20 text-purple-400 text-xs font-semibold rounded-full flex items-center gap-1">
                 50 EMA/200 MA Cross
@@ -114,6 +124,15 @@ export default function IdeasHubPage() {
                 Golden Cross
               </span>
             )}
+          </div>
+        )}
+
+        {/* Warning if no technical data available */}
+        {!idea.technicals && (
+          <div className="mb-3 p-2 bg-yellow-500/10 border border-yellow-500/30 rounded-lg">
+            <p className="text-xs text-yellow-600 dark:text-yellow-400">
+              ⚠️ Technical data not available. Waiting for next analysis cycle.
+            </p>
           </div>
         )}
 
@@ -265,6 +284,24 @@ export default function IdeasHubPage() {
                   <span className="px-2 py-0.5 bg-orange-500/20 text-orange-400 text-xs font-semibold rounded-full">
                     {cookingIdeas.length}
                   </span>
+                  {cookingIdeas[0]?.technicals?.updatedAt && (
+                    <span className="text-xs text-gray-600 dark:text-[#8b949e]">
+                      Technical data updated: {(() => {
+                        const updatedAt = cookingIdeas[0].technicals.updatedAt.toDate();
+                        const now = new Date();
+                        const diffHours = Math.floor((now.getTime() - updatedAt.getTime()) / (1000 * 60 * 60));
+
+                        if (diffHours < 1) {
+                          return 'just now';
+                        } else if (diffHours < 24) {
+                          return `${diffHours}h ago`;
+                        } else {
+                          const diffDays = Math.floor(diffHours / 24);
+                          return `${diffDays}d ago`;
+                        }
+                      })()}
+                    </span>
+                  )}
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                   {cookingIdeas.map((idea) => renderIdeaCard(idea))}
@@ -280,6 +317,24 @@ export default function IdeasHubPage() {
                   <span className="px-2 py-0.5 bg-green-500/20 text-green-400 text-xs font-semibold rounded-full">
                     {activeIdeas.length}
                   </span>
+                  {activeIdeas[0]?.technicals?.updatedAt && (
+                    <span className="text-xs text-gray-600 dark:text-[#8b949e]">
+                      Technical data updated: {(() => {
+                        const updatedAt = activeIdeas[0].technicals.updatedAt.toDate();
+                        const now = new Date();
+                        const diffHours = Math.floor((now.getTime() - updatedAt.getTime()) / (1000 * 60 * 60));
+
+                        if (diffHours < 1) {
+                          return 'just now';
+                        } else if (diffHours < 24) {
+                          return `${diffHours}h ago`;
+                        } else {
+                          const diffDays = Math.floor(diffHours / 24);
+                          return `${diffDays}d ago`;
+                        }
+                      })()}
+                    </span>
+                  )}
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                   {activeIdeas.map((idea) => renderIdeaCard(idea))}

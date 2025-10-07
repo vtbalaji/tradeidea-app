@@ -36,13 +36,13 @@ except ValueError:
 db = firestore.client()
 
 def fetch_eod_data(symbol):
-    """Fetch 365 days of EOD data from Yahoo Finance"""
+    """Fetch 730 days of EOD data from Yahoo Finance (2 years for weekly calculation)"""
     try:
         print(f'  📥 Fetching data for {symbol}...')
         ticker = yf.Ticker(f'{symbol}.NS')
 
         end_date = datetime.now()
-        start_date = end_date - timedelta(days=365)
+        start_date = end_date - timedelta(days=730)  # 2 years for better weekly data
 
         df = ticker.history(start=start_date, end=end_date)
 
@@ -57,10 +57,33 @@ def fetch_eod_data(symbol):
         print(f'  ❌ Error: {str(e)}')
         return None
 
+def resample_to_weekly(df):
+    """Resample daily data to weekly data"""
+    weekly = df.resample('W').agg({
+        'Open': 'first',
+        'High': 'max',
+        'Low': 'min',
+        'Close': 'last',
+        'Volume': 'sum'
+    }).dropna()
+    return weekly
+
+def calculate_atr(df, period=14):
+    """Calculate Average True Range"""
+    high_low = df['High'] - df['Low']
+    high_close = np.abs(df['High'] - df['Close'].shift())
+    low_close = np.abs(df['Low'] - df['Close'].shift())
+
+    ranges = pd.concat([high_low, high_close, low_close], axis=1)
+    true_range = np.max(ranges, axis=1)
+    atr = true_range.rolling(period).mean()
+
+    return atr
+
 def calculate_supertrend(df, period=10, multiplier=3):
-    """Calculate Supertrend indicator"""
+    """Calculate Supertrend indicator with proper ATR"""
+    atr = calculate_atr(df, period)
     hl2 = (df['High'] + df['Low']) / 2
-    atr = df['High'].rolling(period).max() - df['Low'].rolling(period).min()
 
     upper_band = hl2 + (multiplier * atr)
     lower_band = hl2 - (multiplier * atr)
@@ -98,8 +121,12 @@ def calculate_indicators(df):
     ema21 = EMAIndicator(close=df['Close'], window=21).ema_indicator()
     ema50 = EMAIndicator(close=df['Close'], window=50).ema_indicator()
 
-    # Supertrend
-    supertrend, supertrend_direction = calculate_supertrend(df, period=10, multiplier=3)
+    # Weekly Supertrend (resample to weekly data first)
+    weekly_df = resample_to_weekly(df)
+    weekly_supertrend, weekly_supertrend_direction = calculate_supertrend(weekly_df, period=10, multiplier=3)
+    # Get the latest weekly supertrend value
+    supertrend = weekly_supertrend.iloc[-1] if not pd.isna(weekly_supertrend.iloc[-1]) else 0
+    supertrend_direction = weekly_supertrend_direction.iloc[-1] if not pd.isna(weekly_supertrend_direction.iloc[-1]) else 0
 
     # RSI
     rsi14 = RSIIndicator(close=df['Close'], window=14).rsi()
@@ -138,8 +165,8 @@ def calculate_indicators(df):
         'ema21': float(ema21.iloc[-1]) if not pd.isna(ema21.iloc[-1]) else 0,
         'ema50': float(ema50.iloc[-1]) if not pd.isna(ema50.iloc[-1]) else 0,
 
-        'supertrend': float(supertrend.iloc[-1]) if not pd.isna(supertrend.iloc[-1]) else 0,
-        'supertrendDirection': int(supertrend_direction.iloc[-1]) if not pd.isna(supertrend_direction.iloc[-1]) else 0,
+        'supertrend': float(supertrend) if supertrend != 0 else 0,
+        'supertrendDirection': int(supertrend_direction) if supertrend_direction != 0 else 0,
 
         'rsi14': float(rsi14.iloc[-1]) if not pd.isna(rsi14.iloc[-1]) else 50,
 
@@ -316,7 +343,7 @@ def analyze_symbols():
                 print(f'  ✅ {symbol} - {analysis["overallSignal"]}')
                 print(f'     Price: ₹{analysis["lastPrice"]:.2f} ({analysis["changePercent"]:+.2f}%)')
                 print(f'     RSI: {analysis["rsi14"]:.1f} | 50EMA: ₹{analysis["ema50"]:.2f} | 100MA: ₹{analysis["sma100"]:.2f} | 200MA: ₹{analysis["sma200"]:.2f}')
-                print(f'     Supertrend: ₹{analysis["supertrend"]:.2f} ({"BULLISH ↗" if analysis["supertrendDirection"] == 1 else "BEARISH ↘"})')
+                print(f'     Weekly Supertrend: ₹{analysis["supertrend"]:.2f} ({"BULLISH ↗" if analysis["supertrendDirection"] == 1 else "BEARISH ↘"})')
 
                 if analysis['signals']['ema50CrossSMA200'] == 'above':
                     print(f'     🔥 50 EMA/200 MA CROSSOVER!')

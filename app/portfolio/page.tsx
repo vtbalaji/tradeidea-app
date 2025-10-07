@@ -424,6 +424,15 @@ export default function PortfolioPage() {
                 </div>
               )}
 
+              {/* Warning if no technical data available */}
+              {!position.technicals && position.status === 'open' && (
+                <div className="mb-4 p-3 bg-yellow-500/10 border border-yellow-500/30 rounded-lg">
+                  <p className="text-xs text-yellow-600 dark:text-yellow-400">
+                    ⚠️ Technical data not available. Waiting for next analysis cycle.
+                  </p>
+                </div>
+              )}
+
               {/* Actions */}
               {position.status === 'open' && (
                 <div className="flex gap-2 pt-3 border-t border-gray-200 dark:border-[#30363d]">
@@ -500,8 +509,26 @@ export default function PortfolioPage() {
       </div>
       {/* Positions Section */}
       <div className="px-5">
-        <div className="mb-4">
+        <div className="mb-4 flex items-center gap-3">
           <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Positions</h2>
+          {activeTab === 'open' && openPositions.length > 0 && openPositions[0]?.technicals?.updatedAt && (
+            <span className="text-xs text-gray-600 dark:text-[#8b949e]">
+              Technical data updated: {(() => {
+                const updatedAt = openPositions[0].technicals.updatedAt.toDate();
+                const now = new Date();
+                const diffHours = Math.floor((now.getTime() - updatedAt.getTime()) / (1000 * 60 * 60));
+
+                if (diffHours < 1) {
+                  return 'just now';
+                } else if (diffHours < 24) {
+                  return `${diffHours}h ago`;
+                } else {
+                  const diffDays = Math.floor(diffHours / 24);
+                  return `${diffDays}d ago`;
+                }
+              })()}
+            </span>
+          )}
         </div>
         {/* Tabs */}
         <div className="flex gap-3 mb-5">
