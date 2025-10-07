@@ -56,6 +56,41 @@ interface Transaction {
   timestamp: Timestamp;
 }
 
+interface ExitCriteria {
+  exitBelow50EMA?: boolean;
+  exitBelowPrice?: number | null;
+  exitAtStopLoss?: boolean;
+  exitAtTarget?: boolean;
+  customNote?: string;
+}
+
+interface TechnicalData {
+  lastPrice: number;
+  previousClose: number;
+  change: number;
+  changePercent: number;
+  sma20: number;
+  sma50: number;
+  sma200: number;
+  ema9: number;
+  ema21: number;
+  ema50: number;
+  rsi14: number;
+  bollingerUpper: number;
+  bollingerMiddle: number;
+  bollingerLower: number;
+  macd: number;
+  macdSignal: number;
+  macdHistogram: number;
+  volume: number;
+  avgVolume20: number;
+  signals?: any;
+  overallSignal?: string;
+  dataPoints?: number;
+  symbol?: string;
+  updatedAt?: any;
+}
+
 interface PortfolioPosition {
   id: string;
   ideaId: string;
@@ -74,6 +109,9 @@ interface PortfolioPosition {
   closedAt?: Timestamp;
   exitPrice?: number;
   exitDate?: string;
+  exitReason?: string;
+  exitCriteria?: ExitCriteria;
+  technicals?: TechnicalData;
   transactions: Transaction[];
 }
 
@@ -103,7 +141,7 @@ interface TradingContextType {
   updatePosition: (positionId: string, updates: Partial<PortfolioPosition>) => Promise<void>;
   closePosition: (positionId: string, closeData: Partial<PortfolioPosition>) => Promise<void>;
   addTransaction: (positionId: string, transaction: Omit<Transaction, 'timestamp'>) => Promise<void>;
-  exitTrade: (positionId: string, exitPrice: number, exitDate: string) => Promise<void>;
+  exitTrade: (positionId: string, exitPrice: number, exitDate: string, exitReason?: string) => Promise<void>;
 }
 
 const TradingContext = createContext<TradingContextType | undefined>(undefined);
@@ -375,11 +413,16 @@ export const TradingProvider: React.FC<TradingProviderProps> = ({ children }) =>
         price: positionData.entryPrice || 0,
         date: positionData.dateTaken || new Date().toISOString().split('T')[0],
         totalValue: (positionData.quantity || 0) * (positionData.entryPrice || 0),
-        timestamp: serverTimestamp()
+        timestamp: Timestamp.now()
       };
 
+      // Clean undefined values from positionData
+      const cleanedData = Object.fromEntries(
+        Object.entries(positionData).filter(([_, value]) => value !== undefined)
+      );
+
       const newPosition = {
-        ...positionData,
+        ...cleanedData,
         ideaId,
         userId: user.uid,
         status: 'open',
@@ -413,7 +456,7 @@ export const TradingProvider: React.FC<TradingProviderProps> = ({ children }) =>
   };
 
   // Close a position
-  const closePosition = async (positionId: string, closeData: Partial<PortfolioPosition>): Promise<void> => {
+  const closePosition = async (positionId: string, closeData: Partial<PortfolioPosition> & { exitReason?: string }): Promise<void> => {
     if (!user) throw new Error('User must be logged in');
 
     try {
@@ -447,7 +490,7 @@ export const TradingProvider: React.FC<TradingProviderProps> = ({ children }) =>
 
       const newTransaction = {
         ...transaction,
-        timestamp: serverTimestamp()
+        timestamp: Timestamp.now()
       };
 
       // Calculate new average price and quantity
@@ -477,7 +520,7 @@ export const TradingProvider: React.FC<TradingProviderProps> = ({ children }) =>
   };
 
   // Exit a trade with exit price
-  const exitTrade = async (positionId: string, exitPrice: number, exitDate: string): Promise<void> => {
+  const exitTrade = async (positionId: string, exitPrice: number, exitDate: string, exitReason?: string): Promise<void> => {
     if (!user) throw new Error('User must be logged in');
 
     try {
@@ -498,13 +541,14 @@ export const TradingProvider: React.FC<TradingProviderProps> = ({ children }) =>
         price: exitPrice,
         date: exitDate,
         totalValue: exitPrice * positionData.quantity,
-        timestamp: serverTimestamp()
+        timestamp: Timestamp.now()
       };
 
       await updateDoc(positionRef, {
         status: 'closed',
         exitPrice,
         exitDate,
+        exitReason: exitReason || 'Manual exit',
         currentPrice: exitPrice,
         transactions: [...transactions, exitTransaction],
         closedAt: serverTimestamp(),

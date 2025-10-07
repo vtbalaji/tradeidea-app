@@ -6,6 +6,7 @@ import Navigation from '../../../components/Navigation';
 import { useTrading } from '../../../contexts/TradingContext';
 import { useAuth } from '../../../contexts/AuthContext';
 import { IdeaIcon, TargetIcon, EntryIcon, HeartIcon, EyeIcon } from '@/components/icons';
+import { getCurrentISTDate, formatDateForDisplay, formatDateForStorage } from '@/lib/dateUtils';
 
 export default function IdeaDetailPage() {
   const params = useParams();
@@ -33,7 +34,14 @@ export default function IdeaDetailPage() {
   const [tradeDetails, setTradeDetails] = useState({
     quantity: '',
     entryPrice: '',
-    dateTaken: new Date().toISOString().split('T')[0], // Today's date in YYYY-MM-DD format
+    dateTaken: formatDateForDisplay(getCurrentISTDate()), // Today's date in DD-MM-YYYY format
+  });
+  const [exitCriteria, setExitCriteria] = useState({
+    exitBelow50EMA: false,
+    exitBelowPrice: null as number | null,
+    exitAtStopLoss: false,
+    exitAtTarget: false,
+    customNote: '',
   });
 
   useEffect(() => {
@@ -113,15 +121,16 @@ export default function IdeaDetailPage() {
       const entryPrice = parseFloat(tradeDetails.entryPrice);
 
       const positionData = {
-        symbol: idea.symbol,
-        tradeType: idea.tradeType,
+        symbol: idea.symbol || '',
+        tradeType: idea.tradeType || 'Long',
         entryPrice: entryPrice,
         currentPrice: entryPrice,
-        target1: idea.target1,
-        stopLoss: idea.stopLoss,
+        target1: idea.target1 || 0,
+        stopLoss: idea.stopLoss || 0,
         quantity: quantity,
         totalValue: entryPrice * quantity,
-        dateTaken: tradeDetails.dateTaken,
+        dateTaken: formatDateForStorage(tradeDetails.dateTaken), // Convert DD-MM-YYYY to YYYY-MM-DD for storage
+        exitCriteria: exitCriteria,
       };
 
       await addToPortfolio(ideaId, positionData);
@@ -129,7 +138,14 @@ export default function IdeaDetailPage() {
       setTradeDetails({
         quantity: '',
         entryPrice: '',
-        dateTaken: new Date().toISOString().split('T')[0],
+        dateTaken: formatDateForDisplay(getCurrentISTDate()),
+      });
+      setExitCriteria({
+        exitBelow50EMA: false,
+        exitBelowPrice: null,
+        exitAtStopLoss: false,
+        exitAtTarget: false,
+        customNote: '',
       });
       alert('Trade added to your portfolio!');
       router.push('/portfolio');
@@ -469,16 +485,115 @@ export default function IdeaDetailPage() {
 
                 <div>
                   <label className="block text-sm font-medium text-gray-600 dark:text-[#8b949e] mb-2">
-                    Date Taken
+                    Date Taken (DD-MM-YYYY)
                   </label>
                   <input
-                    type="date"
+                    type="text"
                     value={tradeDetails.dateTaken}
                     onChange={(e) =>
                       setTradeDetails({ ...tradeDetails, dateTaken: e.target.value })
                     }
+                    placeholder="DD-MM-YYYY"
+                    pattern="\d{2}-\d{2}-\d{4}"
                     className="w-full bg-white dark:bg-[#0f1419] border border-gray-200 dark:border-[#30363d] rounded-lg px-3 py-2 text-gray-900 dark:text-white placeholder-[#8b949e] outline-none focus:border-[#ff8c42] transition-colors"
                   />
+                </div>
+
+                {/* Exit Criteria Section */}
+                <div className="border-t border-gray-200 dark:border-[#30363d] pt-4">
+                  <label className="block text-sm font-semibold text-gray-900 dark:text-white mb-3">
+                    📤 Exit Criteria (Optional)
+                  </label>
+
+                  <div className="space-y-3">
+                    {/* Exit Below 50 EMA */}
+                    <label className="flex items-center gap-3 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={exitCriteria.exitBelow50EMA}
+                        onChange={(e) =>
+                          setExitCriteria({ ...exitCriteria, exitBelow50EMA: e.target.checked })
+                        }
+                        className="w-4 h-4 rounded border-gray-300 text-[#ff8c42] focus:ring-[#ff8c42]"
+                      />
+                      <span className="text-sm text-gray-600 dark:text-[#8b949e]">Exit if price goes below 50 EMA</span>
+                    </label>
+
+                    {/* Exit Below Specific Price */}
+                    <div>
+                      <label className="flex items-center gap-3 cursor-pointer mb-2">
+                        <input
+                          type="checkbox"
+                          checked={exitCriteria.exitBelowPrice !== null}
+                          onChange={(e) =>
+                            setExitCriteria({
+                              ...exitCriteria,
+                              exitBelowPrice: e.target.checked ? 0 : null
+                            })
+                          }
+                          className="w-4 h-4 rounded border-gray-300 text-[#ff8c42] focus:ring-[#ff8c42]"
+                        />
+                        <span className="text-sm text-gray-600 dark:text-[#8b949e]">Exit if price goes below</span>
+                      </label>
+                      {exitCriteria.exitBelowPrice !== null && (
+                        <input
+                          type="number"
+                          step="0.01"
+                          value={exitCriteria.exitBelowPrice || ''}
+                          onChange={(e) =>
+                            setExitCriteria({
+                              ...exitCriteria,
+                              exitBelowPrice: parseFloat(e.target.value) || 0
+                            })
+                          }
+                          placeholder="Enter price"
+                          className="w-full bg-white dark:bg-[#0f1419] border border-gray-200 dark:border-[#30363d] rounded-lg px-3 py-2 text-sm text-gray-900 dark:text-white placeholder-[#8b949e] outline-none focus:border-[#ff8c42] transition-colors ml-7"
+                        />
+                      )}
+                    </div>
+
+                    {/* Exit at Stop Loss */}
+                    <label className="flex items-center gap-3 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={exitCriteria.exitAtStopLoss}
+                        onChange={(e) =>
+                          setExitCriteria({ ...exitCriteria, exitAtStopLoss: e.target.checked })
+                        }
+                        className="w-4 h-4 rounded border-gray-300 text-[#ff8c42] focus:ring-[#ff8c42]"
+                      />
+                      <span className="text-sm text-gray-600 dark:text-[#8b949e]">Exit if stop loss (₹{idea?.stopLoss}) is hit</span>
+                    </label>
+
+                    {/* Exit at Target */}
+                    <label className="flex items-center gap-3 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={exitCriteria.exitAtTarget}
+                        onChange={(e) =>
+                          setExitCriteria({ ...exitCriteria, exitAtTarget: e.target.checked })
+                        }
+                        className="w-4 h-4 rounded border-gray-300 text-[#ff8c42] focus:ring-[#ff8c42]"
+                      />
+                      <span className="text-sm text-gray-600 dark:text-[#8b949e]">Exit if target (₹{idea?.target1}) is reached</span>
+                    </label>
+
+                    {/* Custom Note */}
+                    <div>
+                      <label className="block text-xs text-gray-600 dark:text-[#8b949e] mb-1">
+                        Custom Exit Note
+                      </label>
+                      <textarea
+                        value={exitCriteria.customNote}
+                        onChange={(e) =>
+                          setExitCriteria({ ...exitCriteria, customNote: e.target.value })
+                        }
+                        placeholder="e.g., Exit if RSI goes below 30"
+                        rows={2}
+                        className="w-full bg-white dark:bg-[#0f1419] border border-gray-200 dark:border-[#30363d] rounded-lg px-3 py-2 text-sm text-gray-900 dark:text-white placeholder-[#8b949e] outline-none focus:border-[#ff8c42] transition-colors resize-none"
+                      />
+                    </div>
+                  </div>
                 </div>
               </div>
 

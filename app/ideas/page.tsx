@@ -6,6 +6,7 @@ import Navigation from '../../components/Navigation';
 import { useTrading } from '../../contexts/TradingContext';
 import { useAuth } from '../../contexts/AuthContext';
 import { IdeaIcon, TargetIcon, EntryIcon, HeartIcon } from '@/components/icons';
+import { formatIndianDate } from '@/lib/dateUtils';
 
 export default function IdeasHubPage() {
   const router = useRouter();
@@ -156,7 +157,7 @@ export default function IdeasHubPage() {
               {idea.likes}
             </span>
             <span>💬 {idea.commentCount}</span>
-            <span>📅 {idea.createdAt?.toDate ? idea.createdAt.toDate().toLocaleDateString() : 'Recent'}</span>
+            <span>📅 {formatIndianDate(idea.createdAt, 'relative')}</span>
           </div>
           <button
             onClick={(e) => {

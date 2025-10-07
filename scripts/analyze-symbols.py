@@ -222,10 +222,13 @@ def save_to_firestore(symbol, analysis):
     for doc in portfolio_query.stream():
         doc.reference.update({'technicals': data})
 
-    # Update portfolios
+    # Update portfolios (also update currentPrice for LTP)
     portfolios_query = db.collection('portfolios').where('symbol', '==', symbol)
     for doc in portfolios_query.stream():
-        doc.reference.update({'technicals': data})
+        doc.reference.update({
+            'technicals': data,
+            'currentPrice': analysis['lastPrice']  # Update LTP with current market price
+        })
 
 def analyze_symbols():
     """Main analysis function"""

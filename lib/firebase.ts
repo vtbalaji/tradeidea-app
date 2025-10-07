@@ -1,6 +1,6 @@
-import { initializeApp, getApps, getApp } from 'firebase/app';
-import { getAuth } from 'firebase/auth';
-import { getFirestore } from 'firebase/firestore';
+import { initializeApp, getApps, getApp, FirebaseApp } from 'firebase/app';
+import { getAuth, Auth } from 'firebase/auth';
+import { getFirestore, Firestore } from 'firebase/firestore';
 
 // Your Firebase config - loaded from environment variables
 const firebaseConfig = {
@@ -13,10 +13,46 @@ const firebaseConfig = {
   measurementId: process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID
 };
 
-// Initialize Firebase (prevent multiple initializations)
-const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
+// Initialize Firebase app (lazy initialization)
+let app: FirebaseApp | null = null;
+let authInstance: Auth | null = null;
+let dbInstance: Firestore | null = null;
 
-// Initialize Firebase Auth and Firestore
-export const auth = getAuth(app);
-export const db = getFirestore(app);
-export default app;
+function getFirebaseApp() {
+  if (typeof window === 'undefined') {
+    return null;
+  }
+  if (!app) {
+    app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
+  }
+  return app;
+}
+
+// Lazy getters for auth and db
+export function getAuthInstance(): Auth | null {
+  if (typeof window === 'undefined') return null;
+  if (!authInstance) {
+    const firebaseApp = getFirebaseApp();
+    if (firebaseApp) {
+      authInstance = getAuth(firebaseApp);
+    }
+  }
+  return authInstance;
+}
+
+export function getDbInstance(): Firestore | null {
+  if (typeof window === 'undefined') return null;
+  if (!dbInstance) {
+    const firebaseApp = getFirebaseApp();
+    if (firebaseApp) {
+      dbInstance = getFirestore(firebaseApp);
+    }
+  }
+  return dbInstance;
+}
+
+// Export instances (for backward compatibility, but prefer using the getters)
+export const auth = typeof window !== 'undefined' ? getAuthInstance() : null;
+export const db = typeof window !== 'undefined' ? getDbInstance() : null;
+
+export default getFirebaseApp();

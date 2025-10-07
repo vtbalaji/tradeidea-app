@@ -5,10 +5,11 @@ import Navigation from '../../components/Navigation';
 import { useTrading } from '../../contexts/TradingContext';
 import { useAuth } from '../../contexts/AuthContext';
 import { TrendingIcon, ChartIcon, TargetIcon, EntryIcon } from '@/components/icons';
+import { getCurrentISTDate, formatDateForDisplay, formatDateForStorage } from '@/lib/dateUtils';
 export default function PortfolioPage() {
   const router = useRouter();
   const { user } = useAuth();
-  const { myPortfolio, exitTrade, addTransaction } = useTrading();
+  const { myPortfolio, exitTrade, addTransaction, updatePosition } = useTrading();
   const [activeTab, setActiveTab] = useState('open');
 
   // Check email verification
@@ -20,15 +21,18 @@ export default function PortfolioPage() {
   const [showExitModal, setShowExitModal] = useState(false);
   const [showTransactionModal, setShowTransactionModal] = useState(false);
   const [selectedPosition, setSelectedPosition] = useState<any>(null);
+  const [updatingPrice, setUpdatingPrice] = useState<string | null>(null);
+  const [newPrice, setNewPrice] = useState<string>('');
   const [exitDetails, setExitDetails] = useState({
     exitPrice: '',
-    exitDate: new Date().toISOString().split('T')[0]
+    exitDate: formatDateForDisplay(getCurrentISTDate()),
+    exitReason: ''
   });
   const [transactionDetails, setTransactionDetails] = useState({
     type: 'buy' as 'buy' | 'sell',
     quantity: '',
     price: '',
-    date: new Date().toISOString().split('T')[0]
+    date: formatDateForDisplay(getCurrentISTDate())
   });
   const openPositions = myPortfolio.filter(p => p.status === 'open');
   const closedPositions = myPortfolio.filter(p => p.status === 'closed');
@@ -43,12 +47,19 @@ export default function PortfolioPage() {
     if (!selectedPosition || !exitDetails.exitPrice) return;
 
     try {
-      await exitTrade(selectedPosition.id, parseFloat(exitDetails.exitPrice), exitDetails.exitDate);
+      await exitTrade(
+        selectedPosition.id,
+        parseFloat(exitDetails.exitPrice),
+        formatDateForStorage(exitDetails.exitDate), // Convert DD-MM-YYYY to YYYY-MM-DD for storage
+        exitDetails.exitReason
+      );
+
       setShowExitModal(false);
       setSelectedPosition(null);
       setExitDetails({
         exitPrice: '',
-        exitDate: new Date().toISOString().split('T')[0]
+        exitDate: formatDateForDisplay(getCurrentISTDate()),
+        exitReason: ''
       });
     } catch (error) {
       console.error('Error exiting trade:', error);
@@ -67,7 +78,7 @@ export default function PortfolioPage() {
         type: transactionDetails.type,
         quantity,
         price,
-        date: transactionDetails.date,
+        date: formatDateForStorage(transactionDetails.date), // Convert DD-MM-YYYY to YYYY-MM-DD for storage
         totalValue: quantity * price
       });
 
@@ -77,7 +88,7 @@ export default function PortfolioPage() {
         type: 'buy',
         quantity: '',
         price: '',
-        date: new Date().toISOString().split('T')[0]
+        date: formatDateForDisplay(getCurrentISTDate())
       });
     } catch (error) {
       console.error('Error adding transaction:', error);
@@ -85,7 +96,77 @@ export default function PortfolioPage() {
     }
   };
 
-  const renderHoldingsTable = (positions: any[]) => {
+  // Function to analyze exit criteria
+  const analyzeExitCriteria = (position: any) => {
+    if (!position.exitCriteria) return null;
+
+    const alerts: { type: 'critical' | 'warning' | 'info'; message: string }[] = [];
+    const { exitCriteria, currentPrice, stopLoss, target1, technicals } = position;
+
+    // Check stop loss
+    if (exitCriteria.exitAtStopLoss) {
+      if (currentPrice <= stopLoss) {
+        alerts.push({ type: 'critical', message: `🚨 STOP LOSS HIT at ₹${stopLoss.toFixed(2)}` });
+      } else {
+        const percentAbove = ((currentPrice - stopLoss) / stopLoss) * 100;
+        if (percentAbove <= 5) {
+          alerts.push({ type: 'warning', message: `⚠️ Near SL: ₹${stopLoss.toFixed(2)} (${percentAbove.toFixed(1)}% above)` });
+        } else {
+          alerts.push({ type: 'info', message: `✅ SL Safe: ₹${stopLoss.toFixed(2)} (+${percentAbove.toFixed(1)}%)` });
+        }
+      }
+    }
+
+    // Check target reached
+    if (exitCriteria.exitAtTarget) {
+      if (currentPrice >= target1) {
+        alerts.push({ type: 'info', message: `🎯 TARGET REACHED at ₹${target1.toFixed(2)}` });
+      } else {
+        const percentBelow = ((target1 - currentPrice) / currentPrice) * 100;
+        if (percentBelow <= 5) {
+          alerts.push({ type: 'warning', message: `⚠️ Near Target: ₹${target1.toFixed(2)} (${percentBelow.toFixed(1)}% away)` });
+        } else {
+          alerts.push({ type: 'info', message: `🎯 Target: ₹${target1.toFixed(2)} (${percentBelow.toFixed(1)}% away)` });
+        }
+      }
+    }
+
+    // Check 50 EMA
+    if (exitCriteria.exitBelow50EMA) {
+      if (technicals?.ema50) {
+        if (currentPrice < technicals.ema50) {
+          alerts.push({ type: 'critical', message: `📉 Below 50 EMA (₹${technicals.ema50.toFixed(2)}) - TIME TO EXIT` });
+        } else {
+          const percentAbove = ((currentPrice - technicals.ema50) / technicals.ema50) * 100;
+          if (percentAbove <= 5) {
+            alerts.push({ type: 'warning', message: `⚠️ Near 50 EMA: ₹${technicals.ema50.toFixed(2)} (${percentAbove.toFixed(1)}% above)` });
+          } else {
+            alerts.push({ type: 'info', message: `✅ Above 50 EMA: ₹${technicals.ema50.toFixed(2)} (+${percentAbove.toFixed(1)}%)` });
+          }
+        }
+      } else {
+        alerts.push({ type: 'warning', message: `⚠️ 50 EMA data not available - Run batch analysis` });
+      }
+    }
+
+    // Check custom exit price
+    if (exitCriteria.exitBelowPrice && exitCriteria.exitBelowPrice > 0) {
+      if (currentPrice < exitCriteria.exitBelowPrice) {
+        alerts.push({ type: 'critical', message: `📉 Below exit price ₹${exitCriteria.exitBelowPrice} - TIME TO EXIT` });
+      } else {
+        const percentAbove = ((currentPrice - exitCriteria.exitBelowPrice) / exitCriteria.exitBelowPrice) * 100;
+        if (percentAbove <= 5) {
+          alerts.push({ type: 'warning', message: `⚠️ Near exit level: ₹${exitCriteria.exitBelowPrice} (${percentAbove.toFixed(1)}% above)` });
+        } else {
+          alerts.push({ type: 'info', message: `✅ Above exit level: ₹${exitCriteria.exitBelowPrice} (+${percentAbove.toFixed(1)}%)` });
+        }
+      }
+    }
+
+    return alerts.length > 0 ? alerts : null;
+  };
+
+  const renderHoldingsCards = (positions: any[]) => {
     if (positions.length === 0) {
       return (
         <div className="text-center py-16">
@@ -97,94 +178,129 @@ export default function PortfolioPage() {
     }
 
     return (
-      <div className="overflow-x-auto">
-        <table className="w-full min-w-[900px] border-collapse">
-          <thead>
-            <tr className="border-b border-gray-200 dark:border-[#30363d]">
-              <th className="text-left py-3 px-4 text-sm font-semibold text-gray-600 dark:text-[#8b949e]">Stock</th>
-              <th className="text-right py-3 px-4 text-sm font-semibold text-gray-600 dark:text-[#8b949e]">Qty</th>
-              <th className="text-right py-3 px-4 text-sm font-semibold text-gray-600 dark:text-[#8b949e]">Avg Buy Price</th>
-              <th className="text-right py-3 px-4 text-sm font-semibold text-gray-600 dark:text-[#8b949e]">Invested Amount</th>
-              <th className="text-right py-3 px-4 text-sm font-semibold text-gray-600 dark:text-[#8b949e]">LTP</th>
-              <th className="text-right py-3 px-4 text-sm font-semibold text-gray-600 dark:text-[#8b949e]">Current Value</th>
-              <th className="text-right py-3 px-4 text-sm font-semibold text-gray-600 dark:text-[#8b949e]">P&L</th>
-              <th className="text-right py-3 px-4 text-sm font-semibold text-gray-600 dark:text-[#8b949e]">Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {positions.map((position) => {
-              const investedAmount = position.entryPrice * position.quantity;
-              const currentValue = position.currentPrice * position.quantity;
-              const pnl = currentValue - investedAmount;
-              const pnlPercent = (pnl / investedAmount) * 100;
-              const isProfit = pnl >= 0;
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        {positions.map((position) => {
+          const investedAmount = position.entryPrice * position.quantity;
+          const currentValue = position.currentPrice * position.quantity;
+          const pnl = currentValue - investedAmount;
+          const pnlPercent = (pnl / investedAmount) * 100;
+          const isProfit = pnl >= 0;
+          const alerts = analyzeExitCriteria(position);
 
-              return (
-                <tr
-                  key={position.id}
-                  className="border-b border-gray-200 dark:border-[#30363d] hover:bg-gray-50 dark:bg-[#1c2128] transition-colors"
-                >
-                  <td className="py-3 px-4">
-                    <div>
-                      <p className="text-base font-semibold text-gray-900 dark:text-white">{position.symbol}</p>
-                      <div className="flex gap-2 mt-1">
-                        <span className="px-2 py-0.5 bg-blue-500/20 text-gray-600 dark:text-[#8b949e] text-xs font-semibold rounded">
-                          {position.tradeType}
-                        </span>
-                        <span className={`px-2 py-0.5 text-xs font-semibold rounded ${
-                          position.status === 'open' ? 'bg-green-500/20 text-green-400' : 'bg-gray-500/20 text-gray-400'
-                        }`}>
-                          {position.status}
-                        </span>
-                      </div>
+          return (
+            <div
+              key={position.id}
+              className="bg-gray-50 dark:bg-[#1c2128] border border-gray-200 dark:border-[#30363d] rounded-xl p-5 hover:border-[#ff8c42] transition-colors"
+            >
+              {/* Header */}
+              <div className="flex justify-between items-start mb-4">
+                <div>
+                  <h3 className="text-2xl font-bold text-gray-900 dark:text-white">{position.symbol}</h3>
+                  <div className="flex gap-2 mt-2">
+                    <span className="px-2.5 py-1 bg-blue-500/20 text-blue-400 text-xs font-semibold rounded">
+                      {position.tradeType}
+                    </span>
+                    <span className={`px-2.5 py-1 text-xs font-semibold rounded ${
+                      position.status === 'open' ? 'bg-green-500/20 text-green-400' : 'bg-gray-500/20 text-gray-400'
+                    }`}>
+                      {position.status}
+                    </span>
+                  </div>
+                </div>
+                <div className={`text-right ${isProfit ? 'text-green-500' : 'text-red-500'}`}>
+                  <p className="text-xl font-bold">{isProfit ? '+' : ''}₹{pnl.toFixed(2)}</p>
+                  <p className="text-sm">({isProfit ? '+' : ''}{pnlPercent.toFixed(2)}%)</p>
+                </div>
+              </div>
+
+              {/* Exit Reason for Closed */}
+              {position.exitReason && position.status === 'closed' && (
+                <div className="mb-3 px-3 py-2 bg-orange-500/20 border border-orange-500/30 rounded-lg">
+                  <p className="text-xs text-orange-400">📤 {position.exitReason}</p>
+                </div>
+              )}
+
+              {/* Exit Criteria Badges */}
+              {position.exitCriteria && position.status === 'open' && (
+                <div className="flex flex-wrap gap-1.5 mb-3">
+                  {position.exitCriteria.exitBelow50EMA && <span className="px-2 py-1 bg-blue-500/20 text-blue-400 text-xs font-semibold rounded">📉 50 EMA</span>}
+                  {position.exitCriteria.exitBelowPrice && <span className="px-2 py-1 bg-purple-500/20 text-purple-400 text-xs font-semibold rounded">📉 ₹{position.exitCriteria.exitBelowPrice}</span>}
+                  {position.exitCriteria.exitAtStopLoss && <span className="px-2 py-1 bg-red-500/20 text-red-400 text-xs font-semibold rounded">🛑 SL</span>}
+                  {position.exitCriteria.exitAtTarget && <span className="px-2 py-1 bg-green-500/20 text-green-400 text-xs font-semibold rounded">🎯 Target</span>}
+                </div>
+              )}
+
+              {/* Exit Analysis Alerts */}
+              {alerts && position.status === 'open' && (
+                <div className="space-y-2 mb-4">
+                  {alerts.map((alert, idx) => (
+                    <div
+                      key={idx}
+                      className={`px-3 py-2 rounded-lg text-xs font-semibold ${
+                        alert.type === 'critical'
+                          ? 'bg-red-500/20 text-red-400 border border-red-500/30'
+                          : alert.type === 'warning'
+                          ? 'bg-yellow-500/20 text-yellow-400 border border-yellow-500/30'
+                          : 'bg-blue-500/20 text-blue-400 border border-blue-500/30'
+                      }`}
+                    >
+                      {alert.message}
                     </div>
-                  </td>
-                  <td className="py-3 px-4 text-right text-gray-900 dark:text-white font-medium">{position.quantity}</td>
-                  <td className="py-3 px-4 text-right text-gray-900 dark:text-white font-medium">₹{position.entryPrice.toFixed(2)}</td>
-                  <td className="py-3 px-4 text-right text-gray-900 dark:text-white font-medium">₹{investedAmount.toFixed(2)}</td>
-                  <td className="py-3 px-4 text-right text-gray-900 dark:text-white font-medium">₹{position.currentPrice.toFixed(2)}</td>
-                  <td className="py-3 px-4 text-right text-gray-900 dark:text-white font-medium">₹{currentValue.toFixed(2)}</td>
-                  <td className="py-3 px-4 text-right">
-                    <div className={`font-semibold ${isProfit ? 'text-green-500' : 'text-red-500'}`}>
-                      <p>{isProfit ? '+' : ''}₹{pnl.toFixed(2)}</p>
-                      <p className="text-sm">({isProfit ? '+' : ''}{pnlPercent.toFixed(2)}%)</p>
-                    </div>
-                  </td>
-                  <td className="py-3 px-4 text-right">
-                    {position.status === 'open' ? (
-                      <div className="flex gap-2 justify-end">
-                        <button
-                          onClick={() => {
-                            setSelectedPosition(position);
-                            setShowTransactionModal(true);
-                          }}
-                          className="px-3 py-1 bg-blue-500/20 text-blue-400 text-xs font-semibold rounded hover:bg-blue-500/30 transition-colors"
-                        >
-                          Buy/Sell
-                        </button>
-                        <button
-                          onClick={() => {
-                            setSelectedPosition(position);
-                            setExitDetails({
-                              exitPrice: position.currentPrice.toString(),
-                              exitDate: new Date().toISOString().split('T')[0]
-                            });
-                            setShowExitModal(true);
-                          }}
-                          className="px-3 py-1 bg-red-500/20 text-red-400 text-xs font-semibold rounded hover:bg-red-500/30 transition-colors"
-                        >
-                          Exit
-                        </button>
-                      </div>
-                    ) : (
-                      <span className="text-xs text-gray-600 dark:text-[#8b949e]">Closed</span>
-                    )}
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
+                  ))}
+                </div>
+              )}
+
+              {/* Position Details Grid */}
+              <div className="grid grid-cols-2 gap-3 mb-4">
+                <div>
+                  <p className="text-xs text-gray-600 dark:text-[#8b949e] mb-1">Quantity</p>
+                  <p className="text-sm font-semibold text-gray-900 dark:text-white">{position.quantity}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-gray-600 dark:text-[#8b949e] mb-1">Avg Buy Price</p>
+                  <p className="text-sm font-semibold text-gray-900 dark:text-white">₹{position.entryPrice.toFixed(2)}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-gray-600 dark:text-[#8b949e] mb-1">LTP</p>
+                  <p className="text-sm font-semibold text-gray-900 dark:text-white">₹{position.currentPrice.toFixed(2)}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-gray-600 dark:text-[#8b949e] mb-1">Current Value</p>
+                  <p className="text-sm font-semibold text-gray-900 dark:text-white">₹{currentValue.toFixed(2)}</p>
+                </div>
+              </div>
+
+              {/* Actions */}
+              {position.status === 'open' && (
+                <div className="flex gap-2 pt-3 border-t border-gray-200 dark:border-[#30363d]">
+                  <button
+                    onClick={() => {
+                      setSelectedPosition(position);
+                      setShowTransactionModal(true);
+                    }}
+                    className="flex-1 px-4 py-2 bg-blue-500/20 text-blue-400 text-sm font-semibold rounded-lg hover:bg-blue-500/30 transition-colors"
+                  >
+                    Buy/Sell
+                  </button>
+                  <button
+                    onClick={() => {
+                      setSelectedPosition(position);
+                      setExitDetails({
+                        exitPrice: position.currentPrice.toString(),
+                        exitDate: formatDateForDisplay(getCurrentISTDate()),
+                        exitReason: ''
+                      });
+                      setShowExitModal(true);
+                    }}
+                    className="flex-1 px-4 py-2 bg-red-500/20 text-red-400 text-sm font-semibold rounded-lg hover:bg-red-500/30 transition-colors"
+                  >
+                    Exit Trade
+                  </button>
+                </div>
+              )}
+            </div>
+          );
+        })}
       </div>
     );
   };
@@ -247,9 +363,9 @@ export default function PortfolioPage() {
             Closed ({closedPositions.length})
           </button>
         </div>
-        {/* Holdings Table */}
+        {/* Holdings Cards */}
         <div className="pb-8">
-          {activeTab === 'open' ? renderHoldingsTable(openPositions) : renderHoldingsTable(closedPositions)}
+          {activeTab === 'open' ? renderHoldingsCards(openPositions) : renderHoldingsCards(closedPositions)}
         </div>
       </div>
 
@@ -293,16 +409,42 @@ export default function PortfolioPage() {
 
               <div>
                 <label className="block text-sm font-medium text-gray-600 dark:text-[#8b949e] mb-2">
-                  Exit Date
+                  Exit Date (DD-MM-YYYY)
                 </label>
                 <input
-                  type="date"
+                  type="text"
                   value={exitDetails.exitDate}
                   onChange={(e) =>
                     setExitDetails({ ...exitDetails, exitDate: e.target.value })
                   }
+                  placeholder="DD-MM-YYYY"
+                  pattern="\d{2}-\d{2}-\d{4}"
                   className="w-full bg-white dark:bg-[#0f1419] border border-gray-200 dark:border-[#30363d] rounded-lg px-3 py-2 text-gray-900 dark:text-white placeholder-[#8b949e] outline-none focus:border-[#ff8c42] transition-colors"
                 />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-600 dark:text-[#8b949e] mb-2">
+                  Exit Reason
+                </label>
+                <select
+                  value={exitDetails.exitReason}
+                  onChange={(e) =>
+                    setExitDetails({ ...exitDetails, exitReason: e.target.value })
+                  }
+                  className="w-full bg-white dark:bg-[#0f1419] border border-gray-200 dark:border-[#30363d] rounded-lg px-3 py-2 text-gray-900 dark:text-white outline-none focus:border-[#ff8c42] transition-colors"
+                >
+                  <option value="">Select exit reason</option>
+                  <option value="Target reached">Target reached</option>
+                  <option value="Stop loss hit">Stop loss hit</option>
+                  <option value="Below 50 EMA">Below 50 EMA</option>
+                  <option value="Below exit price level">Below exit price level</option>
+                  <option value="Technical breakdown">Technical breakdown</option>
+                  <option value="Profit booking">Profit booking</option>
+                  <option value="Risk management">Risk management</option>
+                  <option value="Manual exit">Manual exit</option>
+                  <option value="Other">Other</option>
+                </select>
               </div>
             </div>
 
@@ -408,14 +550,16 @@ export default function PortfolioPage() {
 
               <div>
                 <label className="block text-sm font-medium text-gray-600 dark:text-[#8b949e] mb-2">
-                  Date
+                  Date (DD-MM-YYYY)
                 </label>
                 <input
-                  type="date"
+                  type="text"
                   value={transactionDetails.date}
                   onChange={(e) =>
                     setTransactionDetails({ ...transactionDetails, date: e.target.value })
                   }
+                  placeholder="DD-MM-YYYY"
+                  pattern="\d{2}-\d{2}-\d{4}"
                   className="w-full bg-white dark:bg-[#0f1419] border border-gray-200 dark:border-[#30363d] rounded-lg px-3 py-2 text-gray-900 dark:text-white placeholder-[#8b949e] outline-none focus:border-[#ff8c42] transition-colors"
                 />
               </div>
