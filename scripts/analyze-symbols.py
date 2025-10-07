@@ -57,17 +57,49 @@ def fetch_eod_data(symbol):
         print(f'  ❌ Error: {str(e)}')
         return None
 
+def calculate_supertrend(df, period=10, multiplier=3):
+    """Calculate Supertrend indicator"""
+    hl2 = (df['High'] + df['Low']) / 2
+    atr = df['High'].rolling(period).max() - df['Low'].rolling(period).min()
+
+    upper_band = hl2 + (multiplier * atr)
+    lower_band = hl2 - (multiplier * atr)
+
+    supertrend = pd.Series(index=df.index, dtype=float)
+    direction = pd.Series(index=df.index, dtype=int)
+
+    for i in range(period, len(df)):
+        if i == period:
+            supertrend.iloc[i] = upper_band.iloc[i]
+            direction.iloc[i] = -1
+        else:
+            if df['Close'].iloc[i] > supertrend.iloc[i-1]:
+                supertrend.iloc[i] = lower_band.iloc[i]
+                direction.iloc[i] = 1
+            elif df['Close'].iloc[i] < supertrend.iloc[i-1]:
+                supertrend.iloc[i] = upper_band.iloc[i]
+                direction.iloc[i] = -1
+            else:
+                supertrend.iloc[i] = supertrend.iloc[i-1]
+                direction.iloc[i] = direction.iloc[i-1]
+
+    return supertrend, direction
+
 def calculate_indicators(df):
     """Calculate all technical indicators"""
 
     # Moving Averages
     sma20 = SMAIndicator(close=df['Close'], window=20).sma_indicator()
     sma50 = SMAIndicator(close=df['Close'], window=50).sma_indicator()
+    sma100 = SMAIndicator(close=df['Close'], window=100).sma_indicator()
     sma200 = SMAIndicator(close=df['Close'], window=200).sma_indicator()
 
     ema9 = EMAIndicator(close=df['Close'], window=9).ema_indicator()
     ema21 = EMAIndicator(close=df['Close'], window=21).ema_indicator()
     ema50 = EMAIndicator(close=df['Close'], window=50).ema_indicator()
+
+    # Supertrend
+    supertrend, supertrend_direction = calculate_supertrend(df, period=10, multiplier=3)
 
     # RSI
     rsi14 = RSIIndicator(close=df['Close'], window=14).rsi()
@@ -99,11 +131,15 @@ def calculate_indicators(df):
 
         'sma20': float(sma20.iloc[-1]) if not pd.isna(sma20.iloc[-1]) else 0,
         'sma50': float(sma50.iloc[-1]) if not pd.isna(sma50.iloc[-1]) else 0,
+        'sma100': float(sma100.iloc[-1]) if not pd.isna(sma100.iloc[-1]) else 0,
         'sma200': float(sma200.iloc[-1]) if not pd.isna(sma200.iloc[-1]) else 0,
 
         'ema9': float(ema9.iloc[-1]) if not pd.isna(ema9.iloc[-1]) else 0,
         'ema21': float(ema21.iloc[-1]) if not pd.isna(ema21.iloc[-1]) else 0,
         'ema50': float(ema50.iloc[-1]) if not pd.isna(ema50.iloc[-1]) else 0,
+
+        'supertrend': float(supertrend.iloc[-1]) if not pd.isna(supertrend.iloc[-1]) else 0,
+        'supertrendDirection': int(supertrend_direction.iloc[-1]) if not pd.isna(supertrend_direction.iloc[-1]) else 0,
 
         'rsi14': float(rsi14.iloc[-1]) if not pd.isna(rsi14.iloc[-1]) else 50,
 
@@ -122,7 +158,10 @@ def calculate_indicators(df):
     # Calculate signals
     signals = {
         'priceCrossSMA200': 'above' if latest['sma200'] > 0 and last_price > latest['sma200'] else 'below' if latest['sma200'] > 0 else None,
+        'priceCrossSMA100': 'above' if latest['sma100'] > 0 and last_price > latest['sma100'] else 'below' if latest['sma100'] > 0 else None,
         'priceCrossEMA50': 'above' if latest['ema50'] > 0 and last_price > latest['ema50'] else 'below' if latest['ema50'] > 0 else None,
+        'supertrendBullish': latest['supertrendDirection'] == 1,
+        'supertrendBearish': latest['supertrendDirection'] == -1,
         'rsiOverbought': latest['rsi14'] > 70,
         'rsiOversold': latest['rsi14'] < 30,
         'macdBullish': latest['macdHistogram'] > 0,
@@ -138,8 +177,14 @@ def calculate_indicators(df):
     if signals['priceCrossSMA200'] == 'above': score += 2
     elif signals['priceCrossSMA200'] == 'below': score -= 2
 
+    if signals['priceCrossSMA100'] == 'above': score += 1
+    elif signals['priceCrossSMA100'] == 'below': score -= 1
+
     if signals['priceCrossEMA50'] == 'above': score += 1
     elif signals['priceCrossEMA50'] == 'below': score -= 1
+
+    if signals['supertrendBullish']: score += 2
+    elif signals['supertrendBearish']: score -= 2
 
     if signals['rsiOversold']: score += 2
     elif signals['rsiOverbought']: score -= 2
@@ -270,7 +315,8 @@ def analyze_symbols():
                 # Display summary
                 print(f'  ✅ {symbol} - {analysis["overallSignal"]}')
                 print(f'     Price: ₹{analysis["lastPrice"]:.2f} ({analysis["changePercent"]:+.2f}%)')
-                print(f'     RSI: {analysis["rsi14"]:.1f} | SMA200: ₹{analysis["sma200"]:.2f} | EMA50: ₹{analysis["ema50"]:.2f}')
+                print(f'     RSI: {analysis["rsi14"]:.1f} | 50EMA: ₹{analysis["ema50"]:.2f} | 100MA: ₹{analysis["sma100"]:.2f} | 200MA: ₹{analysis["sma200"]:.2f}')
+                print(f'     Supertrend: ₹{analysis["supertrend"]:.2f} ({"BULLISH ↗" if analysis["supertrendDirection"] == 1 else "BEARISH ↘"})')
 
                 if analysis['signals']['ema50CrossSMA200'] == 'above':
                     print(f'     🔥 50 EMA/200 MA CROSSOVER!')

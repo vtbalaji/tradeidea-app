@@ -37,10 +37,12 @@ export default function IdeaDetailPage() {
     dateTaken: formatDateForDisplay(getCurrentISTDate()), // Today's date in DD-MM-YYYY format
   });
   const [exitCriteria, setExitCriteria] = useState({
+    exitAtStopLoss: true, // Always true by default
+    exitAtTarget: true, // Always true by default
     exitBelow50EMA: false,
-    exitBelowPrice: null as number | null,
-    exitAtStopLoss: false,
-    exitAtTarget: false,
+    exitBelow100MA: false,
+    exitBelow200MA: false,
+    exitOnWeeklySupertrend: false,
     customNote: '',
   });
 
@@ -141,10 +143,12 @@ export default function IdeaDetailPage() {
         dateTaken: formatDateForDisplay(getCurrentISTDate()),
       });
       setExitCriteria({
+        exitAtStopLoss: true,
+        exitAtTarget: true,
         exitBelow50EMA: false,
-        exitBelowPrice: null,
-        exitAtStopLoss: false,
-        exitAtTarget: false,
+        exitBelow100MA: false,
+        exitBelow200MA: false,
+        exitOnWeeklySupertrend: false,
         customNote: '',
       });
       alert('Trade added to your portfolio!');
@@ -501,9 +505,12 @@ export default function IdeaDetailPage() {
 
                 {/* Exit Criteria Section */}
                 <div className="border-t border-gray-200 dark:border-[#30363d] pt-4">
-                  <label className="block text-sm font-semibold text-gray-900 dark:text-white mb-3">
-                    📤 Exit Criteria (Optional)
+                  <label className="block text-sm font-semibold text-gray-900 dark:text-white mb-2">
+                    📤 Exit Strategy
                   </label>
+                  <p className="text-xs text-gray-600 dark:text-[#8b949e] mb-3">
+                    By default, position will exit at Stop Loss (₹{idea?.stopLoss}) or Target (₹{idea?.target1})
+                  </p>
 
                   <div className="space-y-3">
                     {/* Exit Below 50 EMA */}
@@ -519,76 +526,56 @@ export default function IdeaDetailPage() {
                       <span className="text-sm text-gray-600 dark:text-[#8b949e]">Exit if price goes below 50 EMA</span>
                     </label>
 
-                    {/* Exit Below Specific Price */}
-                    <div>
-                      <label className="flex items-center gap-3 cursor-pointer mb-2">
-                        <input
-                          type="checkbox"
-                          checked={exitCriteria.exitBelowPrice !== null}
-                          onChange={(e) =>
-                            setExitCriteria({
-                              ...exitCriteria,
-                              exitBelowPrice: e.target.checked ? 0 : null
-                            })
-                          }
-                          className="w-4 h-4 rounded border-gray-300 text-[#ff8c42] focus:ring-[#ff8c42]"
-                        />
-                        <span className="text-sm text-gray-600 dark:text-[#8b949e]">Exit if price goes below</span>
-                      </label>
-                      {exitCriteria.exitBelowPrice !== null && (
-                        <input
-                          type="number"
-                          step="0.01"
-                          value={exitCriteria.exitBelowPrice || ''}
-                          onChange={(e) =>
-                            setExitCriteria({
-                              ...exitCriteria,
-                              exitBelowPrice: parseFloat(e.target.value) || 0
-                            })
-                          }
-                          placeholder="Enter price"
-                          className="w-full bg-white dark:bg-[#0f1419] border border-gray-200 dark:border-[#30363d] rounded-lg px-3 py-2 text-sm text-gray-900 dark:text-white placeholder-[#8b949e] outline-none focus:border-[#ff8c42] transition-colors ml-7"
-                        />
-                      )}
-                    </div>
-
-                    {/* Exit at Stop Loss */}
+                    {/* Exit Below 100 MA */}
                     <label className="flex items-center gap-3 cursor-pointer">
                       <input
                         type="checkbox"
-                        checked={exitCriteria.exitAtStopLoss}
+                        checked={exitCriteria.exitBelow100MA}
                         onChange={(e) =>
-                          setExitCriteria({ ...exitCriteria, exitAtStopLoss: e.target.checked })
+                          setExitCriteria({ ...exitCriteria, exitBelow100MA: e.target.checked })
                         }
                         className="w-4 h-4 rounded border-gray-300 text-[#ff8c42] focus:ring-[#ff8c42]"
                       />
-                      <span className="text-sm text-gray-600 dark:text-[#8b949e]">Exit if stop loss (₹{idea?.stopLoss}) is hit</span>
+                      <span className="text-sm text-gray-600 dark:text-[#8b949e]">Exit if price goes below 100 MA</span>
                     </label>
 
-                    {/* Exit at Target */}
+                    {/* Exit Below 200 MA */}
                     <label className="flex items-center gap-3 cursor-pointer">
                       <input
                         type="checkbox"
-                        checked={exitCriteria.exitAtTarget}
+                        checked={exitCriteria.exitBelow200MA}
                         onChange={(e) =>
-                          setExitCriteria({ ...exitCriteria, exitAtTarget: e.target.checked })
+                          setExitCriteria({ ...exitCriteria, exitBelow200MA: e.target.checked })
                         }
                         className="w-4 h-4 rounded border-gray-300 text-[#ff8c42] focus:ring-[#ff8c42]"
                       />
-                      <span className="text-sm text-gray-600 dark:text-[#8b949e]">Exit if target (₹{idea?.target1}) is reached</span>
+                      <span className="text-sm text-gray-600 dark:text-[#8b949e]">Exit if price goes below 200 MA</span>
+                    </label>
+
+                    {/* Exit on Weekly Supertrend */}
+                    <label className="flex items-center gap-3 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={exitCriteria.exitOnWeeklySupertrend}
+                        onChange={(e) =>
+                          setExitCriteria({ ...exitCriteria, exitOnWeeklySupertrend: e.target.checked })
+                        }
+                        className="w-4 h-4 rounded border-gray-300 text-[#ff8c42] focus:ring-[#ff8c42]"
+                      />
+                      <span className="text-sm text-gray-600 dark:text-[#8b949e]">Exit based on Weekly Supertrend</span>
                     </label>
 
                     {/* Custom Note */}
                     <div>
                       <label className="block text-xs text-gray-600 dark:text-[#8b949e] mb-1">
-                        Custom Exit Note
+                        Additional Exit Notes (Optional)
                       </label>
                       <textarea
                         value={exitCriteria.customNote}
                         onChange={(e) =>
                           setExitCriteria({ ...exitCriteria, customNote: e.target.value })
                         }
-                        placeholder="e.g., Exit if RSI goes below 30"
+                        placeholder="e.g., Exit if RSI goes below 30, or any other custom criteria"
                         rows={2}
                         className="w-full bg-white dark:bg-[#0f1419] border border-gray-200 dark:border-[#30363d] rounded-lg px-3 py-2 text-sm text-gray-900 dark:text-white placeholder-[#8b949e] outline-none focus:border-[#ff8c42] transition-colors resize-none"
                       />
