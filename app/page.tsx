@@ -257,6 +257,7 @@ export default function Home() {
             </div>
             <div className="flex gap-6 text-sm text-gray-600 dark:text-[#8b949e]">
               <button className="hover:text-gray-900 dark:hover:text-white transition-colors">About</button>
+              <button onClick={() => router.push('/faq')} className="hover:text-gray-900 dark:hover:text-white transition-colors">FAQ</button>
               <button className="hover:text-gray-900 dark:hover:text-white transition-colors">Privacy</button>
               <button className="hover:text-gray-900 dark:hover:text-white transition-colors">Terms</button>
               <button className="hover:text-gray-900 dark:hover:text-white transition-colors">Contact</button>
