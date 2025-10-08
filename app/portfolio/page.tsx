@@ -482,12 +482,6 @@ export default function PortfolioPage() {
                             <span className="ml-1 font-semibold text-gray-900 dark:text-white">{position.fundamentals.trailingPE.toFixed(2)}</span>
                           </div>
                         )}
-                        {position.fundamentals.pegRatio && (
-                          <div>
-                            <span className="text-gray-600 dark:text-[#8b949e]">PEG:</span>
-                            <span className="ml-1 font-semibold text-gray-900 dark:text-white">{position.fundamentals.pegRatio.toFixed(2)}</span>
-                          </div>
-                        )}
                         {position.fundamentals.returnOnEquity && (
                           <div>
                             <span className="text-gray-600 dark:text-[#8b949e]">ROE:</span>

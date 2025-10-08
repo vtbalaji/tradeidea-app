@@ -163,12 +163,6 @@ export default function IdeasHubPage() {
                       <span className="ml-1 font-semibold text-gray-900 dark:text-white">{idea.fundamentals.trailingPE.toFixed(2)}</span>
                     </div>
                   )}
-                  {idea.fundamentals.pegRatio && (
-                    <div>
-                      <span className="text-gray-600 dark:text-[#8b949e]">PEG:</span>
-                      <span className="ml-1 font-semibold text-gray-900 dark:text-white">{idea.fundamentals.pegRatio.toFixed(2)}</span>
-                    </div>
-                  )}
                   {idea.fundamentals.returnOnEquity && (
                     <div>
                       <span className="text-gray-600 dark:text-[#8b949e]">ROE:</span>

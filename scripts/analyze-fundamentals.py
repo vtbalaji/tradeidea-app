@@ -87,18 +87,15 @@ def fetch_fundamentals(symbol):
             if fundamentals[field] is not None and isinstance(fundamentals[field], (int, float)):
                 fundamentals[field] = round(fundamentals[field] * 100, 2)  # Convert to percentage
 
-        # Calculate PEG manually if not provided (common for NSE stocks)
-        if fundamentals['pegRatio'] is None:
-            pe = fundamentals.get('trailingPE')
-            eg = fundamentals.get('earningsGrowth')
+        # Don't calculate PEG - Yahoo data is unreliable for Indian stocks
+        # Screener.in uses 3-year CAGR which we don't have access to
+        fundamentals['pegRatio'] = None
 
-            # PEG = PE / Earnings Growth (in percentage)
-            # Only calculate if both values exist and earnings growth is positive
-            if pe is not None and eg is not None and eg > 0:
-                fundamentals['pegRatio'] = round(pe / eg, 2)
-            # If earnings growth is available but negative/zero, set PEG to None
-            elif pe is not None and eg is not None:
-                fundamentals['pegRatio'] = None
+        # Convert Debt-to-Equity from percentage to ratio
+        # Yahoo returns it as percentage (e.g., 63.93 for 63.93%)
+        # Convert to ratio format (e.g., 0.64) to match screener.in
+        if fundamentals['debtToEquity'] is not None:
+            fundamentals['debtToEquity'] = round(fundamentals['debtToEquity'] / 100, 2)
 
         print(f'  ✅ Fetched fundamentals')
         return fundamentals
