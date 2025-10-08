@@ -91,41 +91,6 @@ export default function IdeasHubPage() {
           </span>
         </div>
 
-        {/* Technical Signals */}
-        {idea.technicals && (
-          <div className="flex flex-wrap gap-2 mb-3">
-            {idea.technicals.signals?.priceCrossSMA200 === 'above' && (
-              <span className="px-2 py-1 bg-green-500/20 text-green-400 text-xs font-semibold rounded-full flex items-center gap-1">
-                Above 200 MA
-              </span>
-            )}
-            {idea.technicals.signals?.priceCrossEMA50 === 'above' && (
-              <span className="px-2 py-1 bg-blue-500/20 text-blue-400 text-xs font-semibold rounded-full flex items-center gap-1">
-                Above 50 EMA
-              </span>
-            )}
-            {idea.technicals.signals?.supertrendBullish && (
-              <span className="px-2 py-1 bg-emerald-500/20 text-emerald-400 text-xs font-semibold rounded-full flex items-center gap-1">
-                Supertrend Bullish
-              </span>
-            )}
-            {idea.technicals.signals?.supertrendBearish && (
-              <span className="px-2 py-1 bg-red-500/20 text-red-400 text-xs font-semibold rounded-full flex items-center gap-1">
-                Supertrend Bearish
-              </span>
-            )}
-            {idea.technicals.signals?.ema50CrossSMA200 === 'above' && (
-              <span className="px-2 py-1 bg-purple-500/20 text-purple-400 text-xs font-semibold rounded-full flex items-center gap-1">
-                50 EMA/200 MA Cross
-              </span>
-            )}
-            {idea.technicals.signals?.goldenCross && (
-              <span className="px-2 py-1 bg-yellow-500/20 text-yellow-400 text-xs font-semibold rounded-full flex items-center gap-1">
-                Golden Cross
-              </span>
-            )}
-          </div>
-        )}
 
         {/* Warning if no technical data available */}
         {!idea.technicals && (
@@ -142,6 +107,48 @@ export default function IdeasHubPage() {
             <p className="text-sm text-gray-600 dark:text-[#8b949e] leading-relaxed whitespace-pre-wrap">
               <span className="font-semibold text-[#ff8c42]">When to Enter: </span>
               {idea.whenToEnter}
+            </p>
+          </div>
+        )}
+
+        {/* Technical Levels */}
+        {idea.technicals && (
+          <div className="mb-3 p-3 bg-white dark:bg-[#0f1419] border border-gray-200 dark:border-[#30363d] rounded-lg">
+            <p className="text-sm text-gray-600 dark:text-[#8b949e] leading-relaxed whitespace-pre-wrap">
+              <span className="font-semibold text-[#ff8c42]">Technical Levels: </span>
+              <span className="text-sm">
+                {idea.technicals.ema50 && (
+                  <span>
+                    50 EMA: <span className={`font-semibold ${idea.technicals.lastPrice > idea.technicals.ema50 ? 'text-green-500' : 'text-red-500'}`}>
+                      ₹{idea.technicals.ema50.toFixed(2)} {idea.technicals.lastPrice > idea.technicals.ema50 ? '↗' : '↘'}
+                    </span>
+                    {(idea.technicals.sma100 || idea.technicals.sma200 || idea.technicals.supertrend) && ', '}
+                  </span>
+                )}
+                {idea.technicals.sma100 && (
+                  <span>
+                    100 MA: <span className={`font-semibold ${idea.technicals.lastPrice > idea.technicals.sma100 ? 'text-green-500' : 'text-red-500'}`}>
+                      ₹{idea.technicals.sma100.toFixed(2)} {idea.technicals.lastPrice > idea.technicals.sma100 ? '↗' : '↘'}
+                    </span>
+                    {(idea.technicals.sma200 || idea.technicals.supertrend) && ', '}
+                  </span>
+                )}
+                {idea.technicals.sma200 && (
+                  <span>
+                    200 MA: <span className={`font-semibold ${idea.technicals.lastPrice > idea.technicals.sma200 ? 'text-green-500' : 'text-red-500'}`}>
+                      ₹{idea.technicals.sma200.toFixed(2)} {idea.technicals.lastPrice > idea.technicals.sma200 ? '↗' : '↘'}
+                    </span>
+                    {idea.technicals.supertrend && ', '}
+                  </span>
+                )}
+                {idea.technicals.supertrend && (
+                  <span>
+                    Supertrend: <span className={`font-semibold ${idea.technicals.supertrendDirection === 1 ? 'text-green-500' : 'text-red-500'}`}>
+                      ₹{idea.technicals.supertrend.toFixed(2)} {idea.technicals.supertrendDirection === 1 ? '↗' : '↘'}
+                    </span>
+                  </span>
+                )}
+              </span>
             </p>
           </div>
         )}
