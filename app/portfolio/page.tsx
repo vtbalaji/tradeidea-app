@@ -349,23 +349,68 @@ export default function PortfolioPage() {
                 </div>
               )}
 
-              {/* Exit Analysis Alerts */}
+              {/* Overall Recommendation */}
+              {position.technicals && position.status === 'open' && (
+                <div className="mb-4">
+                  {(() => {
+                    const isAbove200MA = position.technicals.sma200 && position.currentPrice > position.technicals.sma200;
+                    const isSupertrendBullish = position.technicals.supertrendDirection === 1;
+
+                    let recommendation = 'HOLD';
+                    let bgColor = 'bg-yellow-500/20';
+                    let borderColor = 'border-yellow-500/30';
+                    let textColor = 'text-yellow-400';
+                    let icon = '⏸️';
+
+                    if (isAbove200MA && isSupertrendBullish) {
+                      recommendation = 'ACCUMULATE';
+                      bgColor = 'bg-green-500/20';
+                      borderColor = 'border-green-500/30';
+                      textColor = 'text-green-400';
+                      icon = '📈';
+                    } else if (!isAbove200MA) {
+                      recommendation = 'EXIT';
+                      bgColor = 'bg-red-500/20';
+                      borderColor = 'border-red-500/30';
+                      textColor = 'text-red-400';
+                      icon = '🚨';
+                    }
+
+                    return (
+                      <div className={`px-3 py-2 rounded-lg ${bgColor} border ${borderColor}`}>
+                        <p className={`text-sm font-bold ${textColor}`}>
+                          {icon} Overall Recommendation: {recommendation}
+                        </p>
+                      </div>
+                    );
+                  })()}
+                </div>
+              )}
+
+              {/* Exit Analysis Alerts - Only SL and Target */}
               {alerts && position.status === 'open' && (
                 <div className="space-y-2 mb-4">
-                  {alerts.map((alert, idx) => (
-                    <div
-                      key={idx}
-                      className={`px-3 py-2 rounded-lg text-sm font-semibold ${
-                        alert.type === 'critical'
-                          ? 'bg-red-500/20 text-red-400 border border-red-500/30'
-                          : alert.type === 'warning'
-                          ? 'bg-yellow-500/20 text-yellow-400 border border-yellow-500/30'
-                          : 'bg-blue-500/20 text-blue-400 border border-blue-500/30'
-                      }`}
-                    >
-                      {alert.message}
-                    </div>
-                  ))}
+                  {alerts
+                    .filter(alert =>
+                      alert.message.includes('SL') ||
+                      alert.message.includes('TARGET') ||
+                      alert.message.includes('Target') ||
+                      alert.message.includes('STOP LOSS')
+                    )
+                    .map((alert, idx) => (
+                      <div
+                        key={idx}
+                        className={`px-3 py-2 rounded-lg text-sm font-semibold ${
+                          alert.type === 'critical'
+                            ? 'bg-red-500/20 text-red-400 border border-red-500/30'
+                            : alert.type === 'warning'
+                            ? 'bg-yellow-500/20 text-yellow-400 border border-yellow-500/30'
+                            : 'bg-blue-500/20 text-blue-400 border border-blue-500/30'
+                        }`}
+                      >
+                        {alert.message}
+                      </div>
+                    ))}
                 </div>
               )}
 
@@ -397,19 +442,25 @@ export default function PortfolioPage() {
                     {position.technicals.ema50 && (
                       <div>
                         <span className="text-gray-600 dark:text-[#8b949e]">50 EMA:</span>
-                        <span className="ml-1 font-semibold text-gray-900 dark:text-white">₹{position.technicals.ema50.toFixed(2)}</span>
+                        <span className={`ml-1 font-semibold ${position.currentPrice > position.technicals.ema50 ? 'text-green-500' : 'text-red-500'}`}>
+                          ₹{position.technicals.ema50.toFixed(2)} {position.currentPrice > position.technicals.ema50 ? '↗' : '↘'}
+                        </span>
                       </div>
                     )}
                     {position.technicals.sma100 && (
                       <div>
                         <span className="text-gray-600 dark:text-[#8b949e]">100 MA:</span>
-                        <span className="ml-1 font-semibold text-gray-900 dark:text-white">₹{position.technicals.sma100.toFixed(2)}</span>
+                        <span className={`ml-1 font-semibold ${position.currentPrice > position.technicals.sma100 ? 'text-green-500' : 'text-red-500'}`}>
+                          ₹{position.technicals.sma100.toFixed(2)} {position.currentPrice > position.technicals.sma100 ? '↗' : '↘'}
+                        </span>
                       </div>
                     )}
                     {position.technicals.sma200 && (
                       <div>
                         <span className="text-gray-600 dark:text-[#8b949e]">200 MA:</span>
-                        <span className="ml-1 font-semibold text-gray-900 dark:text-white">₹{position.technicals.sma200.toFixed(2)}</span>
+                        <span className={`ml-1 font-semibold ${position.currentPrice > position.technicals.sma200 ? 'text-green-500' : 'text-red-500'}`}>
+                          ₹{position.technicals.sma200.toFixed(2)} {position.currentPrice > position.technicals.sma200 ? '↗' : '↘'}
+                        </span>
                       </div>
                     )}
                     {position.technicals.supertrend && (
@@ -512,7 +563,7 @@ export default function PortfolioPage() {
         <div className="mb-4 flex items-center gap-3">
           <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Positions</h2>
           {activeTab === 'open' && openPositions.length > 0 && openPositions[0]?.technicals?.updatedAt && (
-            <span className="text-xs text-gray-600 dark:text-[#8b949e]">
+            <span className="text-xs text-orange-600 dark:text-orange-400">
               Technical data updated: {(() => {
                 const updatedAt = openPositions[0].technicals.updatedAt.toDate();
                 const now = new Date();

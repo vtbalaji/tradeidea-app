@@ -285,7 +285,7 @@ export default function IdeasHubPage() {
                     {cookingIdeas.length}
                   </span>
                   {cookingIdeas[0]?.technicals?.updatedAt && (
-                    <span className="text-xs text-gray-600 dark:text-[#8b949e]">
+                    <span className="text-xs text-orange-600 dark:text-orange-400">
                       Technical data updated: {(() => {
                         const updatedAt = cookingIdeas[0].technicals.updatedAt.toDate();
                         const now = new Date();
@@ -318,7 +318,7 @@ export default function IdeasHubPage() {
                     {activeIdeas.length}
                   </span>
                   {activeIdeas[0]?.technicals?.updatedAt && (
-                    <span className="text-xs text-gray-600 dark:text-[#8b949e]">
+                    <span className="text-xs text-orange-600 dark:text-orange-400">
                       Technical data updated: {(() => {
                         const updatedAt = activeIdeas[0].technicals.updatedAt.toDate();
                         const now = new Date();

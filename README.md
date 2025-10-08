@@ -68,12 +68,17 @@ The project includes a Python batch job that fetches EOD (End of Day) data from 
 
 ### Running the Batch Job
 
-```bash
-# Activate Python virtual environment
-source venv/bin/activate
+**Quick Start (Recommended)**
 
-# Run technical analysis on all symbols
-python3 scripts/analyze-symbols.py
+```bash
+./eod_batch.sh
+```
+
+**Manual Method**
+
+```bash
+# Activate Python virtual environment and run batch
+source venv/bin/activate && python3 scripts/analyze-symbols.py
 ```
 
 ### What the Batch Job Does

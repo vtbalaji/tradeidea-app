@@ -85,26 +85,58 @@ def calculate_supertrend(df, period=10, multiplier=3):
     atr = calculate_atr(df, period)
     hl2 = (df['High'] + df['Low']) / 2
 
-    upper_band = hl2 + (multiplier * atr)
-    lower_band = hl2 - (multiplier * atr)
+    # Calculate basic upper and lower bands
+    basic_upper = hl2 + (multiplier * atr)
+    basic_lower = hl2 - (multiplier * atr)
 
+    # Initialize final bands
+    final_upper = pd.Series(index=df.index, dtype=float)
+    final_lower = pd.Series(index=df.index, dtype=float)
     supertrend = pd.Series(index=df.index, dtype=float)
     direction = pd.Series(index=df.index, dtype=int)
 
     for i in range(period, len(df)):
+        # Adjust upper band
         if i == period:
-            supertrend.iloc[i] = upper_band.iloc[i]
+            final_upper.iloc[i] = basic_upper.iloc[i]
+        else:
+            if basic_upper.iloc[i] < final_upper.iloc[i-1] or df['Close'].iloc[i-1] > final_upper.iloc[i-1]:
+                final_upper.iloc[i] = basic_upper.iloc[i]
+            else:
+                final_upper.iloc[i] = final_upper.iloc[i-1]
+
+        # Adjust lower band
+        if i == period:
+            final_lower.iloc[i] = basic_lower.iloc[i]
+        else:
+            if basic_lower.iloc[i] > final_lower.iloc[i-1] or df['Close'].iloc[i-1] < final_lower.iloc[i-1]:
+                final_lower.iloc[i] = basic_lower.iloc[i]
+            else:
+                final_lower.iloc[i] = final_lower.iloc[i-1]
+
+        # Determine supertrend direction
+        if i == period:
+            supertrend.iloc[i] = final_upper.iloc[i]
             direction.iloc[i] = -1
         else:
-            if df['Close'].iloc[i] > supertrend.iloc[i-1]:
-                supertrend.iloc[i] = lower_band.iloc[i]
-                direction.iloc[i] = 1
-            elif df['Close'].iloc[i] < supertrend.iloc[i-1]:
-                supertrend.iloc[i] = upper_band.iloc[i]
-                direction.iloc[i] = -1
+            prev_direction = direction.iloc[i-1]
+
+            if prev_direction == 1:
+                # Was in uptrend
+                if df['Close'].iloc[i] <= final_lower.iloc[i]:
+                    supertrend.iloc[i] = final_upper.iloc[i]
+                    direction.iloc[i] = -1
+                else:
+                    supertrend.iloc[i] = final_lower.iloc[i]
+                    direction.iloc[i] = 1
             else:
-                supertrend.iloc[i] = supertrend.iloc[i-1]
-                direction.iloc[i] = direction.iloc[i-1]
+                # Was in downtrend
+                if df['Close'].iloc[i] >= final_upper.iloc[i]:
+                    supertrend.iloc[i] = final_lower.iloc[i]
+                    direction.iloc[i] = 1
+                else:
+                    supertrend.iloc[i] = final_upper.iloc[i]
+                    direction.iloc[i] = -1
 
     return supertrend, direction
 
