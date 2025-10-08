@@ -434,12 +434,12 @@ export default function PortfolioPage() {
                 </div>
               </div>
 
-              {/* Technical Indicators Display */}
-              {position.technicals && position.status === 'open' && (
+              {/* Technical Indicators & Fundamentals Display */}
+              {(position.technicals || position.fundamentals) && position.status === 'open' && (
                 <div className="mb-4 p-3 bg-white dark:bg-[#0f1419] border border-gray-200 dark:border-[#30363d] rounded-lg">
-                  <p className="text-xs font-semibold text-gray-600 dark:text-[#8b949e] mb-2">Technical Levels</p>
-                  <div className="grid grid-cols-2 gap-2 text-xs">
-                    {position.technicals.ema50 && (
+                  <p className="text-xs font-bold text-[#ff8c42] mb-2">Technical Levels</p>
+                  <div className="grid grid-cols-2 gap-2 text-xs mb-3">
+                    {position.technicals?.ema50 && (
                       <div>
                         <span className="text-gray-600 dark:text-[#8b949e]">50 EMA:</span>
                         <span className={`ml-1 font-semibold ${position.currentPrice > position.technicals.ema50 ? 'text-green-500' : 'text-red-500'}`}>
@@ -447,7 +447,7 @@ export default function PortfolioPage() {
                         </span>
                       </div>
                     )}
-                    {position.technicals.sma100 && (
+                    {position.technicals?.sma100 && (
                       <div>
                         <span className="text-gray-600 dark:text-[#8b949e]">100 MA:</span>
                         <span className={`ml-1 font-semibold ${position.currentPrice > position.technicals.sma100 ? 'text-green-500' : 'text-red-500'}`}>
@@ -455,7 +455,7 @@ export default function PortfolioPage() {
                         </span>
                       </div>
                     )}
-                    {position.technicals.sma200 && (
+                    {position.technicals?.sma200 && (
                       <div>
                         <span className="text-gray-600 dark:text-[#8b949e]">200 MA:</span>
                         <span className={`ml-1 font-semibold ${position.currentPrice > position.technicals.sma200 ? 'text-green-500' : 'text-red-500'}`}>
@@ -463,7 +463,7 @@ export default function PortfolioPage() {
                         </span>
                       </div>
                     )}
-                    {position.technicals.supertrend && (
+                    {position.technicals?.supertrend && (
                       <div>
                         <span className="text-gray-600 dark:text-[#8b949e]">Supertrend:</span>
                         <span className={`ml-1 font-semibold ${position.technicals.supertrendDirection === 1 ? 'text-green-500' : 'text-red-500'}`}>
@@ -472,6 +472,54 @@ export default function PortfolioPage() {
                       </div>
                     )}
                   </div>
+                  {position.fundamentals && (
+                    <>
+                      <p className="text-xs font-bold text-[#ff8c42] mb-2 pt-2 border-t border-gray-200 dark:border-[#30363d]">Fundamentals</p>
+                      <div className="grid grid-cols-2 gap-2 text-xs">
+                        {position.fundamentals.trailingPE && (
+                          <div>
+                            <span className="text-gray-600 dark:text-[#8b949e]">PE:</span>
+                            <span className="ml-1 font-semibold text-gray-900 dark:text-white">{position.fundamentals.trailingPE.toFixed(2)}</span>
+                          </div>
+                        )}
+                        {position.fundamentals.pegRatio && (
+                          <div>
+                            <span className="text-gray-600 dark:text-[#8b949e]">PEG:</span>
+                            <span className="ml-1 font-semibold text-gray-900 dark:text-white">{position.fundamentals.pegRatio.toFixed(2)}</span>
+                          </div>
+                        )}
+                        {position.fundamentals.returnOnEquity && (
+                          <div>
+                            <span className="text-gray-600 dark:text-[#8b949e]">ROE:</span>
+                            <span className="ml-1 font-semibold text-gray-900 dark:text-white">{position.fundamentals.returnOnEquity.toFixed(1)}%</span>
+                          </div>
+                        )}
+                        {position.fundamentals.debtToEquity && (
+                          <div>
+                            <span className="text-gray-600 dark:text-[#8b949e]">Debt-to-Equity:</span>
+                            <span className="ml-1 font-semibold text-gray-900 dark:text-white">{position.fundamentals.debtToEquity.toFixed(1)}</span>
+                          </div>
+                        )}
+                        {position.fundamentals.earningsGrowth && (
+                          <div>
+                            <span className="text-gray-600 dark:text-[#8b949e]">Earnings Growth:</span>
+                            <span className="ml-1 font-semibold text-gray-900 dark:text-white">{position.fundamentals.earningsGrowth.toFixed(1)}%</span>
+                          </div>
+                        )}
+                        {position.fundamentals.fundamentalRating && (
+                          <div>
+                            <span className="text-gray-600 dark:text-[#8b949e]">Rating:</span>
+                            <span className={`ml-1 font-semibold ${
+                              position.fundamentals.fundamentalRating === 'EXCELLENT' ? 'text-green-500' :
+                              position.fundamentals.fundamentalRating === 'GOOD' ? 'text-blue-400' :
+                              position.fundamentals.fundamentalRating === 'AVERAGE' ? 'text-yellow-400' :
+                              'text-red-400'
+                            }`}>{position.fundamentals.fundamentalRating}</span>
+                          </div>
+                        )}
+                      </div>
+                    </>
+                  )}
                 </div>
               )}
 

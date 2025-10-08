@@ -111,45 +111,96 @@ export default function IdeasHubPage() {
           </div>
         )}
 
-        {/* Technical Levels */}
-        {idea.technicals && (
+        {/* Technical Levels & Fundamentals */}
+        {(idea.technicals || idea.fundamentals) && (
           <div className="mb-3 p-3 bg-white dark:bg-[#0f1419] border border-gray-200 dark:border-[#30363d] rounded-lg">
-            <p className="text-sm text-gray-600 dark:text-[#8b949e] leading-relaxed whitespace-pre-wrap">
-              <span className="font-semibold text-[#ff8c42]">Technical Levels: </span>
-              <span className="text-sm">
-                {idea.technicals.ema50 && (
-                  <span>
-                    50 EMA: <span className={`font-semibold ${idea.technicals.lastPrice > idea.technicals.ema50 ? 'text-green-500' : 'text-red-500'}`}>
-                      ₹{idea.technicals.ema50.toFixed(2)} {idea.technicals.lastPrice > idea.technicals.ema50 ? '↗' : '↘'}
-                    </span>
-                    {(idea.technicals.sma100 || idea.technicals.sma200 || idea.technicals.supertrend) && ', '}
-                  </span>
-                )}
-                {idea.technicals.sma100 && (
-                  <span>
-                    100 MA: <span className={`font-semibold ${idea.technicals.lastPrice > idea.technicals.sma100 ? 'text-green-500' : 'text-red-500'}`}>
-                      ₹{idea.technicals.sma100.toFixed(2)} {idea.technicals.lastPrice > idea.technicals.sma100 ? '↗' : '↘'}
-                    </span>
-                    {(idea.technicals.sma200 || idea.technicals.supertrend) && ', '}
-                  </span>
-                )}
-                {idea.technicals.sma200 && (
-                  <span>
-                    200 MA: <span className={`font-semibold ${idea.technicals.lastPrice > idea.technicals.sma200 ? 'text-green-500' : 'text-red-500'}`}>
-                      ₹{idea.technicals.sma200.toFixed(2)} {idea.technicals.lastPrice > idea.technicals.sma200 ? '↗' : '↘'}
-                    </span>
-                    {idea.technicals.supertrend && ', '}
-                  </span>
-                )}
-                {idea.technicals.supertrend && (
-                  <span>
-                    Supertrend: <span className={`font-semibold ${idea.technicals.supertrendDirection === 1 ? 'text-green-500' : 'text-red-500'}`}>
-                      ₹{idea.technicals.supertrend.toFixed(2)} {idea.technicals.supertrendDirection === 1 ? '↗' : '↘'}
-                    </span>
-                  </span>
-                )}
-              </span>
-            </p>
+            {idea.technicals && (
+              <>
+                <p className="text-xs font-bold text-[#ff8c42] mb-2">Technical Levels</p>
+                <div className="grid grid-cols-2 gap-2 text-xs mb-3">
+                  {idea.technicals.ema50 && (
+                    <div>
+                      <span className="text-gray-600 dark:text-[#8b949e]">50 EMA:</span>
+                      <span className={`ml-1 font-semibold ${idea.technicals.lastPrice > idea.technicals.ema50 ? 'text-green-500' : 'text-red-500'}`}>
+                        ₹{idea.technicals.ema50.toFixed(2)} {idea.technicals.lastPrice > idea.technicals.ema50 ? '↗' : '↘'}
+                      </span>
+                    </div>
+                  )}
+                  {idea.technicals.sma100 && (
+                    <div>
+                      <span className="text-gray-600 dark:text-[#8b949e]">100 MA:</span>
+                      <span className={`ml-1 font-semibold ${idea.technicals.lastPrice > idea.technicals.sma100 ? 'text-green-500' : 'text-red-500'}`}>
+                        ₹{idea.technicals.sma100.toFixed(2)} {idea.technicals.lastPrice > idea.technicals.sma100 ? '↗' : '↘'}
+                      </span>
+                    </div>
+                  )}
+                  {idea.technicals.sma200 && (
+                    <div>
+                      <span className="text-gray-600 dark:text-[#8b949e]">200 MA:</span>
+                      <span className={`ml-1 font-semibold ${idea.technicals.lastPrice > idea.technicals.sma200 ? 'text-green-500' : 'text-red-500'}`}>
+                        ₹{idea.technicals.sma200.toFixed(2)} {idea.technicals.lastPrice > idea.technicals.sma200 ? '↗' : '↘'}
+                      </span>
+                    </div>
+                  )}
+                  {idea.technicals.supertrend && (
+                    <div>
+                      <span className="text-gray-600 dark:text-[#8b949e]">Supertrend:</span>
+                      <span className={`ml-1 font-semibold ${idea.technicals.supertrendDirection === 1 ? 'text-green-500' : 'text-red-500'}`}>
+                        ₹{idea.technicals.supertrend.toFixed(2)} {idea.technicals.supertrendDirection === 1 ? '↗' : '↘'}
+                      </span>
+                    </div>
+                  )}
+                </div>
+              </>
+            )}
+            {idea.fundamentals && (
+              <>
+                <p className="text-xs font-bold text-[#ff8c42] mb-2 pt-2 border-t border-gray-200 dark:border-[#30363d]">Fundamentals</p>
+                <div className="grid grid-cols-2 gap-2 text-xs">
+                  {idea.fundamentals.trailingPE && (
+                    <div>
+                      <span className="text-gray-600 dark:text-[#8b949e]">PE:</span>
+                      <span className="ml-1 font-semibold text-gray-900 dark:text-white">{idea.fundamentals.trailingPE.toFixed(2)}</span>
+                    </div>
+                  )}
+                  {idea.fundamentals.pegRatio && (
+                    <div>
+                      <span className="text-gray-600 dark:text-[#8b949e]">PEG:</span>
+                      <span className="ml-1 font-semibold text-gray-900 dark:text-white">{idea.fundamentals.pegRatio.toFixed(2)}</span>
+                    </div>
+                  )}
+                  {idea.fundamentals.returnOnEquity && (
+                    <div>
+                      <span className="text-gray-600 dark:text-[#8b949e]">ROE:</span>
+                      <span className="ml-1 font-semibold text-gray-900 dark:text-white">{idea.fundamentals.returnOnEquity.toFixed(1)}%</span>
+                    </div>
+                  )}
+                  {idea.fundamentals.debtToEquity && (
+                    <div>
+                      <span className="text-gray-600 dark:text-[#8b949e]">Debt-to-Equity:</span>
+                      <span className="ml-1 font-semibold text-gray-900 dark:text-white">{idea.fundamentals.debtToEquity.toFixed(1)}</span>
+                    </div>
+                  )}
+                  {idea.fundamentals.earningsGrowth && (
+                    <div>
+                      <span className="text-gray-600 dark:text-[#8b949e]">Earnings Growth:</span>
+                      <span className="ml-1 font-semibold text-gray-900 dark:text-white">{idea.fundamentals.earningsGrowth.toFixed(1)}%</span>
+                    </div>
+                  )}
+                  {idea.fundamentals.fundamentalRating && (
+                    <div>
+                      <span className="text-gray-600 dark:text-[#8b949e]">Rating:</span>
+                      <span className={`ml-1 font-semibold ${
+                        idea.fundamentals.fundamentalRating === 'EXCELLENT' ? 'text-green-500' :
+                        idea.fundamentals.fundamentalRating === 'GOOD' ? 'text-blue-400' :
+                        idea.fundamentals.fundamentalRating === 'AVERAGE' ? 'text-yellow-400' :
+                        'text-red-400'
+                      }`}>{idea.fundamentals.fundamentalRating}</span>
+                    </div>
+                  )}
+                </div>
+              </>
+            )}
           </div>
         )}
 

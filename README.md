@@ -62,9 +62,13 @@ npm run dev
 
 Open [http://localhost:3000](http://localhost:3000) to view the app.
 
-## Technical Analysis Batch Job
+## Batch Jobs
 
-The project includes a Python batch job that fetches EOD (End of Day) data from Yahoo Finance and calculates technical indicators.
+The project includes two Python batch jobs for comprehensive stock analysis:
+
+### 1. Technical Analysis Batch Job (Daily)
+
+Fetches EOD (End of Day) data from Yahoo Finance and calculates technical indicators.
 
 ### Running the Batch Job
 
@@ -127,16 +131,79 @@ source venv/bin/activate && python3 scripts/analyze-symbols.py
      ⭐ GOLDEN CROSS!
 ```
 
-### Scheduling the Batch Job
+### Scheduling Technical Analysis
 
-You can schedule the batch job to run daily using cron:
+Run daily after market close using cron:
 
 ```bash
 # Edit crontab
 crontab -e
 
 # Add daily run at 6 PM IST (after market close)
-0 18 * * * cd /path/to/project && source venv/bin/activate && python3 scripts/analyze-symbols.py >> logs/batch.log 2>&1
+0 18 * * * cd /path/to/project && ./eod_batch.sh >> logs/technical.log 2>&1
+```
+
+---
+
+### 2. Fundamentals Analysis Batch Job (Weekly)
+
+Fetches fundamental data from Yahoo Finance for long-term investment analysis.
+
+### Running the Fundamentals Batch
+
+**Quick Start (Recommended)**
+
+```bash
+./fundamentals_batch.sh
+```
+
+**Manual Method**
+
+```bash
+source venv/bin/activate && python3 scripts/analyze-fundamentals.py
+```
+
+### What the Fundamentals Batch Does
+
+1. **Fetches fundamental data** for all symbols in Firestore
+
+2. **Collects key metrics**:
+   - **Valuation**: PE Ratio, Forward PE, PEG Ratio, Price-to-Book, Price-to-Sales
+   - **Financial Health**: Debt-to-Equity, Current Ratio, Quick Ratio
+   - **Profitability**: ROE, ROA, Profit Margins, Operating Margins
+   - **Growth**: Earnings Growth, Revenue Growth, Quarterly Growth
+   - **Dividends**: Dividend Yield, Payout Ratio
+   - **Market Data**: Market Cap, Enterprise Value, Beta
+
+3. **Calculates Fundamental Score** (0-100):
+   - Analyzes PE, PEG, ROE, D/E, margins, growth rates
+   - Assigns rating: EXCELLENT, GOOD, AVERAGE, POOR, WEAK
+
+4. **Saves to Firebase**:
+   - `fundamentals` collection (one document per symbol)
+   - Embeds in idea/portfolio documents
+
+### Output Example
+
+```
+[1/5] Processing RELIANCE...
+  📥 Fetching fundamentals for RELIANCE...
+  ✅ Fetched fundamentals
+  💾 Saving to Firestore...
+  ✅ RELIANCE - GOOD (Score: 72.5)
+     PE: 24.50 | PEG: 1.85 | ROE: 14.2% | D/E: 45.3
+```
+
+### Scheduling Fundamentals Analysis
+
+Run weekly (e.g., every Sunday) using cron:
+
+```bash
+# Edit crontab
+crontab -e
+
+# Add weekly run every Sunday at 10 AM
+0 10 * * 0 cd /path/to/project && ./fundamentals_batch.sh >> logs/fundamentals.log 2>&1
 ```
 
 ## Project Structure
@@ -150,16 +217,20 @@ crontab -e
 ├── contexts/              # React contexts (Auth, Trading)
 ├── lib/                   # Utilities and Firebase config
 ├── scripts/               # Batch jobs
-│   ├── analyze-symbols.py        # Python technical analysis (recommended)
-│   ├── analyze-symbols.ts        # TypeScript version (has DuckDB issues)
-│   └── load-symbols-from-csv.ts  # Load NSE symbols
+│   ├── analyze-symbols.py         # Daily technical analysis (Python)
+│   ├── analyze-fundamentals.py   # Weekly fundamentals analysis (Python)
+│   ├── analyze-symbols.ts         # TypeScript version (has DuckDB issues)
+│   └── load-symbols-from-csv.ts   # Load NSE symbols
 ├── venv/                  # Python virtual environment
+├── eod_batch.sh           # Daily technical analysis runner
+├── fundamentals_batch.sh  # Weekly fundamentals analysis runner
 └── serviceAccountKey.json # Firebase admin credentials (gitignored)
 ```
 
 ## Firebase Collections
 
 - **technicals**: Technical analysis data (one doc per symbol)
+- **fundamentals**: Fundamental analysis data (one doc per symbol)
 - **ideas**: User trading ideas
 - **tradingIdeas**: Trading ideas
 - **portfolio**: User portfolio positions
@@ -167,6 +238,37 @@ crontab -e
 - **symbols**: NSE symbol master list (2,147 symbols)
 - **users**: User profiles
 - **comments**: Idea comments
+
+## Quick Reference
+
+### Daily Operations
+
+```bash
+# Run technical analysis (after market close)
+./eod_batch.sh
+
+# Start dev server
+npm run dev
+# or on specific port
+PORT=3001 npm run dev
+```
+
+### Weekly Operations
+
+```bash
+# Run fundamentals analysis (Sunday mornings)
+./fundamentals_batch.sh
+```
+
+### Cron Schedule (Recommended)
+
+```bash
+# Daily technical at 6 PM IST (after market close)
+0 18 * * * cd /path/to/project && ./eod_batch.sh >> logs/technical.log 2>&1
+
+# Weekly fundamentals every Sunday at 10 AM
+0 10 * * 0 cd /path/to/project && ./fundamentals_batch.sh >> logs/fundamentals.log 2>&1
+```
 
 ## Learn More
 
