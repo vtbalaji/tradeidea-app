@@ -1405,8 +1405,8 @@ export default function PortfolioPage() {
             <div className="mb-6 p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
               <h4 className="font-semibold text-gray-900 dark:text-white mb-2">📋 CSV Format Requirements</h4>
               <ul className="text-sm text-gray-700 dark:text-gray-300 space-y-1 list-disc list-inside">
-                <li><strong>Auto-detects:</strong> Zerodha (Instrument, Qty., Avg. cost), Upstox, and standard formats</li>
-                <li><strong>Required fields:</strong> Symbol/Instrument, Quantity/Qty., Entry Price/Avg. cost</li>
+                <li><strong>Auto-detects:</strong> Zerodha, ICICI Direct, Upstox, and standard formats</li>
+                <li><strong>Required fields:</strong> Symbol/Stock Symbol, Quantity/Qty, Entry Price/Avg Cost</li>
                 <li><strong>Optional:</strong> Target (+15% default), Stop Loss (-8% default), Date (today), Trade Type (Long)</li>
                 <li><strong>Default Exit Strategy:</strong> Stop Loss, Target, 200MA, Weekly Supertrend (all enabled)</li>
                 <li>Symbols validated against NSE database • Invalid rows reported</li>

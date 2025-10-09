@@ -525,7 +525,7 @@ export const TradingProvider: React.FC<TradingProviderProps> = ({ children }) =>
         ...cleanedData,
         ideaId,
         userId: user.uid,
-        accountId: selectedAccount?.id || `${user.uid}-primary`, // Use selected account or default to user's primary
+        accountId: cleanedData.accountId || selectedAccount?.id || `${user.uid}-primary`, // Use provided accountId, selected account, or default to user's primary
         status: 'open',
         transactions: [initialTransaction],
         createdAt: serverTimestamp(),

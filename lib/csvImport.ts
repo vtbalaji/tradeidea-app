@@ -31,6 +31,15 @@ const FIELD_MAPPINGS: { [key: string]: { [key: string]: string } } = {
   'ltp': 'currentPrice',
   'current price': 'currentPrice',
 
+  // ICICI format
+  'Stock Symbol': 'symbol',
+  'stock symbol': 'symbol',
+  'Qty': 'quantity',
+  'Average Cost Price': 'entryPrice',
+  'average cost price': 'entryPrice',
+  'Current Market Price': 'currentPrice',
+  'current market price': 'currentPrice',
+
   // Standard format
   'symbol': 'symbol',
   'entryPrice': 'entryPrice',
