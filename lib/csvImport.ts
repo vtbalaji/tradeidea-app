@@ -109,6 +109,64 @@ function validateDate(dateStr: string): boolean {
 }
 
 /**
+ * ICICI Direct symbol mapping to NSE symbols
+ * ICICI uses abbreviated codes, we need to map them to actual NSE symbols
+ */
+const ICICI_SYMBOL_MAP: { [key: string]: string } = {
+  'ULTCEM': 'ULTRACEMCO',
+  'HDFBAN': 'HDFCBANK',
+  'TATCHE': 'TATACHEM',
+  'ADAPOR': 'ADANIPORTS',
+  'DELCOR': 'DELTACORP',
+  'HINCOP': 'HINDCOPPER',
+  'JSWSTE': 'JSWSTEEL',
+  'NATALU': 'NATIONALUM',
+  'NATMIN': 'NMDC',
+  'ASIPAI': 'ASIANPAINT',
+  'KPIGLO': 'KPIGREEN',
+  'POWGRI': 'POWERGRID',
+  'TATPOW': 'TATAPOWER',
+  'RELIND': 'RELIANCE',
+  'COCSHI': 'COCHINSHIP',
+  'GATDIS': 'GATEWAYDIS',
+  'JINSP': 'JINDALSTEL',
+  'SARENE': 'SARDAEN',
+  'TATSTE': 'TATASTEEL',
+  'BALCHI': 'BALRAMCHIN',
+  'BHAAIR': 'BHARTIARTL',
+  'FINCAB': 'FINCABLES',
+  'KEIIND': 'KEI',
+  'POLI': 'POLYCAB',
+  'RAIIND': 'RAIN',
+  'DIXTEC': 'DIXON',
+  'ZOMLIM': 'ETERNAL',
+  'BHEL': 'BHEL',
+  'THERMA': 'THERMAX',
+  'EMALIM': 'EMAMILTD',
+  'HATAGR': 'HATSUN',
+  'HINLEV': 'HINDUNILVR',
+  'BAJFI': 'BAJFINANCE',
+  'LICHF': 'LICHSGFIN',
+  'NIITEC': 'COFORGE',
+  'WIPRO': 'WIPRO',
+  'SOMDIS': 'SDBL',  // Som Distilleries & Breweries
+  'AMARAJ': 'ARE&M', // Amara Raja Energy & Mobility
+  'WHEIND': 'WHEELS',     // Wheels India
+  // ETFs - these won't work with Yahoo Finance EOD job, skip them
+  'CPSETF': 'CPSEETF',
+  'NIFBEE': 'NIFTYBEES',
+  'NIPNIT': 'ITBEES',
+  'NIPSIL': 'SILVERETF',
+  'RELCON': 'CONSUMBEES',
+  'BHABO1': 'BHARAT23',
+  'BHABO2': 'BHARAT30',
+  'BHABO5': 'BHARAT32',
+  'BHABO6': 'BHARAT33',
+  'POWINF': 'POWMFINVIT',
+  'URBCOM': null,  // Urban Company - unlisted/private
+};
+
+/**
  * List of known NSE symbols (subset for quick validation)
  * Full list is in Firestore, but this provides fast offline validation
  */
@@ -118,7 +176,10 @@ const KNOWN_NSE_SYMBOLS = [
   'ADANIPORTS', 'ADANIPOWER', 'ADANIENT', 'ADANIGREEN', 'ADANIENSOL', 'TATAMOTORS', 'TATASTEEL', 'TATACONSUM', 'TATAPOWER',
   'WIPRO', 'POWERGRID', 'NTPC', 'ONGC', 'COALINDIA', 'BAJAJFINSV', 'M&M', 'DIVISLAB', 'TECHM', 'DRREDDY',
   'JSWSTEEL', 'INDUSINDBK', 'BRITANNIA', 'CIPLA', 'EICHERMOT', 'GRASIM', 'HINDALCO', 'HEROMOTOCO', 'BPCL', 'SHREECEM',
-  'UPL', 'APOLLOHOSP', 'VEDL', 'TATAELXSI', 'PERSISTENT', 'COFORGE', 'MPHASIS', 'LTTS', 'LTIM', 'OFSS'
+  'UPL', 'APOLLOHOSP', 'VEDL', 'TATAELXSI', 'PERSISTENT', 'COFORGE', 'MPHASIS', 'LTTS', 'LTIM', 'OFSS',
+  'KEI', 'POLYCAB', 'DIXON', 'RAIN', 'ETERNAL', 'BHEL', 'THERMAX', 'EMAMILTD', 'HATSUN', 'LICHSGFIN',
+  'TATACHEM', 'NMDC', 'COCHINSHIP', 'GATEWAY', 'BALRAMCHIN', 'FINOLEXCAB', 'SARDAEN', 'AMARAJABAT', 'WHEELS',
+  'ARE&M', 'SDBL'
 ];
 
 /**
@@ -127,7 +188,18 @@ const KNOWN_NSE_SYMBOLS = [
  */
 export async function validateSymbol(symbol: string, firestoreDb: any): Promise<string | null> {
   try {
-    const upperSymbol = symbol.toUpperCase().trim();
+    let upperSymbol = symbol.toUpperCase().trim();
+
+    // First, check if this is an ICICI symbol that needs mapping
+    if (upperSymbol in ICICI_SYMBOL_MAP) {
+      const mapped = ICICI_SYMBOL_MAP[upperSymbol];
+      if (mapped === null) {
+        console.warn(`⚠️  ${upperSymbol} is unlisted/private - skipping`);
+        return null;
+      }
+      upperSymbol = mapped;
+      console.log(`Mapped ICICI symbol ${symbol} → ${upperSymbol}`);
+    }
 
     // Quick check against known symbols first (fast path)
     if (KNOWN_NSE_SYMBOLS.includes(upperSymbol)) {
@@ -157,8 +229,8 @@ export async function validateSymbol(symbol: string, firestoreDb: any): Promise<
     }
 
     // If Firestore check fails, still accept the symbol if it looks valid
-    // (alphanumeric, 1-20 chars) - batch job will validate later
-    if (/^[A-Z0-9]{1,20}$/.test(upperSymbol)) {
+    // (alphanumeric + &, 1-20 chars) - batch job will validate later
+    if (/^[A-Z0-9&]{1,20}$/.test(upperSymbol)) {
       console.warn(`Symbol ${upperSymbol} not found in DB but accepting (will validate during batch)`);
       return upperSymbol;
     }
@@ -168,7 +240,7 @@ export async function validateSymbol(symbol: string, firestoreDb: any): Promise<
     console.error('Error validating symbol:', error);
     // On error, accept if format looks valid
     const upperSymbol = symbol.toUpperCase().trim();
-    if (/^[A-Z0-9]{1,20}$/.test(upperSymbol)) {
+    if (/^[A-Z0-9&]{1,20}$/.test(upperSymbol)) {
       return upperSymbol;
     }
     return null;
