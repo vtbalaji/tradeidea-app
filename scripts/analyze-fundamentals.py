@@ -39,6 +39,15 @@ def fetch_fundamentals(symbol):
             print(f'  ⚠️  No data available')
             return None
 
+        # Check market cap FIRST - skip if less than 1000 Cr (10 billion INR)
+        market_cap = info.get('marketCap', 0)
+        MIN_MARKET_CAP = 10_000_000_000  # 1000 Cr = 10 billion INR
+
+        if market_cap and market_cap < MIN_MARKET_CAP:
+            market_cap_cr = market_cap / 10_000_000  # Convert to Crores
+            print(f'  ⏭️  Skipped - Market cap too low ({market_cap_cr:.0f} Cr < 1000 Cr)')
+            return None
+
         # Extract fundamental metrics
         fundamentals = {
             # Valuation Ratios
@@ -247,68 +256,92 @@ def get_symbols():
     print('📊 Fetching symbols from Firestore...')
     symbols = set()
 
+    # PRIMARY SOURCE: From symbols collection (master list of all NSE symbols)
+    # This ensures we fetch data for ALL available symbols, not just those in portfolios
+    print('  📋 Fetching from symbols collection...')
+    symbols_ref = db.collection('symbols')
+    symbols_count = 0
+    for doc in symbols_ref.stream():
+        data = doc.to_dict()
+        symbol = data.get('symbol') or doc.id
+        if symbol:
+            symbols.add(symbol)
+            symbols_count += 1
+    print(f'  ✅ Found {symbols_count} symbols from symbols collection')
+
+    # SECONDARY SOURCE: From user positions/ideas (ensures we don't miss any active symbols)
+    print('  📋 Fetching from active portfolios and ideas...')
+    active_symbols = set()
+
     # From ideas
     ideas_ref = db.collection('ideas')
     for doc in ideas_ref.stream():
         data = doc.to_dict()
         if 'symbol' in data:
-            symbols.add(data['symbol'])
+            active_symbols.add(data['symbol'])
 
     # From tradingIdeas
     trading_ideas_ref = db.collection('tradingIdeas')
     for doc in trading_ideas_ref.stream():
         data = doc.to_dict()
         if 'symbol' in data:
-            symbols.add(data['symbol'])
+            active_symbols.add(data['symbol'])
 
     # From portfolio
     portfolio_ref = db.collection('portfolio')
     for doc in portfolio_ref.stream():
         data = doc.to_dict()
         if 'symbol' in data:
-            symbols.add(data['symbol'])
+            active_symbols.add(data['symbol'])
 
     # From portfolios
     portfolios_ref = db.collection('portfolios')
     for doc in portfolios_ref.stream():
         data = doc.to_dict()
         if 'symbol' in data:
-            symbols.add(data['symbol'])
+            active_symbols.add(data['symbol'])
 
-    print(f'✅ Found {len(symbols)} unique symbols\n')
+    # From user positions (multi-account support)
+    users_ref = db.collection('users')
+    for user_doc in users_ref.stream():
+        positions_ref = db.collection(f'users/{user_doc.id}/positions')
+        for pos_doc in positions_ref.stream():
+            data = pos_doc.to_dict()
+            if 'symbol' in data:
+                active_symbols.add(data['symbol'])
+
+    print(f'  ✅ Found {len(active_symbols)} active symbols from portfolios/ideas')
+
+    # Combine both sources
+    symbols = symbols.union(active_symbols)
+
+    print(f'✅ Total unique symbols: {len(symbols)}\n')
     return list(symbols)
 
 def save_to_firestore(symbol, fundamentals):
-    """Save fundamentals to Firestore"""
+    """Save fundamentals to Firestore (central symbols collection only)"""
+    # Add NS_ prefix for Firebase compatibility (symbols starting with numbers)
+    symbol_with_prefix = f'NS_{symbol}' if not symbol.startswith('NS_') else symbol
+
     # Add metadata
     data = {
         **fundamentals,
-        'symbol': symbol,
+        'symbol': symbol,  # Store original symbol in data
         'updatedAt': firestore.SERVER_TIMESTAMP
     }
 
-    # Save to fundamentals collection
-    db.collection('fundamentals').document(symbol).set(data)
-
-    # Update ideas
-    ideas_query = db.collection('ideas').where('symbol', '==', symbol)
-    for doc in ideas_query.stream():
-        doc.reference.update({'fundamentals': data})
-
-    # Update tradingIdeas
-    trading_ideas_query = db.collection('tradingIdeas').where('symbol', '==', symbol)
-    for doc in trading_ideas_query.stream():
-        doc.reference.update({'fundamentals': data})
-
-    # Update portfolio
-    portfolio_query = db.collection('portfolio').where('symbol', '==', symbol)
-    for doc in portfolio_query.stream():
-        doc.reference.update({'fundamentals': data})
-
-    # Update portfolios
-    portfolios_query = db.collection('portfolios').where('symbol', '==', symbol)
-    for doc in portfolios_query.stream():
-        doc.reference.update({'fundamentals': data})
+    # Save to symbols collection (central storage - single source of truth)
+    # This allows all users to immediately access fundamental data
+    symbols_doc = db.collection('symbols').document(symbol_with_prefix)
+    symbols_doc.set({
+        'symbol': symbol_with_prefix,  # Store with NS_ prefix
+        'originalSymbol': symbol,  # Store original symbol for reference
+        'name': fundamentals.get('companyName', symbol),
+        'sector': fundamentals.get('sector'),
+        'industry': fundamentals.get('industry'),
+        'fundamental': data,
+        'lastFetched': firestore.SERVER_TIMESTAMP
+    }, merge=True)  # merge=True preserves technical data if it exists
 
 def analyze_fundamentals():
     """Main analysis function"""
@@ -326,6 +359,7 @@ def analyze_fundamentals():
 
         success_count = 0
         fail_count = 0
+        skipped_count = 0
 
         for i, symbol in enumerate(symbols):
             print(f'\n[{i+1}/{len(symbols)}] Processing {symbol}...')
@@ -335,8 +369,8 @@ def analyze_fundamentals():
                 fundamentals = fetch_fundamentals(symbol)
 
                 if fundamentals is None:
-                    print(f'  ⏭️  Skipping - no data available')
-                    fail_count += 1
+                    print(f'  ⏭️  Skipped')
+                    skipped_count += 1
                     continue
 
                 # Calculate fundamental score
@@ -372,6 +406,7 @@ def analyze_fundamentals():
         print('📊 Fundamentals Analysis Complete!')
         print('=' * 60)
         print(f'✅ Success: {success_count} symbols')
+        print(f'⏭️  Skipped: {skipped_count} symbols (market cap < 1000 Cr or no data)')
         print(f'❌ Failed: {fail_count} symbols')
         print(f'⏱️  Duration: {duration:.1f}s')
         print('=' * 60)

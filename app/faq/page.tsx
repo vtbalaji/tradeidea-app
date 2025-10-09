@@ -113,6 +113,21 @@ const faqs: FAQItem[] = [
     question: 'What is a Golden Cross?',
     answer: 'A Golden Cross occurs when the 50-day moving average crosses above the 200-day moving average. This is a bullish signal that often indicates the start of an uptrend.',
   },
+  {
+    category: 'Technical Analysis',
+    question: 'How are Exit recommendations calculated?',
+    answer: 'Exit recommendations are triggered when ANY of your enabled exit criteria are met: (1) Price hits or goes below stop-loss, (2) Target price is reached, (3) Price closes below 50 EMA (if enabled), (4) Price closes below 100 MA (if enabled), (5) Price closes below 200 MA (if enabled), or (6) Weekly Supertrend turns bearish/red (if enabled). The system evaluates your positions daily and alerts you when it\'s time to consider exiting.',
+  },
+  {
+    category: 'Technical Analysis',
+    question: 'How are Accumulate recommendations calculated?',
+    answer: 'Accumulate recommendations are suggested when ALL of these conditions are met: (1) Price is above stop-loss (safe zone), (2) Price is below target (room to grow), (3) Price is above 50 EMA (short-term bullish), (4) Price is above 200 MA (long-term bullish), (5) Weekly Supertrend is bullish/green (weekly momentum), and (6) Golden Cross is present (50 EMA above 200 MA). This ensures strong technical alignment before suggesting accumulation.',
+  },
+  {
+    category: 'Technical Analysis',
+    question: 'Should I always follow Exit/Accumulate recommendations?',
+    answer: 'Exit and Accumulate recommendations are automated suggestions based on technical signals and your configured exit criteria. They provide helpful guidance, but you should always consider fundamental analysis, market conditions, news events, and your own research before making any trading decisions. Think of them as one input in your decision-making process, not absolute rules.',
+  },
 
   // Notifications
   {

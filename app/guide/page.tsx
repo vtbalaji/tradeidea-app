@@ -248,6 +248,50 @@ TCS,3600.00,5,20-01-2025,4000.00,3400.00,Long`}
                   the technical indicators will be calculated and appear within 24 hours (typically updated every evening).
                 </p>
               </div>
+
+              <div className="bg-white dark:bg-[#0f1419] border border-gray-200 dark:border-[#30363d] rounded-lg p-4">
+                <h3 className="font-semibold text-gray-900 dark:text-white mb-2">📋 Exit/Accumulate Recommendations</h3>
+                <p className="text-sm text-gray-600 dark:text-[#8b949e] mb-3">
+                  Our system automatically generates Exit or Accumulate recommendations based on your configured exit criteria:
+                </p>
+                <div className="space-y-2 text-sm">
+                  <div className="bg-gray-50 dark:bg-[#0f1419] p-3 rounded border-l-4 border-red-500">
+                    <div className="font-semibold text-red-600 dark:text-red-400 mb-1">🔴 EXIT Recommendation</div>
+                    <p className="text-gray-600 dark:text-[#8b949e] text-xs">
+                      Triggered when ANY of your enabled exit criteria are met:
+                    </p>
+                    <ul className="mt-2 ml-4 space-y-1 text-xs text-gray-600 dark:text-[#8b949e] list-disc">
+                      <li>Price hits or goes below stop-loss level</li>
+                      <li>Target price is reached or exceeded</li>
+                      <li>Price closes below 50 EMA (if enabled)</li>
+                      <li>Price closes below 100 MA (if enabled)</li>
+                      <li>Price closes below 200 MA (if enabled)</li>
+                      <li>Weekly Supertrend turns bearish/red (if enabled)</li>
+                    </ul>
+                  </div>
+                  <div className="bg-gray-50 dark:bg-[#0f1419] p-3 rounded border-l-4 border-green-500">
+                    <div className="font-semibold text-green-600 dark:text-green-400 mb-1">🟢 ACCUMULATE Recommendation</div>
+                    <p className="text-gray-600 dark:text-[#8b949e] text-xs">
+                      Suggested when ALL of the following conditions are met:
+                    </p>
+                    <ul className="mt-2 ml-4 space-y-1 text-xs text-gray-600 dark:text-[#8b949e] list-disc">
+                      <li>Price is above stop-loss (not in danger zone)</li>
+                      <li>Price is below target (room to grow)</li>
+                      <li>Price is above 50 EMA (short-term bullish)</li>
+                      <li>Price is above 200 MA (long-term bullish)</li>
+                      <li>Weekly Supertrend is bullish/green (weekly momentum)</li>
+                      <li>Golden Cross present (50 EMA above 200 MA)</li>
+                    </ul>
+                  </div>
+                  <div className="bg-blue-50 dark:bg-blue-500/10 p-3 rounded border-l-4 border-blue-500">
+                    <div className="font-semibold text-blue-600 dark:text-blue-400 mb-1">💡 Pro Tip</div>
+                    <p className="text-gray-600 dark:text-[#8b949e] text-xs">
+                      These are automated suggestions based on technical signals. Always consider fundamental analysis,
+                      market conditions, and your own research before making trading decisions.
+                    </p>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </section>

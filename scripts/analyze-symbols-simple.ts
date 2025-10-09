@@ -253,25 +253,22 @@ async function getSymbols(): Promise<string[]> {
 }
 
 async function saveToFirestore(symbol: string, analysis: TechnicalAnalysis) {
+  // Add NS_ prefix for Firebase compatibility (symbols starting with numbers)
+  const symbolWithPrefix = symbol.startsWith('NS_') ? symbol : `NS_${symbol}`;
+
   const data = {
     ...analysis,
     symbol,
     updatedAt: Timestamp.fromDate(analysis.updatedAt)
   };
 
-  await db.collection('technicals').doc(symbol).set(data);
-
-  const ideasQuery = await db.collection('ideas').where('symbol', '==', symbol).get();
-  const ideaUpdates = ideasQuery.docs.map(doc =>
-    doc.ref.update({ technicals: data })
-  );
-
-  const portfolioQuery = await db.collection('portfolio').where('symbol', '==', symbol).get();
-  const portfolioUpdates = portfolioQuery.docs.map(doc =>
-    doc.ref.update({ technicals: data })
-  );
-
-  await Promise.all([...ideaUpdates, ...portfolioUpdates]);
+  // Save to symbols collection (central storage - single source of truth)
+  await db.collection('symbols').doc(symbolWithPrefix).set({
+    symbol: symbolWithPrefix,
+    originalSymbol: symbol,
+    technical: data,
+    lastFetched: Timestamp.now()
+  }, { merge: true });  // merge: true preserves fundamental data if it exists
 }
 
 async function analyzeSymbols() {

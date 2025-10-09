@@ -10,6 +10,8 @@ import { TrendingIcon, ChartIcon, TargetIcon, EntryIcon } from '@/components/ico
 import { getCurrentISTDate, formatDateForDisplay, formatDateForStorage } from '@/lib/dateUtils';
 import { parseAndValidateCSV, csvRowToPosition, generateCSVTemplate, generateErrorReport, ValidationError } from '@/lib/csvImport';
 import { db } from '@/lib/firebase';
+import { getSymbolData } from '@/lib/symbolDataService';
+
 export default function PortfolioPage() {
   const router = useRouter();
   const { user } = useAuth();
@@ -26,6 +28,7 @@ export default function PortfolioPage() {
   const [importSummary, setImportSummary] = useState<{ total: number; valid: number; invalid: number } | null>(null);
   const [isImporting, setIsImporting] = useState(false);
   const [selectedImportAccount, setSelectedImportAccount] = useState<string>('');
+  const [enrichedPositions, setEnrichedPositions] = useState<any[]>([]);
 
   // Check email verification
   useEffect(() => {
@@ -33,6 +36,58 @@ export default function PortfolioPage() {
       router.push('/verify');
     }
   }, [user, router]);
+
+  // Fetch symbol data from central symbols collection and enrich positions
+  useEffect(() => {
+    const enrichPositions = async () => {
+      if (myPortfolio.length === 0) {
+        setEnrichedPositions([]);
+        return;
+      }
+
+      try {
+        // Fetch symbol data for all unique symbols
+        const uniqueSymbols = [...new Set(myPortfolio.map(p => p.symbol))];
+        const symbolDataMap = new Map();
+
+        await Promise.all(
+          uniqueSymbols.map(async (symbol) => {
+            try {
+              // Add NS_ prefix for Firebase document lookup
+              const symbolWithPrefix = symbol.startsWith('NS_') ? symbol : `NS_${symbol}`;
+              const symbolData = await getSymbolData(symbolWithPrefix);
+              if (symbolData) {
+                symbolDataMap.set(symbol, symbolData);
+              }
+            } catch (error) {
+              console.error(`Error fetching symbol data for ${symbol}:`, error);
+            }
+          })
+        );
+
+        // Enrich positions with central symbol data
+        const enriched = myPortfolio.map(position => {
+          const symbolData = symbolDataMap.get(position.symbol);
+
+          return {
+            ...position,
+            // Use central data if available, fallback to position data
+            technicals: symbolData?.technical || position.technicals,
+            fundamentals: symbolData?.fundamental || position.fundamentals,
+          };
+        });
+
+        setEnrichedPositions(enriched);
+      } catch (error) {
+        console.error('Error enriching positions:', error);
+        // Fallback to original positions if enrichment fails
+        setEnrichedPositions(myPortfolio);
+      }
+    };
+
+    enrichPositions();
+  }, [myPortfolio]);
+
   const [showExitModal, setShowExitModal] = useState(false);
   const [showTransactionModal, setShowTransactionModal] = useState(false);
   const [selectedPosition, setSelectedPosition] = useState<any>(null);
@@ -68,13 +123,14 @@ export default function PortfolioPage() {
       customNote: '',
     }
   });
-  // Filter positions by active account
+  // Filter enriched positions by active account
   const accountPositions = activeAccount
-    ? myPortfolio.filter(p => !p.accountId || p.accountId === activeAccount.id)
-    : myPortfolio;
+    ? enrichedPositions.filter(p => !p.accountId || p.accountId === activeAccount.id)
+    : enrichedPositions;
 
   console.log('Portfolio - activeAccount:', activeAccount);
   console.log('Portfolio - total positions:', myPortfolio.length);
+  console.log('Portfolio - enriched positions:', enrichedPositions.length);
   console.log('Portfolio - filtered positions:', accountPositions.length);
   console.log('Portfolio - sample position accountIds:', myPortfolio.slice(0, 3).map(p => ({ symbol: p.symbol, accountId: p.accountId })));
 

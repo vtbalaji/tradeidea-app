@@ -42,23 +42,31 @@ export const SymbolsProvider: React.FC<{ children: React.ReactNode }> = ({ child
       const symbolsRef = collection(db, 'symbols');
       const searchTerm = searchQuery.toUpperCase();
 
-      // Simplified query - just search by symbol (no compound index needed)
+      // Search by originalSymbol field (which doesn't have NS_ prefix)
       const symbolQuery = query(
         symbolsRef,
-        where('symbol', '>=', searchTerm),
-        where('symbol', '<=', searchTerm + '\uf8ff'),
-        orderBy('symbol'),
+        where('originalSymbol', '>=', searchTerm),
+        where('originalSymbol', '<=', searchTerm + '\uf8ff'),
+        orderBy('originalSymbol'),
         limit(maxResults)
       );
 
       const snapshot = await getDocs(symbolQuery);
 
-      // Filter active symbols client-side
+      // Map results to match the Symbol interface
       const results = snapshot.docs
-        .map(doc => ({
-          id: doc.id,
-          ...doc.data()
-        }) as Symbol)
+        .map(doc => {
+          const data = doc.data();
+          return {
+            id: doc.id,
+            symbol: data.originalSymbol || data.symbol?.replace('NS_', ''), // Use originalSymbol, fallback to symbol without prefix
+            name: data.name || '',
+            exchange: 'NSE',
+            yahooSymbol: `${data.originalSymbol || data.symbol?.replace('NS_', '')}.NS`,
+            active: data.active !== false,
+            addedAt: data.lastFetched
+          } as Symbol;
+        })
         .filter(symbol => symbol.active !== false);
 
       return results;
@@ -74,14 +82,23 @@ export const SymbolsProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const getSymbol = async (symbolId: string): Promise<Symbol | null> => {
     try {
       const symbolsRef = collection(db, 'symbols');
-      const q = query(symbolsRef, where('symbol', '==', symbolId.toUpperCase()), limit(1));
+      const searchId = symbolId.toUpperCase();
+
+      // Try searching by originalSymbol first
+      const q = query(symbolsRef, where('originalSymbol', '==', searchId), limit(1));
       const snapshot = await getDocs(q);
 
       if (snapshot.empty) return null;
 
+      const data = snapshot.docs[0].data();
       return {
         id: snapshot.docs[0].id,
-        ...snapshot.docs[0].data()
+        symbol: data.originalSymbol || data.symbol?.replace('NS_', ''),
+        name: data.name || '',
+        exchange: 'NSE',
+        yahooSymbol: `${data.originalSymbol || data.symbol?.replace('NS_', '')}.NS`,
+        active: data.active !== false,
+        addedAt: data.lastFetched
       } as Symbol;
     } catch (error) {
       console.error('Error getting symbol:', error);

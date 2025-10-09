@@ -19,6 +19,7 @@ import {
 import { db } from '../lib/firebase';
 import { useAuth } from './AuthContext';
 import { useAccounts } from './AccountsContext';
+import { getSymbolData } from '@/lib/symbolDataService';
 
 interface TradingIdea {
   id: string;
@@ -187,6 +188,34 @@ export const TradingProvider: React.FC<TradingProviderProps> = ({ children }) =>
   const [unreadCount, setUnreadCount] = useState(0);
   const [loading, setLoading] = useState(true);
 
+  // Helper function to enrich data with central symbol data
+  const enrichWithSymbolData = async <T extends { symbol: string; technicals?: any; fundamentals?: any }>(
+    items: T[]
+  ): Promise<T[]> => {
+    const enrichedItems = await Promise.all(
+      items.map(async (item) => {
+        try {
+          // Add NS_ prefix for lookup
+          const symbolId = `NS_${item.symbol}`;
+          const symbolData = await getSymbolData(symbolId);
+
+          if (symbolData) {
+            return {
+              ...item,
+              technicals: symbolData.technical || item.technicals,
+              fundamentals: symbolData.fundamental || item.fundamentals,
+            };
+          }
+          return item;
+        } catch (error) {
+          console.error(`Error fetching symbol data for ${item.symbol}:`, error);
+          return item;
+        }
+      })
+    );
+    return enrichedItems;
+  };
+
   // Fetch all trading ideas
   useEffect(() => {
     if (!user) {
@@ -198,12 +227,15 @@ export const TradingProvider: React.FC<TradingProviderProps> = ({ children }) =>
     const ideasRef = collection(db, 'tradingIdeas');
     const q = query(ideasRef, orderBy('createdAt', 'desc'));
 
-    const unsubscribe = onSnapshot(q, (snapshot) => {
+    const unsubscribe = onSnapshot(q, async (snapshot) => {
       const ideasData = snapshot.docs.map(doc => ({
         id: doc.id,
         ...doc.data()
       })) as TradingIdea[];
-      setIdeas(ideasData);
+
+      // Enrich with central symbol data
+      const enrichedIdeas = await enrichWithSymbolData(ideasData);
+      setIdeas(enrichedIdeas);
       setLoading(false);
     }, (error) => {
       console.error('Error fetching ideas:', error);
@@ -223,12 +255,15 @@ export const TradingProvider: React.FC<TradingProviderProps> = ({ children }) =>
     const portfolioRef = collection(db, 'portfolios');
     const q = query(portfolioRef, where('userId', '==', user.uid));
 
-    const unsubscribe = onSnapshot(q, (snapshot) => {
+    const unsubscribe = onSnapshot(q, async (snapshot) => {
       const portfolioData = snapshot.docs.map(doc => ({
         id: doc.id,
         ...doc.data()
       })) as PortfolioPosition[];
-      setMyPortfolio(portfolioData);
+
+      // Enrich with central symbol data
+      const enrichedPortfolio = await enrichWithSymbolData(portfolioData);
+      setMyPortfolio(enrichedPortfolio);
     }, (error) => {
       console.error('Error fetching portfolio:', error);
     });
