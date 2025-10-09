@@ -116,7 +116,7 @@ const KNOWN_NSE_SYMBOLS = [
  * Validate symbol against NSE symbols
  * Returns normalized symbol if valid, null if invalid
  */
-export async function validateSymbol(symbol: string, db: any): Promise<string | null> {
+export async function validateSymbol(symbol: string, firestoreDb: any): Promise<string | null> {
   try {
     const upperSymbol = symbol.toUpperCase().trim();
 
@@ -126,9 +126,25 @@ export async function validateSymbol(symbol: string, db: any): Promise<string | 
     }
 
     // Check Firestore (slower but comprehensive)
-    const symbolDoc = await db.collection('symbols').doc(upperSymbol).get();
-    if (symbolDoc.exists) {
-      return upperSymbol;
+    // Import the required functions dynamically to support both v8 and v9
+    if (firestoreDb) {
+      try {
+        // Try v9 modular syntax first
+        const { doc, getDoc } = await import('firebase/firestore');
+        const symbolDocRef = doc(firestoreDb, 'symbols', upperSymbol);
+        const symbolDoc = await getDoc(symbolDocRef);
+        if (symbolDoc.exists()) {
+          return upperSymbol;
+        }
+      } catch (v9Error) {
+        // Fallback to v8 syntax if available
+        if (typeof firestoreDb.collection === 'function') {
+          const symbolDoc = await firestoreDb.collection('symbols').doc(upperSymbol).get();
+          if (symbolDoc.exists) {
+            return upperSymbol;
+          }
+        }
+      }
     }
 
     // If Firestore check fails, still accept the symbol if it looks valid

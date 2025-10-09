@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { useAuth } from '../../contexts/AuthContext';
 import { useTrading } from '../../contexts/TradingContext';
 import Navigation from '../../components/Navigation';
@@ -281,8 +282,13 @@ export default function ProfilePage() {
           </div>
 
           <div className="bg-gray-50 dark:bg-[#1c2128] rounded-xl border border-gray-200 dark:border-[#30363d] p-6">
-            <div className="text-gray-600 dark:text-[#8b949e] text-sm font-semibold mb-1">Followers</div>
-            <div className="text-gray-900 dark:text-white text-2xl font-bold">0</div>
+            <div className="text-gray-600 dark:text-[#8b949e] text-sm font-semibold mb-3">Portfolio Accounts</div>
+            <Link
+              href="/accounts"
+              className="inline-block bg-[#ff8c42] hover:bg-[#ff9a58] text-white font-semibold py-2 px-4 rounded-lg transition-colors"
+            >
+              👥 Manage Accounts
+            </Link>
           </div>
         </div>
 

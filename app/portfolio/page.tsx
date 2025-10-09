@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation';
 import Navigation from '../../components/Navigation';
 import { useTrading } from '../../contexts/TradingContext';
 import { useAuth } from '../../contexts/AuthContext';
+import { useAccounts } from '../../contexts/AccountsContext';
 import { useSymbols, Symbol } from '../../contexts/SymbolsContext';
 import { TrendingIcon, ChartIcon, TargetIcon, EntryIcon } from '@/components/icons';
 import { getCurrentISTDate, formatDateForDisplay, formatDateForStorage } from '@/lib/dateUtils';
@@ -13,6 +14,7 @@ export default function PortfolioPage() {
   const router = useRouter();
   const { user } = useAuth();
   const { myPortfolio, exitTrade, addTransaction, updatePosition, addToPortfolio } = useTrading();
+  const { accounts, activeAccount, setActiveAccount } = useAccounts();
   const { searchSymbols } = useSymbols();
   const [activeTab, setActiveTab] = useState('open');
   const [viewMode, setViewMode] = useState<'summary' | 'detailed'>('detailed');
@@ -23,6 +25,7 @@ export default function PortfolioPage() {
   const [importErrors, setImportErrors] = useState<ValidationError[]>([]);
   const [importSummary, setImportSummary] = useState<{ total: number; valid: number; invalid: number } | null>(null);
   const [isImporting, setIsImporting] = useState(false);
+  const [selectedImportAccount, setSelectedImportAccount] = useState<string>('');
 
   // Check email verification
   useEffect(() => {
@@ -65,8 +68,18 @@ export default function PortfolioPage() {
       customNote: '',
     }
   });
-  const openPositions = myPortfolio.filter(p => p.status === 'open');
-  const closedPositions = myPortfolio.filter(p => p.status === 'closed');
+  // Filter positions by active account
+  const accountPositions = activeAccount
+    ? myPortfolio.filter(p => !p.accountId || p.accountId === activeAccount.id)
+    : myPortfolio;
+
+  console.log('Portfolio - activeAccount:', activeAccount);
+  console.log('Portfolio - total positions:', myPortfolio.length);
+  console.log('Portfolio - filtered positions:', accountPositions.length);
+  console.log('Portfolio - sample position accountIds:', myPortfolio.slice(0, 3).map(p => ({ symbol: p.symbol, accountId: p.accountId })));
+
+  const openPositions = accountPositions.filter(p => p.status === 'open');
+  const closedPositions = accountPositions.filter(p => p.status === 'closed');
   // Calculate portfolio metrics
   const portfolioValue = openPositions.reduce((sum, p) => sum + (p.currentPrice * p.quantity), 0);
   const totalPnL = openPositions.reduce((sum, p) => {
@@ -222,6 +235,12 @@ export default function PortfolioPage() {
           const positionData = csvRowToPosition(row);
           // Convert date format for storage
           positionData.dateTaken = formatDateForStorage(row.dateTaken);
+          // Add accountId if selected
+          if (selectedImportAccount) {
+            positionData.accountId = selectedImportAccount;
+          } else if (activeAccount) {
+            positionData.accountId = activeAccount.id;
+          }
           await addToPortfolio('', positionData);
         }
       }
@@ -728,6 +747,28 @@ export default function PortfolioPage() {
           </div>
         </div>
         <p className="text-gray-600 dark:text-[#8b949e]">Track your positions and portfolio performance</p>
+
+        {/* Account Selector */}
+        {accounts.length > 1 && activeAccount && (
+          <div className="flex items-center gap-3 mt-4">
+            <label className="text-sm font-semibold text-gray-600 dark:text-[#8b949e]">Account:</label>
+            <select
+              value={activeAccount.id}
+              onChange={(e) => {
+                const account = accounts.find(a => a.id === e.target.value);
+                if (account) setActiveAccount(account);
+              }}
+              className="bg-white dark:bg-[#1c2128] border border-gray-200 dark:border-[#30363d] rounded-lg px-3 py-2 text-gray-900 dark:text-white font-semibold"
+              style={{ borderLeftColor: activeAccount.color, borderLeftWidth: '4px' }}
+            >
+              {accounts.map(account => (
+                <option key={account.id} value={account.id}>
+                  {account.name} {account.isDefault ? '(Default)' : ''}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
       </div>
       {/* Metrics Cards */}
       <div className="px-5 mb-5 overflow-x-auto">
@@ -1379,6 +1420,27 @@ export default function PortfolioPage() {
                 <span>📄</span>
                 Download CSV Template
               </button>
+            </div>
+
+            {/* Account Selection */}
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-600 dark:text-[#8b949e] mb-2">
+                Import to Account
+              </label>
+              <select
+                value={selectedImportAccount}
+                onChange={(e) => setSelectedImportAccount(e.target.value)}
+                className="w-full bg-white dark:bg-[#0f1419] border border-gray-200 dark:border-[#30363d] rounded-lg px-3 py-2 text-gray-900 dark:text-white"
+              >
+                <option value="">
+                  {activeAccount ? `${activeAccount.name} (Current)` : 'Select account...'}
+                </option>
+                {accounts.filter(a => a.id !== activeAccount?.id).map(account => (
+                  <option key={account.id} value={account.id}>
+                    {account.name} {account.isDefault ? '(Default)' : ''}
+                  </option>
+                ))}
+              </select>
             </div>
 
             {/* File Upload */}

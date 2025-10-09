@@ -29,12 +29,24 @@ service cloud.firestore {
       allow write: if isOwner(userId);
     }
 
+    // Accounts collection - for managing multiple portfolios
+    match /accounts/{accountId} {
+      allow read: if isSignedIn() &&
+        resource.data.userId == request.auth.uid;
+      allow create: if isSignedIn() &&
+        request.resource.data.userId == request.auth.uid;
+      allow update: if isSignedIn() &&
+        resource.data.userId == request.auth.uid;
+      allow delete: if false; // No delete allowed
+    }
+
     // Ideas collection
     match /ideas/{ideaId} {
       allow read: if isSignedIn();
       allow create: if isSignedIn();
-      allow update, delete: if isSignedIn() &&
+      allow update: if isSignedIn() &&
         resource.data.userId == request.auth.uid;
+      allow delete: if false; // No delete allowed
     }
 
     // Portfolio collection
@@ -42,44 +54,49 @@ service cloud.firestore {
       allow read: if isSignedIn();
       allow create: if isSignedIn() &&
         request.resource.data.userId == request.auth.uid;
-      allow update, delete: if isSignedIn() &&
+      allow update: if isSignedIn() &&
         resource.data.userId == request.auth.uid;
+      allow delete: if false; // No delete allowed - use status='closed' instead
     }
 
     // TradingIdeas collection
     match /tradingIdeas/{ideaId} {
       allow read: if isSignedIn();
       allow create: if isSignedIn();
-      allow delete: if isSignedIn() &&
-        resource.data.userId == request.auth.uid;
       // Allow owner to update everything, others can only update followers/likes/likedBy
       allow update: if isSignedIn() && (
         resource.data.userId == request.auth.uid ||
         request.resource.data.diff(resource.data).affectedKeys().hasOnly(['followers', 'likedBy', 'likes', 'commentCount'])
       );
+      allow delete: if false; // No delete allowed
     }
 
     // Portfolios collection
     match /portfolios/{positionId} {
-      allow read, write: if isSignedIn() &&
+      allow read: if isSignedIn() &&
         resource.data.userId == request.auth.uid;
       allow create: if isSignedIn();
+      allow update: if isSignedIn() &&
+        resource.data.userId == request.auth.uid;
+      allow delete: if false; // No delete allowed
     }
 
     // Comments collection
     match /comments/{commentId} {
       allow read: if isSignedIn();
       allow create: if isSignedIn();
-      allow update, delete: if isSignedIn() &&
+      allow update: if isSignedIn() &&
         resource.data.userId == request.auth.uid;
+      allow delete: if false; // No delete allowed
     }
 
     // Notifications collection
     match /notifications/{notificationId} {
       allow read: if isSignedIn();
       allow create: if isSignedIn();
-      allow update, delete: if isSignedIn() &&
+      allow update: if isSignedIn() &&
         resource.data.userId == request.auth.uid;
+      allow delete: if false; // No delete allowed
     }
   }
 }

@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { AuthProvider } from "../contexts/AuthContext";
+import { AccountsProvider } from "../contexts/AccountsContext";
 import { TradingProvider } from "../contexts/TradingContext";
 import { SymbolsProvider } from "../contexts/SymbolsContext";
 import { ThemeProvider } from "../contexts/ThemeContext";
@@ -75,11 +76,13 @@ export default function RootLayout({
       >
         <ThemeProvider>
           <AuthProvider>
-            <SymbolsProvider>
-              <TradingProvider>
-                {children}
-              </TradingProvider>
-            </SymbolsProvider>
+            <AccountsProvider>
+              <SymbolsProvider>
+                <TradingProvider>
+                  {children}
+                </TradingProvider>
+              </SymbolsProvider>
+            </AccountsProvider>
           </AuthProvider>
         </ThemeProvider>
       </body>

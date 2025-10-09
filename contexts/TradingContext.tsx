@@ -18,6 +18,7 @@ import {
 } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 import { useAuth } from './AuthContext';
+import { useAccounts } from './AccountsContext';
 
 interface TradingIdea {
   id: string;
@@ -95,6 +96,7 @@ interface PortfolioPosition {
   id: string;
   ideaId: string;
   userId: string;
+  accountId?: string; // NEW: Links position to account
   symbol: string;
   tradeType: string;
   entryPrice: number;
@@ -112,6 +114,7 @@ interface PortfolioPosition {
   exitReason?: string;
   exitCriteria?: ExitCriteria;
   technicals?: TechnicalData;
+  fundamentals?: any;
   transactions: Transaction[];
 }
 
@@ -177,6 +180,7 @@ interface TradingProviderProps {
 
 export const TradingProvider: React.FC<TradingProviderProps> = ({ children }) => {
   const { user } = useAuth();
+  const { selectedAccount } = useAccounts();
   const [ideas, setIdeas] = useState<TradingIdea[]>([]);
   const [myPortfolio, setMyPortfolio] = useState<PortfolioPosition[]>([]);
   const [notifications, setNotifications] = useState<Notification[]>([]);
@@ -521,6 +525,7 @@ export const TradingProvider: React.FC<TradingProviderProps> = ({ children }) =>
         ...cleanedData,
         ideaId,
         userId: user.uid,
+        accountId: selectedAccount?.id || `${user.uid}-primary`, // Use selected account or default to user's primary
         status: 'open',
         transactions: [initialTransaction],
         createdAt: serverTimestamp(),
