@@ -364,11 +364,11 @@ export default function Home() {
               © 2025 TradeIdea. All rights reserved.
             </div>
             <div className="flex gap-6 text-sm text-gray-600 dark:text-[#8b949e]">
-              <button className="hover:text-gray-900 dark:hover:text-white transition-colors">About</button>
+              <button onClick={() => router.push('/guide')} className="hover:text-gray-900 dark:hover:text-white transition-colors">User Guide</button>
               <button onClick={() => router.push('/faq')} className="hover:text-gray-900 dark:hover:text-white transition-colors">FAQ</button>
+              <button className="hover:text-gray-900 dark:hover:text-white transition-colors">About</button>
               <button className="hover:text-gray-900 dark:hover:text-white transition-colors">Privacy</button>
               <button className="hover:text-gray-900 dark:hover:text-white transition-colors">Terms</button>
-              <button className="hover:text-gray-900 dark:hover:text-white transition-colors">Contact</button>
             </div>
           </div>
         </div>

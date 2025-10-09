@@ -1,0 +1,491 @@
+'use client';
+
+import React from 'react';
+import Link from 'next/link';
+import Navigation from '../../components/Navigation';
+import { MyPortfolioIcon } from '@/components/icons';
+
+export default function GuidePage() {
+  return (
+    <div className="min-h-screen bg-white dark:bg-[#0f1419]">
+      <Navigation />
+
+      <div className="max-w-5xl mx-auto px-4 py-8">
+        {/* Header */}
+        <div className="mb-12 text-center">
+          <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-[#ff8c42] flex items-center justify-center">
+            <MyPortfolioIcon size={36} />
+          </div>
+          <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-3">TradeIdea User Guide</h1>
+          <p className="text-lg text-gray-600 dark:text-[#8b949e]">
+            Complete guide to all features and capabilities
+          </p>
+        </div>
+
+        {/* Table of Contents */}
+        <div className="mb-12 bg-gray-50 dark:bg-[#1c2128] border border-gray-200 dark:border-[#30363d] rounded-xl p-6">
+          <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4">Table of Contents</h2>
+          <div className="grid md:grid-cols-2 gap-3">
+            <a href="#portfolio-health" className="text-[#ff8c42] hover:underline">1. Portfolio Health Dashboard</a>
+            <a href="#multi-account" className="text-[#ff8c42] hover:underline">2. Multi-Account Management</a>
+            <a href="#csv-import" className="text-[#ff8c42] hover:underline">3. CSV Import</a>
+            <a href="#technical-analysis" className="text-[#ff8c42] hover:underline">4. Technical Analysis</a>
+            <a href="#fundamental-analysis" className="text-[#ff8c42] hover:underline">5. Fundamental Analysis</a>
+            <a href="#exit-criteria" className="text-[#ff8c42] hover:underline">6. Smart Exit Criteria</a>
+            <a href="#trading-ideas" className="text-[#ff8c42] hover:underline">7. Trading Ideas Community</a>
+            <a href="#notifications" className="text-[#ff8c42] hover:underline">8. Notifications & Alerts</a>
+          </div>
+        </div>
+
+        {/* Section 1: Portfolio Health Dashboard */}
+        <section id="portfolio-health" className="mb-12 scroll-mt-20">
+          <div className="bg-gray-50 dark:bg-[#1c2128] border border-gray-200 dark:border-[#30363d] rounded-xl p-8">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="text-4xl">📊</div>
+              <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Portfolio Health Dashboard</h2>
+            </div>
+            <p className="text-gray-600 dark:text-[#8b949e] mb-6">
+              Get instant insights into your portfolio's health with a comprehensive single-page view.
+            </p>
+
+            <div className="space-y-4">
+              <div className="bg-white dark:bg-[#0f1419] border border-gray-200 dark:border-[#30363d] rounded-lg p-4">
+                <h3 className="font-semibold text-gray-900 dark:text-white mb-2">💰 Total Value & P&L</h3>
+                <ul className="text-sm text-gray-600 dark:text-[#8b949e] space-y-1 ml-4 list-disc">
+                  <li>Current portfolio value and total invested amount</li>
+                  <li>Unrealized profit/loss with percentage gain</li>
+                  <li>Daily change tracker</li>
+                  <li>Per-position breakdown with color-coded indicators</li>
+                </ul>
+              </div>
+
+              <div className="bg-white dark:bg-[#0f1419] border border-gray-200 dark:border-[#30363d] rounded-lg p-4">
+                <h3 className="font-semibold text-gray-900 dark:text-white mb-2">⚠️ Risk Signals</h3>
+                <ul className="text-sm text-gray-600 dark:text-[#8b949e] space-y-1 ml-4 list-disc">
+                  <li>Positions below stop-loss levels</li>
+                  <li>Stocks trading below 50 EMA, 100 MA, or 200 MA</li>
+                  <li>Weekly Supertrend exit signals</li>
+                  <li>Warning indicators for high-risk positions</li>
+                </ul>
+              </div>
+
+              <div className="bg-white dark:bg-[#0f1419] border border-gray-200 dark:border-[#30363d] rounded-lg p-4">
+                <h3 className="font-semibold text-gray-900 dark:text-white mb-2">📈 Technical Health</h3>
+                <ul className="text-sm text-gray-600 dark:text-[#8b949e] space-y-1 ml-4 list-disc">
+                  <li>Golden Cross and Death Cross indicators</li>
+                  <li>EMA/MA trend analysis</li>
+                  <li>RSI, MACD, and Bollinger Bands signals</li>
+                  <li>Supertrend momentum indicators</li>
+                </ul>
+              </div>
+
+              <div className="bg-white dark:bg-[#0f1419] border border-gray-200 dark:border-[#30363d] rounded-lg p-4">
+                <h3 className="font-semibold text-gray-900 dark:text-white mb-2">🎯 Action Items</h3>
+                <ul className="text-sm text-gray-600 dark:text-[#8b949e] space-y-1 ml-4 list-disc">
+                  <li>Positions near target prices</li>
+                  <li>Pending exit recommendations</li>
+                  <li>Buy/sell opportunities based on signals</li>
+                  <li>Rebalancing suggestions</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* Section 2: Multi-Account Management */}
+        <section id="multi-account" className="mb-12 scroll-mt-20">
+          <div className="bg-gray-50 dark:bg-[#1c2128] border border-gray-200 dark:border-[#30363d] rounded-xl p-8">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="text-4xl">📂</div>
+              <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Multi-Account Management</h2>
+            </div>
+            <p className="text-gray-600 dark:text-[#8b949e] mb-6">
+              Manage separate portfolios for different purposes or family members.
+            </p>
+
+            <div className="space-y-4">
+              <div className="bg-white dark:bg-[#0f1419] border border-gray-200 dark:border-[#30363d] rounded-lg p-4">
+                <h3 className="font-semibold text-gray-900 dark:text-white mb-2">Create Multiple Accounts</h3>
+                <ul className="text-sm text-gray-600 dark:text-[#8b949e] space-y-1 ml-4 list-disc">
+                  <li>Set up unlimited portfolio accounts (Personal, Spouse, Kids, etc.)</li>
+                  <li>Assign unique names, descriptions, and colors</li>
+                  <li>Set a default account for quick access</li>
+                  <li>Switch between accounts instantly</li>
+                </ul>
+              </div>
+
+              <div className="bg-white dark:bg-[#0f1419] border border-gray-200 dark:border-[#30363d] rounded-lg p-4">
+                <h3 className="font-semibold text-gray-900 dark:text-white mb-2">Separate Tracking</h3>
+                <ul className="text-sm text-gray-600 dark:text-[#8b949e] space-y-1 ml-4 list-disc">
+                  <li>Each account has independent positions and performance</li>
+                  <li>Color-coded visual identification</li>
+                  <li>Consolidated view across all accounts</li>
+                  <li>Per-account P&L and analytics</li>
+                </ul>
+              </div>
+
+              <div className="bg-white dark:bg-[#0f1419] border border-gray-200 dark:border-[#30363d] rounded-lg p-4">
+                <h3 className="font-semibold text-gray-900 dark:text-white mb-2">How to Use</h3>
+                <ol className="text-sm text-gray-600 dark:text-[#8b949e] space-y-1 ml-4 list-decimal">
+                  <li>Go to <strong>Accounts</strong> page from navigation</li>
+                  <li>Click <strong>Create Account</strong> button</li>
+                  <li>Enter name, description (optional), and choose a color</li>
+                  <li>Use <strong>Switch</strong> to change active account</li>
+                  <li>All new positions will be added to the active account</li>
+                </ol>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* Section 3: CSV Import */}
+        <section id="csv-import" className="mb-12 scroll-mt-20">
+          <div className="bg-gray-50 dark:bg-[#1c2128] border border-gray-200 dark:border-[#30363d] rounded-xl p-8">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="text-4xl">📥</div>
+              <h2 className="text-2xl font-bold text-gray-900 dark:text-white">CSV Import</h2>
+            </div>
+            <p className="text-gray-600 dark:text-[#8b949e] mb-6">
+              Quickly import your holdings from any broker with smart format detection.
+            </p>
+
+            <div className="space-y-4">
+              <div className="bg-white dark:bg-[#0f1419] border border-gray-200 dark:border-[#30363d] rounded-lg p-4">
+                <h3 className="font-semibold text-gray-900 dark:text-white mb-2">Supported Brokers</h3>
+                <ul className="text-sm text-gray-600 dark:text-[#8b949e] space-y-1 ml-4 list-disc">
+                  <li><strong>Zerodha</strong> - Console holdings export</li>
+                  <li><strong>ICICI Direct</strong> - Portfolio report with smart symbol mapping</li>
+                  <li><strong>Standard Format</strong> - Custom CSV with symbol, quantity, entry price</li>
+                  <li>Automatic field mapping (handles different column names)</li>
+                </ul>
+              </div>
+
+              <div className="bg-white dark:bg-[#0f1419] border border-gray-200 dark:border-[#30363d] rounded-lg p-4">
+                <h3 className="font-semibold text-gray-900 dark:text-white mb-2">ICICI Direct Symbol Mapping</h3>
+                <p className="text-sm text-gray-600 dark:text-[#8b949e] mb-2">
+                  ICICI uses abbreviated codes. We automatically map them to NSE symbols:
+                </p>
+                <div className="grid md:grid-cols-2 gap-2 text-sm">
+                  <div className="text-gray-600 dark:text-[#8b949e]">HDFBAN → HDFCBANK</div>
+                  <div className="text-gray-600 dark:text-[#8b949e]">ULTCEM → ULTRACEMCO</div>
+                  <div className="text-gray-600 dark:text-[#8b949e]">RELIND → RELIANCE</div>
+                  <div className="text-gray-600 dark:text-[#8b949e]">AMARAJ → ARE&M</div>
+                  <div className="text-gray-600 dark:text-[#8b949e] md:col-span-2">...and 40+ more mappings</div>
+                </div>
+              </div>
+
+              <div className="bg-white dark:bg-[#0f1419] border border-gray-200 dark:border-[#30363d] rounded-lg p-4">
+                <h3 className="font-semibold text-gray-900 dark:text-white mb-2">How to Import</h3>
+                <ol className="text-sm text-gray-600 dark:text-[#8b949e] space-y-1 ml-4 list-decimal">
+                  <li>Go to <strong>My Portfolio</strong> page</li>
+                  <li>Click <strong>Import CSV</strong> button</li>
+                  <li>Select your CSV file from your broker</li>
+                  <li>Review the preview and validation results</li>
+                  <li>Set default target/stop-loss if missing</li>
+                  <li>Click <strong>Import</strong> to add all positions</li>
+                </ol>
+              </div>
+
+              <div className="bg-white dark:bg-[#0f1419] border border-gray-200 dark:border-[#30363d] rounded-lg p-4">
+                <h3 className="font-semibold text-gray-900 dark:text-white mb-2">CSV Format (Standard)</h3>
+                <pre className="text-xs bg-gray-100 dark:bg-[#0f1419] p-3 rounded border border-gray-200 dark:border-[#30363d] overflow-x-auto">
+{`symbol,entryPrice,quantity,dateTaken,target1,stopLoss,tradeType
+RELIANCE,2500.00,10,15-01-2025,2800.00,2300.00,Long
+TCS,3600.00,5,20-01-2025,4000.00,3400.00,Long`}
+                </pre>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* Section 4: Technical Analysis */}
+        <section id="technical-analysis" className="mb-12 scroll-mt-20">
+          <div className="bg-gray-50 dark:bg-[#1c2128] border border-gray-200 dark:border-[#30363d] rounded-xl p-8">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="text-4xl">📊</div>
+              <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Technical Analysis</h2>
+            </div>
+            <p className="text-gray-600 dark:text-[#8b949e] mb-6">
+              Automated real-time technical indicators for every stock in your portfolio.
+            </p>
+
+            <div className="space-y-4">
+              <div className="bg-white dark:bg-[#0f1419] border border-gray-200 dark:border-[#30363d] rounded-lg p-4">
+                <h3 className="font-semibold text-gray-900 dark:text-white mb-2">Moving Averages & EMAs</h3>
+                <ul className="text-sm text-gray-600 dark:text-[#8b949e] space-y-1 ml-4 list-disc">
+                  <li><strong>50 EMA</strong> - Short-term trend indicator</li>
+                  <li><strong>100 MA</strong> - Medium-term support/resistance</li>
+                  <li><strong>200 MA</strong> - Long-term trend (bull/bear market indicator)</li>
+                  <li><strong>Golden Cross</strong> - 50 EMA crosses above 200 MA (bullish)</li>
+                  <li><strong>Death Cross</strong> - 50 EMA crosses below 200 MA (bearish)</li>
+                </ul>
+              </div>
+
+              <div className="bg-white dark:bg-[#0f1419] border border-gray-200 dark:border-[#30363d] rounded-lg p-4">
+                <h3 className="font-semibold text-gray-900 dark:text-white mb-2">Momentum Indicators</h3>
+                <ul className="text-sm text-gray-600 dark:text-[#8b949e] space-y-1 ml-4 list-disc">
+                  <li><strong>RSI (Relative Strength Index)</strong> - Overbought (&gt;70) / Oversold (&lt;30)</li>
+                  <li><strong>MACD</strong> - Trend following momentum with signal line</li>
+                  <li><strong>Bollinger Bands</strong> - Volatility and price range analysis</li>
+                  <li><strong>Supertrend</strong> - Weekly trend with buy/sell signals</li>
+                </ul>
+              </div>
+
+              <div className="bg-white dark:bg-[#0f1419] border border-gray-200 dark:border-[#30363d] rounded-lg p-4">
+                <h3 className="font-semibold text-gray-900 dark:text-white mb-2">How to View</h3>
+                <ul className="text-sm text-gray-600 dark:text-[#8b949e] space-y-1 ml-4 list-disc">
+                  <li>All indicators are automatically calculated daily via batch job</li>
+                  <li>View on portfolio page in the technical column</li>
+                  <li>Click position details for full technical analysis</li>
+                  <li>Color-coded signals (green = bullish, red = bearish)</li>
+                </ul>
+              </div>
+
+              <div className="bg-orange-50 dark:bg-orange-500/10 border border-orange-200 dark:border-orange-500/30 rounded-lg p-4">
+                <h3 className="font-semibold text-orange-900 dark:text-orange-400 mb-2">⏰ Important Note</h3>
+                <p className="text-sm text-orange-800 dark:text-orange-300">
+                  Technical analysis data is updated daily through our automated batch job. When you first add a position,
+                  the technical indicators will be calculated and appear within 24 hours (typically updated every evening).
+                </p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* Section 5: Fundamental Analysis */}
+        <section id="fundamental-analysis" className="mb-12 scroll-mt-20">
+          <div className="bg-gray-50 dark:bg-[#1c2128] border border-gray-200 dark:border-[#30363d] rounded-xl p-8">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="text-4xl">💼</div>
+              <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Fundamental Analysis</h2>
+            </div>
+            <p className="text-gray-600 dark:text-[#8b949e] mb-6">
+              Access key financial metrics to make informed investment decisions.
+            </p>
+
+            <div className="space-y-4">
+              <div className="bg-white dark:bg-[#0f1419] border border-gray-200 dark:border-[#30363d] rounded-lg p-4">
+                <h3 className="font-semibold text-gray-900 dark:text-white mb-2">Valuation Metrics</h3>
+                <ul className="text-sm text-gray-600 dark:text-[#8b949e] space-y-1 ml-4 list-disc">
+                  <li><strong>P/E Ratio</strong> - Price to Earnings (valuation indicator)</li>
+                  <li><strong>Market Cap</strong> - Company size classification</li>
+                  <li><strong>P/B Ratio</strong> - Price to Book value</li>
+                  <li><strong>Dividend Yield</strong> - Annual dividend percentage</li>
+                </ul>
+              </div>
+
+              <div className="bg-white dark:bg-[#0f1419] border border-gray-200 dark:border-[#30363d] rounded-lg p-4">
+                <h3 className="font-semibold text-gray-900 dark:text-white mb-2">Profitability Metrics</h3>
+                <ul className="text-sm text-gray-600 dark:text-[#8b949e] space-y-1 ml-4 list-disc">
+                  <li><strong>ROE</strong> - Return on Equity (efficiency indicator)</li>
+                  <li><strong>ROA</strong> - Return on Assets</li>
+                  <li><strong>Profit Margin</strong> - Net profit percentage</li>
+                  <li><strong>Revenue Growth</strong> - Year-over-year growth rate</li>
+                </ul>
+              </div>
+
+              <div className="bg-white dark:bg-[#0f1419] border border-gray-200 dark:border-[#30363d] rounded-lg p-4">
+                <h3 className="font-semibold text-gray-900 dark:text-white mb-2">Financial Health</h3>
+                <ul className="text-sm text-gray-600 dark:text-[#8b949e] space-y-1 ml-4 list-disc">
+                  <li><strong>Debt to Equity</strong> - Leverage ratio</li>
+                  <li><strong>Current Ratio</strong> - Short-term liquidity</li>
+                  <li><strong>EPS</strong> - Earnings Per Share</li>
+                  <li><strong>Book Value</strong> - Net asset value per share</li>
+                </ul>
+              </div>
+
+              <div className="bg-white dark:bg-[#0f1419] border border-gray-200 dark:border-[#30363d] rounded-lg p-4">
+                <h3 className="font-semibold text-gray-900 dark:text-white mb-2">How to Access</h3>
+                <ul className="text-sm text-gray-600 dark:text-[#8b949e] space-y-1 ml-4 list-disc">
+                  <li>Click on any position in your portfolio</li>
+                  <li>Navigate to the <strong>Fundamentals</strong> tab</li>
+                  <li>View comprehensive financial data</li>
+                  <li>Compare with industry averages</li>
+                </ul>
+              </div>
+
+              <div className="bg-orange-50 dark:bg-orange-500/10 border border-orange-200 dark:border-orange-500/30 rounded-lg p-4">
+                <h3 className="font-semibold text-orange-900 dark:text-orange-400 mb-2">⏰ Important Note</h3>
+                <p className="text-sm text-orange-800 dark:text-orange-300">
+                  Fundamental data is fetched daily through our automated batch job. When you first add a position,
+                  the fundamental metrics will be available within 24 hours (typically updated every evening).
+                  This ensures you always have the most recent quarterly/annual financial data.
+                </p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* Section 6: Smart Exit Criteria */}
+        <section id="exit-criteria" className="mb-12 scroll-mt-20">
+          <div className="bg-gray-50 dark:bg-[#1c2128] border border-gray-200 dark:border-[#30363d] rounded-xl p-8">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="text-4xl">🎯</div>
+              <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Smart Exit Criteria</h2>
+            </div>
+            <p className="text-gray-600 dark:text-[#8b949e] mb-6">
+              Set custom rules for when to exit positions automatically based on technical signals.
+            </p>
+
+            <div className="space-y-4">
+              <div className="bg-white dark:bg-[#0f1419] border border-gray-200 dark:border-[#30363d] rounded-lg p-4">
+                <h3 className="font-semibold text-gray-900 dark:text-white mb-2">Available Exit Rules</h3>
+                <ul className="text-sm text-gray-600 dark:text-[#8b949e] space-y-1 ml-4 list-disc">
+                  <li><strong>Exit at Stop-Loss</strong> - Alert when price hits stop-loss level</li>
+                  <li><strong>Exit at Target</strong> - Alert when target price is reached</li>
+                  <li><strong>Exit Below 50 EMA</strong> - Short-term trend reversal</li>
+                  <li><strong>Exit Below 100 MA</strong> - Medium-term support break</li>
+                  <li><strong>Exit Below 200 MA</strong> - Long-term trend break (Default: ON)</li>
+                  <li><strong>Exit on Weekly Supertrend</strong> - Weekly trend reversal (Default: ON)</li>
+                  <li><strong>Custom Note</strong> - Add your own exit conditions</li>
+                </ul>
+              </div>
+
+              <div className="bg-white dark:bg-[#0f1419] border border-gray-200 dark:border-[#30363d] rounded-lg p-4">
+                <h3 className="font-semibold text-gray-900 dark:text-white mb-2">Default Settings</h3>
+                <p className="text-sm text-gray-600 dark:text-[#8b949e] mb-2">
+                  New positions automatically have these criteria enabled:
+                </p>
+                <ul className="text-sm text-gray-600 dark:text-[#8b949e] space-y-1 ml-4 list-disc">
+                  <li>✅ Exit at Stop-Loss</li>
+                  <li>✅ Exit at Target</li>
+                  <li>✅ Exit Below 200 MA</li>
+                  <li>✅ Exit on Weekly Supertrend</li>
+                </ul>
+              </div>
+
+              <div className="bg-white dark:bg-[#0f1419] border border-gray-200 dark:border-[#30363d] rounded-lg p-4">
+                <h3 className="font-semibold text-gray-900 dark:text-white mb-2">How to Configure</h3>
+                <ol className="text-sm text-gray-600 dark:text-[#8b949e] space-y-1 ml-4 list-decimal">
+                  <li>Click on a position in your portfolio</li>
+                  <li>Go to <strong>Exit Criteria</strong> section</li>
+                  <li>Toggle ON/OFF for each exit rule</li>
+                  <li>Set your stop-loss and target prices</li>
+                  <li>Add custom notes if needed</li>
+                  <li>Save changes</li>
+                </ol>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* Section 7: Trading Ideas Community */}
+        <section id="trading-ideas" className="mb-12 scroll-mt-20">
+          <div className="bg-gray-50 dark:bg-[#1c2128] border border-gray-200 dark:border-[#30363d] rounded-xl p-8">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="text-4xl">💡</div>
+              <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Trading Ideas Community</h2>
+            </div>
+            <p className="text-gray-600 dark:text-[#8b949e] mb-6">
+              Share and discover trading opportunities with a community of traders.
+            </p>
+
+            <div className="space-y-4">
+              <div className="bg-white dark:bg-[#0f1419] border border-gray-200 dark:border-[#30363d] rounded-lg p-4">
+                <h3 className="font-semibold text-gray-900 dark:text-white mb-2">Share Your Ideas</h3>
+                <ul className="text-sm text-gray-600 dark:text-[#8b949e] space-y-1 ml-4 list-disc">
+                  <li>Post detailed trade setups with entry, target, and stop-loss</li>
+                  <li>Add technical and fundamental analysis</li>
+                  <li>Share your reasoning and strategy</li>
+                  <li>Track performance of your shared ideas</li>
+                </ul>
+              </div>
+
+              <div className="bg-white dark:bg-[#0f1419] border border-gray-200 dark:border-[#30363d] rounded-lg p-4">
+                <h3 className="font-semibold text-gray-900 dark:text-white mb-2">Discover Ideas</h3>
+                <ul className="text-sm text-gray-600 dark:text-[#8b949e] space-y-1 ml-4 list-disc">
+                  <li>Browse ideas from successful traders</li>
+                  <li>Filter by trade type, time frame, and status</li>
+                  <li>Add ideas directly to your portfolio</li>
+                  <li>Follow traders to get their latest ideas</li>
+                </ul>
+              </div>
+
+              <div className="bg-white dark:bg-[#0f1419] border border-gray-200 dark:border-[#30363d] rounded-lg p-4">
+                <h3 className="font-semibold text-gray-900 dark:text-white mb-2">How to Post an Idea</h3>
+                <ol className="text-sm text-gray-600 dark:text-[#8b949e] space-y-1 ml-4 list-decimal">
+                  <li>Click <strong>New Idea</strong> from navigation</li>
+                  <li>Enter stock symbol, entry price, quantity</li>
+                  <li>Set target and stop-loss levels</li>
+                  <li>Add your analysis and reasoning</li>
+                  <li>Choose time frame (Intraday, Swing, Positional)</li>
+                  <li>Click <strong>Share Idea</strong></li>
+                </ol>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* Section 8: Notifications & Alerts */}
+        <section id="notifications" className="mb-12 scroll-mt-20">
+          <div className="bg-gray-50 dark:bg-[#1c2128] border border-gray-200 dark:border-[#30363d] rounded-xl p-8">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="text-4xl">🔔</div>
+              <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Notifications & Alerts</h2>
+            </div>
+            <p className="text-gray-600 dark:text-[#8b949e] mb-6">
+              Stay informed with real-time notifications for important portfolio events.
+            </p>
+
+            <div className="space-y-4">
+              <div className="bg-white dark:bg-[#0f1419] border border-gray-200 dark:border-[#30363d] rounded-lg p-4">
+                <h3 className="font-semibold text-gray-900 dark:text-white mb-2">Exit Alerts</h3>
+                <ul className="text-sm text-gray-600 dark:text-[#8b949e] space-y-1 ml-4 list-disc">
+                  <li>Stop-loss breach notifications</li>
+                  <li>Target price reached alerts</li>
+                  <li>EMA/MA level breaks</li>
+                  <li>Supertrend reversal signals</li>
+                </ul>
+              </div>
+
+              <div className="bg-white dark:bg-[#0f1419] border border-gray-200 dark:border-[#30363d] rounded-lg p-4">
+                <h3 className="font-semibold text-gray-900 dark:text-white mb-2">Community Notifications</h3>
+                <ul className="text-sm text-gray-600 dark:text-[#8b949e] space-y-1 ml-4 list-disc">
+                  <li>New ideas from followed traders</li>
+                  <li>Comments on your shared ideas</li>
+                  <li>Likes and engagement updates</li>
+                  <li>Community milestones</li>
+                </ul>
+              </div>
+
+              <div className="bg-white dark:bg-[#0f1419] border border-gray-200 dark:border-[#30363d] rounded-lg p-4">
+                <h3 className="font-semibold text-gray-900 dark:text-white mb-2">How to Manage</h3>
+                <ul className="text-sm text-gray-600 dark:text-[#8b949e] space-y-1 ml-4 list-disc">
+                  <li>Click the bell icon in navigation to view notifications</li>
+                  <li>Mark as read or dismiss individual notifications</li>
+                  <li>Configure notification preferences in Profile settings</li>
+                  <li>Enable/disable browser notifications</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* Footer CTA */}
+        <div className="bg-gradient-to-r from-[#ff8c42]/10 to-orange-500/5 border-2 border-[#ff8c42] rounded-2xl p-8 text-center">
+          <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-3">Ready to Get Started?</h2>
+          <p className="text-gray-600 dark:text-[#8b949e] mb-6">
+            Start managing your portfolio with powerful tools and insights
+          </p>
+          <Link
+            href="/portfolio"
+            className="inline-block px-6 py-3 bg-[#ff8c42] hover:bg-[#ff9a58] text-white font-semibold rounded-lg transition-colors"
+          >
+            Go to My Portfolio
+          </Link>
+        </div>
+
+        {/* Quick Links */}
+        <div className="mt-8 text-center text-sm text-gray-600 dark:text-[#8b949e]">
+          <Link href="/faq" className="hover:text-[#ff8c42] transition-colors">FAQ</Link>
+          <span className="mx-3">•</span>
+          <Link href="/ideas" className="hover:text-[#ff8c42] transition-colors">Ideas Hub</Link>
+          <span className="mx-3">•</span>
+          <Link href="/portfolio" className="hover:text-[#ff8c42] transition-colors">My Portfolio</Link>
+          <span className="mx-3">•</span>
+          <Link href="/accounts" className="hover:text-[#ff8c42] transition-colors">Accounts</Link>
+        </div>
+      </div>
+    </div>
+  );
+}

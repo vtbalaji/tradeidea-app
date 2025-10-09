@@ -250,8 +250,8 @@ export default function IdeasHubPage() {
 
       {/* Header */}
       <div className="p-5 pt-5 pb-3">
-        <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-1">Trading Ideas Hub</h1>
-        <p className="text-sm text-gray-600 dark:text-[#8b949e]">Discover and share trading opportunities</p>
+        <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-1">Investment Ideas Hub</h1>
+        <p className="text-sm text-gray-600 dark:text-[#8b949e]">Discover and share Investment opportunities</p>
       </div>
 
       {/* Search Bar */}

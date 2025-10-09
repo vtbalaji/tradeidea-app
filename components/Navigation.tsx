@@ -180,6 +180,28 @@ export default function Navigation() {
                     <span className="text-sm font-semibold text-gray-900 dark:text-white">Profile</span>
                   </button>
 
+                  <button
+                    onClick={() => {
+                      setShowProfileMenu(false);
+                      router.push('/guide');
+                    }}
+                    className="w-full flex items-center gap-3 px-4 py-3 hover:bg-gray-100 dark:hover:bg-[#30363d] transition-colors"
+                  >
+                    <span className="text-lg">📖</span>
+                    <span className="text-sm font-semibold text-gray-900 dark:text-white">User Guide</span>
+                  </button>
+
+                  <button
+                    onClick={() => {
+                      setShowProfileMenu(false);
+                      router.push('/faq');
+                    }}
+                    className="w-full flex items-center gap-3 px-4 py-3 hover:bg-gray-100 dark:hover:bg-[#30363d] transition-colors"
+                  >
+                    <span className="text-lg">❓</span>
+                    <span className="text-sm font-semibold text-gray-900 dark:text-white">FAQ</span>
+                  </button>
+
                   <div className="h-px bg-gray-200 dark:bg-[#30363d] mx-2" />
 
                   <button

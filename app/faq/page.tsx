@@ -86,7 +86,17 @@ const faqs: FAQItem[] = [
   {
     category: 'Technical Analysis',
     question: 'How often is technical data updated?',
-    answer: 'Technical data is updated when the batch analysis script runs. You can see "Technical data updated: Xh ago" on the Ideas and Portfolio pages to know when it was last refreshed.',
+    answer: 'Technical data is updated daily through our automated batch job (typically every evening). When you first add a position, technical indicators will be calculated and appear within 24 hours. You can see "Technical data updated: Xh ago" on the Ideas and Portfolio pages to know when it was last refreshed.',
+  },
+  {
+    category: 'Technical Analysis',
+    question: 'Why don\'t I see technical analysis for my newly added position?',
+    answer: 'Technical indicators are calculated through our daily batch job. When you add a new position, the technical analysis data (50 EMA, 200 MA, RSI, MACD, Bollinger Bands, Supertrend, etc.) will appear within 24 hours after the next batch run. This is normal and ensures accurate calculations based on historical data.',
+  },
+  {
+    category: 'Technical Analysis',
+    question: 'Why don\'t I see fundamental data for my stock?',
+    answer: 'Fundamental data (P/E ratio, market cap, ROE, debt ratios, etc.) is fetched daily through our automated batch job. When you first add a position, the fundamental metrics will be available within 24 hours (typically updated every evening). This ensures you always have the most recent quarterly/annual financial data.',
   },
   {
     category: 'Technical Analysis',
