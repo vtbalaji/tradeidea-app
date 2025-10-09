@@ -435,11 +435,12 @@ export default function PortfolioPage() {
                 key={position.id}
                 className="bg-gray-50 dark:bg-[#1c2128] border border-gray-200 dark:border-[#30363d] rounded-lg p-4 hover:border-[#ff8c42] transition-colors"
               >
-                <div className="flex items-center justify-between gap-4">
+                {/* First Row: Symbol, Trade Type, P&L */}
+                <div className="flex items-center justify-between gap-3 mb-2">
                   {/* Symbol and Trade Type */}
-                  <div className="flex items-center gap-2 min-w-[120px]">
-                    <h3 className="text-xl font-bold text-gray-900 dark:text-white">{position.symbol}</h3>
-                    <span className={`px-2 py-0.5 text-xs font-semibold rounded ${
+                  <div className="flex items-center gap-2 flex-1 min-w-0">
+                    <h3 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white truncate">{position.symbol}</h3>
+                    <span className={`px-2 py-0.5 text-xs font-semibold rounded flex-shrink-0 ${
                       position.tradeType === 'Long'
                         ? 'bg-green-500/20 text-green-400'
                         : 'bg-red-500/20 text-red-400'
@@ -448,21 +449,21 @@ export default function PortfolioPage() {
                     </span>
                   </div>
 
-                  {/* Overall Recommendation */}
-                  {position.technicals && position.status === 'open' && (
-                    <div className={`px-3 py-1.5 rounded-lg ${bgColor} flex-shrink-0`}>
-                      <p className={`text-xs font-bold ${textColor}`}>
-                        {recommendation}
-                      </p>
-                    </div>
-                  )}
-
                   {/* P&L */}
                   <div className={`text-right flex-shrink-0 ${isProfit ? 'text-green-500' : 'text-red-500'}`}>
-                    <p className="text-lg font-bold">{isProfit ? '+' : ''}₹{pnl.toFixed(2)}</p>
+                    <p className="text-base sm:text-lg font-bold">{isProfit ? '+' : ''}₹{pnl.toFixed(2)}</p>
                     <p className="text-xs">({isProfit ? '+' : ''}{pnlPercent.toFixed(2)}%)</p>
                   </div>
                 </div>
+
+                {/* Second Row: Recommendation (if available) */}
+                {position.technicals && position.status === 'open' && (
+                  <div className={`px-3 py-1.5 rounded-lg ${bgColor} inline-block`}>
+                    <p className={`text-xs font-bold ${textColor}`}>
+                      {recommendation}
+                    </p>
+                  </div>
+                )}
               </div>
             );
           })}
@@ -727,22 +728,23 @@ export default function PortfolioPage() {
       <Navigation />
       {/* Header */}
       <div className="p-5 pt-8">
-        <div className="flex justify-between items-center mb-2">
-          <h1 className="text-4xl font-bold text-gray-900 dark:text-white">My Portfolio</h1>
-          <div className="flex gap-3">
+        <div className="flex justify-between items-center mb-2 gap-2">
+          <h1 className="text-2xl sm:text-4xl font-bold text-gray-900 dark:text-white">My Portfolio</h1>
+          <div className="flex gap-2 sm:gap-3">
             <button
               onClick={() => setShowImportModal(true)}
-              className="bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-4 rounded-lg transition-colors flex items-center gap-2"
+              className="bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-3 sm:px-4 rounded-lg transition-colors flex items-center gap-2 text-sm sm:text-base"
             >
-              <span className="text-xl">📥</span>
-              Import CSV
+              <span className="text-xl hidden sm:inline">📥</span>
+              <span className="whitespace-nowrap">Import CSV</span>
             </button>
             <button
               onClick={() => setShowAddPositionModal(true)}
-              className="bg-[#ff8c42] hover:bg-[#ff9a58] text-white font-semibold py-2 px-4 rounded-lg transition-colors flex items-center gap-2"
+              className="bg-[#ff8c42] hover:bg-[#ff9a58] text-white font-semibold py-2 px-3 sm:px-4 rounded-lg transition-colors flex items-center gap-2 text-sm sm:text-base"
             >
               <span className="text-xl">+</span>
-              Add Position
+              <span className="hidden sm:inline">Add Position</span>
+              <span className="sm:hidden">Add</span>
             </button>
           </div>
         </div>
@@ -817,49 +819,49 @@ export default function PortfolioPage() {
           )}
         </div>
         {/* Tabs */}
-        <div className="flex items-center justify-between mb-5">
-          <div className="flex gap-3">
+        <div className="flex items-center justify-between mb-5 gap-2">
+          <div className="flex gap-2">
             <button
               onClick={() => setActiveTab('open')}
-              className={`px-5 py-2.5 rounded-lg text-sm font-semibold transition-colors ${
+              className={`px-3 sm:px-5 py-2 sm:py-2.5 rounded-lg text-xs sm:text-sm font-semibold transition-colors ${
                 activeTab === 'open'
                   ? 'bg-[#ff8c42] text-gray-900 dark:text-white border-[#ff8c42]'
                   : 'bg-gray-50 dark:bg-[#1c2128] text-gray-600 dark:text-[#8b949e] border-gray-200 dark:border-[#30363d]'
-              } border`}
+              } border whitespace-nowrap`}
             >
               Open ({openPositions.length})
             </button>
             <button
               onClick={() => setActiveTab('closed')}
-              className={`px-5 py-2.5 rounded-lg text-sm font-semibold transition-colors ${
+              className={`px-3 sm:px-5 py-2 sm:py-2.5 rounded-lg text-xs sm:text-sm font-semibold transition-colors ${
                 activeTab === 'closed'
                   ? 'bg-[#ff8c42] text-gray-900 dark:text-white border-[#ff8c42]'
                   : 'bg-gray-50 dark:bg-[#1c2128] text-gray-600 dark:text-[#8b949e] border-gray-200 dark:border-[#30363d]'
-              } border`}
+              } border whitespace-nowrap`}
             >
               Closed ({closedPositions.length})
             </button>
           </div>
 
           {/* View Mode Toggle */}
-          <div className="flex gap-2">
+          <div className="flex gap-1.5 sm:gap-2">
             <button
               onClick={() => setViewMode('summary')}
-              className={`px-4 py-2 rounded-lg text-xs font-semibold transition-colors ${
+              className={`px-2.5 sm:px-4 py-2 rounded-lg text-xs font-semibold transition-colors ${
                 viewMode === 'summary'
                   ? 'bg-[#ff8c42] text-gray-900 dark:text-white'
                   : 'bg-gray-50 dark:bg-[#1c2128] text-gray-600 dark:text-[#8b949e] hover:bg-gray-100 dark:hover:bg-[#30363d]'
-              }`}
+              } whitespace-nowrap`}
             >
               Summary
             </button>
             <button
               onClick={() => setViewMode('detailed')}
-              className={`px-4 py-2 rounded-lg text-xs font-semibold transition-colors ${
+              className={`px-2.5 sm:px-4 py-2 rounded-lg text-xs font-semibold transition-colors ${
                 viewMode === 'detailed'
                   ? 'bg-[#ff8c42] text-gray-900 dark:text-white'
                   : 'bg-gray-50 dark:bg-[#1c2128] text-gray-600 dark:text-[#8b949e] hover:bg-gray-100 dark:hover:bg-[#30363d]'
-              }`}
+              } whitespace-nowrap`}
             >
               Detailed
             </button>
