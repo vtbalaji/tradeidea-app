@@ -3,12 +3,18 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '../../contexts/AuthContext';
+import { useTrading } from '../../contexts/TradingContext';
 import Navigation from '../../components/Navigation';
+import { db as firestore } from '@/lib/firebase';
+import { collection, doc, updateDoc, serverTimestamp } from 'firebase/firestore';
 
 export default function ProfilePage() {
   const router = useRouter();
   const { user, userData, updateUserProfile, logout } = useAuth();
+  const { myPortfolio, exitTrade } = useTrading();
   const [isEditing, setIsEditing] = useState(false);
+  const [showClearConfirmModal, setShowClearConfirmModal] = useState(false);
+  const [isClearing, setIsClearing] = useState(false);
 
   // Check email verification
   useEffect(() => {
@@ -43,6 +49,49 @@ export default function ProfilePage() {
     }
     setLoading(false);
   };
+
+  const handleClearPortfolio = async () => {
+    if (!user) return;
+
+    setIsClearing(true);
+    try {
+      // Filter to only current user's open positions
+      const openPositions = myPortfolio.filter(p =>
+        p.status === 'open' && p.userId === user.uid
+      );
+
+      if (openPositions.length === 0) {
+        setMessage('No positions to close');
+        setShowClearConfirmModal(false);
+        setIsClearing(false);
+        return;
+      }
+
+      // Get current date in DD-MM-YYYY format
+      const today = new Date();
+      const exitDate = `${String(today.getDate()).padStart(2, '0')}-${String(today.getMonth() + 1).padStart(2, '0')}-${today.getFullYear()}`;
+
+      // Use exitTrade function from TradingContext for each position
+      for (const position of openPositions) {
+        await exitTrade(
+          position.id,
+          position.currentPrice, // Use LTP as exit price
+          exitDate,
+          'Portfolio cleared from profile'
+        );
+      }
+
+      setShowClearConfirmModal(false);
+      setMessage(`Successfully closed ${openPositions.length} position${openPositions.length !== 1 ? 's' : ''} at current LTP`);
+    } catch (error) {
+      console.error('Error clearing portfolio:', error);
+      setMessage('Error: Failed to clear portfolio');
+    } finally {
+      setIsClearing(false);
+    }
+  };
+
+  const openPositionsCount = myPortfolio.filter(p => p.status === 'open').length;
 
   return (
     <div className="min-h-screen bg-white dark:bg-[#0f1419]">
@@ -236,7 +285,79 @@ export default function ProfilePage() {
             <div className="text-gray-900 dark:text-white text-2xl font-bold">0</div>
           </div>
         </div>
+
+        {/* Danger Zone */}
+        <div className="mt-8 bg-red-50 dark:bg-red-900/10 rounded-xl border border-red-200 dark:border-red-900/30 overflow-hidden">
+          <div className="p-6">
+            <h3 className="text-xl font-bold text-red-600 dark:text-red-400 mb-2">⚠️ Danger Zone</h3>
+            <p className="text-red-600 dark:text-red-400/80 text-sm mb-4">
+              Actions in this section are permanent and cannot be undone.
+            </p>
+
+            <div className="flex items-center justify-between p-4 bg-white dark:bg-[#1c2128] border border-red-200 dark:border-red-900/30 rounded-lg">
+              <div className="flex-1">
+                <h4 className="font-semibold text-gray-900 dark:text-white mb-1">Clear Portfolio</h4>
+                <p className="text-sm text-gray-600 dark:text-[#8b949e]">
+                  Close all open positions at current LTP ({openPositionsCount} position{openPositionsCount !== 1 ? 's' : ''})
+                </p>
+              </div>
+              <button
+                onClick={() => setShowClearConfirmModal(true)}
+                disabled={openPositionsCount === 0}
+                className="ml-4 px-6 py-2 bg-red-500 hover:bg-red-600 text-white font-semibold rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Clear Portfolio
+              </button>
+            </div>
+          </div>
+        </div>
       </div>
+
+      {/* Clear Portfolio Confirmation Modal */}
+      {showClearConfirmModal && (
+        <div
+          className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4"
+          onClick={() => setShowClearConfirmModal(false)}
+        >
+          <div
+            className="bg-white dark:bg-[#1c2128] border border-red-500 rounded-xl p-6 w-full max-w-md"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-start gap-4 mb-6">
+              <div className="text-5xl">⚠️</div>
+              <div>
+                <h3 className="text-xl font-bold text-red-500 mb-2">Clear Portfolio?</h3>
+                <p className="text-gray-700 dark:text-gray-300">
+                  This will close <strong>{openPositionsCount} open position{openPositionsCount !== 1 ? 's' : ''}</strong> at current LTP (Last Traded Price).
+                </p>
+                <p className="text-gray-600 dark:text-gray-400 text-sm mt-2">
+                  Exit Reason: "Portfolio cleared from profile"
+                </p>
+                <p className="text-red-600 dark:text-red-400 font-semibold mt-2">
+                  Positions will be moved to Closed tab.
+                </p>
+              </div>
+            </div>
+
+            <div className="flex gap-3">
+              <button
+                onClick={() => setShowClearConfirmModal(false)}
+                disabled={isClearing}
+                className="flex-1 bg-gray-100 dark:bg-[#30363d] hover:bg-gray-200 dark:hover:bg-[#3c444d] text-gray-900 dark:text-white font-semibold py-3 rounded-lg transition-colors disabled:opacity-50"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleClearPortfolio}
+                disabled={isClearing}
+                className="flex-1 bg-red-500 hover:bg-red-600 text-white font-semibold py-3 rounded-lg transition-colors disabled:opacity-50"
+              >
+                {isClearing ? 'Closing Positions...' : 'Yes, Close All Positions'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

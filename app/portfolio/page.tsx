@@ -7,15 +7,22 @@ import { useAuth } from '../../contexts/AuthContext';
 import { useSymbols, Symbol } from '../../contexts/SymbolsContext';
 import { TrendingIcon, ChartIcon, TargetIcon, EntryIcon } from '@/components/icons';
 import { getCurrentISTDate, formatDateForDisplay, formatDateForStorage } from '@/lib/dateUtils';
+import { parseAndValidateCSV, csvRowToPosition, generateCSVTemplate, generateErrorReport, ValidationError } from '@/lib/csvImport';
+import { db } from '@/lib/firebase';
 export default function PortfolioPage() {
   const router = useRouter();
   const { user } = useAuth();
   const { myPortfolio, exitTrade, addTransaction, updatePosition, addToPortfolio } = useTrading();
   const { searchSymbols } = useSymbols();
   const [activeTab, setActiveTab] = useState('open');
+  const [viewMode, setViewMode] = useState<'summary' | 'detailed'>('detailed');
   const [showAddPositionModal, setShowAddPositionModal] = useState(false);
+  const [showImportModal, setShowImportModal] = useState(false);
   const [symbolSuggestions, setSymbolSuggestions] = useState<Symbol[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
+  const [importErrors, setImportErrors] = useState<ValidationError[]>([]);
+  const [importSummary, setImportSummary] = useState<{ total: number; valid: number; invalid: number } | null>(null);
+  const [isImporting, setIsImporting] = useState(false);
 
   // Check email verification
   useEffect(() => {
@@ -193,6 +200,73 @@ export default function PortfolioPage() {
     }
   };
 
+  // Handle CSV Import
+  const handleCSVImport = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    setIsImporting(true);
+    setImportErrors([]);
+    setImportSummary(null);
+
+    try {
+      const text = await file.text();
+      const result = await parseAndValidateCSV(text, db);
+
+      setImportSummary(result.summary);
+      setImportErrors(result.errors);
+
+      if (result.validRows.length > 0) {
+        // Import valid rows
+        for (const row of result.validRows) {
+          const positionData = csvRowToPosition(row);
+          // Convert date format for storage
+          positionData.dateTaken = formatDateForStorage(row.dateTaken);
+          await addToPortfolio('', positionData);
+        }
+      }
+
+      setIsImporting(false);
+    } catch (error) {
+      console.error('Error importing CSV:', error);
+      setImportErrors([{
+        row: 0,
+        field: 'file',
+        message: 'Failed to parse CSV file. Please check the format.'
+      }]);
+      setIsImporting(false);
+    }
+  };
+
+  // Download CSV template
+  const downloadTemplate = () => {
+    const template = generateCSVTemplate();
+    const blob = new Blob([template], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'portfolio_import_template.csv';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
+  // Download error report
+  const downloadErrorReport = () => {
+    if (importErrors.length === 0) return;
+    const report = generateErrorReport(importErrors);
+    const blob = new Blob([report], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'import_errors.csv';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
   // Function to analyze exit criteria
   const analyzeExitCriteria = (position: any) => {
     if (!position.exitCriteria) return null;
@@ -309,6 +383,75 @@ export default function PortfolioPage() {
       );
     }
 
+    // Summary View
+    if (viewMode === 'summary') {
+      return (
+        <div className="space-y-3">
+          {positions.map((position) => {
+            const investedAmount = position.entryPrice * position.quantity;
+            const currentValue = position.currentPrice * position.quantity;
+            const pnl = currentValue - investedAmount;
+            const pnlPercent = (pnl / investedAmount) * 100;
+            const isProfit = pnl >= 0;
+
+            // Calculate recommendation
+            const isAbove200MA = position.technicals?.sma200 && position.currentPrice > position.technicals.sma200;
+            const isSupertrendBullish = position.technicals?.supertrendDirection === 1;
+            let recommendation = 'HOLD';
+            let bgColor = 'bg-yellow-500/20';
+            let textColor = 'text-yellow-400';
+
+            if (isAbove200MA && isSupertrendBullish) {
+              recommendation = 'ACCUMULATE';
+              bgColor = 'bg-green-500/20';
+              textColor = 'text-green-400';
+            } else if (!isAbove200MA) {
+              recommendation = 'EXIT';
+              bgColor = 'bg-red-500/20';
+              textColor = 'text-red-400';
+            }
+
+            return (
+              <div
+                key={position.id}
+                className="bg-gray-50 dark:bg-[#1c2128] border border-gray-200 dark:border-[#30363d] rounded-lg p-4 hover:border-[#ff8c42] transition-colors"
+              >
+                <div className="flex items-center justify-between gap-4">
+                  {/* Symbol and Trade Type */}
+                  <div className="flex items-center gap-2 min-w-[120px]">
+                    <h3 className="text-xl font-bold text-gray-900 dark:text-white">{position.symbol}</h3>
+                    <span className={`px-2 py-0.5 text-xs font-semibold rounded ${
+                      position.tradeType === 'Long'
+                        ? 'bg-green-500/20 text-green-400'
+                        : 'bg-red-500/20 text-red-400'
+                    }`}>
+                      {position.tradeType || 'Long'}
+                    </span>
+                  </div>
+
+                  {/* Overall Recommendation */}
+                  {position.technicals && position.status === 'open' && (
+                    <div className={`px-3 py-1.5 rounded-lg ${bgColor} flex-shrink-0`}>
+                      <p className={`text-xs font-bold ${textColor}`}>
+                        {recommendation}
+                      </p>
+                    </div>
+                  )}
+
+                  {/* P&L */}
+                  <div className={`text-right flex-shrink-0 ${isProfit ? 'text-green-500' : 'text-red-500'}`}>
+                    <p className="text-lg font-bold">{isProfit ? '+' : ''}₹{pnl.toFixed(2)}</p>
+                    <p className="text-xs">({isProfit ? '+' : ''}{pnlPercent.toFixed(2)}%)</p>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      );
+    }
+
+    // Detailed View
     return (
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {positions.map((position) => {
@@ -567,13 +710,22 @@ export default function PortfolioPage() {
       <div className="p-5 pt-8">
         <div className="flex justify-between items-center mb-2">
           <h1 className="text-4xl font-bold text-gray-900 dark:text-white">My Portfolio</h1>
-          <button
-            onClick={() => setShowAddPositionModal(true)}
-            className="bg-[#ff8c42] hover:bg-[#ff9a58] text-white font-semibold py-2 px-4 rounded-lg transition-colors flex items-center gap-2"
-          >
-            <span className="text-xl">+</span>
-            Add Position
-          </button>
+          <div className="flex gap-3">
+            <button
+              onClick={() => setShowImportModal(true)}
+              className="bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-4 rounded-lg transition-colors flex items-center gap-2"
+            >
+              <span className="text-xl">📥</span>
+              Import CSV
+            </button>
+            <button
+              onClick={() => setShowAddPositionModal(true)}
+              className="bg-[#ff8c42] hover:bg-[#ff9a58] text-white font-semibold py-2 px-4 rounded-lg transition-colors flex items-center gap-2"
+            >
+              <span className="text-xl">+</span>
+              Add Position
+            </button>
+          </div>
         </div>
         <p className="text-gray-600 dark:text-[#8b949e]">Track your positions and portfolio performance</p>
       </div>
@@ -624,27 +776,53 @@ export default function PortfolioPage() {
           )}
         </div>
         {/* Tabs */}
-        <div className="flex gap-3 mb-5">
-          <button
-            onClick={() => setActiveTab('open')}
-            className={`px-5 py-2.5 rounded-lg text-sm font-semibold transition-colors ${
-              activeTab === 'open'
-                ? 'bg-[#ff8c42] text-gray-900 dark:text-white border-[#ff8c42]'
-                : 'bg-gray-50 dark:bg-[#1c2128] text-gray-600 dark:text-[#8b949e] border-gray-200 dark:border-[#30363d]'
-            } border`}
-          >
-            Open ({openPositions.length})
-          </button>
-          <button
-            onClick={() => setActiveTab('closed')}
-            className={`px-5 py-2.5 rounded-lg text-sm font-semibold transition-colors ${
-              activeTab === 'closed'
-                ? 'bg-[#ff8c42] text-gray-900 dark:text-white border-[#ff8c42]'
-                : 'bg-gray-50 dark:bg-[#1c2128] text-gray-600 dark:text-[#8b949e] border-gray-200 dark:border-[#30363d]'
-            } border`}
-          >
-            Closed ({closedPositions.length})
-          </button>
+        <div className="flex items-center justify-between mb-5">
+          <div className="flex gap-3">
+            <button
+              onClick={() => setActiveTab('open')}
+              className={`px-5 py-2.5 rounded-lg text-sm font-semibold transition-colors ${
+                activeTab === 'open'
+                  ? 'bg-[#ff8c42] text-gray-900 dark:text-white border-[#ff8c42]'
+                  : 'bg-gray-50 dark:bg-[#1c2128] text-gray-600 dark:text-[#8b949e] border-gray-200 dark:border-[#30363d]'
+              } border`}
+            >
+              Open ({openPositions.length})
+            </button>
+            <button
+              onClick={() => setActiveTab('closed')}
+              className={`px-5 py-2.5 rounded-lg text-sm font-semibold transition-colors ${
+                activeTab === 'closed'
+                  ? 'bg-[#ff8c42] text-gray-900 dark:text-white border-[#ff8c42]'
+                  : 'bg-gray-50 dark:bg-[#1c2128] text-gray-600 dark:text-[#8b949e] border-gray-200 dark:border-[#30363d]'
+              } border`}
+            >
+              Closed ({closedPositions.length})
+            </button>
+          </div>
+
+          {/* View Mode Toggle */}
+          <div className="flex gap-2">
+            <button
+              onClick={() => setViewMode('summary')}
+              className={`px-4 py-2 rounded-lg text-xs font-semibold transition-colors ${
+                viewMode === 'summary'
+                  ? 'bg-[#ff8c42] text-gray-900 dark:text-white'
+                  : 'bg-gray-50 dark:bg-[#1c2128] text-gray-600 dark:text-[#8b949e] hover:bg-gray-100 dark:hover:bg-[#30363d]'
+              }`}
+            >
+              Summary
+            </button>
+            <button
+              onClick={() => setViewMode('detailed')}
+              className={`px-4 py-2 rounded-lg text-xs font-semibold transition-colors ${
+                viewMode === 'detailed'
+                  ? 'bg-[#ff8c42] text-gray-900 dark:text-white'
+                  : 'bg-gray-50 dark:bg-[#1c2128] text-gray-600 dark:text-[#8b949e] hover:bg-gray-100 dark:hover:bg-[#30363d]'
+              }`}
+            >
+              Detailed
+            </button>
+          </div>
         </div>
         {/* Holdings Cards */}
         <div className="pb-8">
@@ -1146,6 +1324,150 @@ export default function PortfolioPage() {
                 className="flex-1 bg-[#ff8c42] hover:bg-[#ff9a58] text-white font-semibold py-3 rounded-lg transition-colors"
               >
                 Add Position
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Import CSV Modal */}
+      {showImportModal && (
+        <div
+          className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4"
+          onClick={() => {
+            setShowImportModal(false);
+            setImportErrors([]);
+            setImportSummary(null);
+          }}
+        >
+          <div
+            className="bg-white dark:bg-[#1c2128] border border-gray-200 dark:border-[#30363d] rounded-xl p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex justify-between items-center mb-6">
+              <h3 className="text-xl font-bold text-gray-900 dark:text-white">Import Portfolio from CSV</h3>
+              <button
+                onClick={() => {
+                  setShowImportModal(false);
+                  setImportErrors([]);
+                  setImportSummary(null);
+                }}
+                className="text-gray-600 dark:text-[#8b949e] hover:text-gray-900 dark:hover:text-white transition-colors text-2xl"
+              >
+                ×
+              </button>
+            </div>
+
+            {/* Instructions */}
+            <div className="mb-6 p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
+              <h4 className="font-semibold text-gray-900 dark:text-white mb-2">📋 CSV Format Requirements</h4>
+              <ul className="text-sm text-gray-700 dark:text-gray-300 space-y-1 list-disc list-inside">
+                <li><strong>Auto-detects:</strong> Zerodha (Instrument, Qty., Avg. cost), Upstox, and standard formats</li>
+                <li><strong>Required fields:</strong> Symbol/Instrument, Quantity/Qty., Entry Price/Avg. cost</li>
+                <li><strong>Optional:</strong> Target (+15% default), Stop Loss (-8% default), Date (today), Trade Type (Long)</li>
+                <li><strong>Default Exit Strategy:</strong> Stop Loss, Target, 200MA, Weekly Supertrend (all enabled)</li>
+                <li>Symbols validated against NSE database • Invalid rows reported</li>
+              </ul>
+            </div>
+
+            {/* Download Template Button */}
+            <div className="mb-6">
+              <button
+                onClick={downloadTemplate}
+                className="w-full bg-green-500 hover:bg-green-600 text-white font-semibold py-3 rounded-lg transition-colors flex items-center justify-center gap-2"
+              >
+                <span>📄</span>
+                Download CSV Template
+              </button>
+            </div>
+
+            {/* File Upload */}
+            <div className="mb-6">
+              <label className="block text-sm font-medium text-gray-600 dark:text-[#8b949e] mb-2">
+                Upload CSV File
+              </label>
+              <input
+                type="file"
+                accept=".csv"
+                onChange={handleCSVImport}
+                disabled={isImporting}
+                className="w-full bg-white dark:bg-[#0f1419] border border-gray-200 dark:border-[#30363d] rounded-lg px-3 py-2 text-gray-900 dark:text-white file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-[#ff8c42] file:text-white hover:file:bg-[#ff9a58] file:cursor-pointer disabled:opacity-50"
+              />
+            </div>
+
+            {/* Loading Indicator */}
+            {isImporting && (
+              <div className="mb-6 p-4 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg">
+                <p className="text-sm font-semibold text-yellow-800 dark:text-yellow-200">
+                  ⏳ Importing and validating positions...
+                </p>
+              </div>
+            )}
+
+            {/* Import Summary */}
+            {importSummary && (
+              <div className="mb-6 p-4 bg-gray-50 dark:bg-[#0f1419] border border-gray-200 dark:border-[#30363d] rounded-lg">
+                <h4 className="font-semibold text-gray-900 dark:text-white mb-3">Import Summary</h4>
+                <div className="grid grid-cols-3 gap-4">
+                  <div>
+                    <p className="text-xs text-gray-600 dark:text-[#8b949e]">Total Rows</p>
+                    <p className="text-xl font-bold text-gray-900 dark:text-white">{importSummary.total}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-gray-600 dark:text-[#8b949e]">Valid</p>
+                    <p className="text-xl font-bold text-green-500">{importSummary.valid}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-gray-600 dark:text-[#8b949e]">Invalid</p>
+                    <p className="text-xl font-bold text-red-500">{importSummary.invalid}</p>
+                  </div>
+                </div>
+                {importSummary.valid > 0 && (
+                  <p className="mt-3 text-sm text-green-600 dark:text-green-400">
+                    ✅ {importSummary.valid} position{importSummary.valid > 1 ? 's' : ''} successfully imported!
+                  </p>
+                )}
+              </div>
+            )}
+
+            {/* Error List */}
+            {importErrors.length > 0 && (
+              <div className="mb-6">
+                <div className="flex justify-between items-center mb-3">
+                  <h4 className="font-semibold text-red-500">❌ Import Errors ({importErrors.length})</h4>
+                  <button
+                    onClick={downloadErrorReport}
+                    className="text-xs bg-red-500 hover:bg-red-600 text-white font-semibold px-3 py-1.5 rounded transition-colors"
+                  >
+                    Download Error Report
+                  </button>
+                </div>
+                <div className="max-h-60 overflow-y-auto bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-3">
+                  {importErrors.slice(0, 20).map((error, idx) => (
+                    <div key={idx} className="text-sm text-red-700 dark:text-red-300 mb-2">
+                      <strong>Row {error.row}</strong> - {error.field}: {error.message}
+                    </div>
+                  ))}
+                  {importErrors.length > 20 && (
+                    <p className="text-xs text-red-600 dark:text-red-400 mt-2">
+                      ... and {importErrors.length - 20} more errors. Download full report.
+                    </p>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Close Button */}
+            <div className="flex gap-3">
+              <button
+                onClick={() => {
+                  setShowImportModal(false);
+                  setImportErrors([]);
+                  setImportSummary(null);
+                }}
+                className="flex-1 bg-gray-100 dark:bg-[#30363d] hover:bg-gray-200 dark:hover:bg-[#3c444d] text-gray-900 dark:text-white font-semibold py-3 rounded-lg transition-colors"
+              >
+                Close
               </button>
             </div>
           </div>
