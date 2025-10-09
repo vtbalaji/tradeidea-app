@@ -174,7 +174,7 @@ export default function IdeaDetailPage() {
   };
 
   const handleDeleteIdea = async () => {
-    if (!confirm('Are you sure you want to delete this idea?')) return;
+    if (!confirm('Are you sure you want to close this idea? It will be hidden from the Ideas Hub.')) return;
 
     setLoading(true);
     try {
@@ -184,6 +184,12 @@ export default function IdeaDetailPage() {
       setError(error.message);
     }
     setLoading(false);
+  };
+
+  const handleShare = () => {
+    const shareUrl = `${window.location.origin}/share/${ideaId}`;
+    navigator.clipboard.writeText(shareUrl);
+    alert('Share link copied to clipboard! Anyone can view this idea without logging in.');
   };
 
   const isOwner = user && idea && idea.userId === user.uid;
@@ -227,7 +233,7 @@ export default function IdeaDetailPage() {
             </div>
           </div>
 
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
             <button
               onClick={handleLike}
               className="px-3 py-1.5 bg-gray-50 dark:bg-[#1c2128] hover:bg-[#30363d] border border-gray-200 dark:border-[#30363d] rounded-lg text-gray-900 dark:text-white text-sm flex items-center gap-1.5 transition-colors"
@@ -246,6 +252,18 @@ export default function IdeaDetailPage() {
                 <circle cx="8" cy="8" r="2"/>
               </svg>
               {idea.followers?.includes(user?.uid || '') ? 'Following' : 'Follow'}
+            </button>
+            <button
+              onClick={handleShare}
+              className="px-3 py-1.5 bg-green-500/20 hover:bg-green-500/30 border border-green-500 rounded-lg text-green-400 text-sm flex items-center gap-1.5 transition-colors"
+            >
+              <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
+                <circle cx="4" cy="8" r="2"/>
+                <circle cx="12" cy="4" r="2"/>
+                <circle cx="12" cy="12" r="2"/>
+                <path d="M5.5 7L10.5 5M5.5 9L10.5 11"/>
+              </svg>
+              Share
             </button>
             {isOwner && (
               <>
@@ -269,7 +287,7 @@ export default function IdeaDetailPage() {
                   onClick={handleDeleteIdea}
                   className="px-3 py-1.5 bg-red-500/20 hover:bg-red-500/30 border border-red-500 rounded-lg text-red-400 text-sm transition-colors"
                 >
-                  🗑️ Delete
+                  ❌ Close
                 </button>
               </>
             )}

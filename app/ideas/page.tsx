@@ -27,7 +27,8 @@ export default function IdeasHubPage() {
   }, [user, router]);
 
   // Filter ideas based on search and tab
-  let filteredIdeas = ideas;
+  // First filter out closed ideas
+  let filteredIdeas = ideas.filter(idea => idea.status !== 'closed');
 
   if (searchQuery) {
     filteredIdeas = filteredIdeas.filter(idea =>

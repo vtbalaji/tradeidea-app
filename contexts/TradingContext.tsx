@@ -391,15 +391,19 @@ export const TradingProvider: React.FC<TradingProviderProps> = ({ children }) =>
     }
   };
 
-  // Delete an idea
+  // Delete an idea (actually marks it as closed instead of deleting)
   const deleteIdea = async (ideaId: string): Promise<void> => {
     if (!user) throw new Error('User must be logged in');
 
     try {
       const ideaRef = doc(db, 'tradingIdeas', ideaId);
-      await deleteDoc(ideaRef);
+      // Instead of deleting, update status to 'closed'
+      await updateDoc(ideaRef, {
+        status: 'closed',
+        updatedAt: serverTimestamp()
+      });
     } catch (error) {
-      console.error('Error deleting idea:', error);
+      console.error('Error closing idea:', error);
       throw error;
     }
   };
