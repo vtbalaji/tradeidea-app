@@ -65,14 +65,14 @@ export default function Home() {
       {/* Hero Section */}
       <section className="max-w-7xl mx-auto px-6 py-20 text-center">
         <h1 className="text-5xl md:text-6xl font-bold text-gray-900 dark:text-white mb-6">
-          Community Driven<br />
-          <span className="text-[#ff8c42]">Trading Ideas</span>
+          Smart Portfolio Management<br />
+          <span className="text-[#ff8c42]">Made Simple</span>
         </h1>
-        <p className="text-xl text-gray-600 dark:text-[#8b949e] mb-10 max-w-2xl mx-auto">
-          Discover, share, and track trading opportunities with a community of traders.
-          Follow the best ideas and build your portfolio together.
+        <p className="text-xl text-gray-600 dark:text-[#8b949e] mb-10 max-w-3xl mx-auto">
+          Track multiple portfolios, analyze stocks with real-time technical & fundamental data,
+          import holdings from any broker, and share ideas with a community of traders.
         </p>
-        <div className="flex gap-4 justify-center">
+        <div className="flex gap-4 justify-center flex-wrap">
           <button
             onClick={() => router.push('/login')}
             className="px-8 py-4 bg-[#ff8c42] hover:bg-[#ff9a58] text-white text-lg font-bold rounded-lg transition-colors"
@@ -86,11 +86,78 @@ export default function Home() {
             Explore Ideas
           </button>
         </div>
+
+        {/* Key highlights */}
+        <div className="mt-12 flex flex-wrap justify-center gap-6 text-sm text-gray-600 dark:text-[#8b949e]">
+          <div className="flex items-center gap-2">
+            <span className="text-green-500">✓</span>
+            <span>Multi-Account Support</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="text-green-500">✓</span>
+            <span>CSV Import (Zerodha, ICICI)</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="text-green-500">✓</span>
+            <span>Real-time Analysis</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="text-green-500">✓</span>
+            <span>Exit Alerts</span>
+          </div>
+        </div>
+      </section>
+
+      {/* Hero Feature - Portfolio Health */}
+      <section className="max-w-7xl mx-auto px-6 py-16">
+        <div className="bg-gradient-to-br from-[#ff8c42]/10 to-orange-500/5 border-2 border-[#ff8c42] rounded-2xl p-8 md:p-12">
+          <div className="text-center mb-8">
+            <div className="text-6xl mb-4">📊</div>
+            <h2 className="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mb-4">
+              Portfolio Health at a Glance
+            </h2>
+            <p className="text-lg text-gray-600 dark:text-[#8b949e] max-w-3xl mx-auto">
+              Understand your portfolio's health instantly with our comprehensive single-page dashboard.
+              See total value, P&L, risk exposure, technical signals, and exit alerts all in one view.
+            </p>
+          </div>
+
+          <div className="grid md:grid-cols-4 gap-6 mt-8">
+            <div className="bg-white dark:bg-[#1c2128] border border-gray-200 dark:border-[#30363d] rounded-lg p-4 text-center">
+              <div className="text-2xl mb-2">💰</div>
+              <h4 className="font-bold text-gray-900 dark:text-white mb-1">Total Value & P&L</h4>
+              <p className="text-sm text-gray-600 dark:text-[#8b949e]">
+                Current portfolio worth, unrealized gains/losses, and daily changes
+              </p>
+            </div>
+            <div className="bg-white dark:bg-[#1c2128] border border-gray-200 dark:border-[#30363d] rounded-lg p-4 text-center">
+              <div className="text-2xl mb-2">⚠️</div>
+              <h4 className="font-bold text-gray-900 dark:text-white mb-1">Risk Signals</h4>
+              <p className="text-sm text-gray-600 dark:text-[#8b949e]">
+                Positions below EMA/MA, stop-loss breaches, and exit alerts
+              </p>
+            </div>
+            <div className="bg-white dark:bg-[#1c2128] border border-gray-200 dark:border-[#30363d] rounded-lg p-4 text-center">
+              <div className="text-2xl mb-2">📈</div>
+              <h4 className="font-bold text-gray-900 dark:text-white mb-1">Technical Health</h4>
+              <p className="text-sm text-gray-600 dark:text-[#8b949e]">
+                EMA crossovers, Supertrend signals, and momentum indicators
+              </p>
+            </div>
+            <div className="bg-white dark:bg-[#1c2128] border border-gray-200 dark:border-[#30363d] rounded-lg p-4 text-center">
+              <div className="text-2xl mb-2">🎯</div>
+              <h4 className="font-bold text-gray-900 dark:text-white mb-1">Action Items</h4>
+              <p className="text-sm text-gray-600 dark:text-[#8b949e]">
+                Positions near targets, pending exits, and opportunities
+              </p>
+            </div>
+          </div>
+        </div>
       </section>
 
       {/* Features Section */}
       <section className="max-w-7xl mx-auto px-6 py-16">
-        <h2 className="text-3xl font-bold text-gray-900 dark:text-white text-center mb-12">Why TradeIdea?</h2>
+        <h2 className="text-3xl font-bold text-gray-900 dark:text-white text-center mb-12">Powerful Features for Traders</h2>
         <div className="grid md:grid-cols-3 gap-8">
           {/* Feature 1 */}
           <div className="bg-gray-50 dark:bg-[#1c2128] border border-gray-200 dark:border-[#30363d] rounded-xl p-6 text-center">
@@ -105,20 +172,50 @@ export default function Home() {
           {/* Feature 2 */}
           <div className="bg-gray-50 dark:bg-[#1c2128] border border-gray-200 dark:border-[#30363d] rounded-xl p-6 text-center">
             <div className="text-5xl mb-4">📊</div>
-            <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-3">Real-time Technical Analysis</h3>
+            <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-3">Advanced Technical Analysis</h3>
             <p className="text-gray-600 dark:text-[#8b949e]">
-              Automated technical indicators including 50 EMA/200 MA crossovers, Golden Cross,
-              RSI, MACD, and Bollinger Bands for every stock.
+              Automated indicators: EMA/MA crossovers, Golden Cross, RSI, MACD, Bollinger Bands,
+              and Supertrend for every stock.
             </p>
           </div>
 
           {/* Feature 3 */}
           <div className="bg-gray-50 dark:bg-[#1c2128] border border-gray-200 dark:border-[#30363d] rounded-xl p-6 text-center">
-            <div className="text-5xl mb-4">👥</div>
-            <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-3">Follow Top Traders</h3>
+            <div className="text-5xl mb-4">💼</div>
+            <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-3">Fundamental Analysis</h3>
             <p className="text-gray-600 dark:text-[#8b949e]">
-              Discover and follow successful traders. Get notified when they share
-              new ideas and learn from the best.
+              Access key metrics like P/E ratio, market cap, revenue growth, ROE, debt ratios,
+              and more for informed decisions.
+            </p>
+          </div>
+
+          {/* Feature 4 */}
+          <div className="bg-gray-50 dark:bg-[#1c2128] border border-gray-200 dark:border-[#30363d] rounded-xl p-6 text-center">
+            <div className="text-5xl mb-4">📂</div>
+            <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-3">Multi-Account Support</h3>
+            <p className="text-gray-600 dark:text-[#8b949e]">
+              Manage multiple portfolios (Personal, Spouse, Kids) with separate tracking,
+              colors, and performance metrics.
+            </p>
+          </div>
+
+          {/* Feature 5 */}
+          <div className="bg-gray-50 dark:bg-[#1c2128] border border-gray-200 dark:border-[#30363d] rounded-xl p-6 text-center">
+            <div className="text-5xl mb-4">📥</div>
+            <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-3">CSV Import</h3>
+            <p className="text-gray-600 dark:text-[#8b949e]">
+              Easily import holdings from Zerodha, ICICI Direct, or any broker.
+              Smart mapping handles different formats automatically.
+            </p>
+          </div>
+
+          {/* Feature 6 */}
+          <div className="bg-gray-50 dark:bg-[#1c2128] border border-gray-200 dark:border-[#30363d] rounded-xl p-6 text-center">
+            <div className="text-5xl mb-4">🎯</div>
+            <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-3">Smart Exit Criteria</h3>
+            <p className="text-gray-600 dark:text-[#8b949e]">
+              Set custom exit rules: Stop-loss, targets, EMA/MA levels, and Supertrend signals
+              for automatic alerts.
             </p>
           </div>
         </div>
@@ -168,15 +265,15 @@ export default function Home() {
       {/* How It Works Section */}
       <section className="max-w-7xl mx-auto px-6 py-16">
         <h2 className="text-3xl font-bold text-gray-900 dark:text-white text-center mb-12">How It Works</h2>
-        <div className="grid md:grid-cols-3 gap-8">
+        <div className="grid md:grid-cols-4 gap-8">
           {/* Step 1 */}
           <div className="text-center">
             <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-[#ff8c42] flex items-center justify-center text-2xl font-bold text-white">
               1
             </div>
-            <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-3">Create an Account</h3>
+            <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-3">Sign Up Free</h3>
             <p className="text-gray-600 dark:text-[#8b949e]">
-              Sign up for free and join our trading community in seconds.
+              Create your account in seconds and set up multiple portfolios.
             </p>
           </div>
 
@@ -185,9 +282,9 @@ export default function Home() {
             <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-[#ff8c42] flex items-center justify-center text-2xl font-bold text-white">
               2
             </div>
-            <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-3">Explore & Share</h3>
+            <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-3">Import Holdings</h3>
             <p className="text-gray-600 dark:text-[#8b949e]">
-              Browse trading ideas or share your own with detailed analysis.
+              Upload CSV from your broker or manually add positions with exit criteria.
             </p>
           </div>
 
@@ -196,9 +293,20 @@ export default function Home() {
             <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-[#ff8c42] flex items-center justify-center text-2xl font-bold text-white">
               3
             </div>
+            <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-3">Analyze & Share</h3>
+            <p className="text-gray-600 dark:text-[#8b949e]">
+              Get real-time technical & fundamental analysis. Share ideas with the community.
+            </p>
+          </div>
+
+          {/* Step 4 */}
+          <div className="text-center">
+            <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-[#ff8c42] flex items-center justify-center text-2xl font-bold text-white">
+              4
+            </div>
             <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-3">Track & Grow</h3>
             <p className="text-gray-600 dark:text-[#8b949e]">
-              Add ideas to your portfolio and watch your trading performance grow.
+              Monitor performance, get exit alerts, and grow your portfolio intelligently.
             </p>
           </div>
         </div>

@@ -18,11 +18,12 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "TradeIdea - Community Driven Trading Ideas",
-  description: "Discover and share trading opportunities with the community. Track your portfolio and follow the best trading ideas.",
+  title: "TradeIdea - Smart Portfolio Management Made Simple",
+  description: "Track multiple portfolios, analyze stocks with real-time technical & fundamental data, import holdings from any broker (Zerodha, ICICI), and get instant portfolio health insights. Set smart exit criteria and share trading ideas with the community.",
+  keywords: ["portfolio management", "stock analysis", "technical analysis", "fundamental analysis", "trading ideas", "CSV import", "Zerodha", "ICICI Direct", "portfolio tracking", "exit alerts", "multi-account portfolio"],
   openGraph: {
-    title: "TradeIdea - Community Driven Trading Ideas",
-    description: "Discover and share trading opportunities with the community. Track your portfolio and follow the best trading ideas.",
+    title: "TradeIdea - Smart Portfolio Management Made Simple",
+    description: "Track multiple portfolios with instant health insights. Real-time technical & fundamental analysis, CSV import from any broker, smart exit alerts, and community-driven trading ideas.",
     url: "https://tradeidea.co.in",
     siteName: "TradeIdea",
     images: [
@@ -37,9 +38,9 @@ export const metadata: Metadata = {
     type: "website",
   },
   twitter: {
-    card: "summary",
-    title: "TradeIdea - Community Driven Trading Ideas",
-    description: "Discover and share trading opportunities with the community",
+    card: "summary_large_card",
+    title: "TradeIdea - Smart Portfolio Management",
+    description: "Track portfolios, analyze stocks with real-time data, import from Zerodha/ICICI, get instant health insights & exit alerts",
     images: ["/icon.svg"],
   },
   metadataBase: new URL("https://tradeidea.co.in"),
