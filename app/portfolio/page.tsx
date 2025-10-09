@@ -748,7 +748,7 @@ export default function PortfolioPage() {
             </button>
           </div>
         </div>
-        <p className="text-gray-600 dark:text-[#8b949e]">Track your positions and portfolio performance</p>
+        <p className="text-gray-600 dark:text-[#8b949e]">Track your portfolio performance</p>
 
         {/* Account Selector */}
         {accounts.length > 1 && activeAccount && (
