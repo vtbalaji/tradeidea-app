@@ -77,7 +77,7 @@ export default function Home() {
         <div className="max-w-3xl mx-auto mb-10 grid md:grid-cols-3 gap-4">
           <div className="bg-white dark:bg-[#1c2128] rounded-lg p-4 border-2 border-gray-200 dark:border-[#30363d] hover:border-[#ff8c42] dark:hover:border-[#ff8c42] transition-colors">
             <div className="text-3xl mb-2">🔔</div>
-            <h3 className="font-bold text-gray-900 dark:text-white text-sm mb-1">Never Miss Intestment/Profil booking Oppertunity</h3>
+            <h3 className="font-bold text-gray-900 dark:text-white text-sm mb-1">Never Miss Intestment/Profil booking Opportunity</h3>
             <p className="text-xs text-gray-600 dark:text-[#8b949e]">
               Automated notifications when entry, target, or stop-loss prices are hit
             </p>
