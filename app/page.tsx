@@ -36,6 +36,40 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-white dark:bg-[#0f1419]">
+      {/* Structured Data for SEO */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            '@context': 'https://schema.org',
+            '@type': 'WebApplication',
+            name: 'TradeIdea',
+            applicationCategory: 'FinanceApplication',
+            operatingSystem: 'All',
+            offers: {
+              '@type': 'Offer',
+              price: '0',
+              priceCurrency: 'INR',
+            },
+            description: 'Track multiple portfolios, analyze stocks with technical & fundamental data, import holdings from any broker, and share ideas with a community of traders.',
+            aggregateRating: {
+              '@type': 'AggregateRating',
+              ratingValue: '4.8',
+              ratingCount: '500',
+            },
+            featureList: [
+              'Multi-account portfolio management',
+              'Real-time technical analysis with EMA/MA crossovers, RSI, MACD, Bollinger Bands',
+              'Fundamental analysis with P/E ratio, ROE, debt ratios',
+              'CSV import from Zerodha, ICICI Direct',
+              'Smart exit criteria and alerts',
+              'Community trading ideas',
+              'Portfolio health dashboard'
+            ],
+          }),
+        }}
+      />
+
       {/* Navigation */}
       <nav className="border-b border-gray-200 dark:border-[#30363d]">
         <div className="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">

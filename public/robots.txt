@@ -1,0 +1,15 @@
+# Allow all crawlers
+User-agent: *
+Allow: /
+
+# Disallow authentication pages
+Disallow: /login
+Disallow: /verify
+Disallow: /api/
+
+# Allow public pages
+Allow: /ideas
+Allow: /share/*
+
+# Sitemap location
+Sitemap: https://tradeidea.co.in/sitemap.xml
