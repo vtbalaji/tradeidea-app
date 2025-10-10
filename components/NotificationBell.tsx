@@ -30,8 +30,12 @@ export default function NotificationBell() {
         await markNotificationAsRead(notification.id);
       }
 
-      // Navigate to idea if applicable
-      if (notification.ideaId) {
+      // Navigate based on notification type
+      if (notification.type === 'target_alert' || notification.type === 'stoploss_alert') {
+        // Portfolio alerts go to portfolio page
+        router.push('/portfolio');
+      } else if (notification.ideaId) {
+        // Other alerts go to idea page
         router.push(`/ideas/${notification.ideaId}`);
       }
 
@@ -57,6 +61,12 @@ export default function NotificationBell() {
         return '🔄';
       case 'new_follower':
         return '👤';
+      case 'entry_alert':
+        return '🎯';
+      case 'target_alert':
+        return '✅';
+      case 'stoploss_alert':
+        return '⚠️';
       default:
         return '🔔';
     }
@@ -127,10 +137,19 @@ export default function NotificationBell() {
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="text-sm text-gray-900 dark:text-white leading-relaxed">
-                        <span className="font-semibold">{notification.fromUserName}</span>{' '}
-                        {notification.message}
-                        {notification.ideaSymbol && (
-                          <span className="font-semibold text-[#ff8c42]"> {notification.ideaSymbol}</span>
+                        {/* For alert types, message already includes symbol and "- TradeIdea" */}
+                        {(notification.type === 'entry_alert' ||
+                          notification.type === 'target_alert' ||
+                          notification.type === 'stoploss_alert') ? (
+                          <>{notification.message}</>
+                        ) : (
+                          <>
+                            <span className="font-semibold">{notification.fromUserName}</span>{' '}
+                            {notification.message}
+                            {notification.ideaSymbol && (
+                              <span className="font-semibold text-[#ff8c42]"> {notification.ideaSymbol}</span>
+                            )}
+                          </>
                         )}
                       </p>
                       <p className="text-xs text-gray-600 dark:text-[#8b949e] mt-1">
