@@ -7,6 +7,8 @@ import { useTrading } from '../../contexts/TradingContext';
 import { useAuth } from '../../contexts/AuthContext';
 import { IdeaIcon, TargetIcon, EntryIcon, HeartIcon } from '@/components/icons';
 import { formatIndianDate } from '@/lib/dateUtils';
+import { createInvestmentEngine } from '@/lib/investment-rules';
+import InvestorAnalysisModal from '@/components/InvestorAnalysisModal';
 
 export default function IdeasHubPage() {
   const router = useRouter();
@@ -14,6 +16,8 @@ export default function IdeasHubPage() {
   const { user } = useAuth();
   const [searchQuery, setSearchQuery] = useState('');
   const [activeTab, setActiveTab] = useState('all');
+  const [showAnalysisModal, setShowAnalysisModal] = useState<string | null>(null);
+  const [currentRecommendation, setCurrentRecommendation] = useState<any>(null);
 
   // Check authentication and email verification
   useEffect(() => {
@@ -59,6 +63,20 @@ export default function IdeasHubPage() {
   const hitTargetIdeas = filteredIdeas.filter(idea => idea.status === 'hit target');
   const hitSLIdeas = filteredIdeas.filter(idea => idea.status === 'hit sl');
   const cancelledIdeas = filteredIdeas.filter(idea => idea.status === 'cancelled');
+
+  const handleAnalyze = (e: React.MouseEvent, idea: any) => {
+    e.stopPropagation();
+
+    if (!idea.technicals || !idea.fundamentals) {
+      alert('⚠️ Technical or fundamental data not available. Run batch analysis first.');
+      return;
+    }
+
+    const engine = createInvestmentEngine(idea.technicals, idea.fundamentals);
+    const rec = engine.getRecommendation();
+    setCurrentRecommendation(rec);
+    setShowAnalysisModal(idea.id);
+  };
 
   const renderIdeaCard = (idea: any) => {
     const target1Percent = idea.entryPrice
@@ -241,15 +259,28 @@ export default function IdeasHubPage() {
             <span>💬 {idea.commentCount}</span>
             <span>📅 {formatIndianDate(idea.createdAt, 'relative')}</span>
           </div>
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              router.push(`/ideas/${idea.id}`);
-            }}
-            className="px-3 py-1.5 bg-[#30363d] hover:bg-[#3c444d] text-[#ff8c42] text-xs font-semibold rounded transition-colors"
-          >
-            View Details
-          </button>
+
+          <div className="flex gap-2">
+            {/* Analyze Button */}
+            <button
+              onClick={(e) => handleAnalyze(e, idea)}
+              className="px-3 py-1.5 bg-blue-500/20 text-blue-400 text-xs font-semibold rounded hover:bg-blue-500/30 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              disabled={!idea.technicals || !idea.fundamentals}
+            >
+              Analyze
+            </button>
+
+            {/* View Details Button */}
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                router.push(`/ideas/${idea.id}`);
+              }}
+              className="px-3 py-1.5 bg-[#30363d] hover:bg-[#3c444d] text-[#ff8c42] text-xs font-semibold rounded transition-colors"
+            >
+              View Details
+            </button>
+          </div>
         </div>
       </div>
     );
@@ -461,6 +492,19 @@ export default function IdeasHubPage() {
           </div>
         )}
       </div>
+
+      {/* Investor Analysis Modal */}
+      {showAnalysisModal && currentRecommendation && (
+        <InvestorAnalysisModal
+          isOpen={true}
+          onClose={() => {
+            setShowAnalysisModal(null);
+            setCurrentRecommendation(null);
+          }}
+          symbol={ideas.find(i => i.id === showAnalysisModal)?.symbol || ''}
+          recommendation={currentRecommendation}
+        />
+      )}
     </div>
   );
 }
