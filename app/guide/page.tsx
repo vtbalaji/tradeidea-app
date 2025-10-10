@@ -28,11 +28,11 @@ export default function GuidePage() {
           <div className="grid md:grid-cols-2 gap-3">
             <a href="#portfolio-health" className="text-[#ff8c42] hover:underline">1. Portfolio Health Dashboard</a>
             <a href="#multi-account" className="text-[#ff8c42] hover:underline">2. Multi-Account Management</a>
-            <a href="#csv-import" className="text-[#ff8c42] hover:underline">3. CSV Import</a>
+            <a href="#portfolio-import" className="text-[#ff8c42] hover:underline">3. Portfolio Import</a>
             <a href="#technical-analysis" className="text-[#ff8c42] hover:underline">4. Technical Analysis</a>
             <a href="#fundamental-analysis" className="text-[#ff8c42] hover:underline">5. Fundamental Analysis</a>
             <a href="#exit-criteria" className="text-[#ff8c42] hover:underline">6. Smart Exit Criteria</a>
-            <a href="#trading-ideas" className="text-[#ff8c42] hover:underline">7. Trading Ideas Community</a>
+            <a href="#investment-ideas" className="text-[#ff8c42] hover:underline">7. Investment Ideas Community</a>
             <a href="#notifications" className="text-[#ff8c42] hover:underline">8. Notifications & Alerts</a>
           </div>
         </div>
@@ -138,24 +138,24 @@ export default function GuidePage() {
           </div>
         </section>
 
-        {/* Section 3: CSV Import */}
-        <section id="csv-import" className="mb-12 scroll-mt-20">
+        {/* Section 3: Portfolio Import */}
+        <section id="portfolio-import" className="mb-12 scroll-mt-20">
           <div className="bg-gray-50 dark:bg-[#1c2128] border border-gray-200 dark:border-[#30363d] rounded-xl p-8">
             <div className="flex items-center gap-3 mb-4">
               <div className="text-4xl">📥</div>
-              <h2 className="text-2xl font-bold text-gray-900 dark:text-white">CSV Import</h2>
+              <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Portfolio Import</h2>
             </div>
             <p className="text-gray-600 dark:text-[#8b949e] mb-6">
-              Quickly import your holdings from any broker with smart format detection.
+              Quickly import your portfolio holdings from any broker using CSV format with smart detection.
             </p>
 
             <div className="space-y-4">
               <div className="bg-white dark:bg-[#0f1419] border border-gray-200 dark:border-[#30363d] rounded-lg p-4">
-                <h3 className="font-semibold text-gray-900 dark:text-white mb-2">Supported Brokers</h3>
+                <h3 className="font-semibold text-gray-900 dark:text-white mb-2">Import Methods & Supported Brokers</h3>
                 <ul className="text-sm text-gray-600 dark:text-[#8b949e] space-y-1 ml-4 list-disc">
-                  <li><strong>Zerodha</strong> - Console holdings export</li>
-                  <li><strong>ICICI Direct</strong> - Portfolio report with smart symbol mapping</li>
-                  <li><strong>Standard Format</strong> - Custom CSV with symbol, quantity, entry price</li>
+                  <li><strong>Zerodha CSV</strong> - Console holdings export</li>
+                  <li><strong>ICICI Direct CSV</strong> - Portfolio report with smart symbol mapping</li>
+                  <li><strong>Standard CSV Format</strong> - Custom CSV with symbol, quantity, entry price</li>
                   <li>Automatic field mapping (handles different column names)</li>
                 </ul>
               </div>
@@ -287,7 +287,7 @@ TCS,3600.00,5,20-01-2025,4000.00,3400.00,Long`}
                     <div className="font-semibold text-blue-600 dark:text-blue-400 mb-1">💡 Pro Tip</div>
                     <p className="text-gray-600 dark:text-[#8b949e] text-xs">
                       These are automated suggestions based on technical signals. Always consider fundamental analysis,
-                      market conditions, and your own research before making trading decisions.
+                      market conditions, and your own research before making investment decisions.
                     </p>
                   </div>
                 </div>
@@ -314,7 +314,7 @@ TCS,3600.00,5,20-01-2025,4000.00,3400.00,Long`}
                   <li><strong>P/E Ratio</strong> - Price to Earnings (valuation indicator)</li>
                   <li><strong>Market Cap</strong> - Company size classification</li>
                   <li><strong>P/B Ratio</strong> - Price to Book value</li>
-                  <li><strong>Dividend Yield</strong> - Annual dividend percentage</li>
+                  <li><strong>Dividend Yield</strong> - Annual dividend percentage for long-term returns</li>
                 </ul>
               </div>
 
@@ -413,22 +413,22 @@ TCS,3600.00,5,20-01-2025,4000.00,3400.00,Long`}
           </div>
         </section>
 
-        {/* Section 7: Trading Ideas Community */}
-        <section id="trading-ideas" className="mb-12 scroll-mt-20">
+        {/* Section 7: Investment Ideas Community */}
+        <section id="investment-ideas" className="mb-12 scroll-mt-20">
           <div className="bg-gray-50 dark:bg-[#1c2128] border border-gray-200 dark:border-[#30363d] rounded-xl p-8">
             <div className="flex items-center gap-3 mb-4">
               <div className="text-4xl">💡</div>
-              <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Trading Ideas Community</h2>
+              <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Investment Ideas Community</h2>
             </div>
             <p className="text-gray-600 dark:text-[#8b949e] mb-6">
-              Share and discover trading opportunities with a community of traders.
+              Share and discover investment opportunities with a community of investors.
             </p>
 
             <div className="space-y-4">
               <div className="bg-white dark:bg-[#0f1419] border border-gray-200 dark:border-[#30363d] rounded-lg p-4">
                 <h3 className="font-semibold text-gray-900 dark:text-white mb-2">Share Your Ideas</h3>
                 <ul className="text-sm text-gray-600 dark:text-[#8b949e] space-y-1 ml-4 list-disc">
-                  <li>Post detailed trade setups with entry, target, and stop-loss</li>
+                  <li>Post detailed investment ideas with entry, target, and stop-loss</li>
                   <li>Add technical and fundamental analysis</li>
                   <li>Share your reasoning and strategy</li>
                   <li>Track performance of your shared ideas</li>
@@ -438,10 +438,10 @@ TCS,3600.00,5,20-01-2025,4000.00,3400.00,Long`}
               <div className="bg-white dark:bg-[#0f1419] border border-gray-200 dark:border-[#30363d] rounded-lg p-4">
                 <h3 className="font-semibold text-gray-900 dark:text-white mb-2">Discover Ideas</h3>
                 <ul className="text-sm text-gray-600 dark:text-[#8b949e] space-y-1 ml-4 list-disc">
-                  <li>Browse ideas from successful traders</li>
-                  <li>Filter by trade type, time frame, and status</li>
+                  <li>Browse ideas from successful investors</li>
+                  <li>Filter by investment type, time frame, and status</li>
                   <li>Add ideas directly to your portfolio</li>
-                  <li>Follow traders to get their latest ideas</li>
+                  <li>Follow investors to get their latest ideas</li>
                 </ul>
               </div>
 
@@ -452,7 +452,7 @@ TCS,3600.00,5,20-01-2025,4000.00,3400.00,Long`}
                   <li>Enter stock symbol, entry price, quantity</li>
                   <li>Set target and stop-loss levels</li>
                   <li>Add your analysis and reasoning</li>
-                  <li>Choose time frame (Intraday, Swing, Positional)</li>
+                  <li>Choose time frame (Short-term, Medium-term, Long-term)</li>
                   <li>Click <strong>Share Idea</strong></li>
                 </ol>
               </div>
@@ -537,7 +537,7 @@ TCS,3600.00,5,20-01-2025,4000.00,3400.00,Long`}
               <div className="bg-white dark:bg-[#0f1419] border border-gray-200 dark:border-[#30363d] rounded-lg p-4">
                 <h3 className="font-semibold text-gray-900 dark:text-white mb-2">💡 Community Notifications</h3>
                 <ul className="text-sm text-gray-600 dark:text-[#8b949e] space-y-1 ml-4 list-disc">
-                  <li>New ideas from traders you follow</li>
+                  <li>New ideas from investors you follow</li>
                   <li>Entry price alerts for followed ideas</li>
                   <li>Comments on your shared ideas</li>
                   <li>Likes and engagement updates</li>
@@ -561,7 +561,7 @@ TCS,3600.00,5,20-01-2025,4000.00,3400.00,Long`}
                   </div>
                   <div className="flex items-center gap-2">
                     <span className="text-xl">💡</span>
-                    <span className="text-gray-600 dark:text-[#8b949e]"><strong>New Idea</strong> - Followed trader posted new idea</span>
+                    <span className="text-gray-600 dark:text-[#8b949e]"><strong>New Idea</strong> - Followed investor posted new idea</span>
                   </div>
                 </div>
               </div>
@@ -582,7 +582,7 @@ TCS,3600.00,5,20-01-2025,4000.00,3400.00,Long`}
                 <ul className="text-sm text-green-800 dark:text-green-300 space-y-1 ml-4 list-disc">
                   <li>Alerts are sent only once per 24 hours to avoid spam</li>
                   <li>Entry price alerts auto-update idea status - no manual action needed</li>
-                  <li>Portfolio alerts require you to manually close/exit positions</li>
+                  <li>Portfolio alerts require you to manually close/exit your investments</li>
                   <li>Set realistic stop-loss or system will use 100MA as fallback</li>
                   <li>Configure exit criteria carefully - alerts fire based on your settings</li>
                 </ul>
