@@ -200,7 +200,17 @@ export default function IdeasHubPage() {
         )}
 
         {/* Trade Details */}
-        <div className="grid grid-cols-3 gap-3 mb-4 pt-4 border-t border-gray-200 dark:border-[#30363d]">
+        <div className="grid grid-cols-4 gap-3 mb-4 pt-4 border-t border-gray-200 dark:border-[#30363d]">
+          <div className="text-center">
+            <div className="text-xs text-gray-600 dark:text-[#8b949e] mb-1">LTP</div>
+            <div className={`text-sm font-semibold ${
+              idea.technicals?.lastPrice
+                ? (idea.technicals.lastPrice >= idea.entryPrice ? 'text-green-500' : 'text-gray-900 dark:text-white')
+                : 'text-gray-500 dark:text-[#8b949e]'
+            }`}>
+              {idea.technicals?.lastPrice ? `₹${idea.technicals.lastPrice.toFixed(2)}` : 'N/A'}
+            </div>
+          </div>
           <div className="text-center">
             <div className="text-xs text-gray-600 dark:text-[#8b949e] mb-1">Entry</div>
             <div className="text-sm font-semibold text-gray-900 dark:text-white">

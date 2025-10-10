@@ -43,3 +43,6 @@ next-env.d.ts
 serviceAccountKey.json
 *.duckdb
 *.duckdb.wal
+
+# unused scripts (scheduled for deletion)
+/scripts/unused/

@@ -191,7 +191,7 @@ export const TradingProvider: React.FC<TradingProviderProps> = ({ children }) =>
   const [loading, setLoading] = useState(true);
 
   // Helper function to enrich data with central symbol data
-  const enrichWithSymbolData = async <T extends { symbol: string; technicals?: any; fundamentals?: any }>(
+  const enrichWithSymbolData = async <T extends { symbol: string; technicals?: any; fundamentals?: any; currentPrice?: number }>(
     items: T[]
   ): Promise<T[]> => {
     const enrichedItems = await Promise.all(
@@ -202,11 +202,19 @@ export const TradingProvider: React.FC<TradingProviderProps> = ({ children }) =>
           const symbolData = await getSymbolData(symbolId);
 
           if (symbolData) {
-            return {
+            // Build enriched object
+            const enriched: any = {
               ...item,
               technicals: symbolData.technical || item.technicals,
               fundamentals: symbolData.fundamental || item.fundamentals,
             };
+
+            // Update currentPrice with lastPrice for portfolio positions
+            if ('currentPrice' in item && symbolData.technical?.lastPrice) {
+              enriched.currentPrice = symbolData.technical.lastPrice;
+            }
+
+            return enriched as T;
           }
           return item;
         } catch (error) {
@@ -273,7 +281,9 @@ export const TradingProvider: React.FC<TradingProviderProps> = ({ children }) =>
     return () => unsubscribe();
   }, [user]);
 
-  // Fetch user's notifications
+  // Fetch user's notifications - DISABLED to reduce Firebase API calls
+  // TODO: Re-enable when needed
+  /*
   useEffect(() => {
     if (!user) {
       setNotifications([]);
@@ -308,8 +318,11 @@ export const TradingProvider: React.FC<TradingProviderProps> = ({ children }) =>
 
     return () => unsubscribe();
   }, [user]);
+  */
 
   // Monitor entry prices for "cooking" ideas and auto-update to "active" when within 1% variance
+  // DISABLED to reduce Firebase API calls - TODO: Re-enable when needed
+  /*
   useEffect(() => {
     if (!user || ideas.length === 0) return;
 
@@ -394,8 +407,11 @@ export const TradingProvider: React.FC<TradingProviderProps> = ({ children }) =>
 
     return () => clearInterval(interval);
   }, [user, ideas]);
+  */
 
   // Monitor portfolio positions for target/stop-loss alerts
+  // DISABLED to reduce Firebase API calls - TODO: Re-enable when needed
+  /*
   useEffect(() => {
     if (!user || myPortfolio.length === 0) return;
 
@@ -477,6 +493,7 @@ export const TradingProvider: React.FC<TradingProviderProps> = ({ children }) =>
 
     return () => clearInterval(interval);
   }, [user, myPortfolio]);
+  */
 
   // Create a new trading idea
   const createIdea = async (ideaData: Partial<TradingIdea>): Promise<string> => {

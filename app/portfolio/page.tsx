@@ -74,6 +74,8 @@ export default function PortfolioPage() {
             // Use central data if available, fallback to position data
             technicals: symbolData?.technical || position.technicals,
             fundamentals: symbolData?.fundamental || position.fundamentals,
+            // Update currentPrice with lastPrice from technical data (LTP)
+            currentPrice: symbolData?.technical?.lastPrice || position.currentPrice,
           };
         });
 
