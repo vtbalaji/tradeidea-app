@@ -69,13 +69,39 @@ export default function Home() {
           <span className="text-[#ff8c42]">Made Simple</span>
         </h1>
         <p className="text-xl text-gray-600 dark:text-[#8b949e] mb-10 max-w-3xl mx-auto">
-          Track multiple portfolios, analyze stocks with real-time technical & fundamental data,
+          Track multiple portfolios, analyze stocks with technical & fundamental data,
           import holdings from any broker, and share ideas with a community of traders.
         </p>
+
+        {/* Top 3 Points */}
+        <div className="max-w-3xl mx-auto mb-10 grid md:grid-cols-3 gap-4">
+          <div className="bg-white dark:bg-[#1c2128] rounded-lg p-4 border-2 border-gray-200 dark:border-[#30363d] hover:border-[#ff8c42] dark:hover:border-[#ff8c42] transition-colors">
+            <div className="text-3xl mb-2">🔔</div>
+            <h3 className="font-bold text-gray-900 dark:text-white text-sm mb-1">Never Miss Intestment/Profil booking Oppertunity</h3>
+            <p className="text-xs text-gray-600 dark:text-[#8b949e]">
+              Automated notifications when entry, target, or stop-loss prices are hit
+            </p>
+          </div>
+          <div className="bg-white dark:bg-[#1c2128] rounded-lg p-4 border-2 border-gray-200 dark:border-[#30363d] hover:border-[#ff8c42] dark:hover:border-[#ff8c42] transition-colors">
+            <div className="text-3xl mb-2">📊</div>
+            <h3 className="font-bold text-gray-900 dark:text-white text-sm mb-1">Always on top of Portfolio </h3>
+            <p className="text-xs text-gray-600 dark:text-[#8b949e]">
+              Automatic signals based on Technical/Fundamentals - no manual work
+            </p>
+          </div>
+          <div className="bg-white dark:bg-[#1c2128] rounded-lg p-4 border-2 border-gray-200 dark:border-[#30363d] hover:border-[#ff8c42] dark:hover:border-[#ff8c42] transition-colors">
+            <div className="text-3xl mb-2">🛡️</div>
+            <h3 className="font-bold text-gray-900 dark:text-white text-sm mb-1">Smart Risk Protection</h3>
+            <p className="text-xs text-gray-600 dark:text-[#8b949e]">
+              100MA fallback, exit criteria tracking, and instant risk warnings
+            </p>
+          </div>
+        </div>
+
         <div className="flex gap-4 justify-center flex-wrap">
           <button
             onClick={() => router.push('/login')}
-            className="px-8 py-4 bg-[#ff8c42] hover:bg-[#ff9a58] text-white text-lg font-bold rounded-lg transition-colors"
+            className="px-8 py-4 bg-[#ff8c42] hover:bg-[#ff9a58] text-white text-lg font-bold rounded-lg transition-colors shadow-lg hover:shadow-xl"
           >
             Get Started Free
           </button>

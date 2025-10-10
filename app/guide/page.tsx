@@ -17,9 +17,18 @@ export default function GuidePage() {
             <MyPortfolioIcon size={36} />
           </div>
           <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-3">TradeIdea User Guide</h1>
-          <p className="text-lg text-gray-600 dark:text-[#8b949e]">
+          <p className="text-lg text-gray-600 dark:text-[#8b949e] mb-4">
             Complete guide to all features and capabilities
           </p>
+          <div className="max-w-3xl mx-auto bg-gradient-to-r from-[#ff8c42]/10 to-orange-500/5 border border-[#ff8c42]/30 rounded-xl p-6">
+            <div className="text-2xl mb-3">🚀</div>
+            <p className="text-base text-gray-700 dark:text-[#c9d1d9] font-medium mb-2">
+              Never miss a profit opportunity or lose sleep over your investments again!
+            </p>
+            <p className="text-sm text-gray-600 dark:text-[#8b949e]">
+              Automated alerts • Daily technical analysis • Smart exit tracking • Multi-account management • Community insights
+            </p>
+          </div>
         </div>
 
         {/* Table of Contents */}
@@ -31,7 +40,7 @@ export default function GuidePage() {
             <a href="#portfolio-import" className="text-[#ff8c42] hover:underline">3. Portfolio Import</a>
             <a href="#technical-analysis" className="text-[#ff8c42] hover:underline">4. Technical Analysis</a>
             <a href="#fundamental-analysis" className="text-[#ff8c42] hover:underline">5. Fundamental Analysis</a>
-            <a href="#exit-criteria" className="text-[#ff8c42] hover:underline">6. Smart Exit Criteria</a>
+            <a href="#investment-tracking" className="text-[#ff8c42] hover:underline">6. Smart Investment Tracking</a>
             <a href="#investment-ideas" className="text-[#ff8c42] hover:underline">7. Investment Ideas Community</a>
             <a href="#notifications" className="text-[#ff8c42] hover:underline">8. Notifications & Alerts</a>
           </div>
@@ -57,6 +66,9 @@ export default function GuidePage() {
                   <li>Daily change tracker</li>
                   <li>Per-position breakdown with color-coded indicators</li>
                 </ul>
+                <div className="mt-3 pt-3 border-t border-gray-200 dark:border-[#30363d]">
+                  <p className="text-xs text-[#ff8c42] font-semibold">💡 See your entire portfolio health at a glance - no spreadsheet juggling!</p>
+                </div>
               </div>
 
               <div className="bg-white dark:bg-[#0f1419] border border-gray-200 dark:border-[#30363d] rounded-lg p-4">
@@ -67,6 +79,9 @@ export default function GuidePage() {
                   <li>Weekly Supertrend exit signals</li>
                   <li>Warning indicators for high-risk positions</li>
                 </ul>
+                <div className="mt-3 pt-3 border-t border-gray-200 dark:border-[#30363d]">
+                  <p className="text-xs text-[#ff8c42] font-semibold">⚡ Get instant warnings before losses pile up - protect your capital!</p>
+                </div>
               </div>
 
               <div className="bg-white dark:bg-[#0f1419] border border-gray-200 dark:border-[#30363d] rounded-lg p-4">
@@ -243,9 +258,12 @@ TCS,3600.00,5,20-01-2025,4000.00,3400.00,Long`}
 
               <div className="bg-orange-50 dark:bg-orange-500/10 border border-orange-200 dark:border-orange-500/30 rounded-lg p-4">
                 <h3 className="font-semibold text-orange-900 dark:text-orange-400 mb-2">⏰ Important Note</h3>
-                <p className="text-sm text-orange-800 dark:text-orange-300">
+                <p className="text-sm text-orange-800 dark:text-orange-300 mb-2">
                   Technical analysis data is updated daily through our automated batch job. When you first add a position,
                   the technical indicators will be calculated and appear within 24 hours (typically updated every evening).
+                </p>
+                <p className="text-xs text-orange-700 dark:text-orange-400 font-semibold mt-2">
+                  🎯 No manual calculations needed - we do all the complex technical analysis for you automatically!
                 </p>
               </div>
 
@@ -360,54 +378,129 @@ TCS,3600.00,5,20-01-2025,4000.00,3400.00,Long`}
           </div>
         </section>
 
-        {/* Section 6: Smart Exit Criteria */}
-        <section id="exit-criteria" className="mb-12 scroll-mt-20">
+        {/* Section 6: Smart Investment Tracking */}
+        <section id="investment-tracking" className="mb-12 scroll-mt-20">
           <div className="bg-gray-50 dark:bg-[#1c2128] border border-gray-200 dark:border-[#30363d] rounded-xl p-8">
             <div className="flex items-center gap-3 mb-4">
               <div className="text-4xl">🎯</div>
-              <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Smart Exit Criteria</h2>
+              <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Smart Investment Tracking</h2>
             </div>
-            <p className="text-gray-600 dark:text-[#8b949e] mb-6">
-              Set custom rules for when to exit positions automatically based on technical signals.
+            <p className="text-gray-600 dark:text-[#8b949e] mb-4">
+              Automated monitoring system that tracks your investments and alerts you when exit conditions are met based on technical signals and your configured criteria.
             </p>
+            <div className="mb-6 bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 border-2 border-green-500 dark:border-green-600 rounded-lg p-4">
+              <p className="text-sm text-green-900 dark:text-green-300 font-semibold flex items-center gap-2">
+                <span className="text-xl">🎉</span>
+                <span>Sleep peacefully knowing our system is watching your portfolio 24/7 and will alert you at the right moment!</span>
+              </p>
+            </div>
 
             <div className="space-y-4">
+              <div className="bg-blue-50 dark:bg-blue-500/10 border border-blue-200 dark:border-blue-500/30 rounded-lg p-4">
+                <h3 className="font-semibold text-blue-900 dark:text-blue-400 mb-2">🤖 How It Works</h3>
+                <p className="text-sm text-blue-800 dark:text-blue-300 mb-3">
+                  The system monitors your portfolio daily, comparing current prices against your configured exit criteria.
+                  When any condition is met, you receive an automatic alert to help you make timely investment decisions.
+                </p>
+              </div>
+
               <div className="bg-white dark:bg-[#0f1419] border border-gray-200 dark:border-[#30363d] rounded-lg p-4">
-                <h3 className="font-semibold text-gray-900 dark:text-white mb-2">Available Exit Rules</h3>
-                <ul className="text-sm text-gray-600 dark:text-[#8b949e] space-y-1 ml-4 list-disc">
-                  <li><strong>Exit at Stop-Loss</strong> - Alert when price hits stop-loss level</li>
-                  <li><strong>Exit at Target</strong> - Alert when target price is reached</li>
-                  <li><strong>Exit Below 50 EMA</strong> - Short-term trend reversal</li>
-                  <li><strong>Exit Below 100 MA</strong> - Medium-term support break</li>
+                <h3 className="font-semibold text-gray-900 dark:text-white mb-2">📊 Exit Criteria Options</h3>
+                <p className="text-sm text-gray-600 dark:text-[#8b949e] mb-3">
+                  Configure custom rules to receive alerts when specific conditions are met:
+                </p>
+                <ul className="text-sm text-gray-600 dark:text-[#8b949e] space-y-2 ml-4 list-disc">
+                  <li><strong>Exit at Stop-Loss</strong> - Alert when price hits your stop-loss level (protects downside)</li>
+                  <li><strong>Exit at Target</strong> - Alert when target price is reached (locks in profits)</li>
+                  <li><strong>Exit Below 50 EMA</strong> - Short-term trend reversal signal</li>
+                  <li><strong>Exit Below 100 MA</strong> - Medium-term support level broken</li>
                   <li><strong>Exit Below 200 MA</strong> - Long-term trend break (Default: ON)</li>
                   <li><strong>Exit on Weekly Supertrend</strong> - Weekly trend reversal (Default: ON)</li>
-                  <li><strong>Custom Note</strong> - Add your own exit conditions</li>
+                  <li><strong>Exit Below Custom Price</strong> - Set any specific price level</li>
+                  <li><strong>Custom Note</strong> - Add your own exit conditions and reminders</li>
                 </ul>
               </div>
 
               <div className="bg-white dark:bg-[#0f1419] border border-gray-200 dark:border-[#30363d] rounded-lg p-4">
-                <h3 className="font-semibold text-gray-900 dark:text-white mb-2">Default Settings</h3>
+                <h3 className="font-semibold text-gray-900 dark:text-white mb-2">🔔 Alert Logic & Triggers</h3>
+                <p className="text-sm text-gray-600 dark:text-[#8b949e] mb-3">
+                  Understanding when and how alerts are triggered:
+                </p>
+                <div className="space-y-3">
+                  <div className="bg-gray-50 dark:bg-[#0f1419] p-3 rounded border-l-4 border-orange-500">
+                    <div className="font-semibold text-gray-900 dark:text-white text-sm mb-1">✅ Target Price Alert</div>
+                    <p className="text-xs text-gray-600 dark:text-[#8b949e]">
+                      <strong>Trigger:</strong> Current price ≥ Target price<br/>
+                      <strong>Logic:</strong> Simple price comparison check<br/>
+                      <strong>Action:</strong> Notification sent, manual exit required
+                    </p>
+                  </div>
+
+                  <div className="bg-gray-50 dark:bg-[#0f1419] p-3 rounded border-l-4 border-red-500">
+                    <div className="font-semibold text-gray-900 dark:text-white text-sm mb-1">⚠️ Stop Loss Alert</div>
+                    <p className="text-xs text-gray-600 dark:text-[#8b949e]">
+                      <strong>Trigger:</strong> Current price ≤ Stop-loss OR Current price ≤ 100MA (if no SL set)<br/>
+                      <strong>Logic:</strong> Uses your configured stop-loss, falls back to 100MA as safety net<br/>
+                      <strong>Action:</strong> Urgent notification sent, immediate review recommended
+                    </p>
+                  </div>
+
+                  <div className="bg-gray-50 dark:bg-[#0f1419] p-3 rounded border-l-4 border-yellow-500">
+                    <div className="font-semibold text-gray-900 dark:text-white text-sm mb-1">📉 Technical Exit Alerts</div>
+                    <p className="text-xs text-gray-600 dark:text-[#8b949e]">
+                      <strong>Trigger:</strong> Price crosses below enabled moving averages (50 EMA, 100 MA, 200 MA)<br/>
+                      <strong>Logic:</strong> Daily technical data comparison, only fires if criteria enabled<br/>
+                      <strong>Action:</strong> Warning notification, suggests reviewing position
+                    </p>
+                  </div>
+
+                  <div className="bg-gray-50 dark:bg-[#0f1419] p-3 rounded border-l-4 border-purple-500">
+                    <div className="font-semibold text-gray-900 dark:text-white text-sm mb-1">🔄 Monitoring Frequency</div>
+                    <p className="text-xs text-gray-600 dark:text-[#8b949e]">
+                      <strong>Check Interval:</strong> Once per day automatically<br/>
+                      <strong>Duplicate Prevention:</strong> Same alert max once per 24 hours<br/>
+                      <strong>Data Source:</strong> Real-time technical indicators updated daily
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-white dark:bg-[#0f1419] border border-gray-200 dark:border-[#30363d] rounded-lg p-4">
+                <h3 className="font-semibold text-gray-900 dark:text-white mb-2">⚙️ Default Settings</h3>
                 <p className="text-sm text-gray-600 dark:text-[#8b949e] mb-2">
-                  New positions automatically have these criteria enabled:
+                  New investments automatically have these criteria enabled for protection:
                 </p>
                 <ul className="text-sm text-gray-600 dark:text-[#8b949e] space-y-1 ml-4 list-disc">
-                  <li>✅ Exit at Stop-Loss</li>
+                  <li>✅ Exit at Stop-Loss (with 100MA fallback)</li>
                   <li>✅ Exit at Target</li>
-                  <li>✅ Exit Below 200 MA</li>
-                  <li>✅ Exit on Weekly Supertrend</li>
+                  <li>✅ Exit Below 200 MA (long-term trend protection)</li>
+                  <li>✅ Exit on Weekly Supertrend (momentum protection)</li>
                 </ul>
               </div>
 
               <div className="bg-white dark:bg-[#0f1419] border border-gray-200 dark:border-[#30363d] rounded-lg p-4">
-                <h3 className="font-semibold text-gray-900 dark:text-white mb-2">How to Configure</h3>
+                <h3 className="font-semibold text-gray-900 dark:text-white mb-2">🔧 How to Configure</h3>
                 <ol className="text-sm text-gray-600 dark:text-[#8b949e] space-y-1 ml-4 list-decimal">
-                  <li>Click on a position in your portfolio</li>
-                  <li>Go to <strong>Exit Criteria</strong> section</li>
-                  <li>Toggle ON/OFF for each exit rule</li>
+                  <li>Click on an investment in your portfolio</li>
+                  <li>Navigate to <strong>Exit Criteria</strong> section</li>
+                  <li>Toggle ON/OFF for each exit rule based on your strategy</li>
                   <li>Set your stop-loss and target prices</li>
-                  <li>Add custom notes if needed</li>
-                  <li>Save changes</li>
+                  <li>Optionally add custom exit price levels</li>
+                  <li>Add custom notes for your reference</li>
+                  <li>Save changes - alerts will automatically monitor your settings</li>
                 </ol>
+              </div>
+
+              <div className="bg-green-50 dark:bg-green-500/10 border border-green-200 dark:border-green-500/30 rounded-lg p-4">
+                <h3 className="font-semibold text-green-900 dark:text-green-400 mb-2">💡 Best Practices</h3>
+                <ul className="text-sm text-green-800 dark:text-green-300 space-y-1 ml-4 list-disc">
+                  <li>Always set a realistic stop-loss - system uses 100MA as fallback if none provided</li>
+                  <li>Enable 200 MA exit for long-term trend protection on positional investments</li>
+                  <li>Use 50 EMA exit for short-term investments requiring tighter controls</li>
+                  <li>Weekly Supertrend is ideal for swing and medium-term holdings</li>
+                  <li>Alerts are recommendations - final decision is always yours</li>
+                  <li>Review and adjust criteria periodically based on market conditions</li>
+                </ul>
               </div>
             </div>
           </div>
@@ -420,9 +513,15 @@ TCS,3600.00,5,20-01-2025,4000.00,3400.00,Long`}
               <div className="text-4xl">💡</div>
               <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Investment Ideas Community</h2>
             </div>
-            <p className="text-gray-600 dark:text-[#8b949e] mb-6">
+            <p className="text-gray-600 dark:text-[#8b949e] mb-4">
               Share and discover investment opportunities with a community of investors.
             </p>
+            <div className="mb-6 bg-gradient-to-r from-blue-50 to-cyan-50 dark:from-blue-900/20 dark:to-cyan-900/20 border-2 border-blue-500 dark:border-blue-600 rounded-lg p-4">
+              <p className="text-sm text-blue-900 dark:text-blue-300 font-semibold flex items-center gap-2">
+                <span className="text-xl">👥</span>
+                <span>Learn from successful investors and share your winning strategies - grow together!</span>
+              </p>
+            </div>
 
             <div className="space-y-4">
               <div className="bg-white dark:bg-[#0f1419] border border-gray-200 dark:border-[#30363d] rounded-lg p-4">
@@ -467,9 +566,15 @@ TCS,3600.00,5,20-01-2025,4000.00,3400.00,Long`}
               <div className="text-4xl">🔔</div>
               <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Notifications & Alerts</h2>
             </div>
-            <p className="text-gray-600 dark:text-[#8b949e] mb-6">
+            <p className="text-gray-600 dark:text-[#8b949e] mb-4">
               Stay informed with automated real-time alerts for important portfolio events and trading opportunities.
             </p>
+            <div className="mb-6 bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 border-2 border-purple-500 dark:border-purple-600 rounded-lg p-4">
+              <p className="text-sm text-purple-900 dark:text-purple-300 font-semibold flex items-center gap-2">
+                <span className="text-xl">🔔</span>
+                <span>Never miss entry prices, targets, or stop-losses again - automated alerts keep you ahead of the market!</span>
+              </p>
+            </div>
 
             <div className="space-y-4">
               <div className="bg-blue-50 dark:bg-blue-500/10 border border-blue-200 dark:border-blue-500/30 rounded-lg p-4">
@@ -593,16 +698,44 @@ TCS,3600.00,5,20-01-2025,4000.00,3400.00,Long`}
 
         {/* Footer CTA */}
         <div className="bg-gradient-to-r from-[#ff8c42]/10 to-orange-500/5 border-2 border-[#ff8c42] rounded-2xl p-8 text-center">
-          <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-3">Ready to Get Started?</h2>
-          <p className="text-gray-600 dark:text-[#8b949e] mb-6">
-            Start managing your portfolio with powerful tools and insights
+          <div className="text-4xl mb-4">🚀✨</div>
+          <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-3">Ready to Transform Your Investment Journey?</h2>
+          <p className="text-lg text-gray-700 dark:text-[#c9d1d9] mb-6 font-medium">
+            Join investors who never miss opportunities and always exit at the right time
           </p>
+
+          {/* Top 3 Points */}
+          <div className="max-w-2xl mx-auto mb-8 grid md:grid-cols-3 gap-4">
+            <div className="bg-white dark:bg-[#1c2128] rounded-lg p-4 border border-gray-200 dark:border-[#30363d]">
+              <div className="text-3xl mb-2">🔔</div>
+              <h3 className="font-bold text-gray-900 dark:text-white text-sm mb-1">Never Miss Alerts</h3>
+              <p className="text-xs text-gray-600 dark:text-[#8b949e]">
+                Automated notifications when entry, target, or stop-loss prices are hit
+              </p>
+            </div>
+            <div className="bg-white dark:bg-[#1c2128] rounded-lg p-4 border border-gray-200 dark:border-[#30363d]">
+              <div className="text-3xl mb-2">📊</div>
+              <h3 className="font-bold text-gray-900 dark:text-white text-sm mb-1">Daily Technical Analysis</h3>
+              <p className="text-xs text-gray-600 dark:text-[#8b949e]">
+                Automatic RSI, MACD, moving averages, and signals - no manual work
+              </p>
+            </div>
+            <div className="bg-white dark:bg-[#1c2128] rounded-lg p-4 border border-gray-200 dark:border-[#30363d]">
+              <div className="text-3xl mb-2">🛡️</div>
+              <h3 className="font-bold text-gray-900 dark:text-white text-sm mb-1">Smart Risk Protection</h3>
+              <p className="text-xs text-gray-600 dark:text-[#8b949e]">
+                100MA fallback, exit criteria tracking, and instant risk warnings
+              </p>
+            </div>
+          </div>
+
           <Link
             href="/portfolio"
-            className="inline-block px-6 py-3 bg-[#ff8c42] hover:bg-[#ff9a58] text-white font-semibold rounded-lg transition-colors"
+            className="inline-block px-8 py-4 bg-[#ff8c42] hover:bg-[#ff9a58] text-white text-lg font-semibold rounded-lg transition-colors shadow-lg hover:shadow-xl"
           >
-            Go to My Portfolio
+            Start Managing Smarter →
           </Link>
+          <p className="text-xs text-gray-500 dark:text-[#8b949e] mt-4">No credit card required • Free to start</p>
         </div>
 
         {/* Quick Links */}
