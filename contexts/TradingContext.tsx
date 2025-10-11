@@ -281,9 +281,7 @@ export const TradingProvider: React.FC<TradingProviderProps> = ({ children }) =>
     return () => unsubscribe();
   }, [user]);
 
-  // Fetch user's notifications - DISABLED to reduce Firebase API calls
-  // TODO: Re-enable when needed
-  /*
+  // Fetch user's notifications
   useEffect(() => {
     if (!user) {
       setNotifications([]);
@@ -318,83 +316,118 @@ export const TradingProvider: React.FC<TradingProviderProps> = ({ children }) =>
 
     return () => unsubscribe();
   }, [user]);
-  */
 
   // Monitor entry prices for "cooking" ideas and auto-update to "active" when within 1% variance
-  // DISABLED to reduce Firebase API calls - TODO: Re-enable when needed
-  /*
   useEffect(() => {
     if (!user || ideas.length === 0) return;
 
     const checkEntryPrices = async () => {
       const cookingIdeas = ideas.filter(idea => idea.status === 'cooking');
 
-      for (const idea of cookingIdeas) {
-        try {
-          const currentPrice = idea.technicals?.lastPrice;
-          if (!currentPrice || !idea.entryPrice) continue;
+      // Group ideas by symbol to consolidate alerts per symbol
+      const symbolToIdeas = new Map<string, typeof cookingIdeas>();
+      cookingIdeas.forEach(idea => {
+        if (!symbolToIdeas.has(idea.symbol)) {
+          symbolToIdeas.set(idea.symbol, []);
+        }
+        symbolToIdeas.get(idea.symbol)!.push(idea);
+      });
 
-          // Use common alert checker
-          const alerts = checkAllAlerts({
-            type: 'idea',
-            symbol: idea.symbol,
-            entryPrice: idea.entryPrice,
-            currentPrice,
-            technicals: idea.technicals,
-            fundamentals: idea.fundamentals
+      // Process one alert per symbol
+      for (const [symbol, symbolIdeas] of symbolToIdeas.entries()) {
+        try {
+          // Check if this symbol already has a recent alert (within last 24 hours)
+          const oneDayAgo = new Date();
+          oneDayAgo.setHours(oneDayAgo.getHours() - 24);
+
+          const notificationsRef = collection(db, 'notifications');
+          const existingAlertQuery = query(
+            notificationsRef,
+            where('ideaSymbol', '==', symbol),
+            where('type', '==', 'entry_alert')
+          );
+
+          const existingAlerts = await getDocs(existingAlertQuery);
+          const hasRecentAlert = existingAlerts.docs.some(doc => {
+            const data = doc.data();
+            const createdAt = data.createdAt?.toDate?.();
+            return createdAt && createdAt > oneDayAgo;
           });
 
-          // Process entry alerts
-          for (const alert of alerts) {
-            if (alert.type === 'entry_alert' && alert.shouldTrigger) {
-              console.log(`🎯 Entry price hit for ${idea.symbol}!`, alert.metadata);
+          if (hasRecentAlert) {
+            console.log(`⏭️ Skipping duplicate entry alert for ${symbol} (recent alert exists)`);
+            continue;
+          }
 
-              // Update idea status to "active"
-              const ideaRef = doc(db, 'tradingIdeas', idea.id);
-              await updateDoc(ideaRef, {
-                status: 'active',
-                updatedAt: serverTimestamp()
-              });
+          // Check all ideas for this symbol
+          for (const idea of symbolIdeas) {
+            const currentPrice = idea.technicals?.lastPrice;
+            if (!currentPrice || !idea.entryPrice) continue;
 
-              // Notify the idea owner
-              const notificationsRef = collection(db, 'notifications');
-              await addDoc(notificationsRef, {
-                userId: idea.userId,
-                type: 'entry_alert',
-                fromUserId: 'system',
-                fromUserName: 'TradeIdea',
-                ideaId: idea.id,
-                ideaSymbol: idea.symbol,
-                message: alert.message,
-                read: false,
-                createdAt: serverTimestamp()
-              });
+            // Use common alert checker
+            const alerts = checkAllAlerts({
+              type: 'idea',
+              symbol: idea.symbol,
+              entryPrice: idea.entryPrice,
+              currentPrice,
+              technicals: idea.technicals,
+              fundamentals: idea.fundamentals
+            });
 
-              // Notify all followers
-              if (idea.followers && idea.followers.length > 0) {
-                const followerNotifications = idea.followers.map(followerId => {
-                  if (followerId === idea.userId) return null; // Don't double-notify owner
+            // Process entry alerts
+            for (const alert of alerts) {
+              if (alert.type === 'entry_alert' && alert.shouldTrigger) {
+                console.log(`🎯 Entry price hit for ${idea.symbol}!`, alert.metadata);
 
-                  return addDoc(notificationsRef, {
-                    userId: followerId,
-                    type: 'entry_alert',
-                    fromUserId: idea.userId,
-                    fromUserName: idea.userName || 'A trader',
-                    ideaId: idea.id,
-                    ideaSymbol: idea.symbol,
-                    message: `idea ${alert.message}`,
-                    read: false,
-                    createdAt: serverTimestamp()
-                  });
-                }).filter(Boolean);
+                // Update idea status to "active"
+                const ideaRef = doc(db, 'tradingIdeas', idea.id);
+                await updateDoc(ideaRef, {
+                  status: 'active',
+                  updatedAt: serverTimestamp()
+                });
 
-                await Promise.all(followerNotifications);
-                console.log(`✅ Notified ${followerNotifications.length} followers about ${idea.symbol} entry alert`);
+                // Notify the idea owner
+                await addDoc(notificationsRef, {
+                  userId: idea.userId,
+                  type: 'entry_alert',
+                  fromUserId: 'system',
+                  fromUserName: 'TradeIdea',
+                  ideaId: idea.id,
+                  ideaSymbol: idea.symbol,
+                  message: alert.message,
+                  read: false,
+                  createdAt: serverTimestamp()
+                });
+
+                // Notify all followers
+                if (idea.followers && idea.followers.length > 0) {
+                  const followerNotifications = idea.followers.map(followerId => {
+                    if (followerId === idea.userId) return null; // Don't double-notify owner
+
+                    return addDoc(notificationsRef, {
+                      userId: followerId,
+                      type: 'entry_alert',
+                      fromUserId: idea.userId,
+                      fromUserName: idea.userName || 'A trader',
+                      ideaId: idea.id,
+                      ideaSymbol: idea.symbol,
+                      message: `idea ${alert.message}`,
+                      read: false,
+                      createdAt: serverTimestamp()
+                    });
+                  }).filter(Boolean);
+
+                  await Promise.all(followerNotifications);
+                  console.log(`✅ Notified ${followerNotifications.length} followers about ${idea.symbol} entry alert`);
+                }
+
+                // Only process the first triggered alert per symbol
+                break;
               }
             }
           }
         } catch (error) {
-          console.error(`Error checking entry price for ${idea.symbol}:`, error);
+          console.error(`Error checking entry price for ${symbol}:`, error);
         }
       }
     };
@@ -407,60 +440,75 @@ export const TradingProvider: React.FC<TradingProviderProps> = ({ children }) =>
 
     return () => clearInterval(interval);
   }, [user, ideas]);
-  */
 
   // Monitor portfolio positions for target/stop-loss alerts
-  // DISABLED to reduce Firebase API calls - TODO: Re-enable when needed
-  /*
   useEffect(() => {
     if (!user || myPortfolio.length === 0) return;
 
     const checkPortfolioPrices = async () => {
       const openPositions = myPortfolio.filter(pos => pos.status === 'open');
 
-      for (const position of openPositions) {
-        try {
-          const currentPrice = position.technicals?.lastPrice;
-          if (!currentPrice) continue;
+      // Group positions by symbol to consolidate alerts per symbol
+      const symbolToPositions = new Map<string, typeof openPositions>();
+      openPositions.forEach(position => {
+        if (!symbolToPositions.has(position.symbol)) {
+          symbolToPositions.set(position.symbol, []);
+        }
+        symbolToPositions.get(position.symbol)!.push(position);
+      });
 
-          // Use common alert checker
-          const alerts = checkAllAlerts({
-            type: 'portfolio',
-            symbol: position.symbol,
-            targetPrice: position.target1,
-            stopLossPrice: position.stopLoss,
-            currentPrice,
-            exitCriteria: position.exitCriteria,
-            technicals: position.technicals,
-            fundamentals: position.fundamentals
-          });
+      // Process one alert per symbol per type
+      for (const [symbol, symbolPositions] of symbolToPositions.entries()) {
+        try {
+          // Check if this symbol already has recent alerts (within last 24 hours)
+          const oneDayAgo = new Date();
+          oneDayAgo.setHours(oneDayAgo.getHours() - 24);
 
           const notificationsRef = collection(db, 'notifications');
+          const existingAlertQuery = query(
+            notificationsRef,
+            where('ideaSymbol', '==', symbol),
+            where('userId', '==', user.uid)
+          );
 
-          // Process all triggered alerts
-          for (const alert of alerts) {
-            if (alert.shouldTrigger) {
-              console.log(`${alert.type === 'target_alert' ? '🎯' : '⚠️'} Alert for ${position.symbol}!`, alert.metadata);
+          const existingAlerts = await getDocs(existingAlertQuery);
+          const recentAlertTypes = new Set<string>();
+          existingAlerts.docs.forEach(doc => {
+            const data = doc.data();
+            const createdAt = data.createdAt?.toDate?.();
+            if (createdAt && createdAt > oneDayAgo) {
+              recentAlertTypes.add(data.type);
+            }
+          });
 
-              // Check if this alert was already sent (within last 24 hours)
-              const oneDayAgo = new Date();
-              oneDayAgo.setHours(oneDayAgo.getHours() - 24);
+          // Check all positions for this symbol
+          for (const position of symbolPositions) {
+            const currentPrice = position.technicals?.lastPrice;
+            if (!currentPrice) continue;
 
-              const existingAlertQuery = query(
-                notificationsRef,
-                where('userId', '==', position.userId),
-                where('type', '==', alert.type),
-                where('positionId', '==', position.id)
-              );
+            // Use common alert checker
+            const alerts = checkAllAlerts({
+              type: 'portfolio',
+              symbol: position.symbol,
+              targetPrice: position.target1,
+              stopLossPrice: position.stopLoss,
+              currentPrice,
+              exitCriteria: position.exitCriteria,
+              technicals: position.technicals,
+              fundamentals: position.fundamentals
+            });
 
-              const existingAlerts = await getDocs(existingAlertQuery);
-              const hasRecentAlert = existingAlerts.docs.some(doc => {
-                const data = doc.data();
-                const createdAt = data.createdAt?.toDate?.();
-                return createdAt && createdAt > oneDayAgo;
-              });
+            // Process all triggered alerts, but skip if already sent for this symbol today
+            for (const alert of alerts) {
+              if (alert.shouldTrigger) {
+                // Check if this alert type was already sent for this symbol today
+                if (recentAlertTypes.has(alert.type)) {
+                  console.log(`⏭️ Skipping duplicate ${alert.type} for ${symbol} (recent alert exists)`);
+                  continue;
+                }
 
-              if (!hasRecentAlert) {
+                console.log(`${alert.type === 'target_alert' ? '🎯' : '⚠️'} Alert for ${position.symbol}!`, alert.metadata);
+
                 await addDoc(notificationsRef, {
                   userId: position.userId,
                   type: alert.type,
@@ -474,13 +522,14 @@ export const TradingProvider: React.FC<TradingProviderProps> = ({ children }) =>
                   createdAt: serverTimestamp()
                 });
                 console.log(`✅ Created ${alert.type} notification for ${position.symbol}`);
-              } else {
-                console.log(`⏭️ Skipping duplicate ${alert.type} for ${position.symbol}`);
+
+                // Mark this alert type as sent for this symbol
+                recentAlertTypes.add(alert.type);
               }
             }
           }
         } catch (error) {
-          console.error(`Error checking portfolio prices for ${position.symbol}:`, error);
+          console.error(`Error checking portfolio prices for ${symbol}:`, error);
         }
       }
     };
@@ -493,7 +542,6 @@ export const TradingProvider: React.FC<TradingProviderProps> = ({ children }) =>
 
     return () => clearInterval(interval);
   }, [user, myPortfolio]);
-  */
 
   // Create a new trading idea
   const createIdea = async (ideaData: Partial<TradingIdea>): Promise<string> => {
