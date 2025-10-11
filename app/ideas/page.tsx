@@ -106,15 +106,15 @@ export default function IdeasHubPage() {
         </div>
 
         {/* Tags */}
-        <div className="flex flex-wrap gap-2 mb-3">
-          <span className="px-2.5 py-1 bg-yellow-500/20 text-gray-600 dark:text-[#8b949e] text-xs font-semibold rounded-full">
-            {idea.riskLevel}
+        <div className="flex flex-wrap gap-3 mb-3">
+          <span className="text-xs text-gray-600 dark:text-[#8b949e]">
+            #{idea.riskLevel} risk
           </span>
-          <span className="px-2.5 py-1 bg-blue-500/20 text-gray-600 dark:text-[#8b949e] text-xs font-semibold rounded-full">
-            {idea.timeframe}
+          <span className="text-xs text-gray-600 dark:text-[#8b949e]">
+            #{idea.timeframe}
           </span>
-          <span className="px-2.5 py-1 bg-gray-500/20 text-gray-600 dark:text-[#8b949e] text-xs font-semibold rounded-full">
-            {idea.analysisType}
+          <span className="text-xs text-gray-600 dark:text-[#8b949e]">
+            #{idea.analysisType} analysis
           </span>
         </div>
 
@@ -246,7 +246,7 @@ export default function IdeasHubPage() {
             <div className="text-xs text-gray-600 dark:text-[#8b949e] mb-1">LTP</div>
             <div className={`text-sm font-semibold ${
               idea.technicals?.lastPrice
-                ? (idea.technicals.lastPrice >= idea.entryPrice ? 'text-green-500' : 'text-gray-900 dark:text-white')
+                ? 'text-gray-900 dark:text-white'
                 : 'text-gray-500 dark:text-[#8b949e]'
             }`}>
               {idea.technicals?.lastPrice ? `₹${idea.technicals.lastPrice.toFixed(2)}` : 'N/A'}
@@ -260,13 +260,13 @@ export default function IdeasHubPage() {
           </div>
           <div className="text-center">
             <div className="text-xs text-gray-600 dark:text-[#8b949e] mb-1">Target</div>
-            <div className="text-sm font-semibold text-green-500">
-              ₹{idea.target1} {target1Percent && <span className="text-xs text-green-400">+{target1Percent}%</span>}
+            <div className="text-sm font-semibold text-gray-900 dark:text-white">
+              ₹{idea.target1} {target1Percent && <span className="text-xs text-gray-600 dark:text-[#8b949e]">+{target1Percent}%</span>}
             </div>
           </div>
           <div className="text-center">
             <div className="text-xs text-gray-600 dark:text-[#8b949e] mb-1">Stop Loss</div>
-            <div className="text-sm font-semibold text-red-500">₹{idea.stopLoss}</div>
+            <div className="text-sm font-semibold text-gray-900 dark:text-white">₹{idea.stopLoss}</div>
           </div>
         </div>
 
@@ -296,7 +296,7 @@ export default function IdeasHubPage() {
               <span>Analyze</span>
             </button>
 
-            {/* View Details Button */}
+            {/* Edit Button */}
             <button
               onClick={(e) => {
                 e.stopPropagation();
@@ -305,10 +305,9 @@ export default function IdeasHubPage() {
               className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-100 dark:bg-[#30363d] hover:bg-gray-200 dark:hover:bg-[#3c444d] border border-gray-200 dark:border-[#444c56] text-gray-700 dark:text-gray-300 text-xs font-semibold rounded-lg transition-colors"
             >
               <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
               </svg>
-              <span>View Details</span>
+              <span>Edit</span>
             </button>
           </div>
         </div>
