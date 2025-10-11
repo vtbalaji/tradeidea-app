@@ -43,7 +43,10 @@ export default function IdeasHubPage() {
   }
 
   // Apply tab filters
-  if (activeTab === 'following') {
+  if (activeTab === 'active') {
+    // Show only active ideas
+    filteredIdeas = filteredIdeas.filter(idea => idea.status === 'active');
+  } else if (activeTab === 'following') {
     filteredIdeas = filteredIdeas.filter(idea => idea.followers?.includes(user?.uid || ''));
   } else if (activeTab === 'trending') {
     // Sort by likes (most liked first)
@@ -344,6 +347,16 @@ export default function IdeasHubPage() {
             }`}
           >
             All Ideas
+          </button>
+          <button
+            onClick={() => setActiveTab('active')}
+            className={`px-3 py-1.5 rounded-md text-xs font-semibold transition-colors whitespace-nowrap ${
+              activeTab === 'active'
+                ? 'bg-[#ff8c42] text-gray-900 dark:text-white'
+                : 'bg-gray-50 dark:bg-[#1c2128] text-gray-600 dark:text-[#8b949e] hover:bg-[#30363d]'
+            }`}
+          >
+            🟢 Active
           </button>
           <button
             onClick={() => setActiveTab('trending')}

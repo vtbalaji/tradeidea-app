@@ -39,7 +39,7 @@ export function checkQualityInvestorEntry(
     earningsGrowth: fundamental.earningsGrowth !== null && fundamental.earningsGrowth >= 8,
     quarterlyGrowth: fundamental.earningsQuarterlyGrowth !== null &&
                      fundamental.earningsQuarterlyGrowth >= 10,
-    marketCap: fundamental.marketCap !== null && fundamental.marketCap > 100000000000, // >100B
+    // marketCap: fundamental.marketCap !== null && fundamental.marketCap > 100000000000, // >100B
     technicalConfirmation: technicalScore >= 3,
     forwardPE: fundamental.forwardPE !== null && fundamental.forwardPE < 50,
     priceToBook: fundamental.priceToBook !== null && fundamental.priceToBook < 10

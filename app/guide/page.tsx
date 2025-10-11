@@ -77,7 +77,7 @@ export default function GuidePage() {
                 <ul className="text-sm text-gray-600 dark:text-[#8b949e] space-y-1 ml-4 list-disc">
                   <li>Positions below stop-loss levels</li>
                   <li>Stocks trading below 50 EMA, 100 MA, or 200 MA</li>
-                  <li>Weekly Supertrend exit signals</li>
+                  <li>Daily Supertrend exit signals</li>
                   <li>Warning indicators for high-risk positions</li>
                 </ul>
                 <div className="mt-3 pt-3 border-t border-gray-200 dark:border-[#30363d]">
@@ -243,7 +243,7 @@ TCS,3600.00,5,20-01-2025,4000.00,3400.00,Long`}
                   <li><strong>RSI (Relative Strength Index)</strong> - Overbought (&gt;70) / Oversold (&lt;30)</li>
                   <li><strong>MACD</strong> - Trend following momentum with signal line</li>
                   <li><strong>Bollinger Bands</strong> - Volatility and price range analysis</li>
-                  <li><strong>Supertrend</strong> - Weekly trend with buy/sell signals</li>
+                  <li><strong>Supertrend</strong> - Daily trend with buy/sell signals</li>
                 </ul>
               </div>
 
@@ -285,7 +285,7 @@ TCS,3600.00,5,20-01-2025,4000.00,3400.00,Long`}
                       <li>Price closes below 50 EMA (if enabled)</li>
                       <li>Price closes below 100 MA (if enabled)</li>
                       <li>Price closes below 200 MA (if enabled)</li>
-                      <li>Weekly Supertrend turns bearish/red (if enabled)</li>
+                      <li>Daily Supertrend turns bearish/red (if enabled)</li>
                     </ul>
                   </div>
                   <div className="bg-gray-50 dark:bg-[#0f1419] p-3 rounded border-l-4 border-green-500">
@@ -298,7 +298,7 @@ TCS,3600.00,5,20-01-2025,4000.00,3400.00,Long`}
                       <li>Price is below target (room to grow)</li>
                       <li>Price is above 50 EMA (short-term bullish)</li>
                       <li>Price is above 200 MA (long-term bullish)</li>
-                      <li>Weekly Supertrend is bullish/green (weekly momentum)</li>
+                      <li>Daily Supertrend is bullish/green (daily momentum)</li>
                       <li>Golden Cross present (50 EMA above 200 MA)</li>
                     </ul>
                   </div>
@@ -572,7 +572,7 @@ TCS,3600.00,5,20-01-2025,4000.00,3400.00,Long`}
                   <li><strong>Exit Below 50 EMA</strong> - Short-term trend reversal signal</li>
                   <li><strong>Exit Below 100 MA</strong> - Medium-term support level broken</li>
                   <li><strong>Exit Below 200 MA</strong> - Long-term trend break (Default: ON)</li>
-                  <li><strong>Exit on Weekly Supertrend</strong> - Weekly trend reversal (Default: ON)</li>
+                  <li><strong>Exit on Daily Supertrend</strong> - Daily trend reversal (Default: ON)</li>
                   <li><strong>Exit Below Custom Price</strong> - Set any specific price level</li>
                   <li><strong>Custom Note</strong> - Add your own exit conditions and reminders</li>
                 </ul>
@@ -631,7 +631,7 @@ TCS,3600.00,5,20-01-2025,4000.00,3400.00,Long`}
                   <li>✅ Exit at Stop-Loss (with 100MA fallback)</li>
                   <li>✅ Exit at Target</li>
                   <li>✅ Exit Below 200 MA (long-term trend protection)</li>
-                  <li>✅ Exit on Weekly Supertrend (momentum protection)</li>
+                  <li>✅ Exit on Daily Supertrend (momentum protection)</li>
                 </ul>
               </div>
 
@@ -654,7 +654,7 @@ TCS,3600.00,5,20-01-2025,4000.00,3400.00,Long`}
                   <li>Always set a realistic stop-loss - system uses 100MA as fallback if none provided</li>
                   <li>Enable 200 MA exit for long-term trend protection on positional investments</li>
                   <li>Use 50 EMA exit for short-term investments requiring tighter controls</li>
-                  <li>Weekly Supertrend is ideal for swing and medium-term holdings</li>
+                  <li>Daily Supertrend is ideal for swing and medium-term holdings</li>
                   <li>Alerts are recommendations - final decision is always yours</li>
                   <li>Review and adjust criteria periodically based on market conditions</li>
                 </ul>

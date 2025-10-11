@@ -16,8 +16,8 @@ export function checkGrowthInvestorEntry(
   // Growth score (need at least 3 of 4)
   const growthScore = [
     fundamental.earningsGrowth !== null && fundamental.earningsGrowth >= 15,
-    fundamental.earningsQuarterlyGrowth !== null && fundamental.earningsQuarterlyGrowth >= 15,
-    fundamental.revenueGrowth !== null && fundamental.revenueGrowth >= 15,
+    fundamental.earningsQuarterlyGrowth !== null && fundamental.earningsQuarterlyGrowth >= 12,
+    fundamental.revenueGrowth !== null && fundamental.revenueGrowth >= 8,
     technical.changePercent > 0
   ].filter(Boolean).length;
 

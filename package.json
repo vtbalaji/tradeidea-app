@@ -7,7 +7,7 @@
     "build": "next build --turbopack",
     "start": "next start",
     "lint": "eslint",
-    "analyze": "tsx scripts/analyze-symbols.ts",
+    "analyze": "source venv/bin/activate && python3 scripts/analyze-symbols.py",
     "load-symbols": "tsx scripts/load-symbols.ts",
     "load-symbols-csv": "tsx scripts/load-symbols-from-csv.ts"
   },
