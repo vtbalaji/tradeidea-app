@@ -29,7 +29,7 @@ export function checkValueInvestorEntry(
     debtToEquity: fundamental.debtToEquity !== null && fundamental.debtToEquity < 1.0,
 
     // Price not too far above SMA200
-    priceVsSMA200: technical.lastPrice < (signals.sma200 * 1.10),
+    priceVsSMA200: technical.lastPrice < (technical.sma200 * 1.10),
 
     // Technical Confirmation (at least 2 of 3)
     technicalConfirmation: [

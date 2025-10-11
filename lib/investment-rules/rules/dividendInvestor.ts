@@ -18,7 +18,7 @@ export function checkDividendInvestorEntry(
     fundamental.debtToEquity !== null && fundamental.debtToEquity < 1.2,
     fundamental.beta !== null && fundamental.beta < 0.8,
     fundamental.profitMargins !== null && fundamental.profitMargins >= 10,
-    fundamental.fundamentalScore ? fundamental.fundamentalScore >= 55 : false,
+    fundamental.fundamentalScore ? fundamental.fundamentalScore >= 60 : false,
     fundamental.currentRatio !== null && fundamental.currentRatio >= 1.5
   ].filter(Boolean).length;
 

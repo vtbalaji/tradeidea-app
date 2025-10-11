@@ -26,15 +26,15 @@ export function checkMomentumTraderEntry(
 
   const conditions = {
     momentumSignals: momentumScore >= 5,
-    priceAboveSMA20: technical.lastPrice > signals.sma20,
-    priceAboveSMA50: technical.lastPrice > signals.sma50,
+    priceAboveSMA20: technical.lastPrice > technical.sma20,
+    priceAboveSMA50: technical.lastPrice > technical.sma50,
     rsiNotOverbought: technical.rsi14 < 70,
     withinBollingerBands: technical.lastPrice < technical.bollingerUpper &&
                           technical.lastPrice > technical.bollingerLower,
     volumeConfirmation: signals.volumeSpike === true ||
-                        (signals.volume / technical.avgVolume20) >= 0.8,
-    positiveChange: technical.changePercent > 0,
-    aboveSupertrend: signals.supertrend ? technical.lastPrice > signals.supertrend : false
+                        (technical.volume / technical.avgVolume20) >= 0.8,
+    // positiveChange: technical.changePercent > 0,
+    aboveSupertrend: technical.supertrend ? technical.lastPrice > technical.supertrend : false
   };
 
   const allMet = Object.values(conditions).every(v => v === true);
@@ -79,8 +79,8 @@ export function checkMomentumTraderExit(
     momentumReversal: momentumReversalScore >= 3,
 
     // Below key moving averages
-    belowSMA20: technical.lastPrice < signals.sma20,
-    belowSupertrend: signals.supertrend ? technical.lastPrice < signals.supertrend : false,
+    belowSMA20: technical.lastPrice < technical.sma20,
+    belowSupertrend: technical.supertrend ? technical.lastPrice < technical.supertrend : false,
 
     // Tight stop loss
     stopLoss: (technical.lastPrice / entryPrice) <= 0.97,
@@ -89,7 +89,7 @@ export function checkMomentumTraderExit(
     timeExit: holdingDays > 60,
 
     // Low volume (momentum dying)
-    lowVolume: (signals.volume / technical.avgVolume20) < 0.3
+    lowVolume: (technical.volume / technical.avgVolume20) < 0.3
   };
 
   const shouldExit = Object.values(exitConditions).some(v => v === true);

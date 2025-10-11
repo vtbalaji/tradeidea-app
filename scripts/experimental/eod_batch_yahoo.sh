@@ -1,12 +1,12 @@
 #!/bin/bash
 
-# TradeIdea - EOD Technical Analysis Batch Job
-# This script activates the Python virtual environment and runs technical analysis
-# Using Yahoo Finance (reliable and tested)
+# TradeIdea - EOD Technical Analysis Batch Job (Yahoo Finance - BACKUP)
+# This is the original version using Yahoo Finance
+# Use eod_batch.sh for the new DuckDB + NSE version
 
 set -e  # Exit on error
 
-echo "🚀 Starting EOD Technical Analysis Batch Job (Yahoo Finance)"
+echo "🚀 Starting EOD Technical Analysis Batch Job (Yahoo Finance - BACKUP)"
 echo "============================================"
 echo ""
 

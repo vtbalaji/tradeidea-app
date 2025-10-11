@@ -26,7 +26,7 @@ const investorTypeInfo: Record<InvestorType, { name: string; icon: string; descr
     horizon: 'Medium-term (6 months - 2 years)'
   },
   momentum: {
-    name: 'Momentum Trader',
+    name: 'Momentum Trader/Swing Trader',
     icon: '🚀',
     description: 'Ride short-term trends with strong technical signals',
     horizon: 'Short-term (days - 2 months)'
