@@ -11,6 +11,8 @@ import { getCurrentISTDate, formatDateForDisplay, formatDateForStorage } from '@
 import { parseAndValidateCSV, csvRowToPosition, generateCSVTemplate, generateErrorReport, ValidationError } from '@/lib/csvImport';
 import { db } from '@/lib/firebase';
 import { getSymbolData } from '@/lib/symbolDataService';
+import InvestorAnalysisModal from '@/components/InvestorAnalysisModal';
+import { createInvestmentEngine } from '@/lib/investment-rules';
 
 export default function PortfolioPage() {
   const router = useRouter();
@@ -29,6 +31,9 @@ export default function PortfolioPage() {
   const [isImporting, setIsImporting] = useState(false);
   const [selectedImportAccount, setSelectedImportAccount] = useState<string>('');
   const [enrichedPositions, setEnrichedPositions] = useState<any[]>([]);
+  const [showAnalysisModal, setShowAnalysisModal] = useState(false);
+  const [currentRecommendation, setCurrentRecommendation] = useState<any>(null);
+  const [analysisPosition, setAnalysisPosition] = useState<any>(null);
 
   // Check email verification
   useEffect(() => {
@@ -342,6 +347,20 @@ export default function PortfolioPage() {
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
+  };
+
+  // Handle opening investor analysis modal
+  const handleOpenAnalysis = (position: any) => {
+    if (!position.technicals || !position.fundamentals) {
+      alert('Technical or fundamental data not available for this symbol yet. Please wait for the next analysis cycle.');
+      return;
+    }
+
+    const engine = createInvestmentEngine(position.technicals, position.fundamentals);
+    const rec = engine.getRecommendation();
+    setCurrentRecommendation(rec);
+    setAnalysisPosition(position);
+    setShowAnalysisModal(true);
   };
 
   // Function to analyze exit criteria
@@ -766,13 +785,25 @@ export default function PortfolioPage() {
               {position.status === 'open' && (
                 <div className="flex gap-2 pt-3 border-t border-gray-200 dark:border-[#30363d]">
                   <button
+                    onClick={() => handleOpenAnalysis(position)}
+                    className="flex-1 px-3 py-2 bg-gray-100 dark:bg-[#30363d] hover:bg-gray-200 dark:hover:bg-[#3c444d] border border-gray-200 dark:border-[#444c56] text-gray-700 dark:text-gray-300 text-xs font-semibold rounded-lg transition-colors flex items-center justify-center gap-1.5"
+                  >
+                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                    </svg>
+                    <span>Analysis</span>
+                  </button>
+                  <button
                     onClick={() => {
                       setSelectedPosition(position);
                       setShowTransactionModal(true);
                     }}
-                    className="flex-1 px-4 py-2 bg-blue-500/20 text-blue-400 text-sm font-semibold rounded-lg hover:bg-blue-500/30 transition-colors"
+                    className="flex-1 px-3 py-2 bg-gray-100 dark:bg-[#30363d] hover:bg-gray-200 dark:hover:bg-[#3c444d] border border-gray-200 dark:border-[#444c56] text-gray-700 dark:text-gray-300 text-xs font-semibold rounded-lg transition-colors flex items-center justify-center gap-1.5"
                   >
-                    Buy/Sell
+                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
+                    </svg>
+                    <span>Buy/Sell</span>
                   </button>
                   <button
                     onClick={() => {
@@ -784,9 +815,12 @@ export default function PortfolioPage() {
                       });
                       setShowExitModal(true);
                     }}
-                    className="flex-1 px-4 py-2 bg-red-500/20 text-red-400 text-sm font-semibold rounded-lg hover:bg-red-500/30 transition-colors"
+                    className="flex-1 px-3 py-2 bg-gray-100 dark:bg-[#30363d] hover:bg-gray-200 dark:hover:bg-[#3c444d] border border-gray-200 dark:border-[#444c56] text-gray-700 dark:text-gray-300 text-xs font-semibold rounded-lg transition-colors flex items-center justify-center gap-1.5"
                   >
-                    Exit Trade
+                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                    </svg>
+                    <span>Exit</span>
                   </button>
                 </div>
               )}
@@ -1609,6 +1643,22 @@ export default function PortfolioPage() {
             </div>
           </div>
         </div>
+      )}
+
+      {/* Investor Analysis Modal */}
+      {showAnalysisModal && currentRecommendation && analysisPosition && (
+        <InvestorAnalysisModal
+          isOpen={true}
+          onClose={() => {
+            setShowAnalysisModal(false);
+            setCurrentRecommendation(null);
+            setAnalysisPosition(null);
+          }}
+          symbol={analysisPosition.symbol}
+          recommendation={currentRecommendation}
+          technicals={analysisPosition.technicals}
+          fundamentals={analysisPosition.fundamentals}
+        />
       )}
     </div>
   );

@@ -247,17 +247,34 @@ export default function InvestorAnalysisModal({
           {(technicals || fundamentals) && (
             <button
               onClick={() => setShowDetails(!showDetails)}
-              className="hidden md:block w-full px-4 py-2 bg-blue-500/20 hover:bg-blue-500/30 text-blue-400 font-semibold rounded-lg transition-colors"
+              className="hidden md:flex w-full items-center justify-center gap-2 px-4 py-2 bg-gray-100 dark:bg-[#30363d] hover:bg-gray-200 dark:hover:bg-[#3c444d] border border-gray-200 dark:border-[#444c56] text-gray-700 dark:text-gray-300 font-semibold rounded-lg transition-colors"
             >
-              {showDetails ? '← Hide Details' : 'Show Details →'}
+              {showDetails ? (
+                <>
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                  </svg>
+                  <span>Hide Details</span>
+                </>
+              ) : (
+                <>
+                  <span>Show Details</span>
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                  </svg>
+                </>
+              )}
             </button>
           )}
 
           <button
             onClick={onClose}
-            className="w-full px-4 py-3 bg-[#ff8c42] hover:bg-[#ff9a58] text-white font-semibold rounded-lg transition-colors"
+            className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-gray-100 dark:bg-[#30363d] hover:bg-gray-200 dark:hover:bg-[#3c444d] border border-gray-200 dark:border-[#444c56] text-gray-700 dark:text-gray-300 font-semibold rounded-lg transition-colors"
           >
-            Close
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+            <span>Close</span>
           </button>
         </div>
         </div>
