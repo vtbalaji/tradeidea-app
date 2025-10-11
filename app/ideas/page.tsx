@@ -87,7 +87,12 @@ export default function IdeasHubPage() {
       <div
         key={idea.id}
         className="bg-gray-50 dark:bg-[#1c2128] border border-gray-200 dark:border-[#30363d] rounded-xl p-4 hover:border-[#ff8c42] transition-colors cursor-pointer"
-        onClick={() => router.push(`/ideas/${idea.id}`)}
+        onClick={(e) => {
+          // Only trigger if not clicking on buttons
+          if (!(e.target as HTMLElement).closest('button')) {
+            handleAnalyze(e, idea);
+          }
+        }}
       >
         {/* Header */}
         <div className="flex justify-between items-center mb-3">
@@ -135,37 +140,50 @@ export default function IdeasHubPage() {
           <div className="mb-3 p-3 bg-white dark:bg-[#0f1419] border border-gray-200 dark:border-[#30363d] rounded-lg">
             {idea.technicals && (
               <>
-                <p className="text-xs font-bold text-[#ff8c42] mb-2">Technical Levels</p>
+                <p className="text-xs font-bold text-[#ff8c42] mb-2">
+                  Technical Levels
+                  {idea.technicals.overallSignal && (
+                    <span className={`ml-2 ${
+                      idea.technicals.overallSignal === 'STRONG_BUY' ? 'text-green-600' :
+                      idea.technicals.overallSignal === 'BUY' ? 'text-green-500' :
+                      idea.technicals.overallSignal === 'STRONG_SELL' ? 'text-red-600' :
+                      idea.technicals.overallSignal === 'SELL' ? 'text-red-500' :
+                      'text-gray-500'
+                    }`}>
+                      (Score: {idea.technicals.overallSignal})
+                    </span>
+                  )}
+                </p>
                 <div className="grid grid-cols-2 gap-2 text-xs mb-3">
                   {idea.technicals.ema50 && (
                     <div>
                       <span className="text-gray-600 dark:text-[#8b949e]">50 EMA:</span>
-                      <span className={`ml-1 font-semibold ${idea.technicals.lastPrice > idea.technicals.ema50 ? 'text-green-500' : 'text-red-500'}`}>
-                        ₹{idea.technicals.ema50.toFixed(2)} {idea.technicals.lastPrice > idea.technicals.ema50 ? '↗' : '↘'}
+                      <span className="ml-1 font-semibold text-gray-900 dark:text-white">
+                        ₹{idea.technicals.ema50.toFixed(2)} <span className={idea.technicals.lastPrice > idea.technicals.ema50 ? 'text-green-500' : 'text-red-500'}>{idea.technicals.lastPrice > idea.technicals.ema50 ? '↗' : '↘'}</span>
                       </span>
                     </div>
                   )}
                   {idea.technicals.sma100 && (
                     <div>
                       <span className="text-gray-600 dark:text-[#8b949e]">100 MA:</span>
-                      <span className={`ml-1 font-semibold ${idea.technicals.lastPrice > idea.technicals.sma100 ? 'text-green-500' : 'text-red-500'}`}>
-                        ₹{idea.technicals.sma100.toFixed(2)} {idea.technicals.lastPrice > idea.technicals.sma100 ? '↗' : '↘'}
+                      <span className="ml-1 font-semibold text-gray-900 dark:text-white">
+                        ₹{idea.technicals.sma100.toFixed(2)} <span className={idea.technicals.lastPrice > idea.technicals.sma100 ? 'text-green-500' : 'text-red-500'}>{idea.technicals.lastPrice > idea.technicals.sma100 ? '↗' : '↘'}</span>
                       </span>
                     </div>
                   )}
                   {idea.technicals.sma200 && (
                     <div>
                       <span className="text-gray-600 dark:text-[#8b949e]">200 MA:</span>
-                      <span className={`ml-1 font-semibold ${idea.technicals.lastPrice > idea.technicals.sma200 ? 'text-green-500' : 'text-red-500'}`}>
-                        ₹{idea.technicals.sma200.toFixed(2)} {idea.technicals.lastPrice > idea.technicals.sma200 ? '↗' : '↘'}
+                      <span className="ml-1 font-semibold text-gray-900 dark:text-white">
+                        ₹{idea.technicals.sma200.toFixed(2)} <span className={idea.technicals.lastPrice > idea.technicals.sma200 ? 'text-green-500' : 'text-red-500'}>{idea.technicals.lastPrice > idea.technicals.sma200 ? '↗' : '↘'}</span>
                       </span>
                     </div>
                   )}
                   {idea.technicals.supertrend && (
                     <div>
                       <span className="text-gray-600 dark:text-[#8b949e]">Supertrend:</span>
-                      <span className={`ml-1 font-semibold ${idea.technicals.supertrendDirection === 1 ? 'text-green-500' : 'text-red-500'}`}>
-                        ₹{idea.technicals.supertrend.toFixed(2)} {idea.technicals.supertrendDirection === 1 ? '↗' : '↘'}
+                      <span className="ml-1 font-semibold text-gray-900 dark:text-white">
+                        ₹{idea.technicals.supertrend.toFixed(2)} <span className={idea.technicals.supertrendDirection === 1 ? 'text-green-500' : 'text-red-500'}>{idea.technicals.supertrendDirection === 1 ? '↗' : '↘'}</span>
                       </span>
                     </div>
                   )}
@@ -174,7 +192,20 @@ export default function IdeasHubPage() {
             )}
             {idea.fundamentals && (
               <>
-                <p className="text-xs font-bold text-[#ff8c42] mb-2 pt-2 border-t border-gray-200 dark:border-[#30363d]">Fundamentals</p>
+                <p className="text-xs font-bold text-[#ff8c42] mb-2 pt-2 border-t border-gray-200 dark:border-[#30363d]">
+                  Fundamentals
+                  {idea.fundamentals.fundamentalRating && (
+                    <span className={`ml-2 ${
+                      idea.fundamentals.fundamentalRating === 'EXCELLENT' ? 'text-green-600' :
+                      idea.fundamentals.fundamentalRating === 'GOOD' ? 'text-green-500' :
+                      idea.fundamentals.fundamentalRating === 'AVERAGE' ? 'text-yellow-500' :
+                      idea.fundamentals.fundamentalRating === 'POOR' ? 'text-orange-500' :
+                      'text-red-500'
+                    }`}>
+                      (Rating: {idea.fundamentals.fundamentalRating})
+                    </span>
+                  )}
+                </p>
                 <div className="grid grid-cols-2 gap-2 text-xs">
                   {idea.fundamentals.trailingPE && (
                     <div>
@@ -198,17 +229,6 @@ export default function IdeasHubPage() {
                     <div>
                       <span className="text-gray-600 dark:text-[#8b949e]">Earnings Growth:</span>
                       <span className="ml-1 font-semibold text-gray-900 dark:text-white">{idea.fundamentals.earningsGrowth.toFixed(1)}%</span>
-                    </div>
-                  )}
-                  {idea.fundamentals.fundamentalRating && (
-                    <div>
-                      <span className="text-gray-600 dark:text-[#8b949e]">Rating:</span>
-                      <span className={`ml-1 font-semibold ${
-                        idea.fundamentals.fundamentalRating === 'EXCELLENT' ? 'text-green-500' :
-                        idea.fundamentals.fundamentalRating === 'GOOD' ? 'text-blue-400' :
-                        idea.fundamentals.fundamentalRating === 'AVERAGE' ? 'text-yellow-400' :
-                        'text-red-400'
-                      }`}>{idea.fundamentals.fundamentalRating}</span>
                     </div>
                   )}
                 </div>
