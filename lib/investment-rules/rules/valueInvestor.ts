@@ -21,8 +21,8 @@ export function checkValueInvestorEntry(
     trailingPE: fundamental.trailingPE !== null && fundamental.trailingPE < 25.0,
 
     // Quality Metrics
-    fundamentalRating: fundamental.fundamentalRating ?
-      ['GOOD', 'EXCELLENT'].includes(fundamental.fundamentalRating) : false,
+    // fundamentalRating: fundamental.fundamentalRating ?
+    //   ['GOOD', 'EXCELLENT'].includes(fundamental.fundamentalRating) : false,
     fundamentalScore: fundamental.fundamentalScore ? fundamental.fundamentalScore >= 60 : false,
     profitMargins: fundamental.profitMargins !== null && fundamental.profitMargins >= 15,
     operatingMargins: fundamental.operatingMargins !== null && fundamental.operatingMargins >= 20,
@@ -34,7 +34,7 @@ export function checkValueInvestorEntry(
     // Technical Confirmation (at least 2 of 3)
     technicalConfirmation: [
       signals.priceCrossSMA200 === 'above',
-      technical.rsi14 >= 40 && technical.rsi14 <= 60,
+      technical.rsi14 >= 30 && technical.rsi14 <= 60,
       technical.lastPrice < technical.bollingerUpper
     ].filter(Boolean).length >= 2
   };

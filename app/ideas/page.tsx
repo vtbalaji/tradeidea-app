@@ -503,6 +503,8 @@ export default function IdeasHubPage() {
           }}
           symbol={ideas.find(i => i.id === showAnalysisModal)?.symbol || ''}
           recommendation={currentRecommendation}
+          technicals={ideas.find(i => i.id === showAnalysisModal)?.technicals}
+          fundamentals={ideas.find(i => i.id === showAnalysisModal)?.fundamentals}
         />
       )}
     </div>

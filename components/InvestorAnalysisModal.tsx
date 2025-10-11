@@ -8,6 +8,8 @@ interface InvestorAnalysisModalProps {
   onClose: () => void;
   symbol: string;
   recommendation: InvestorRecommendation | null;
+  technicals?: any;
+  fundamentals?: any;
 }
 
 const investorTypeInfo: Record<InvestorType, { name: string; icon: string; description: string; horizon: string }> = {
@@ -47,9 +49,13 @@ export default function InvestorAnalysisModal({
   isOpen,
   onClose,
   symbol,
-  recommendation
+  recommendation,
+  technicals,
+  fundamentals
 }: InvestorAnalysisModalProps) {
   if (!isOpen || !recommendation) return null;
+
+  const [showDetails, setShowDetails] = React.useState(false);
 
   // Format camelCase to readable text while preserving acronyms
   const formatConditionName = (str: string): string => {
@@ -162,9 +168,11 @@ export default function InvestorAnalysisModal({
       onClick={onClose}
     >
       <div
-        className="bg-white dark:bg-[#1c2128] border border-gray-200 dark:border-[#30363d] rounded-xl w-full max-w-4xl max-h-[90vh] overflow-y-auto"
+        className={`bg-white dark:bg-[#1c2128] border border-gray-200 dark:border-[#30363d] rounded-xl w-full ${showDetails ? 'max-w-7xl' : 'max-w-4xl'} max-h-[90vh] overflow-hidden flex`}
         onClick={(e) => e.stopPropagation()}
       >
+        {/* Main Content */}
+        <div className="flex-1 overflow-y-auto">
         {/* Header */}
         <div className="sticky top-0 bg-white dark:bg-[#1c2128] border-b border-gray-200 dark:border-[#30363d] p-4 flex justify-between items-center">
           <div>
@@ -172,7 +180,11 @@ export default function InvestorAnalysisModal({
               Investor Type Analysis
             </h2>
             <p className="text-sm text-gray-600 dark:text-[#8b949e]">
-              {symbol} - Which investor types is this suitable for?
+              <span className="font-bold text-[#ff8c42]">{symbol}</span>
+              {technicals?.lastPrice && (
+                <span className="text-gray-600 dark:text-[#8b949e]"> (LTP: ₹{technicals.lastPrice.toFixed(2)})</span>
+              )}
+              {' '}- Which investor types is this suitable for?
             </p>
           </div>
           <button
@@ -230,7 +242,17 @@ export default function InvestorAnalysisModal({
         </div>
 
         {/* Footer */}
-        <div className="sticky bottom-0 bg-white dark:bg-[#1c2128] border-t border-gray-200 dark:border-[#30363d] p-4">
+        <div className="sticky bottom-0 bg-white dark:bg-[#1c2128] border-t border-gray-200 dark:border-[#30363d] p-4 space-y-2">
+          {/* Show Details Button - Desktop Only */}
+          {(technicals || fundamentals) && (
+            <button
+              onClick={() => setShowDetails(!showDetails)}
+              className="hidden md:block w-full px-4 py-2 bg-blue-500/20 hover:bg-blue-500/30 text-blue-400 font-semibold rounded-lg transition-colors"
+            >
+              {showDetails ? '← Hide Details' : 'Show Details →'}
+            </button>
+          )}
+
           <button
             onClick={onClose}
             className="w-full px-4 py-3 bg-[#ff8c42] hover:bg-[#ff9a58] text-white font-semibold rounded-lg transition-colors"
@@ -238,6 +260,56 @@ export default function InvestorAnalysisModal({
             Close
           </button>
         </div>
+        </div>
+
+        {/* Details Panel - Desktop Only */}
+        {showDetails && (technicals || fundamentals) && (
+          <div className="hidden md:block w-96 border-l border-gray-200 dark:border-[#30363d] overflow-y-auto bg-gray-50 dark:bg-[#0f1419]">
+            <div className="p-4">
+              <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-4">
+                Raw Data
+              </h3>
+
+              {/* Technical Data */}
+              {technicals && (
+                <div className="mb-6">
+                  <h4 className="text-sm font-semibold text-[#ff8c42] mb-3">Technical Indicators</h4>
+                  <div className="space-y-2 text-xs">
+                    {Object.entries(technicals).map(([key, value]) => (
+                      <div key={key} className="flex justify-between py-1 border-b border-gray-200 dark:border-[#30363d]">
+                        <span className="text-gray-600 dark:text-[#8b949e] font-medium">
+                          {formatConditionName(key)}:
+                        </span>
+                        <span className="text-gray-900 dark:text-white font-semibold">
+                          {typeof value === 'number' ? value.toFixed(2) : String(value)}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Fundamental Data */}
+              {fundamentals && (
+                <div>
+                  <h4 className="text-sm font-semibold text-[#ff8c42] mb-3">Fundamental Data</h4>
+                  <div className="space-y-2 text-xs">
+                    {Object.entries(fundamentals).map(([key, value]) => (
+                      <div key={key} className="flex justify-between py-1 border-b border-gray-200 dark:border-[#30363d]">
+                        <span className="text-gray-600 dark:text-[#8b949e] font-medium">
+                          {formatConditionName(key)}:
+                        </span>
+                        <span className="text-gray-900 dark:text-white font-semibold">
+                          {typeof value === 'number' ? value.toFixed(2) : String(value)}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
