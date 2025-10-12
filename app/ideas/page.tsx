@@ -61,7 +61,7 @@ export default function IdeasHubPage() {
   }
 
   // Group ideas by status
-  const cookingIdeas = filteredIdeas.filter(idea => idea.status === 'cooking');
+  const cookingIdeas = filteredIdeas.filter(idea => idea.status === 'cooking' || idea.status === 'in progress');
   const activeIdeas = filteredIdeas.filter(idea => idea.status === 'active');
   const hitTargetIdeas = filteredIdeas.filter(idea => idea.status === 'hit target');
   const hitSLIdeas = filteredIdeas.filter(idea => idea.status === 'hit sl');
@@ -100,8 +100,8 @@ export default function IdeasHubPage() {
         {/* Header */}
         <div className="flex justify-between items-center mb-3">
           <h3 className="text-xl font-bold text-gray-900 dark:text-white">{idea.symbol}</h3>
-          <span className="px-2 py-1 bg-purple-500/20 text-purple-400 text-xs font-semibold rounded">
-            {idea.status}
+          <span className="px-2 py-1 bg-orange-500/20 text-orange-500 dark:text-orange-400 text-xs font-semibold rounded">
+            {idea.status === 'cooking' ? 'in progress' : idea.status}
           </span>
         </div>
 
@@ -143,20 +143,20 @@ export default function IdeasHubPage() {
           <div className="mb-3 p-3 bg-white dark:bg-[#0f1419] border border-gray-200 dark:border-[#30363d] rounded-lg">
             {idea.technicals && (
               <>
-                <p className="text-xs font-bold text-[#ff8c42] mb-2">
-                  Technical Levels
+                <div className="flex items-center justify-between mb-2">
+                  <p className="text-xs font-bold text-[#ff8c42]">Technical Levels</p>
                   {idea.technicals.overallSignal && (
-                    <span className={`ml-2 ${
-                      idea.technicals.overallSignal === 'STRONG_BUY' ? 'text-green-600' :
-                      idea.technicals.overallSignal === 'BUY' ? 'text-green-500' :
-                      idea.technicals.overallSignal === 'STRONG_SELL' ? 'text-red-600' :
-                      idea.technicals.overallSignal === 'SELL' ? 'text-red-500' :
-                      'text-gray-500'
+                    <span className={`px-2 py-1 text-xs font-bold rounded ${
+                      idea.technicals.overallSignal === 'STRONG_BUY' ? 'bg-green-600/20 text-green-600 dark:text-green-400' :
+                      idea.technicals.overallSignal === 'BUY' ? 'bg-green-500/20 text-green-600 dark:text-green-500' :
+                      idea.technicals.overallSignal === 'STRONG_SELL' ? 'bg-red-600/20 text-red-600 dark:text-red-400' :
+                      idea.technicals.overallSignal === 'SELL' ? 'bg-red-500/20 text-red-600 dark:text-red-500' :
+                      'bg-gray-500/20 text-gray-600 dark:text-gray-400'
                     }`}>
-                      (Score: {idea.technicals.overallSignal})
+                      {idea.technicals.overallSignal.replace('_', ' ')}
                     </span>
                   )}
-                </p>
+                </div>
                 <div className="grid grid-cols-2 gap-2 text-xs mb-3">
                   {idea.technicals.ema50 && (
                     <div>
@@ -195,20 +195,20 @@ export default function IdeasHubPage() {
             )}
             {idea.fundamentals && (
               <>
-                <p className="text-xs font-bold text-[#ff8c42] mb-2 pt-2 border-t border-gray-200 dark:border-[#30363d]">
-                  Fundamentals
+                <div className="flex items-center justify-between mb-2 pt-2 border-t border-gray-200 dark:border-[#30363d]">
+                  <p className="text-xs font-bold text-[#ff8c42]">Fundamentals</p>
                   {idea.fundamentals.fundamentalRating && (
-                    <span className={`ml-2 ${
-                      idea.fundamentals.fundamentalRating === 'EXCELLENT' ? 'text-green-600' :
-                      idea.fundamentals.fundamentalRating === 'GOOD' ? 'text-green-500' :
-                      idea.fundamentals.fundamentalRating === 'AVERAGE' ? 'text-yellow-500' :
-                      idea.fundamentals.fundamentalRating === 'POOR' ? 'text-orange-500' :
-                      'text-red-500'
+                    <span className={`px-2 py-1 text-xs font-bold rounded ${
+                      idea.fundamentals.fundamentalRating === 'EXCELLENT' ? 'bg-green-600/20 text-green-600 dark:text-green-400' :
+                      idea.fundamentals.fundamentalRating === 'GOOD' ? 'bg-green-500/20 text-green-600 dark:text-green-500' :
+                      idea.fundamentals.fundamentalRating === 'AVERAGE' ? 'bg-yellow-500/20 text-yellow-600 dark:text-yellow-500' :
+                      idea.fundamentals.fundamentalRating === 'POOR' ? 'bg-orange-500/20 text-orange-600 dark:text-orange-500' :
+                      'bg-red-500/20 text-red-600 dark:text-red-500'
                     }`}>
-                      (Rating: {idea.fundamentals.fundamentalRating})
+                      {idea.fundamentals.fundamentalRating}
                     </span>
                   )}
-                </p>
+                </div>
                 <div className="grid grid-cols-2 gap-2 text-xs">
                   {idea.fundamentals.trailingPE && (
                     <div>
@@ -409,11 +409,11 @@ export default function IdeasHubPage() {
           </div>
         ) : (
           <div className="space-y-4">
-            {/* Brewing Ideas Section */}
+            {/* In Progress Ideas Section */}
             {cookingIdeas.length > 0 && (
               <div>
                 <div className="flex items-center gap-2 mb-2">
-                  <h2 className="text-xl font-bold text-gray-900 dark:text-white">☕ Brewing Ideas</h2>
+                  <h2 className="text-xl font-bold text-gray-900 dark:text-white">In Progress</h2>
                   <span className="px-2 py-0.5 bg-orange-500/20 text-orange-400 text-xs font-semibold rounded-full">
                     {cookingIdeas.length}
                   </span>

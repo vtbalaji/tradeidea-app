@@ -1114,7 +1114,8 @@ export default function PortfolioPage() {
               className="bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-3 sm:px-4 rounded-lg transition-colors flex items-center gap-2 text-sm sm:text-base"
             >
               <span className="text-xl hidden sm:inline">📥</span>
-              <span className="whitespace-nowrap">Import CSV</span>
+              <span className="hidden sm:inline whitespace-nowrap">Import CSV</span>
+              <span className="sm:hidden">Import</span>
             </button>
             <button
               onClick={() => setShowAddPositionModal(true)}
