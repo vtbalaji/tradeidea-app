@@ -34,6 +34,7 @@ export default function PortfolioPage() {
   const [showAnalysisModal, setShowAnalysisModal] = useState(false);
   const [currentRecommendation, setCurrentRecommendation] = useState<any>(null);
   const [analysisPosition, setAnalysisPosition] = useState<any>(null);
+  const [expandedPositionId, setExpandedPositionId] = useState<string | null>(null);
 
   // Check email verification
   useEffect(() => {
@@ -489,6 +490,8 @@ export default function PortfolioPage() {
             const pnl = currentValue - investedAmount;
             const pnlPercent = (pnl / investedAmount) * 100;
             const isProfit = pnl >= 0;
+            const isExpanded = expandedPositionId === position.id;
+            const alerts = analyzeExitCriteria(position);
 
             // Calculate recommendation
             const isAbove200MA = position.technicals?.sma200 && position.currentPrice > position.technicals.sma200;
@@ -508,37 +511,305 @@ export default function PortfolioPage() {
             }
 
             return (
-              <div
-                key={position.id}
-                className="bg-gray-50 dark:bg-[#1c2128] border border-gray-200 dark:border-[#30363d] rounded-lg p-4 hover:border-[#ff8c42] transition-colors"
-              >
-                {/* First Row: Symbol, Trade Type, P&L */}
-                <div className="flex items-center justify-between gap-3 mb-2">
-                  {/* Symbol and Trade Type */}
-                  <div className="flex items-center gap-2 flex-1 min-w-0">
-                    <h3 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white truncate">{position.symbol}</h3>
-                    <span className={`px-2 py-0.5 text-xs font-semibold rounded flex-shrink-0 ${
-                      position.tradeType === 'Long'
-                        ? 'bg-green-500/20 text-green-400'
-                        : 'bg-red-500/20 text-red-400'
-                    }`}>
-                      {position.tradeType || 'Long'}
-                    </span>
+              <div key={position.id}>
+                {/* Summary Card - Clickable */}
+                <div
+                  onClick={() => setExpandedPositionId(isExpanded ? null : position.id)}
+                  className={`bg-gray-50 dark:bg-[#1c2128] border border-gray-200 dark:border-[#30363d] rounded-lg p-4 hover:border-[#ff8c42] transition-colors cursor-pointer ${
+                    isExpanded ? 'border-[#ff8c42]' : ''
+                  }`}
+                >
+                  {/* First Row: Symbol, Trade Type, P&L, Expand Icon */}
+                  <div className="flex items-center justify-between gap-3 mb-2">
+                    {/* Symbol and Trade Type */}
+                    <div className="flex items-center gap-2 flex-1 min-w-0">
+                      <h3 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white truncate">{position.symbol}</h3>
+                      <span className={`px-2 py-0.5 text-xs font-semibold rounded flex-shrink-0 ${
+                        position.tradeType === 'Long'
+                          ? 'bg-green-500/20 text-green-400'
+                          : 'bg-red-500/20 text-red-400'
+                      }`}>
+                        {position.tradeType || 'Long'}
+                      </span>
+                    </div>
+
+                    {/* P&L and Expand Icon */}
+                    <div className="flex items-center gap-3">
+                      <div className={`text-right flex-shrink-0 ${isProfit ? 'text-green-500' : 'text-red-500'}`}>
+                        <p className="text-base sm:text-lg font-bold">{isProfit ? '+' : ''}₹{pnl.toFixed(2)}</p>
+                        <p className="text-xs">({isProfit ? '+' : ''}{pnlPercent.toFixed(2)}%)</p>
+                      </div>
+                      <svg
+                        className={`w-5 h-5 text-gray-600 dark:text-[#8b949e] transition-transform flex-shrink-0 ${isExpanded ? 'rotate-180' : ''}`}
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                      </svg>
+                    </div>
                   </div>
 
-                  {/* P&L */}
-                  <div className={`text-right flex-shrink-0 ${isProfit ? 'text-green-500' : 'text-red-500'}`}>
-                    <p className="text-base sm:text-lg font-bold">{isProfit ? '+' : ''}₹{pnl.toFixed(2)}</p>
-                    <p className="text-xs">({isProfit ? '+' : ''}{pnlPercent.toFixed(2)}%)</p>
-                  </div>
+                  {/* Second Row: Recommendation (if available) */}
+                  {position.technicals && position.status === 'open' && (
+                    <div className={`px-3 py-1.5 rounded-lg ${bgColor} inline-block`}>
+                      <p className={`text-xs font-bold ${textColor}`}>
+                        {recommendation}
+                      </p>
+                    </div>
+                  )}
                 </div>
 
-                {/* Second Row: Recommendation (if available) */}
-                {position.technicals && position.status === 'open' && (
-                  <div className={`px-3 py-1.5 rounded-lg ${bgColor} inline-block`}>
-                    <p className={`text-xs font-bold ${textColor}`}>
-                      {recommendation}
-                    </p>
+                {/* Expanded Detailed View */}
+                {isExpanded && (
+                  <div className="mt-3 bg-white dark:bg-[#0f1419] border border-[#ff8c42] rounded-xl p-5 animate-fadeIn">
+                    {/* Exit Reason for Closed */}
+                    {position.exitReason && position.status === 'closed' && (
+                      <div className="mb-3 px-3 py-2 bg-orange-500/20 border border-orange-500/30 rounded-lg">
+                        <p className="text-sm text-orange-400 font-semibold">📤 Exited: {position.exitReason}</p>
+                      </div>
+                    )}
+
+                    {/* Overall Recommendation */}
+                    {position.technicals && position.status === 'open' && (
+                      <div className="mb-4">
+                        {(() => {
+                          const isAbove200MA = position.technicals.sma200 && position.currentPrice > position.technicals.sma200;
+                          const isSupertrendBullish = position.technicals.supertrendDirection === 1;
+
+                          let recommendation = 'HOLD';
+                          let bgColor = 'bg-yellow-500/20';
+                          let borderColor = 'border-yellow-500/30';
+                          let textColor = 'text-yellow-400';
+                          let icon = '⏸️';
+
+                          if (isAbove200MA && isSupertrendBullish) {
+                            recommendation = 'ACCUMULATE';
+                            bgColor = 'bg-green-500/20';
+                            borderColor = 'border-green-500/30';
+                            textColor = 'text-green-400';
+                            icon = '📈';
+                          } else if (!isAbove200MA) {
+                            recommendation = 'EXIT';
+                            bgColor = 'bg-red-500/20';
+                            borderColor = 'border-red-500/30';
+                            textColor = 'text-red-400';
+                            icon = '🚨';
+                          }
+
+                          return (
+                            <div className={`px-3 py-2 rounded-lg ${bgColor} border ${borderColor}`}>
+                              <p className={`text-sm font-bold ${textColor}`}>
+                                {icon} Overall Recommendation: {recommendation}
+                              </p>
+                            </div>
+                          );
+                        })()}
+                      </div>
+                    )}
+
+                    {/* Exit Analysis Alerts - Only SL and Target */}
+                    {alerts && position.status === 'open' && (
+                      <div className="space-y-2 mb-4">
+                        {alerts
+                          .filter(alert =>
+                            alert.message.includes('SL') ||
+                            alert.message.includes('TARGET') ||
+                            alert.message.includes('Target') ||
+                            alert.message.includes('STOP LOSS')
+                          )
+                          .map((alert, idx) => (
+                            <div
+                              key={idx}
+                              className={`px-3 py-2 rounded-lg text-sm font-semibold ${
+                                alert.type === 'critical'
+                                  ? 'bg-red-500/20 text-red-400 border border-red-500/30'
+                                  : alert.type === 'warning'
+                                  ? 'bg-yellow-500/20 text-yellow-400 border border-yellow-500/30'
+                                  : 'bg-blue-500/20 text-blue-400 border border-blue-500/30'
+                              }`}
+                            >
+                              {alert.message}
+                            </div>
+                          ))}
+                      </div>
+                    )}
+
+                    {/* Position Details Grid */}
+                    <div className="grid grid-cols-2 gap-3 mb-4">
+                      <div>
+                        <p className="text-xs text-gray-600 dark:text-[#8b949e] mb-1">Quantity</p>
+                        <p className="text-sm font-semibold text-gray-900 dark:text-white">{position.quantity}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-gray-600 dark:text-[#8b949e] mb-1">Avg Buy Price</p>
+                        <p className="text-sm font-semibold text-gray-900 dark:text-white">₹{position.entryPrice.toFixed(2)}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-gray-600 dark:text-[#8b949e] mb-1">LTP</p>
+                        <p className="text-sm font-semibold text-gray-900 dark:text-white">₹{position.currentPrice.toFixed(2)}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-gray-600 dark:text-[#8b949e] mb-1">Current Value</p>
+                        <p className="text-sm font-semibold text-gray-900 dark:text-white">₹{currentValue.toFixed(2)}</p>
+                      </div>
+                    </div>
+
+                    {/* Technical Indicators & Fundamentals Display */}
+                    {(position.technicals || position.fundamentals) && position.status === 'open' && (
+                      <div className="mb-4 p-3 bg-gray-50 dark:bg-[#1c2128] border border-gray-200 dark:border-[#30363d] rounded-lg">
+                        <p className="text-xs font-bold text-[#ff8c42] mb-2">
+                          Technical Levels
+                          {position.technicals?.overallSignal && (
+                            <span className={`ml-2 ${
+                              position.technicals.overallSignal === 'STRONG_BUY' ? 'text-green-600' :
+                              position.technicals.overallSignal === 'BUY' ? 'text-green-500' :
+                              position.technicals.overallSignal === 'STRONG_SELL' ? 'text-red-600' :
+                              position.technicals.overallSignal === 'SELL' ? 'text-red-500' :
+                              'text-gray-500'
+                            }`}>
+                              (Score: {position.technicals.overallSignal})
+                            </span>
+                          )}
+                        </p>
+                        <div className="grid grid-cols-2 gap-2 text-xs mb-3">
+                          {position.technicals?.ema50 && (
+                            <div>
+                              <span className="text-gray-600 dark:text-[#8b949e]">50 EMA:</span>
+                              <span className="ml-1 font-semibold text-gray-900 dark:text-white">
+                                ₹{position.technicals.ema50.toFixed(2)} <span className={position.currentPrice > position.technicals.ema50 ? 'text-green-500' : 'text-red-500'}>{position.currentPrice > position.technicals.ema50 ? '↗' : '↘'}</span>
+                              </span>
+                            </div>
+                          )}
+                          {position.technicals?.sma100 && (
+                            <div>
+                              <span className="text-gray-600 dark:text-[#8b949e]">100 MA:</span>
+                              <span className="ml-1 font-semibold text-gray-900 dark:text-white">
+                                ₹{position.technicals.sma100.toFixed(2)} <span className={position.currentPrice > position.technicals.sma100 ? 'text-green-500' : 'text-red-500'}>{position.currentPrice > position.technicals.sma100 ? '↗' : '↘'}</span>
+                              </span>
+                            </div>
+                          )}
+                          {position.technicals?.sma200 && (
+                            <div>
+                              <span className="text-gray-600 dark:text-[#8b949e]">200 MA:</span>
+                              <span className="ml-1 font-semibold text-gray-900 dark:text-white">
+                                ₹{position.technicals.sma200.toFixed(2)} <span className={position.currentPrice > position.technicals.sma200 ? 'text-green-500' : 'text-red-500'}>{position.currentPrice > position.technicals.sma200 ? '↗' : '↘'}</span>
+                              </span>
+                            </div>
+                          )}
+                          {position.technicals?.supertrend && (
+                            <div>
+                              <span className="text-gray-600 dark:text-[#8b949e]">Supertrend:</span>
+                              <span className="ml-1 font-semibold text-gray-900 dark:text-white">
+                                ₹{position.technicals.supertrend.toFixed(2)} <span className={position.technicals.supertrendDirection === 1 ? 'text-green-500' : 'text-red-500'}>{position.technicals.supertrendDirection === 1 ? '↗' : '↘'}</span>
+                              </span>
+                            </div>
+                          )}
+                        </div>
+                        {position.fundamentals && (
+                          <>
+                            <p className="text-xs font-bold text-[#ff8c42] mb-2 pt-2 border-t border-gray-200 dark:border-[#30363d]">
+                              Fundamentals
+                              {position.fundamentals.fundamentalRating && (
+                                <span className={`ml-2 ${
+                                  position.fundamentals.fundamentalRating === 'EXCELLENT' ? 'text-green-600' :
+                                  position.fundamentals.fundamentalRating === 'GOOD' ? 'text-green-500' :
+                                  position.fundamentals.fundamentalRating === 'AVERAGE' ? 'text-yellow-500' :
+                                  position.fundamentals.fundamentalRating === 'POOR' ? 'text-orange-500' :
+                                  'text-red-500'
+                                }`}>
+                                  (Rating: {position.fundamentals.fundamentalRating})
+                                </span>
+                              )}
+                            </p>
+                            <div className="grid grid-cols-2 gap-2 text-xs">
+                              {position.fundamentals.trailingPE && (
+                                <div>
+                                  <span className="text-gray-600 dark:text-[#8b949e]">PE:</span>
+                                  <span className="ml-1 font-semibold text-gray-900 dark:text-white">{position.fundamentals.trailingPE.toFixed(2)}</span>
+                                </div>
+                              )}
+                              {position.fundamentals.returnOnEquity && (
+                                <div>
+                                  <span className="text-gray-600 dark:text-[#8b949e]">ROE:</span>
+                                  <span className="ml-1 font-semibold text-gray-900 dark:text-white">{position.fundamentals.returnOnEquity.toFixed(1)}%</span>
+                                </div>
+                              )}
+                              {position.fundamentals.debtToEquity && (
+                                <div>
+                                  <span className="text-gray-600 dark:text-[#8b949e]">Debt-to-Equity:</span>
+                                  <span className="ml-1 font-semibold text-gray-900 dark:text-white">{position.fundamentals.debtToEquity.toFixed(1)}</span>
+                                </div>
+                              )}
+                              {position.fundamentals.earningsGrowth && (
+                                <div>
+                                  <span className="text-gray-600 dark:text-[#8b949e]">Earnings Growth:</span>
+                                  <span className="ml-1 font-semibold text-gray-900 dark:text-white">{position.fundamentals.earningsGrowth.toFixed(1)}%</span>
+                                </div>
+                              )}
+                            </div>
+                          </>
+                        )}
+                      </div>
+                    )}
+
+                    {/* Warning if no technical data available */}
+                    {!position.technicals && position.status === 'open' && (
+                      <div className="mb-4 p-3 bg-yellow-500/10 border border-yellow-500/30 rounded-lg">
+                        <p className="text-xs text-yellow-600 dark:text-yellow-400">
+                          ⚠️ Technical data not available. Waiting for next analysis cycle.
+                        </p>
+                      </div>
+                    )}
+
+                    {/* Actions */}
+                    {position.status === 'open' && (
+                      <div className="flex gap-2 pt-3 border-t border-gray-200 dark:border-[#30363d]">
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleOpenAnalysis(position);
+                          }}
+                          className="flex-1 px-3 py-2 bg-gray-100 dark:bg-[#30363d] hover:bg-gray-200 dark:hover:bg-[#3c444d] border border-gray-200 dark:border-[#444c56] text-gray-700 dark:text-gray-300 text-xs font-semibold rounded-lg transition-colors flex items-center justify-center gap-1.5"
+                        >
+                          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                          </svg>
+                          <span>Analysis</span>
+                        </button>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setSelectedPosition(position);
+                            setShowTransactionModal(true);
+                          }}
+                          className="flex-1 px-3 py-2 bg-gray-100 dark:bg-[#30363d] hover:bg-gray-200 dark:hover:bg-[#3c444d] border border-gray-200 dark:border-[#444c56] text-gray-700 dark:text-gray-300 text-xs font-semibold rounded-lg transition-colors flex items-center justify-center gap-1.5"
+                        >
+                          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
+                          </svg>
+                          <span>Buy/Sell</span>
+                        </button>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setSelectedPosition(position);
+                            setExitDetails({
+                              exitPrice: position.currentPrice.toString(),
+                              exitDate: formatDateForDisplay(getCurrentISTDate()),
+                              exitReason: ''
+                            });
+                            setShowExitModal(true);
+                          }}
+                          className="flex-1 px-3 py-2 bg-gray-100 dark:bg-[#30363d] hover:bg-gray-200 dark:hover:bg-[#3c444d] border border-gray-200 dark:border-[#444c56] text-gray-700 dark:text-gray-300 text-xs font-semibold rounded-lg transition-colors flex items-center justify-center gap-1.5"
+                        >
+                          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                          </svg>
+                          <span>Exit</span>
+                        </button>
+                      </div>
+                    )}
                   </div>
                 )}
               </div>

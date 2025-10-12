@@ -61,7 +61,7 @@ export default function Home() {
               'Multi-account portfolio management',
               'Real-time technical analysis with EMA/MA crossovers, RSI, MACD, Bollinger Bands',
               'Fundamental analysis with P/E ratio, ROE, debt ratios',
-              'CSV import from Zerodha, ICICI Direct',
+              'Portfolio import from Zerodha, ICICI Direct',
               'Smart exit criteria and alerts',
               'Community trading ideas',
               'Portfolio health dashboard'
@@ -155,7 +155,7 @@ export default function Home() {
           </div>
           <div className="flex items-center gap-2">
             <span className="text-green-500">✓</span>
-            <span>CSV Import (Zerodha, ICICI)</span>
+            <span>Portfolio Import (Zerodha, ICICI)</span>
           </div>
           <div className="flex items-center gap-2">
             <span className="text-green-500">✓</span>
@@ -262,7 +262,7 @@ export default function Home() {
           {/* Feature 5 */}
           <div className="bg-gray-50 dark:bg-[#1c2128] border border-gray-200 dark:border-[#30363d] rounded-xl p-6 text-center">
             <div className="text-5xl mb-4">📥</div>
-            <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-3">CSV Import</h3>
+            <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-3">Portfolio Import</h3>
             <p className="text-gray-600 dark:text-[#8b949e]">
               Easily import holdings from Zerodha, ICICI Direct, or any broker.
               Smart mapping handles different formats automatically.
