@@ -537,7 +537,14 @@ export default function PortfolioPage() {
                   <div className="flex items-center justify-between gap-3 mb-2">
                     {/* Symbol and Trade Type */}
                     <div className="flex items-center gap-2 flex-1 min-w-0">
-                      <h3 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white truncate">{position.symbol}</h3>
+                      <div>
+                        <h3 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white truncate">{position.symbol}</h3>
+                        {(position.fundamentals?.sector || position.fundamentals?.industry) && (
+                          <p className="text-xs font-medium text-gray-600 dark:text-[#8b949e] mt-0.5">
+                            {position.fundamentals?.sector}{position.fundamentals?.sector && position.fundamentals?.industry && ' / '}{position.fundamentals?.industry}
+                          </p>
+                        )}
+                      </div>
                       <span className={`px-2 py-0.5 text-xs font-semibold rounded flex-shrink-0 ${
                         position.tradeType === 'Long'
                           ? 'bg-green-500/20 text-green-400'
@@ -852,7 +859,14 @@ export default function PortfolioPage() {
               {/* Header */}
               <div className="flex justify-between items-start mb-4">
                 <div className="flex items-center gap-2">
-                  <h3 className="text-2xl font-bold text-gray-900 dark:text-white">{position.symbol}</h3>
+                  <div>
+                    <h3 className="text-2xl font-bold text-gray-900 dark:text-white">{position.symbol}</h3>
+                    {(position.fundamentals?.sector || position.fundamentals?.industry) && (
+                      <p className="text-xs font-medium text-gray-600 dark:text-[#8b949e] mt-0.5">
+                        {position.fundamentals?.sector}{position.fundamentals?.sector && position.fundamentals?.industry && ' / '}{position.fundamentals?.industry}
+                      </p>
+                    )}
+                  </div>
                   <span className={`px-2 py-0.5 text-xs font-semibold rounded ${
                     position.tradeType === 'Long'
                       ? 'bg-green-500/20 text-green-400'
@@ -1128,7 +1142,7 @@ export default function PortfolioPage() {
               className="bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-3 sm:px-4 rounded-lg transition-colors flex items-center gap-2 text-sm sm:text-base"
             >
               <span className="text-xl hidden sm:inline">📥</span>
-              <span className="hidden sm:inline whitespace-nowrap">Import CSV</span>
+              <span className="hidden sm:inline whitespace-nowrap">Import Portfolio</span>
               <span className="sm:hidden">Import</span>
             </button>
             <button

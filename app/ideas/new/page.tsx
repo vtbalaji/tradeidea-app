@@ -199,26 +199,26 @@ export default function ShareIdeaPage() {
 
               <div>
                 <label className="block text-sm font-semibold text-gray-600 dark:text-[#8b949e] mb-2">Visibility</label>
-                <div className="flex bg-white dark:bg-[#0f1419] rounded-lg p-1">
+                <div className="flex gap-2">
                   <button
                     type="button"
                     onClick={() => setFormData({ ...formData, visibility: 'public' })}
-                    className={`flex-1 py-2 rounded-md text-sm font-semibold transition-colors ${
+                    className={`flex-1 py-2 px-3 rounded-md text-sm font-semibold transition-colors ${
                       formData.visibility === 'public'
-                        ? 'bg-[#30363d] text-gray-900 dark:text-white'
-                        : 'text-gray-600 dark:text-[#8b949e]'
-                    }`}
+                        ? "bg-[#ff8c42] text-gray-900 dark:text-white border-[#ff8c42]"
+                        : "bg-white dark:bg-[#0f1419] text-gray-600 dark:text-[#8b949e] border-gray-200 dark:border-[#30363d]"
+                    } border`}
                   >
                     Public
                   </button>
                   <button
                     type="button"
                     onClick={() => setFormData({ ...formData, visibility: 'private' })}
-                    className={`flex-1 py-2 rounded-md text-sm font-semibold transition-colors ${
+                    className={`flex-1 py-2 px-3 rounded-md text-sm font-semibold transition-colors ${
                       formData.visibility === 'private'
-                        ? 'bg-[#30363d] text-gray-900 dark:text-white'
-                        : 'text-gray-600 dark:text-[#8b949e]'
-                    }`}
+                        ? "bg-[#ff8c42] text-gray-900 dark:text-white border-[#ff8c42]"
+                        : "bg-white dark:bg-[#0f1419] text-gray-600 dark:text-[#8b949e] border-gray-200 dark:border-[#30363d]"
+                    } border`}
                   >
                     Private
                   </button>
