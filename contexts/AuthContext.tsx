@@ -9,6 +9,7 @@ import {
   GoogleAuthProvider,
   signInWithPopup,
   sendEmailVerification,
+  sendPasswordResetEmail,
   User
 } from 'firebase/auth';
 import { doc, setDoc, getDoc, Timestamp } from 'firebase/firestore';
@@ -30,6 +31,7 @@ interface AuthContextType {
   register: (email: string, password: string, displayName: string, userMobileNo: string, farmMobileNo: string) => Promise<any>;
   logout: () => Promise<void>;
   signInWithGoogle: () => Promise<any>;
+  resetPassword: (email: string) => Promise<void>;
   updateUserProfile: (updates: Partial<UserData>) => Promise<void>;
   loading: boolean;
 }
@@ -139,6 +141,14 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   };
 
+  const resetPassword = async (email: string) => {
+    try {
+      await sendPasswordResetEmail(auth, email);
+    } catch (error) {
+      throw error;
+    }
+  };
+
   const updateUserProfile = async (updates: Partial<UserData>) => {
     try {
       if (user) {
@@ -161,6 +171,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     register,
     logout,
     signInWithGoogle,
+    resetPassword,
     updateUserProfile,
     loading
   };

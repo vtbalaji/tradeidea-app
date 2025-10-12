@@ -485,11 +485,37 @@ export default function PortfolioPage() {
 
   const renderHoldingsCards = (positions: any[]) => {
     if (positions.length === 0) {
+      // Check if portfolio is completely empty (both open and closed)
+      const isPortfolioEmpty = openPositions.length === 0 && closedPositions.length === 0;
+
       return (
         <div className="text-center py-16">
           <div className="text-6xl mb-4">📂</div>
           <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">No holdings found</h3>
-          <p className="text-gray-600 dark:text-[#8b949e]">Your {activeTab} positions will appear here</p>
+          <p className="text-gray-600 dark:text-[#8b949e] mb-4">
+            {isPortfolioEmpty
+              ? 'Start tracking your investments by importing your portfolio or adding positions manually'
+              : `Your ${activeTab} positions will appear here`
+            }
+          </p>
+          {isPortfolioEmpty && (
+            <div className="flex gap-3 justify-center mt-6">
+              <button
+                onClick={() => setShowImportModal(true)}
+                className="bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2.5 px-5 rounded-lg transition-colors flex items-center gap-2"
+              >
+                <span className="text-xl">📥</span>
+                <span>Import Portfolio</span>
+              </button>
+              <button
+                onClick={() => setShowAddPositionModal(true)}
+                className="bg-[#ff8c42] hover:bg-[#ff9a58] text-white font-semibold py-2.5 px-5 rounded-lg transition-colors flex items-center gap-2"
+              >
+                <span className="text-xl">+</span>
+                <span>Add Position</span>
+              </button>
+            </div>
+          )}
         </div>
       );
     }
@@ -1230,21 +1256,21 @@ export default function PortfolioPage() {
           <div className="flex gap-2">
             <button
               onClick={() => setActiveTab('open')}
-              className={`px-3 sm:px-5 py-2 sm:py-2.5 rounded-lg text-xs sm:text-sm font-semibold transition-colors ${
+              className={`px-3 sm:px-5 py-2 rounded-lg text-xs font-semibold transition-colors ${
                 activeTab === 'open'
-                  ? 'bg-[#ff8c42] text-gray-900 dark:text-white border-[#ff8c42]'
-                  : 'bg-gray-50 dark:bg-[#1c2128] text-gray-600 dark:text-[#8b949e] border-gray-200 dark:border-[#30363d]'
-              } border whitespace-nowrap`}
+                  ? 'bg-[#ff8c42] text-gray-900 dark:text-white'
+                  : 'bg-gray-50 dark:bg-[#1c2128] text-gray-600 dark:text-[#8b949e]'
+              } whitespace-nowrap`}
             >
               Open ({openPositions.length})
             </button>
             <button
               onClick={() => setActiveTab('closed')}
-              className={`px-3 sm:px-5 py-2 sm:py-2.5 rounded-lg text-xs sm:text-sm font-semibold transition-colors ${
+              className={`px-3 sm:px-5 py-2 rounded-lg text-xs font-semibold transition-colors ${
                 activeTab === 'closed'
-                  ? 'bg-[#ff8c42] text-gray-900 dark:text-white border-[#ff8c42]'
-                  : 'bg-gray-50 dark:bg-[#1c2128] text-gray-600 dark:text-[#8b949e] border-gray-200 dark:border-[#30363d]'
-              } border whitespace-nowrap`}
+                  ? 'bg-[#ff8c42] text-gray-900 dark:text-white'
+                  : 'bg-gray-50 dark:bg-[#1c2128] text-gray-600 dark:text-[#8b949e]'
+              } whitespace-nowrap`}
             >
               Closed ({closedPositions.length})
             </button>

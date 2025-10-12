@@ -7,7 +7,7 @@ import { MyPortfolioIcon } from '@/components/icons';
 
 export default function LoginPage() {
   const router = useRouter();
-  const { login, register, signInWithGoogle, user } = useAuth();
+  const { login, register, signInWithGoogle, resetPassword, user } = useAuth();
   const [isSignUp, setIsSignUp] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -15,6 +15,7 @@ export default function LoginPage() {
   const [userMobileNo, setUserMobileNo] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [successMessage, setSuccessMessage] = useState('');
 
   useEffect(() => {
     if (user) {
@@ -26,6 +27,30 @@ export default function LoginPage() {
       }
     }
   }, [user, router]);
+
+  const getErrorMessage = (error: any): string => {
+    const errorCode = error.code;
+
+    switch (errorCode) {
+      case 'auth/invalid-credential':
+      case 'auth/invalid-email':
+      case 'auth/user-not-found':
+      case 'auth/wrong-password':
+        return 'Invalid email or password. Please try again.';
+      case 'auth/email-already-in-use':
+        return 'This email is already registered. Please sign in instead.';
+      case 'auth/weak-password':
+        return 'Password should be at least 6 characters long.';
+      case 'auth/too-many-requests':
+        return 'Too many failed attempts. Please try again later.';
+      case 'auth/network-request-failed':
+        return 'Network error. Please check your connection.';
+      case 'auth/user-disabled':
+        return 'This account has been disabled. Please contact support.';
+      default:
+        return error.message || 'An error occurred. Please try again.';
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -41,6 +66,7 @@ export default function LoginPage() {
 
     setLoading(true);
     setError('');
+    setSuccessMessage('');
     try {
       if (isSignUp) {
         await register(email, password, displayName, userMobileNo, '');
@@ -62,7 +88,7 @@ export default function LoginPage() {
         router.push('/ideas');
       }
     } catch (error: any) {
-      setError(error.message || (isSignUp ? 'Sign up failed' : 'Login failed'));
+      setError(getErrorMessage(error));
     }
     setLoading(false);
   };
@@ -70,13 +96,32 @@ export default function LoginPage() {
   const handleGoogleSignIn = async () => {
     setLoading(true);
     setError('');
+    setSuccessMessage('');
     try {
       const result = await signInWithGoogle();
       // Google sign-in doesn't require email verification
       // as Google has already verified the email
       router.push('/ideas');
     } catch (error: any) {
-      setError(error.message || 'Google Sign-In failed');
+      setError(getErrorMessage(error));
+    }
+    setLoading(false);
+  };
+
+  const handleForgotPassword = async () => {
+    if (!email) {
+      setError('Please enter your email address first');
+      return;
+    }
+
+    setLoading(true);
+    setError('');
+    setSuccessMessage('');
+    try {
+      await resetPassword(email);
+      setSuccessMessage('Password reset email sent! Please check your inbox.');
+    } catch (error: any) {
+      setError(getErrorMessage(error));
     }
     setLoading(false);
   };
@@ -114,6 +159,13 @@ export default function LoginPage() {
         {error && (
           <div className="bg-red-900/20 border border-red-500 text-red-500 px-4 py-3 rounded-lg mb-6">
             {error}
+          </div>
+        )}
+
+        {/* Success Message */}
+        {successMessage && (
+          <div className="bg-green-900/20 border border-green-500 text-green-500 px-4 py-3 rounded-lg mb-6">
+            {successMessage}
           </div>
         )}
 
@@ -225,7 +277,11 @@ export default function LoginPage() {
         {/* Footer Links */}
         <div className="flex justify-between items-center text-sm">
           {!isSignUp && (
-            <button className="text-gray-600 dark:text-[#8b949e] hover:text-gray-900 dark:hover:text-white transition-colors">
+            <button
+              onClick={handleForgotPassword}
+              disabled={loading}
+              className="text-gray-600 dark:text-[#8b949e] hover:text-gray-900 dark:hover:text-white transition-colors disabled:opacity-50"
+            >
               Forgot password?
             </button>
           )}
@@ -233,6 +289,7 @@ export default function LoginPage() {
             onClick={() => {
               setIsSignUp(!isSignUp);
               setError('');
+              setSuccessMessage('');
             }}
             className="text-gray-600 dark:text-[#8b949e] hover:text-gray-900 dark:hover:text-white transition-colors ml-auto"
           >
