@@ -99,7 +99,14 @@ export default function IdeasHubPage() {
       >
         {/* Header */}
         <div className="flex justify-between items-center mb-3">
-          <h3 className="text-xl font-bold text-gray-900 dark:text-white">{idea.symbol}</h3>
+          <div>
+            <h3 className="text-xl font-bold text-gray-900 dark:text-white">{idea.symbol}</h3>
+            {(idea.fundamentals?.industry || idea.fundamentals?.sector) && (
+              <p className="text-xs text-gray-600 dark:text-[#8b949e] mt-0.5">
+                {idea.fundamentals?.industry || idea.fundamentals?.sector}
+              </p>
+            )}
+          </div>
           <span className="px-2 py-1 bg-orange-500/20 text-orange-500 dark:text-orange-400 text-xs font-semibold rounded">
             {idea.status === 'cooking' ? 'in progress' : idea.status}
           </span>

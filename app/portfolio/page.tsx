@@ -565,9 +565,9 @@ export default function PortfolioPage() {
                     <div className="flex items-center gap-2 flex-1 min-w-0">
                       <div>
                         <h3 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white truncate">{position.symbol}</h3>
-                        {(position.fundamentals?.sector || position.fundamentals?.industry) && (
+                        {position.fundamentals?.industry && (
                           <p className="text-xs font-medium text-gray-600 dark:text-[#8b949e] mt-0.5">
-                            {position.fundamentals?.sector}{position.fundamentals?.sector && position.fundamentals?.industry && ' / '}{position.fundamentals?.industry}
+                            {position.fundamentals?.industry}
                           </p>
                         )}
                       </div>
@@ -887,9 +887,9 @@ export default function PortfolioPage() {
                 <div className="flex items-center gap-2">
                   <div>
                     <h3 className="text-2xl font-bold text-gray-900 dark:text-white">{position.symbol}</h3>
-                    {(position.fundamentals?.sector || position.fundamentals?.industry) && (
+                    {position.fundamentals?.industry && (
                       <p className="text-xs font-medium text-gray-600 dark:text-[#8b949e] mt-0.5">
-                        {position.fundamentals?.sector}{position.fundamentals?.sector && position.fundamentals?.industry && ' / '}{position.fundamentals?.industry}
+                        {position.fundamentals?.industry}
                       </p>
                     )}
                   </div>
