@@ -7,7 +7,7 @@ interface IdeaIconProps {
 }
 
 export const IdeaIcon: React.FC<IdeaIconProps> = ({
-  size = 64,
+  size = 18,
   color = '#ff8c42',
   className = ''
 }) => {
@@ -15,31 +15,25 @@ export const IdeaIcon: React.FC<IdeaIconProps> = ({
     <svg
       width={size}
       height={size}
-      viewBox="0 0 64 64"
+      viewBox="0 0 24 24"
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
       className={className}
     >
-      {/* Dark circle background */}
-      <circle cx="32" cy="32" r="32" fill="#1c2128" />
-
-      {/* Lightbulb shape */}
+      {/* Lightbulb outline */}
       <path
-        d="M32 16C26.477 16 22 20.477 22 26C22 29.5 23.5 32.5 25.5 34.5C26.5 35.5 27 36.5 27 37.5V40C27 41.105 27.895 42 29 42H35C36.105 42 37 41.105 37 40V37.5C37 36.5 37.5 35.5 38.5 34.5C40.5 32.5 42 29.5 42 26C42 20.477 37.523 16 32 16Z"
-        fill={color}
+        d="M9 21H15M12 3C8.68629 3 6 5.68629 6 9C6 10.8954 6.8429 12.5907 8.17071 13.6631C8.59554 14.0132 9 14.5324 9 15.1707V16C9 16.5523 9.44772 17 10 17H14C14.5523 17 15 16.5523 15 16V15.1707C15 14.5324 15.4045 14.0132 15.8293 13.6631C17.1571 12.5907 18 10.8954 18 9C18 5.68629 15.3137 3 12 3Z"
         stroke={color}
-        strokeWidth="1.5"
+        strokeWidth="2"
         strokeLinecap="round"
         strokeLinejoin="round"
       />
-
-      {/* Bulb filament */}
-      <line x1="32" y1="22" x2="32" y2="28" stroke="#1c2128" strokeWidth="2" strokeLinecap="round"/>
-      <line x1="28" y1="26" x2="36" y2="26" stroke="#1c2128" strokeWidth="2" strokeLinecap="round"/>
-
-      {/* Base of bulb */}
-      <rect x="28" y="42" width="8" height="3" rx="1" fill={color} />
-      <rect x="28" y="45" width="8" height="3" rx="1" fill={color} />
+      {/* Light rays */}
+      <path d="M12 1V2" stroke={color} strokeWidth="2" strokeLinecap="round"/>
+      <path d="M4.22 4.22L4.93 4.93" stroke={color} strokeWidth="2" strokeLinecap="round"/>
+      <path d="M1 12H2" stroke={color} strokeWidth="2" strokeLinecap="round"/>
+      <path d="M22 12H23" stroke={color} strokeWidth="2" strokeLinecap="round"/>
+      <path d="M19.07 4.93L19.78 4.22" stroke={color} strokeWidth="2" strokeLinecap="round"/>
     </svg>
   );
 };

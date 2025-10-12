@@ -1,0 +1,29 @@
+import React from 'react';
+
+interface UserIconProps {
+  size?: number;
+  color?: string;
+  className?: string;
+}
+
+export const UserIcon: React.FC<UserIconProps> = ({
+  size = 18,
+  color = '#ff8c42',
+  className = ''
+}) => {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      className={className}
+    >
+      <circle cx="12" cy="8" r="4" stroke={color} strokeWidth="2" fill="none"/>
+      <path d="M4 20C4 16.6863 6.68629 14 10 14H14C17.3137 14 20 16.6863 20 20" stroke={color} strokeWidth="2" strokeLinecap="round"/>
+    </svg>
+  );
+};
+
+export default UserIcon;

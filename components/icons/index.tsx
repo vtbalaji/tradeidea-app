@@ -9,3 +9,8 @@ export { EyeIcon } from './EyeIcon';
 export { ShareIcon } from './ShareIcon';
 export { TrendingIcon } from './TrendingIcon';
 export { MyPortfolioIcon } from './MyPortfolioIcon';
+export { FilterIcon } from './FilterIcon';
+export { UserIcon } from './UserIcon';
+export { BookIcon } from './BookIcon';
+export { HelpIcon } from './HelpIcon';
+export { LogoutIcon } from './LogoutIcon';

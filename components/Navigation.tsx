@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
-import { IdeaIcon, SparklesIcon, TrendingIcon, MyPortfolioIcon } from '@/components/icons';
+import { IdeaIcon, SparklesIcon, TrendingIcon, MyPortfolioIcon, FilterIcon, UserIcon, BookIcon, HelpIcon, LogoutIcon } from '@/components/icons';
 import NotificationBell from './NotificationBell';
 
 export default function Navigation() {
@@ -69,7 +69,7 @@ export default function Navigation() {
             <span>My Portfolio</span>
           </Link>
 
-          <Link
+          {/* <Link
             href="/accounts"
             className={`flex items-center gap-1.5 px-4 py-2 rounded-md ${
               pathname === '/accounts' ? 'bg-gray-100 dark:bg-[#30363d] text-gray-900 dark:text-white' : 'text-gray-600 dark:text-[#8b949e]'
@@ -79,6 +79,16 @@ export default function Navigation() {
               <path d="M16 21V19C16 17.9391 15.5786 16.9217 14.8284 16.1716C14.0783 15.4214 13.0609 15 12 15H5C3.93913 15 2.92172 15.4214 2.17157 16.1716C1.42143 16.9217 1 17.9391 1 19V21M19 8V14M22 11H16M12.5 7C12.5 9.20914 10.7091 11 8.5 11C6.29086 11 4.5 9.20914 4.5 7C4.5 4.79086 6.29086 3 8.5 3C10.7091 3 12.5 4.79086 12.5 7Z" stroke="#ff8c42" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
             </svg>
             <span>Accounts</span>
+          </Link> */}
+
+          <Link
+            href="/cross50200"
+            className={`flex items-center gap-1.5 px-4 py-2 rounded-md ${
+              pathname === '/cross50200' ? 'bg-gray-100 dark:bg-[#30363d] text-gray-900 dark:text-white' : 'text-gray-600 dark:text-[#8b949e]'
+            } font-semibold text-sm hover:bg-gray-100 dark:hover:bg-[#30363d] hover:text-gray-900 dark:hover:text-white transition-colors`}
+          >
+            <FilterIcon size={18} />
+            <span>Screens</span>
           </Link>
         </div>
 
@@ -176,8 +186,21 @@ export default function Navigation() {
                     }}
                     className="w-full flex items-center gap-3 px-4 py-3 hover:bg-gray-100 dark:hover:bg-[#30363d] transition-colors"
                   >
-                    <span className="text-lg">👤</span>
+                    <UserIcon size={18} />
                     <span className="text-sm font-semibold text-gray-900 dark:text-white">Profile</span>
+                  </button>
+
+                  <button
+                    onClick={() => {
+                      setShowProfileMenu(false);
+                      router.push('/accounts');
+                    }}
+                    className="w-full flex items-center gap-3 px-4 py-3 hover:bg-gray-100 dark:hover:bg-[#30363d] transition-colors"
+                  >
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      <path d="M16 21V19C16 17.9391 15.5786 16.9217 14.8284 16.1716C14.0783 15.4214 13.0609 15 12 15H5C3.93913 15 2.92172 15.4214 2.17157 16.1716C1.42143 16.9217 1 17.9391 1 19V21M19 8V14M22 11H16M12.5 7C12.5 9.20914 10.7091 11 8.5 11C6.29086 11 4.5 9.20914 4.5 7C4.5 4.79086 6.29086 3 8.5 3C10.7091 3 12.5 4.79086 12.5 7Z" stroke="#ff8c42" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                    </svg>
+                    <span className="text-sm font-semibold text-gray-900 dark:text-white">Accounts</span>
                   </button>
 
                   <button
@@ -187,7 +210,7 @@ export default function Navigation() {
                     }}
                     className="w-full flex items-center gap-3 px-4 py-3 hover:bg-gray-100 dark:hover:bg-[#30363d] transition-colors"
                   >
-                    <span className="text-lg">📖</span>
+                    <BookIcon size={18} />
                     <span className="text-sm font-semibold text-gray-900 dark:text-white">User Guide</span>
                   </button>
 
@@ -198,7 +221,7 @@ export default function Navigation() {
                     }}
                     className="w-full flex items-center gap-3 px-4 py-3 hover:bg-gray-100 dark:hover:bg-[#30363d] transition-colors"
                   >
-                    <span className="text-lg">❓</span>
+                    <HelpIcon size={18} />
                     <span className="text-sm font-semibold text-gray-900 dark:text-white">FAQ</span>
                   </button>
 
@@ -211,7 +234,7 @@ export default function Navigation() {
                     }}
                     className="w-full flex items-center gap-3 px-4 py-3 hover:bg-gray-100 dark:hover:bg-[#30363d] transition-colors"
                   >
-                    <span className="text-lg">🚪</span>
+                    <LogoutIcon size={18} />
                     <span className="text-sm font-semibold text-gray-900 dark:text-white">Logout</span>
                   </button>
                 </div>
@@ -264,6 +287,30 @@ export default function Navigation() {
               >
                 <TrendingIcon size={20} />
                 <span>My Portfolio</span>
+              </Link>
+
+              <Link
+                href="/accounts"
+                onClick={() => setShowMobileMenu(false)}
+                className={`flex items-center gap-3 px-4 py-3 rounded-md ${
+                  pathname === '/accounts' ? 'bg-gray-100 dark:bg-[#30363d] text-gray-900 dark:text-white' : 'text-gray-600 dark:text-[#8b949e]'
+                } font-semibold text-sm hover:bg-gray-100 dark:hover:bg-[#30363d] hover:text-gray-900 dark:hover:text-white transition-colors`}
+              >
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M16 21V19C16 17.9391 15.5786 16.9217 14.8284 16.1716C14.0783 15.4214 13.0609 15 12 15H5C3.93913 15 2.92172 15.4214 2.17157 16.1716C1.42143 16.9217 1 17.9391 1 19V21M19 8V14M22 11H16M12.5 7C12.5 9.20914 10.7091 11 8.5 11C6.29086 11 4.5 9.20914 4.5 7C4.5 4.79086 6.29086 3 8.5 3C10.7091 3 12.5 4.79086 12.5 7Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+                <span>Accounts</span>
+              </Link>
+
+              <Link
+                href="/cross50200"
+                onClick={() => setShowMobileMenu(false)}
+                className={`flex items-center gap-3 px-4 py-3 rounded-md ${
+                  pathname === '/cross50200' ? 'bg-gray-100 dark:bg-[#30363d] text-gray-900 dark:text-white' : 'text-gray-600 dark:text-[#8b949e]'
+                } font-semibold text-sm hover:bg-gray-100 dark:hover:bg-[#30363d] hover:text-gray-900 dark:hover:text-white transition-colors`}
+              >
+                <FilterIcon size={20} />
+                <span>Screens</span>
               </Link>
             </div>
           </div>
