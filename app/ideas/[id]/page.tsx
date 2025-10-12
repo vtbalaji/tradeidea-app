@@ -226,8 +226,8 @@ export default function IdeaDetailPage() {
           <div className="mb-5">
             <div className="flex items-center gap-3">
               <h1 className="text-4xl font-bold text-gray-900 dark:text-white">{idea.symbol}</h1>
-              <span className="px-3 py-1 bg-purple-500/20 text-purple-400 text-sm font-semibold rounded">
-                {idea.status}
+              <span className="px-3 py-1 bg-orange-500/20 text-orange-500 dark:text-orange-400 text-sm font-semibold rounded">
+                {idea.status === 'cooking' ? 'in progress' : idea.status}
               </span>
               <IdeaIcon size={24} />
             </div>
@@ -735,6 +735,8 @@ export default function IdeaDetailPage() {
                     }
                     className="w-full bg-white dark:bg-[#0f1419] border border-gray-200 dark:border-[#30363d] rounded-lg px-3 py-2 text-gray-900 dark:text-white outline-none focus:border-[#ff8c42] transition-colors"
                   >
+                    <option value="in progress">In Progress</option>
+                    <option value="cooking">In Progress (legacy)</option>
                     <option value="active">Active</option>
                     <option value="hit target">Hit Target</option>
                     <option value="hit sl">Hit SL</option>

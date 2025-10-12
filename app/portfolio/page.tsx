@@ -371,33 +371,47 @@ export default function PortfolioPage() {
     const alerts: { type: 'critical' | 'warning' | 'info'; message: string }[] = [];
     const { exitCriteria, currentPrice, stopLoss, target1, technicals } = position;
 
+    // Determine effective stop loss (highest among user SL, Supertrend, 100MA)
+    let effectiveStopLoss = stopLoss;
+    let stopLossSource = 'User SL';
+
+    if (technicals?.supertrend && technicals.supertrend > effectiveStopLoss) {
+      effectiveStopLoss = technicals.supertrend;
+      stopLossSource = 'Supertrend';
+    }
+
+    if (technicals?.sma100 && technicals.sma100 > effectiveStopLoss) {
+      effectiveStopLoss = technicals.sma100;
+      stopLossSource = '100MA';
+    }
+
     // Check stop loss
     if (exitCriteria.exitAtStopLoss) {
-      if (currentPrice <= stopLoss) {
-        alerts.push({ type: 'critical', message: `🚨 STOP LOSS HIT at ₹${stopLoss.toFixed(2)}` });
+      if (currentPrice <= effectiveStopLoss) {
+        alerts.push({ type: 'critical', message: `🚨 STOP LOSS HIT at ₹${effectiveStopLoss.toFixed(2)} (${stopLossSource})` });
       } else {
-        const percentAbove = ((currentPrice - stopLoss) / stopLoss) * 100;
+        const percentAbove = ((currentPrice - effectiveStopLoss) / effectiveStopLoss) * 100;
         if (percentAbove <= 5) {
-          alerts.push({ type: 'warning', message: `⚠️ Near SL: ₹${stopLoss.toFixed(2)} (${percentAbove.toFixed(1)}% above)` });
+          alerts.push({ type: 'warning', message: `⚠️ Near SL: ₹${effectiveStopLoss.toFixed(2)} (${stopLossSource})` });
         } else {
-          alerts.push({ type: 'info', message: `✅ SL Safe: ₹${stopLoss.toFixed(2)} (+${percentAbove.toFixed(1)}%)` });
+          alerts.push({ type: 'info', message: `✅ SL Safe: ₹${effectiveStopLoss.toFixed(2)} (${stopLossSource})` });
         }
       }
     }
 
-    // Check target reached
-    if (exitCriteria.exitAtTarget) {
-      if (currentPrice >= target1) {
-        alerts.push({ type: 'info', message: `🎯 TARGET REACHED at ₹${target1.toFixed(2)}` });
-      } else {
-        const percentBelow = ((target1 - currentPrice) / currentPrice) * 100;
-        if (percentBelow <= 5) {
-          alerts.push({ type: 'warning', message: `⚠️ Near Target: ₹${target1.toFixed(2)} (${percentBelow.toFixed(1)}% away)` });
-        } else {
-          alerts.push({ type: 'info', message: `🎯 Target: ₹${target1.toFixed(2)} (${percentBelow.toFixed(1)}% away)` });
-        }
-      }
-    }
+    // // Check target reached
+    // if (exitCriteria.exitAtTarget) {
+    //   if (currentPrice >= target1) {
+    //     alerts.push({ type: 'info', message: `🎯 TARGET REACHED at ₹${target1.toFixed(2)}` });
+    //   } else {
+    //     const percentBelow = ((target1 - currentPrice) / currentPrice) * 100;
+    //     if (percentBelow <= 5) {
+    //       alerts.push({ type: 'warning', message: `⚠️ Near Target: ₹${target1.toFixed(2)}` });
+    //     } else {
+    //       alerts.push({ type: 'info', message: `🎯 Target: ₹${target1.toFixed(2)}` });
+    //     }
+    //   }
+    // }
 
     // Check 50 EMA
     if (exitCriteria.exitBelow50EMA) {
