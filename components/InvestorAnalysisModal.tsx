@@ -2,6 +2,9 @@
 
 import React from 'react';
 import { InvestorType, InvestorRecommendation, EntryAnalysis } from '@/lib/investment-rules';
+import { TrendArrow } from '@/components/icons';
+import TechnicalLevelsCard from '@/components/TechnicalLevelsCard';
+import FundamentalsCard from '@/components/FundamentalsCard';
 
 interface InvestorAnalysisModalProps {
   isOpen: boolean;
@@ -232,6 +235,147 @@ export default function InvestorAnalysisModal({
             )}
           </div>
 
+          {/* Technical Levels & Fundamentals Summary - Mobile Friendly */}
+          <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* Technical Levels Summary */}
+            {technicals && (
+              <div className="bg-white dark:bg-[#1c2128] border border-gray-200 dark:border-[#30363d] rounded-lg p-4">
+                <div className="flex items-center justify-between mb-3">
+                  <h4 className="text-sm font-semibold text-gray-900 dark:text-white">Technical Levels</h4>
+                  <span className={`px-2 py-0.5 text-xs font-bold rounded ${
+                    recommendation.suitableFor.includes('momentum' as InvestorType)
+                      ? 'bg-green-500 text-white'
+                      : recommendation.suitableFor.length > 0
+                        ? 'bg-yellow-500 text-white'
+                        : 'bg-gray-500 text-white'
+                  }`}>
+                    {recommendation.suitableFor.includes('momentum' as InvestorType)
+                      ? 'STRONG BUY'
+                      : recommendation.suitableFor.length > 0
+                        ? 'BUY'
+                        : 'NEUTRAL'
+                    }
+                  </span>
+                </div>
+
+                <div className="space-y-2 text-xs">
+                  {/* 50 EMA */}
+                  {technicals.ema50 && (
+                    <div className="flex justify-between items-center">
+                      <span className="text-gray-600 dark:text-[#8b949e]">50 EMA:</span>
+                      <div className="flex items-center gap-1">
+                        <span className="text-gray-900 dark:text-white font-semibold">
+                          ₹{technicals.ema50.toFixed(2)}
+                        </span>
+                        {technicals.lastPrice && (
+                          <TrendArrow isUp={technicals.lastPrice > technicals.ema50} />
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* 100 MA */}
+                  {technicals.sma100 && (
+                    <div className="flex justify-between items-center">
+                      <span className="text-gray-600 dark:text-[#8b949e]">100 MA:</span>
+                      <div className="flex items-center gap-1">
+                        <span className="text-gray-900 dark:text-white font-semibold">
+                          ₹{technicals.sma100.toFixed(2)}
+                        </span>
+                        {technicals.lastPrice && (
+                          <TrendArrow isUp={technicals.lastPrice > technicals.sma100} />
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* 200 MA */}
+                  {technicals.sma200 && (
+                    <div className="flex justify-between items-center">
+                      <span className="text-gray-600 dark:text-[#8b949e]">200 MA:</span>
+                      <div className="flex items-center gap-1">
+                        <span className="text-gray-900 dark:text-white font-semibold">
+                          ₹{technicals.sma200.toFixed(2)}
+                        </span>
+                        {technicals.lastPrice && (
+                          <TrendArrow isUp={technicals.lastPrice > technicals.sma200} />
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Supertrend */}
+                  {technicals.supertrend && (
+                    <div className="flex justify-between items-center">
+                      <span className="text-gray-600 dark:text-[#8b949e]">Supertrend:</span>
+                      <div className="flex items-center gap-1">
+                        <span className="text-gray-900 dark:text-white font-semibold">
+                          ₹{technicals.supertrend.toFixed(2)}
+                        </span>
+                        {technicals.lastPrice && (
+                          <TrendArrow isUp={technicals.lastPrice > technicals.supertrend} />
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Fundamentals Summary */}
+            {fundamentals && (
+              <div className="bg-white dark:bg-[#1c2128] border border-gray-200 dark:border-[#30363d] rounded-lg p-4">
+                <div className="flex items-center justify-between mb-3">
+                  <h4 className="text-sm font-semibold text-gray-900 dark:text-white">Fundamentals</h4>
+                  <span className={`px-2 py-0.5 text-xs font-bold rounded ${
+                    recommendation.suitableFor.includes('value' as InvestorType) || recommendation.suitableFor.includes('quality' as InvestorType)
+                      ? 'bg-yellow-500 text-white'
+                      : 'bg-gray-500 text-white'
+                  }`}>
+                    {recommendation.suitableFor.includes('value' as InvestorType) || recommendation.suitableFor.includes('quality' as InvestorType)
+                      ? 'AVERAGE'
+                      : 'BELOW AVG'
+                    }
+                  </span>
+                </div>
+
+                <div className="space-y-2 text-xs">
+                  {/* PE Ratio */}
+                  {fundamentals.pe && (
+                    <div className="flex justify-between items-center">
+                      <span className="text-gray-600 dark:text-[#8b949e]">PE:</span>
+                      <span className="text-gray-900 dark:text-white font-semibold">
+                        {fundamentals.pe.toFixed(2)}
+                      </span>
+                    </div>
+                  )}
+
+                  {/* Debt to Equity */}
+                  {fundamentals.debtToEquity != null && (
+                    <div className="flex justify-between items-center">
+                      <span className="text-gray-600 dark:text-[#8b949e]">Debt-to-Equity:</span>
+                      <span className="text-gray-900 dark:text-white font-semibold">
+                        {fundamentals.debtToEquity.toFixed(1)}
+                      </span>
+                    </div>
+                  )}
+
+                  {/* Earnings Growth */}
+                  {fundamentals.earningsGrowth != null && (
+                    <div className="flex justify-between items-center">
+                      <span className="text-gray-600 dark:text-[#8b949e]">Earnings Growth:</span>
+                      <span className={`font-semibold ${
+                        fundamentals.earningsGrowth > 0 ? 'text-green-500' : 'text-red-500'
+                      }`}>
+                        {fundamentals.earningsGrowth > 0 ? '+' : ''}{fundamentals.earningsGrowth.toFixed(1)}%
+                      </span>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+
           {/* Footer Note */}
           <div className="mt-4 p-3 bg-blue-500/10 border border-blue-500/30 rounded-lg">
             <p className="text-xs text-blue-600 dark:text-blue-400">
@@ -318,9 +462,7 @@ export default function InvestorAnalysisModal({
                             ₹{technicals.ema50.toFixed(2)}
                           </span>
                           {technicals.lastPrice && (
-                            <span className={technicals.lastPrice > technicals.ema50 ? 'text-green-500' : 'text-red-500'}>
-                              {technicals.lastPrice > technicals.ema50 ? '↑' : '↓'}
-                            </span>
+                            <TrendArrow isUp={technicals.lastPrice > technicals.ema50} />
                           )}
                         </div>
                       </div>
@@ -335,9 +477,7 @@ export default function InvestorAnalysisModal({
                             ₹{technicals.sma100.toFixed(2)}
                           </span>
                           {technicals.lastPrice && (
-                            <span className={technicals.lastPrice > technicals.sma100 ? 'text-green-500' : 'text-red-500'}>
-                              {technicals.lastPrice > technicals.sma100 ? '↑' : '↓'}
-                            </span>
+                            <TrendArrow isUp={technicals.lastPrice > technicals.sma100} />
                           )}
                         </div>
                       </div>
@@ -352,9 +492,7 @@ export default function InvestorAnalysisModal({
                             ₹{technicals.sma200.toFixed(2)}
                           </span>
                           {technicals.lastPrice && (
-                            <span className={technicals.lastPrice > technicals.sma200 ? 'text-green-500' : 'text-red-500'}>
-                              {technicals.lastPrice > technicals.sma200 ? '↑' : '↓'}
-                            </span>
+                            <TrendArrow isUp={technicals.lastPrice > technicals.sma200} />
                           )}
                         </div>
                       </div>
@@ -369,9 +507,7 @@ export default function InvestorAnalysisModal({
                             ₹{technicals.supertrend.toFixed(2)}
                           </span>
                           {technicals.lastPrice && (
-                            <span className={technicals.lastPrice > technicals.supertrend ? 'text-green-500' : 'text-red-500'}>
-                              {technicals.lastPrice > technicals.supertrend ? '↑' : '↓'}
-                            </span>
+                            <TrendArrow isUp={technicals.lastPrice > technicals.supertrend} />
                           )}
                         </div>
                       </div>
@@ -409,7 +545,7 @@ export default function InvestorAnalysisModal({
                     )}
 
                     {/* Debt to Equity */}
-                    {fundamentals.debtToEquity !== undefined && (
+                    {fundamentals.debtToEquity != null && (
                       <div className="flex justify-between items-center">
                         <span className="text-gray-600 dark:text-[#8b949e]">Debt-to-Equity:</span>
                         <span className="text-gray-900 dark:text-white font-semibold">
@@ -419,7 +555,7 @@ export default function InvestorAnalysisModal({
                     )}
 
                     {/* Earnings Growth */}
-                    {fundamentals.earningsGrowth !== undefined && (
+                    {fundamentals.earningsGrowth != null && (
                       <div className="flex justify-between items-center">
                         <span className="text-gray-600 dark:text-[#8b949e]">Earnings Growth:</span>
                         <span className={`font-semibold ${

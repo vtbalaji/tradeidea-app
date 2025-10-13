@@ -13,6 +13,8 @@ import { db } from '@/lib/firebase';
 import { getSymbolData } from '@/lib/symbolDataService';
 import InvestorAnalysisModal from '@/components/InvestorAnalysisModal';
 import { createInvestmentEngine } from '@/lib/investment-rules';
+import TechnicalLevelsCard from '@/components/TechnicalLevelsCard';
+import FundamentalsCard from '@/components/FundamentalsCard';
 
 export default function PortfolioPage() {
   const router = useRouter();
@@ -705,97 +707,18 @@ export default function PortfolioPage() {
                     {/* Technical Indicators & Fundamentals Display */}
                     {(position.technicals || position.fundamentals) && position.status === 'open' && (
                       <div className="mb-4 p-3 bg-gray-50 dark:bg-[#1c2128] border border-gray-200 dark:border-[#30363d] rounded-lg">
-                        <p className="text-xs font-bold text-[#ff8c42] mb-2">
-                          Technical Levels
-                          {position.technicals?.overallSignal && (
-                            <span className={`ml-2 ${
-                              position.technicals.overallSignal === 'STRONG_BUY' ? 'text-green-600' :
-                              position.technicals.overallSignal === 'BUY' ? 'text-green-500' :
-                              position.technicals.overallSignal === 'STRONG_SELL' ? 'text-red-600' :
-                              position.technicals.overallSignal === 'SELL' ? 'text-red-500' :
-                              'text-gray-500'
-                            }`}>
-                              (Score: {position.technicals.overallSignal})
-                            </span>
-                          )}
-                        </p>
-                        <div className="grid grid-cols-2 gap-2 text-xs mb-3">
-                          {position.technicals?.ema50 && (
-                            <div>
-                              <span className="text-gray-600 dark:text-[#8b949e]">50 EMA:</span>
-                              <span className="ml-1 font-semibold text-gray-900 dark:text-white">
-                                ₹{position.technicals.ema50.toFixed(2)} <span className={position.currentPrice > position.technicals.ema50 ? 'text-green-500' : 'text-red-500'}>{position.currentPrice > position.technicals.ema50 ? '↗' : '↘'}</span>
-                              </span>
-                            </div>
-                          )}
-                          {position.technicals?.sma100 && (
-                            <div>
-                              <span className="text-gray-600 dark:text-[#8b949e]">100 MA:</span>
-                              <span className="ml-1 font-semibold text-gray-900 dark:text-white">
-                                ₹{position.technicals.sma100.toFixed(2)} <span className={position.currentPrice > position.technicals.sma100 ? 'text-green-500' : 'text-red-500'}>{position.currentPrice > position.technicals.sma100 ? '↗' : '↘'}</span>
-                              </span>
-                            </div>
-                          )}
-                          {position.technicals?.sma200 && (
-                            <div>
-                              <span className="text-gray-600 dark:text-[#8b949e]">200 MA:</span>
-                              <span className="ml-1 font-semibold text-gray-900 dark:text-white">
-                                ₹{position.technicals.sma200.toFixed(2)} <span className={position.currentPrice > position.technicals.sma200 ? 'text-green-500' : 'text-red-500'}>{position.currentPrice > position.technicals.sma200 ? '↗' : '↘'}</span>
-                              </span>
-                            </div>
-                          )}
-                          {position.technicals?.supertrend && (
-                            <div>
-                              <span className="text-gray-600 dark:text-[#8b949e]">Supertrend:</span>
-                              <span className="ml-1 font-semibold text-gray-900 dark:text-white">
-                                ₹{position.technicals.supertrend.toFixed(2)} <span className={position.technicals.supertrendDirection === 1 ? 'text-green-500' : 'text-red-500'}>{position.technicals.supertrendDirection === 1 ? '↗' : '↘'}</span>
-                              </span>
-                            </div>
-                          )}
-                        </div>
+                        {position.technicals && (
+                          <TechnicalLevelsCard
+                            technicals={position.technicals}
+                            currentPrice={position.currentPrice}
+                            className="mb-3"
+                          />
+                        )}
                         {position.fundamentals && (
-                          <>
-                            <p className="text-xs font-bold text-[#ff8c42] mb-2 pt-2 border-t border-gray-200 dark:border-[#30363d]">
-                              Fundamentals
-                              {position.fundamentals.fundamentalRating && (
-                                <span className={`ml-2 ${
-                                  position.fundamentals.fundamentalRating === 'EXCELLENT' ? 'text-green-600' :
-                                  position.fundamentals.fundamentalRating === 'GOOD' ? 'text-green-500' :
-                                  position.fundamentals.fundamentalRating === 'AVERAGE' ? 'text-yellow-500' :
-                                  position.fundamentals.fundamentalRating === 'POOR' ? 'text-orange-500' :
-                                  'text-red-500'
-                                }`}>
-                                  (Rating: {position.fundamentals.fundamentalRating})
-                                </span>
-                              )}
-                            </p>
-                            <div className="grid grid-cols-2 gap-2 text-xs">
-                              {position.fundamentals.trailingPE && (
-                                <div>
-                                  <span className="text-gray-600 dark:text-[#8b949e]">PE:</span>
-                                  <span className="ml-1 font-semibold text-gray-900 dark:text-white">{position.fundamentals.trailingPE.toFixed(2)}</span>
-                                </div>
-                              )}
-                              {position.fundamentals.returnOnEquity && (
-                                <div>
-                                  <span className="text-gray-600 dark:text-[#8b949e]">ROE:</span>
-                                  <span className="ml-1 font-semibold text-gray-900 dark:text-white">{position.fundamentals.returnOnEquity.toFixed(1)}%</span>
-                                </div>
-                              )}
-                              {position.fundamentals.debtToEquity && (
-                                <div>
-                                  <span className="text-gray-600 dark:text-[#8b949e]">Debt-to-Equity:</span>
-                                  <span className="ml-1 font-semibold text-gray-900 dark:text-white">{position.fundamentals.debtToEquity.toFixed(1)}</span>
-                                </div>
-                              )}
-                              {position.fundamentals.earningsGrowth && (
-                                <div>
-                                  <span className="text-gray-600 dark:text-[#8b949e]">Earnings Growth:</span>
-                                  <span className="ml-1 font-semibold text-gray-900 dark:text-white">{position.fundamentals.earningsGrowth.toFixed(1)}%</span>
-                                </div>
-                              )}
-                            </div>
-                          </>
+                          <FundamentalsCard
+                            fundamentals={position.fundamentals}
+                            showBorder={!!position.technicals}
+                          />
                         )}
                       </div>
                     )}
@@ -1002,97 +925,18 @@ export default function PortfolioPage() {
               {/* Technical Indicators & Fundamentals Display */}
               {(position.technicals || position.fundamentals) && position.status === 'open' && (
                 <div className="mb-4 p-3 bg-white dark:bg-[#0f1419] border border-gray-200 dark:border-[#30363d] rounded-lg">
-                  <p className="text-xs font-bold text-[#ff8c42] mb-2">
-                    Technical Levels
-                    {position.technicals?.overallSignal && (
-                      <span className={`ml-2 ${
-                        position.technicals.overallSignal === 'STRONG_BUY' ? 'text-green-600' :
-                        position.technicals.overallSignal === 'BUY' ? 'text-green-500' :
-                        position.technicals.overallSignal === 'STRONG_SELL' ? 'text-red-600' :
-                        position.technicals.overallSignal === 'SELL' ? 'text-red-500' :
-                        'text-gray-500'
-                      }`}>
-                        (Score: {position.technicals.overallSignal})
-                      </span>
-                    )}
-                  </p>
-                  <div className="grid grid-cols-2 gap-2 text-xs mb-3">
-                    {position.technicals?.ema50 && (
-                      <div>
-                        <span className="text-gray-600 dark:text-[#8b949e]">50 EMA:</span>
-                        <span className="ml-1 font-semibold text-gray-900 dark:text-white">
-                          ₹{position.technicals.ema50.toFixed(2)} <span className={position.currentPrice > position.technicals.ema50 ? 'text-green-500' : 'text-red-500'}>{position.currentPrice > position.technicals.ema50 ? '↗' : '↘'}</span>
-                        </span>
-                      </div>
-                    )}
-                    {position.technicals?.sma100 && (
-                      <div>
-                        <span className="text-gray-600 dark:text-[#8b949e]">100 MA:</span>
-                        <span className="ml-1 font-semibold text-gray-900 dark:text-white">
-                          ₹{position.technicals.sma100.toFixed(2)} <span className={position.currentPrice > position.technicals.sma100 ? 'text-green-500' : 'text-red-500'}>{position.currentPrice > position.technicals.sma100 ? '↗' : '↘'}</span>
-                        </span>
-                      </div>
-                    )}
-                    {position.technicals?.sma200 && (
-                      <div>
-                        <span className="text-gray-600 dark:text-[#8b949e]">200 MA:</span>
-                        <span className="ml-1 font-semibold text-gray-900 dark:text-white">
-                          ₹{position.technicals.sma200.toFixed(2)} <span className={position.currentPrice > position.technicals.sma200 ? 'text-green-500' : 'text-red-500'}>{position.currentPrice > position.technicals.sma200 ? '↗' : '↘'}</span>
-                        </span>
-                      </div>
-                    )}
-                    {position.technicals?.supertrend && (
-                      <div>
-                        <span className="text-gray-600 dark:text-[#8b949e]">Supertrend:</span>
-                        <span className="ml-1 font-semibold text-gray-900 dark:text-white">
-                          ₹{position.technicals.supertrend.toFixed(2)} <span className={position.technicals.supertrendDirection === 1 ? 'text-green-500' : 'text-red-500'}>{position.technicals.supertrendDirection === 1 ? '↗' : '↘'}</span>
-                        </span>
-                      </div>
-                    )}
-                  </div>
+                  {position.technicals && (
+                    <TechnicalLevelsCard
+                      technicals={position.technicals}
+                      currentPrice={position.currentPrice}
+                      className="mb-3"
+                    />
+                  )}
                   {position.fundamentals && (
-                    <>
-                      <p className="text-xs font-bold text-[#ff8c42] mb-2 pt-2 border-t border-gray-200 dark:border-[#30363d]">
-                        Fundamentals
-                        {position.fundamentals.fundamentalRating && (
-                          <span className={`ml-2 ${
-                            position.fundamentals.fundamentalRating === 'EXCELLENT' ? 'text-green-600' :
-                            position.fundamentals.fundamentalRating === 'GOOD' ? 'text-green-500' :
-                            position.fundamentals.fundamentalRating === 'AVERAGE' ? 'text-yellow-500' :
-                            position.fundamentals.fundamentalRating === 'POOR' ? 'text-orange-500' :
-                            'text-red-500'
-                          }`}>
-                            (Rating: {position.fundamentals.fundamentalRating})
-                          </span>
-                        )}
-                      </p>
-                      <div className="grid grid-cols-2 gap-2 text-xs">
-                        {position.fundamentals.trailingPE && (
-                          <div>
-                            <span className="text-gray-600 dark:text-[#8b949e]">PE:</span>
-                            <span className="ml-1 font-semibold text-gray-900 dark:text-white">{position.fundamentals.trailingPE.toFixed(2)}</span>
-                          </div>
-                        )}
-                        {position.fundamentals.returnOnEquity && (
-                          <div>
-                            <span className="text-gray-600 dark:text-[#8b949e]">ROE:</span>
-                            <span className="ml-1 font-semibold text-gray-900 dark:text-white">{position.fundamentals.returnOnEquity.toFixed(1)}%</span>
-                          </div>
-                        )}
-                        {position.fundamentals.debtToEquity && (
-                          <div>
-                            <span className="text-gray-600 dark:text-[#8b949e]">Debt-to-Equity:</span>
-                            <span className="ml-1 font-semibold text-gray-900 dark:text-white">{position.fundamentals.debtToEquity.toFixed(1)}</span>
-                          </div>
-                        )}
-                        {position.fundamentals.earningsGrowth && (
-                          <div>
-                            <span className="text-gray-600 dark:text-[#8b949e]">Earnings Growth:</span>
-                            <span className="ml-1 font-semibold text-gray-900 dark:text-white">{position.fundamentals.earningsGrowth.toFixed(1)}%</span>
-                          </div>
-                        )}
-                      </div>
-                    </>
+                    <FundamentalsCard
+                      fundamentals={position.fundamentals}
+                      showBorder={!!position.technicals}
+                    />
                   )}
                 </div>
               )}

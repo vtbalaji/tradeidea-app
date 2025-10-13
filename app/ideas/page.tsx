@@ -9,6 +9,8 @@ import { IdeaIcon, TargetIcon, EntryIcon, HeartIcon } from '@/components/icons';
 import { formatIndianDate } from '@/lib/dateUtils';
 import { createInvestmentEngine } from '@/lib/investment-rules';
 import InvestorAnalysisModal from '@/components/InvestorAnalysisModal';
+import TechnicalLevelsCard from '@/components/TechnicalLevelsCard';
+import FundamentalsCard from '@/components/FundamentalsCard';
 
 export default function IdeasHubPage() {
   const router = useRouter();
@@ -102,7 +104,7 @@ export default function IdeasHubPage() {
           <div>
             <h3 className="text-xl font-bold text-gray-900 dark:text-white">{idea.symbol}</h3>
             {(idea.fundamentals?.industry || idea.fundamentals?.sector) && (
-              <p className="text-xs text-gray-600 dark:text-[#8b949e] mt-0.5">
+              <p className="text-sm text-gray-600 dark:text-[#8b949e] mt-0.5">
                 {idea.fundamentals?.industry || idea.fundamentals?.sector}
               </p>
             )}
@@ -114,13 +116,13 @@ export default function IdeasHubPage() {
 
         {/* Tags */}
         <div className="flex flex-wrap gap-3 mb-3">
-          <span className="text-xs text-gray-600 dark:text-[#8b949e]">
+          <span className="text-sm text-gray-600 dark:text-[#8b949e]">
             #{idea.riskLevel} risk
           </span>
-          <span className="text-xs text-gray-600 dark:text-[#8b949e]">
+          <span className="text-sm text-gray-600 dark:text-[#8b949e]">
             #{idea.timeframe}
           </span>
-          <span className="text-xs text-gray-600 dark:text-[#8b949e]">
+          <span className="text-sm text-gray-600 dark:text-[#8b949e]">
             #{idea.analysisType} analysis
           </span>
         </div>
@@ -138,7 +140,7 @@ export default function IdeasHubPage() {
         {/* When to Enter */}
         {idea.whenToEnter && (
           <div className="bg-white dark:bg-[#0f1419] border border-gray-200 dark:border-[#30363d] rounded-lg p-3 mb-3">
-            <p className="text-sm text-gray-600 dark:text-[#8b949e] leading-relaxed whitespace-pre-wrap">
+            <p className="text-base text-gray-600 dark:text-[#8b949e] leading-relaxed whitespace-pre-wrap">
               <span className="font-semibold text-[#ff8c42]">When to Enter: </span>
               {idea.whenToEnter}
             </p>
@@ -149,100 +151,13 @@ export default function IdeasHubPage() {
         {(idea.technicals || idea.fundamentals) && (
           <div className="mb-3 p-3 bg-white dark:bg-[#0f1419] border border-gray-200 dark:border-[#30363d] rounded-lg">
             {idea.technicals && (
-              <>
-                <div className="flex items-center justify-between mb-2">
-                  <p className="text-xs font-bold text-[#ff8c42]">Technical Levels</p>
-                  {idea.technicals.overallSignal && (
-                    <span className={`px-2 py-1 text-xs font-bold rounded ${
-                      idea.technicals.overallSignal === 'STRONG_BUY' ? 'bg-green-600/20 text-green-600 dark:text-green-400' :
-                      idea.technicals.overallSignal === 'BUY' ? 'bg-green-500/20 text-green-600 dark:text-green-500' :
-                      idea.technicals.overallSignal === 'STRONG_SELL' ? 'bg-red-600/20 text-red-600 dark:text-red-400' :
-                      idea.technicals.overallSignal === 'SELL' ? 'bg-red-500/20 text-red-600 dark:text-red-500' :
-                      'bg-gray-500/20 text-gray-600 dark:text-gray-400'
-                    }`}>
-                      {idea.technicals.overallSignal.replace('_', ' ')}
-                    </span>
-                  )}
-                </div>
-                <div className="grid grid-cols-2 gap-2 text-xs mb-3">
-                  {idea.technicals.ema50 && (
-                    <div>
-                      <span className="text-gray-600 dark:text-[#8b949e]">50 EMA:</span>
-                      <span className="ml-1 font-semibold text-gray-900 dark:text-white">
-                        ₹{idea.technicals.ema50.toFixed(2)} <span className={idea.technicals.lastPrice > idea.technicals.ema50 ? 'text-green-500' : 'text-red-500'}>{idea.technicals.lastPrice > idea.technicals.ema50 ? '↗' : '↘'}</span>
-                      </span>
-                    </div>
-                  )}
-                  {idea.technicals.sma100 && (
-                    <div>
-                      <span className="text-gray-600 dark:text-[#8b949e]">100 MA:</span>
-                      <span className="ml-1 font-semibold text-gray-900 dark:text-white">
-                        ₹{idea.technicals.sma100.toFixed(2)} <span className={idea.technicals.lastPrice > idea.technicals.sma100 ? 'text-green-500' : 'text-red-500'}>{idea.technicals.lastPrice > idea.technicals.sma100 ? '↗' : '↘'}</span>
-                      </span>
-                    </div>
-                  )}
-                  {idea.technicals.sma200 && (
-                    <div>
-                      <span className="text-gray-600 dark:text-[#8b949e]">200 MA:</span>
-                      <span className="ml-1 font-semibold text-gray-900 dark:text-white">
-                        ₹{idea.technicals.sma200.toFixed(2)} <span className={idea.technicals.lastPrice > idea.technicals.sma200 ? 'text-green-500' : 'text-red-500'}>{idea.technicals.lastPrice > idea.technicals.sma200 ? '↗' : '↘'}</span>
-                      </span>
-                    </div>
-                  )}
-                  {idea.technicals.supertrend && (
-                    <div>
-                      <span className="text-gray-600 dark:text-[#8b949e]">Supertrend:</span>
-                      <span className="ml-1 font-semibold text-gray-900 dark:text-white">
-                        ₹{idea.technicals.supertrend.toFixed(2)} <span className={idea.technicals.supertrendDirection === 1 ? 'text-green-500' : 'text-red-500'}>{idea.technicals.supertrendDirection === 1 ? '↗' : '↘'}</span>
-                      </span>
-                    </div>
-                  )}
-                </div>
-              </>
+              <TechnicalLevelsCard technicals={idea.technicals} className="mb-3" />
             )}
             {idea.fundamentals && (
-              <>
-                <div className="flex items-center justify-between mb-2 pt-2 border-t border-gray-200 dark:border-[#30363d]">
-                  <p className="text-xs font-bold text-[#ff8c42]">Fundamentals</p>
-                  {idea.fundamentals.fundamentalRating && (
-                    <span className={`px-2 py-1 text-xs font-bold rounded ${
-                      idea.fundamentals.fundamentalRating === 'EXCELLENT' ? 'bg-green-600/20 text-green-600 dark:text-green-400' :
-                      idea.fundamentals.fundamentalRating === 'GOOD' ? 'bg-green-500/20 text-green-600 dark:text-green-500' :
-                      idea.fundamentals.fundamentalRating === 'AVERAGE' ? 'bg-yellow-500/20 text-yellow-600 dark:text-yellow-500' :
-                      idea.fundamentals.fundamentalRating === 'POOR' ? 'bg-orange-500/20 text-orange-600 dark:text-orange-500' :
-                      'bg-red-500/20 text-red-600 dark:text-red-500'
-                    }`}>
-                      {idea.fundamentals.fundamentalRating}
-                    </span>
-                  )}
-                </div>
-                <div className="grid grid-cols-2 gap-2 text-xs">
-                  {idea.fundamentals.trailingPE && (
-                    <div>
-                      <span className="text-gray-600 dark:text-[#8b949e]">PE:</span>
-                      <span className="ml-1 font-semibold text-gray-900 dark:text-white">{idea.fundamentals.trailingPE.toFixed(2)}</span>
-                    </div>
-                  )}
-                  {idea.fundamentals.returnOnEquity && (
-                    <div>
-                      <span className="text-gray-600 dark:text-[#8b949e]">ROE:</span>
-                      <span className="ml-1 font-semibold text-gray-900 dark:text-white">{idea.fundamentals.returnOnEquity.toFixed(1)}%</span>
-                    </div>
-                  )}
-                  {idea.fundamentals.debtToEquity && (
-                    <div>
-                      <span className="text-gray-600 dark:text-[#8b949e]">Debt-to-Equity:</span>
-                      <span className="ml-1 font-semibold text-gray-900 dark:text-white">{idea.fundamentals.debtToEquity.toFixed(1)}</span>
-                    </div>
-                  )}
-                  {idea.fundamentals.earningsGrowth && (
-                    <div>
-                      <span className="text-gray-600 dark:text-[#8b949e]">Earnings Growth:</span>
-                      <span className="ml-1 font-semibold text-gray-900 dark:text-white">{idea.fundamentals.earningsGrowth.toFixed(1)}%</span>
-                    </div>
-                  )}
-                </div>
-              </>
+              <FundamentalsCard
+                fundamentals={idea.fundamentals}
+                showBorder={!!idea.technicals}
+              />
             )}
           </div>
         )}
@@ -250,7 +165,7 @@ export default function IdeasHubPage() {
         {/* Trade Details */}
         <div className="grid grid-cols-4 gap-3 mb-4 pt-4 border-t border-gray-200 dark:border-[#30363d]">
           <div className="text-center">
-            <div className="text-xs text-gray-600 dark:text-[#8b949e] mb-1">LTP</div>
+            <div className="text-sm text-gray-600 dark:text-[#8b949e] mb-1">LTP</div>
             <div className={`text-sm font-semibold ${
               idea.technicals?.lastPrice
                 ? 'text-gray-900 dark:text-white'
@@ -260,28 +175,28 @@ export default function IdeasHubPage() {
             </div>
           </div>
           <div className="text-center">
-            <div className="text-xs text-gray-600 dark:text-[#8b949e] mb-1">Entry</div>
+            <div className="text-sm text-gray-600 dark:text-[#8b949e] mb-1">Entry</div>
             <div className="text-sm font-semibold text-gray-900 dark:text-white">
               {typeof idea.entryPrice === 'number' ? `₹${idea.entryPrice}` : idea.entryPrice}
             </div>
           </div>
           <div className="text-center">
-            <div className="text-xs text-gray-600 dark:text-[#8b949e] mb-1">Target</div>
+            <div className="text-sm text-gray-600 dark:text-[#8b949e] mb-1">Target</div>
             <div className="text-sm font-semibold text-gray-900 dark:text-white">
               ₹{idea.target1} {target1Percent && <span className="text-xs text-gray-600 dark:text-[#8b949e]">+{target1Percent}%</span>}
             </div>
           </div>
           <div className="text-center">
-            <div className="text-xs text-gray-600 dark:text-[#8b949e] mb-1">Stop Loss</div>
+            <div className="text-sm text-gray-600 dark:text-[#8b949e] mb-1">Stop Loss</div>
             <div className="text-sm font-semibold text-gray-900 dark:text-white">₹{idea.stopLoss}</div>
           </div>
         </div>
 
         {/* Footer */}
         <div className="flex justify-between items-center pt-3 border-t border-gray-200 dark:border-[#30363d]">
-          <div className="flex gap-3 text-xs text-gray-600 dark:text-[#8b949e]">
+          <div className="flex gap-3 text-sm text-gray-600 dark:text-[#8b949e]">
             <span className="flex items-center gap-1">
-              <svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor">
+              <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor">
                 <path d="M8 14s-6-4.5-6-8c0-2.5 2-4 4-4 1.5 0 2 1 2 1s.5-1 2-1c2 0 4 1.5 4 4 0 3.5-6 8-6 8z"/>
               </svg>
               {idea.likes}

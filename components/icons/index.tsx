@@ -14,3 +14,4 @@ export { UserIcon } from './UserIcon';
 export { BookIcon } from './BookIcon';
 export { HelpIcon } from './HelpIcon';
 export { LogoutIcon } from './LogoutIcon';
+export { TrendArrow } from './TrendArrow';
