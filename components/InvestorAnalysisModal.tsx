@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { InvestorType, InvestorRecommendation, EntryAnalysis } from '@/lib/investment-rules';
-import { TrendArrow } from '@/components/icons';
+import { TrendArrow, ChevronLeftIcon, ChevronRightIcon, CloseIcon } from '@/components/icons';
 import TechnicalLevelsCard from '@/components/TechnicalLevelsCard';
 import FundamentalsCard from '@/components/FundamentalsCard';
 
@@ -395,17 +395,13 @@ export default function InvestorAnalysisModal({
             >
               {showDetails ? (
                 <>
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-                  </svg>
+                  <ChevronLeftIcon size={16} className="w-4 h-4" />
                   <span>Hide Details</span>
                 </>
               ) : (
                 <>
                   <span>Show Details</span>
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                  </svg>
+                  <ChevronRightIcon size={16} className="w-4 h-4" />
                 </>
               )}
             </button>
@@ -415,9 +411,7 @@ export default function InvestorAnalysisModal({
             onClick={onClose}
             className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-gray-100 dark:bg-[#30363d] hover:bg-gray-200 dark:hover:bg-[#3c444d] border border-gray-200 dark:border-[#444c56] text-gray-700 dark:text-gray-300 font-semibold rounded-lg transition-colors"
           >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-            </svg>
+            <CloseIcon size={16} className="w-4 h-4" />
             <span>Close</span>
           </button>
         </div>

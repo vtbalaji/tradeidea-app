@@ -5,12 +5,13 @@ import { useRouter } from 'next/navigation';
 import Navigation from '../../components/Navigation';
 import { useTrading } from '../../contexts/TradingContext';
 import { useAuth } from '../../contexts/AuthContext';
-import { IdeaIcon, TargetIcon, EntryIcon, HeartIcon } from '@/components/icons';
+import { IdeaIcon, TargetIcon, EntryIcon, HeartIcon, HeartFilledIcon, EditIcon } from '@/components/icons';
 import { formatIndianDate } from '@/lib/dateUtils';
 import { createInvestmentEngine } from '@/lib/investment-rules';
 import InvestorAnalysisModal from '@/components/InvestorAnalysisModal';
 import TechnicalLevelsCard from '@/components/TechnicalLevelsCard';
 import FundamentalsCard from '@/components/FundamentalsCard';
+import AnalysisButton from '@/components/AnalysisButton';
 
 export default function IdeasHubPage() {
   const router = useRouter();
@@ -196,9 +197,7 @@ export default function IdeasHubPage() {
         <div className="flex justify-between items-center pt-3 border-t border-gray-200 dark:border-[#30363d]">
           <div className="flex gap-3 text-sm text-gray-600 dark:text-[#8b949e]">
             <span className="flex items-center gap-1">
-              <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor">
-                <path d="M8 14s-6-4.5-6-8c0-2.5 2-4 4-4 1.5 0 2 1 2 1s.5-1 2-1c2 0 4 1.5 4 4 0 3.5-6 8-6 8z"/>
-              </svg>
+              <HeartFilledIcon size={14} />
               {idea.likes}
             </span>
             <span>💬 {idea.commentCount}</span>
@@ -207,16 +206,10 @@ export default function IdeasHubPage() {
 
           <div className="flex gap-2">
             {/* Analyze Button */}
-            <button
+            <AnalysisButton
               onClick={(e) => handleAnalyze(e, idea)}
-              className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-100 dark:bg-[#30363d] hover:bg-gray-200 dark:hover:bg-[#3c444d] border border-gray-200 dark:border-[#444c56] text-gray-700 dark:text-gray-300 text-xs font-semibold rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               disabled={!idea.technicals || !idea.fundamentals}
-            >
-              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-              </svg>
-              <span>Analysis</span>
-            </button>
+            />
 
             {/* Edit Button */}
             <button
@@ -226,9 +219,7 @@ export default function IdeasHubPage() {
               }}
               className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-100 dark:bg-[#30363d] hover:bg-gray-200 dark:hover:bg-[#3c444d] border border-gray-200 dark:border-[#444c56] text-gray-700 dark:text-gray-300 text-xs font-semibold rounded-lg transition-colors"
             >
-              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-              </svg>
+              <EditIcon size={14} className="w-3.5 h-3.5" />
               <span>Edit</span>
             </button>
           </div>
@@ -314,9 +305,7 @@ export default function IdeasHubPage() {
                 : 'bg-gray-50 dark:bg-[#1c2128] text-gray-600 dark:text-[#8b949e] hover:bg-[#30363d]'
             }`}
           >
-            <svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor">
-              <path d="M8 14s-6-4.5-6-8c0-2.5 2-4 4-4 1.5 0 2 1 2 1s.5-1 2-1c2 0 4 1.5 4 4 0 3.5-6 8-6 8z"/>
-            </svg>
+            <HeartFilledIcon size={12} />
             Following
           </button>
         </div>

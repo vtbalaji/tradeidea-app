@@ -60,6 +60,8 @@ export default function Home() {
             featureList: [
               'Multi-account portfolio management',
               'Real-time technical analysis with EMA/MA crossovers, RSI, MACD, Bollinger Bands',
+              'Daily market screeners for 50 MA, 200 MA, and Supertrend crossovers',
+              'One-click conversion of screener results to trading ideas',
               'Fundamental analysis with P/E ratio, ROE, debt ratios',
               'Portfolio import from Zerodha, ICICI Direct',
               'Smart exit criteria and alerts',
@@ -277,6 +279,100 @@ export default function Home() {
               Set custom exit rules: Stop-loss, targets, EMA/MA levels, and Supertrend signals
               for automatic alerts.
             </p>
+          </div>
+
+          {/* Feature 7 - NEW */}
+          <div className="bg-gradient-to-br from-[#ff8c42]/10 to-orange-500/5 border-2 border-[#ff8c42] dark:bg-[#1c2128] rounded-xl p-6 text-center relative overflow-hidden">
+            <div className="absolute top-2 right-2 px-2 py-0.5 bg-[#ff8c42] text-white text-xs font-bold rounded-full">
+              NEW
+            </div>
+            <div className="text-5xl mb-4">🔍</div>
+            <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-3">Market Screeners</h3>
+            <p className="text-gray-600 dark:text-[#8b949e]">
+              Discover daily crossover opportunities: 50 MA, 200 MA, and Supertrend signals.
+              Convert screener results to trading ideas with one click.
+            </p>
+          </div>
+
+          {/* Feature 8 */}
+          <div className="bg-gray-50 dark:bg-[#1c2128] border border-gray-200 dark:border-[#30363d] rounded-xl p-6 text-center">
+            <div className="text-5xl mb-4">🤝</div>
+            <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-3">Community Ideas</h3>
+            <p className="text-gray-600 dark:text-[#8b949e]">
+              Learn from other traders' ideas, follow successful strategies, and engage
+              in discussions about market opportunities.
+            </p>
+          </div>
+
+          {/* Feature 9 */}
+          <div className="bg-gray-50 dark:bg-[#1c2128] border border-gray-200 dark:border-[#30363d] rounded-xl p-6 text-center">
+            <div className="text-5xl mb-4">⚡</div>
+            <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-3">Real-time Updates</h3>
+            <p className="text-gray-600 dark:text-[#8b949e]">
+              Technical indicators updated daily with latest market data. Stay informed
+              about your portfolio positions automatically.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      {/* New Screener Feature Highlight */}
+      <section className="max-w-7xl mx-auto px-6 py-16">
+        <div className="bg-gradient-to-br from-blue-500/10 to-cyan-500/5 border-2 border-blue-500 dark:border-blue-400 rounded-2xl p-8 md:p-12">
+          <div className="text-center mb-8">
+            <div className="inline-block px-4 py-1 bg-blue-500 text-white text-sm font-bold rounded-full mb-4">
+              NEW FEATURE
+            </div>
+            <div className="text-6xl mb-4">🔍</div>
+            <h2 className="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mb-4">
+              Daily Market Screeners
+            </h2>
+            <p className="text-lg text-gray-600 dark:text-[#8b949e] max-w-3xl mx-auto">
+              Discover fresh trading opportunities every day with our automated technical screeners.
+              Find stocks crossing key moving averages and Supertrend levels - the signals that matter most.
+            </p>
+          </div>
+
+          <div className="grid md:grid-cols-3 gap-6 mt-8">
+            <div className="bg-white dark:bg-[#1c2128] border border-gray-200 dark:border-[#30363d] rounded-lg p-6">
+              <div className="text-3xl mb-3">📊</div>
+              <h4 className="font-bold text-gray-900 dark:text-white mb-2">50 & 200 MA Crossovers</h4>
+              <p className="text-sm text-gray-600 dark:text-[#8b949e] mb-3">
+                Identify stocks crossing major moving averages - classic bullish/bearish signals
+                used by professional traders.
+              </p>
+              <ul className="text-xs text-gray-600 dark:text-[#8b949e] space-y-1">
+                <li>• Golden Cross opportunities</li>
+                <li>• Death Cross warnings</li>
+                <li>• Dual crossover alerts</li>
+              </ul>
+            </div>
+            <div className="bg-white dark:bg-[#1c2128] border border-gray-200 dark:border-[#30363d] rounded-lg p-6">
+              <div className="text-3xl mb-3">📈</div>
+              <h4 className="font-bold text-gray-900 dark:text-white mb-2">Supertrend Signals</h4>
+              <p className="text-sm text-gray-600 dark:text-[#8b949e] mb-3">
+                Catch trend reversals early with Supertrend crossovers - powerful momentum
+                indicators for entry/exit timing.
+              </p>
+              <ul className="text-xs text-gray-600 dark:text-[#8b949e] space-y-1">
+                <li>• Bullish trend starts</li>
+                <li>• Bearish trend reversals</li>
+                <li>• Momentum confirmation</li>
+              </ul>
+            </div>
+            <div className="bg-white dark:bg-[#1c2128] border border-gray-200 dark:border-[#30363d] rounded-lg p-6">
+              <div className="text-3xl mb-3">💡</div>
+              <h4 className="font-bold text-gray-900 dark:text-white mb-2">One-Click to Idea</h4>
+              <p className="text-sm text-gray-600 dark:text-[#8b949e] mb-3">
+                Convert any screener result into a complete trading idea with pre-filled
+                entry, stop-loss, and target levels.
+              </p>
+              <ul className="text-xs text-gray-600 dark:text-[#8b949e] space-y-1">
+                <li>• Auto-calculated entry at support</li>
+                <li>• Smart stop-loss placement</li>
+                <li>• 2:1 risk-reward targets</li>
+              </ul>
+            </div>
           </div>
         </div>
       </section>

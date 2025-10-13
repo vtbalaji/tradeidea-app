@@ -8,6 +8,7 @@ import { db } from '@/lib/firebase';
 import { collection, query, where, getDocs, orderBy, doc, getDoc } from 'firebase/firestore';
 import { createInvestmentEngine } from '@/lib/investment-rules';
 import InvestorAnalysisModal from '@/components/InvestorAnalysisModal';
+import AnalysisButton from '@/components/AnalysisButton';
 
 interface Crossover {
   id: string;
@@ -278,17 +279,118 @@ export default function Cross50200Page() {
           </p>
         </div>
 
-        {/* Analysis Button */}
-        <div className="flex justify-end pt-3 border-t border-gray-200 dark:border-[#30363d]">
+        {/* Action Buttons */}
+        <div className="flex gap-2 pt-3 border-t border-gray-200 dark:border-[#30363d]">
           <button
-            onClick={(e) => handleAnalyze(e, crossover)}
-            className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-100 dark:bg-[#30363d] hover:bg-gray-200 dark:hover:bg-[#3c444d] border border-gray-200 dark:border-[#444c56] text-gray-700 dark:text-gray-300 text-xs font-semibold rounded-lg transition-colors"
+            onClick={async (e) => {
+              e.stopPropagation();
+
+              // Fetch symbol data to get technical levels (Supertrend, 100MA)
+              let entryPrice = crossover.todayClose;
+              let stopLoss = crossover.todayClose * 0.95; // Default -5%
+              let target = crossover.todayClose * 1.10; // Default +10%
+              let supertrendLevel = null;
+              let sma100Level = null;
+              let sma50Level = null;
+
+              try {
+                const symbolDoc = await getDoc(doc(db, 'symbols', crossover.symbol));
+                if (symbolDoc.exists()) {
+                  const data = symbolDoc.data();
+                  const technicals = data.technicals || data.technical;
+
+                  if (technicals) {
+                    supertrendLevel = technicals.supertrend || technicals.supertrendLevel || null;
+                    sma100Level = technicals.sma100 || technicals.ma100 || null;
+                    sma50Level = technicals.sma50 || technicals.ema50 || technicals.ma50 || null;
+
+                    console.log('Fetched technicals from symbols collection:', {
+                      symbol: crossover.symbol,
+                      supertrend: supertrendLevel,
+                      sma100: sma100Level,
+                      sma50: sma50Level,
+                      allTechnicals: technicals
+                    });
+                  }
+                }
+              } catch (error) {
+                console.error('Error fetching symbol data:', error);
+              }
+
+              // For bullish signals, use the higher of Supertrend or 100MA as entry
+              if (isBullish) {
+                // Build array of valid support levels (excluding current price)
+                const supportLevels = [];
+
+                if (supertrendLevel && supertrendLevel > 0) {
+                  supportLevels.push(supertrendLevel);
+                }
+                if (sma100Level && sma100Level > 0) {
+                  supportLevels.push(sma100Level);
+                }
+                if (sma50Level && sma50Level > 0) {
+                  supportLevels.push(sma50Level);
+                }
+
+                // Entry is the highest of available support levels (Supertrend/100MA/50MA)
+                // NOT the current price if it's already above these levels
+                if (supportLevels.length > 0) {
+                  entryPrice = Math.max(...supportLevels);
+                  // Stop loss: 2% below the highest support level
+                  stopLoss = entryPrice * 0.98;
+                } else {
+                  // Fallback if no technical levels available
+                  entryPrice = crossover.todayClose;
+                  stopLoss = entryPrice * 0.95;
+                }
+              } else {
+                // For bearish/short ideas
+                entryPrice = crossover.todayClose;
+
+                // Build array of valid resistance levels
+                const resistanceLevels = [crossover.todayClose * 1.05];
+                if (supertrendLevel && supertrendLevel > 0) resistanceLevels.push(supertrendLevel);
+                if (sma100Level && sma100Level > 0) resistanceLevels.push(sma100Level);
+
+                // Stop loss at the lowest resistance level + 2%
+                if (resistanceLevels.length > 0) {
+                  stopLoss = Math.min(...resistanceLevels) * 1.02;
+                }
+              }
+
+              // Calculate target based on risk-reward ratio (2:1)
+              const riskAmount = Math.abs(entryPrice - stopLoss);
+              target = entryPrice + (riskAmount * 2); // 2x risk for reward
+
+              console.log('Final entry calculation:', {
+                symbol: crossover.symbol,
+                isBullish,
+                currentPrice: crossover.todayClose,
+                supertrend: supertrendLevel,
+                sma100: sma100Level,
+                sma50: sma50Level,
+                calculatedEntry: entryPrice,
+                calculatedSL: stopLoss,
+                calculatedTarget: target,
+                riskAmount: riskAmount
+              });
+
+              // Build the analysis text based on crossover type
+              const analysisText = isSupertrend
+                ? `${isBullish ? 'Bullish' : 'Bearish'} Supertrend crossover detected.\n\nKey Points:\n- Price is ${isBullish ? 'above' : 'below'} Supertrend level by ${Math.abs(crossover.crossPercent).toFixed(2)}%\n- Current Price: ₹${crossover.todayClose.toFixed(2)}\n- Supertrend Level: ₹${(isSupertrend ? crossover.todaySupertrend : crossover.todayMA)?.toFixed(2)}\n\n${isBullish ? 'This signals potential upward momentum. Consider entering on pullbacks to support levels.' : 'This signals potential downward pressure. Consider exiting long positions or avoiding new entries.'}`
+                : `${isBullish ? 'Bullish' : 'Bearish'} ${crossover.ma_period} MA crossover detected.\n\nKey Points:\n- Price crossed ${isBullish ? 'above' : 'below'} ${crossover.ma_period} MA today\n- Current Price: ₹${crossover.todayClose.toFixed(2)}\n- ${crossover.ma_period} MA Level: ₹${crossover.todayMA?.toFixed(2)}\n- Price change: ${((crossover.todayClose - crossover.yesterdayClose) / crossover.yesterdayClose * 100).toFixed(2)}%\n\n${isBullish ? 'This crossover suggests potential bullish momentum. Entry recommended near support levels with proper risk management.' : 'This crossover indicates potential bearish pressure. Consider profit booking or avoiding fresh longs.'}`;
+
+              // Navigate to new idea page with pre-populated data
+              router.push(`/ideas/new?symbol=${encodeURIComponent(displaySymbol)}&analysis=${encodeURIComponent(analysisText)}&entryPrice=${entryPrice.toFixed(2)}&stopLoss=${stopLoss.toFixed(2)}&target=${target.toFixed(2)}`);
+            }}
+            className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 bg-gray-100 dark:bg-[#30363d] hover:bg-gray-200 dark:hover:bg-[#3c444d] border border-gray-200 dark:border-[#444c56] text-gray-700 dark:text-gray-300 text-xs font-semibold rounded-lg transition-colors"
           >
             <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
             </svg>
-            <span>Analysis</span>
+            <span>Convert to Idea</span>
           </button>
+          <AnalysisButton onClick={(e) => handleAnalyze(e, crossover)} />
         </div>
       </div>
     );

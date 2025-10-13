@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Navigation from '../../../components/Navigation';
 import { useTrading } from '../../../contexts/TradingContext';
 import { useAuth } from '../../../contexts/AuthContext';
@@ -10,6 +10,7 @@ import { TargetIcon, SparklesIcon } from '@/components/icons';
 
 export default function ShareIdeaPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { user } = useAuth();
   const { createIdea } = useTrading();
   const { searchSymbols } = useSymbols();
@@ -42,6 +43,26 @@ export default function ShareIdeaPage() {
     analysisType: 'both',
     tags: '',
   });
+
+  // Pre-populate form from URL parameters (e.g., from screener)
+  useEffect(() => {
+    const symbol = searchParams.get('symbol');
+    const analysis = searchParams.get('analysis');
+    const entryPrice = searchParams.get('entryPrice');
+    const stopLoss = searchParams.get('stopLoss');
+    const target = searchParams.get('target');
+
+    if (symbol || analysis || entryPrice) {
+      setFormData(prev => ({
+        ...prev,
+        ...(symbol && { symbol: symbol.toUpperCase() }),
+        ...(analysis && { analysis: analysis }),
+        ...(entryPrice && { entryPrice: entryPrice }),
+        ...(stopLoss && { stopLoss: stopLoss }),
+        ...(target && { target1: target }),
+      }));
+    }
+  }, [searchParams]);
 
   // Handle symbol search
   const handleSymbolSearch = async (value: string) => {
