@@ -1,43 +1,148 @@
-import React from 'react';
-import { ValidationError } from '../../../lib/csvImport';
+import React, { useState } from 'react';
+import { parseAndValidateCSV, csvRowToPosition, generateCSVTemplate, generateErrorReport, ValidationError } from '../../../lib/csvImport';
+import { getCurrentISTDate, formatDateForStorage } from '@/lib/dateUtils';
 
 interface ImportCsvModalProps {
   isOpen: boolean;
   accounts: any[];
   activeAccount: any;
-  selectedImportAccount: string;
-  isImporting: boolean;
-  importSummary: { total: number; valid: number; invalid: number } | null;
-  importErrors: ValidationError[];
   onClose: () => void;
-  onSetSelectedImportAccount: (accountId: string) => void;
-  onCSVImport: (event: React.ChangeEvent<HTMLInputElement>) => void;
-  onDownloadTemplate: () => void;
-  onDownloadErrorReport: () => void;
+  onAddPosition: (position: any) => Promise<void>;
+  db: any;
 }
 
 /**
- * ImportCsvModal - Modal for importing portfolio positions from CSV files
- * Supports multiple broker formats and provides validation feedback
+ * ImportCsvModal - Self-contained modal for importing portfolio positions from CSV files
+ * Handles all CSV parsing, validation, and import logic internally
  */
 export const ImportCsvModal: React.FC<ImportCsvModalProps> = ({
   isOpen,
   accounts,
   activeAccount,
-  selectedImportAccount,
-  isImporting,
-  importSummary,
-  importErrors,
   onClose,
-  onSetSelectedImportAccount,
-  onCSVImport,
-  onDownloadTemplate,
-  onDownloadErrorReport
+  onAddPosition,
+  db
 }) => {
+  const [selectedImportAccount, setSelectedImportAccount] = useState<string>('');
+  const [isImporting, setIsImporting] = useState(false);
+  const [importSummary, setImportSummary] = useState<{ total: number; valid: number; invalid: number } | null>(null);
+  const [importErrors, setImportErrors] = useState<ValidationError[]>([]);
+
   if (!isOpen) return null;
 
   const handleClose = () => {
+    // Reset state
+    setSelectedImportAccount('');
+    setIsImporting(false);
+    setImportSummary(null);
+    setImportErrors([]);
     onClose();
+  };
+
+  const handleDownloadTemplate = () => {
+    const csvContent = generateCSVTemplate();
+    const blob = new Blob([csvContent], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'portfolio_import_template.csv';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
+  const handleDownloadErrorReport = () => {
+    if (importErrors.length === 0) return;
+
+    const csvContent = generateErrorReport(importErrors);
+    const blob = new Blob([csvContent], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `import_errors_${new Date().toISOString().split('T')[0]}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
+  const handleCSVImport = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    setIsImporting(true);
+    setImportErrors([]);
+    setImportSummary(null);
+
+    try {
+      // Read file
+      const text = await file.text();
+
+      // Parse and validate CSV
+      const result = await parseAndValidateCSV(text, db);
+
+      // Set errors if any
+      if (result.errors.length > 0) {
+        setImportErrors(result.errors);
+      }
+
+      // Set summary
+      setImportSummary(result.summary);
+
+      // Import valid rows
+      if (result.validRows.length > 0) {
+        const currentDate = formatDateForStorage(getCurrentISTDate());
+        const targetAccountId = selectedImportAccount || activeAccount?.id;
+
+        for (const row of result.validRows) {
+          const basePosition = csvRowToPosition(row, currentDate);
+
+          // Ensure all required fields are present and properly typed
+          const position = {
+            symbol: basePosition.symbol,
+            tradeType: basePosition.tradeType,
+            entryPrice: Number(basePosition.entryPrice),
+            currentPrice: Number(basePosition.currentPrice),
+            target1: Number(basePosition.target1),
+            stopLoss: Number(basePosition.stopLoss),
+            quantity: Number(basePosition.quantity),
+            totalValue: Number(basePosition.totalValue),
+            dateTaken: basePosition.dateTaken,
+            exitCriteria: basePosition.exitCriteria,
+            accountId: targetAccountId,
+            status: 'open' as const,
+            createdAt: new Date(),
+          };
+
+          console.log('Importing position:', JSON.stringify(position, null, 2)); // Debug log
+
+          try {
+            // Call with empty ideaId since this is a direct portfolio import
+            await onAddPosition('', position);
+          } catch (error) {
+            console.error(`Error importing ${row.symbol}:`, error, 'Position data:', JSON.stringify(position, null, 2));
+            setImportErrors(prev => [...prev, {
+              row: 0,
+              field: row.symbol,
+              message: `Failed to import: ${error instanceof Error ? error.message : 'Unknown error'}`
+            }]);
+          }
+        }
+      }
+    } catch (error) {
+      console.error('CSV Import Error:', error);
+      setImportErrors([{
+        row: 0,
+        field: 'file',
+        message: error instanceof Error ? error.message : 'Unknown error occurred'
+      }]);
+      setImportSummary({ total: 0, valid: 0, invalid: 1 });
+    } finally {
+      setIsImporting(false);
+      // Reset file input
+      event.target.value = '';
+    }
   };
 
   return (
@@ -74,7 +179,7 @@ export const ImportCsvModal: React.FC<ImportCsvModalProps> = ({
         {/* Download Template Button */}
         <div className="mb-6">
           <button
-            onClick={onDownloadTemplate}
+            onClick={handleDownloadTemplate}
             className="w-full bg-green-500 hover:bg-green-600 text-white font-semibold py-3 rounded-lg transition-colors flex items-center justify-center gap-2"
           >
             <span>📄</span>
@@ -89,7 +194,7 @@ export const ImportCsvModal: React.FC<ImportCsvModalProps> = ({
           </label>
           <select
             value={selectedImportAccount}
-            onChange={(e) => onSetSelectedImportAccount(e.target.value)}
+            onChange={(e) => setSelectedImportAccount(e.target.value)}
             className="w-full bg-white dark:bg-[#0f1419] border border-gray-200 dark:border-[#30363d] rounded-lg px-3 py-2 text-gray-900 dark:text-white"
           >
             <option value="">
@@ -111,7 +216,7 @@ export const ImportCsvModal: React.FC<ImportCsvModalProps> = ({
           <input
             type="file"
             accept=".csv"
-            onChange={onCSVImport}
+            onChange={handleCSVImport}
             disabled={isImporting}
             className="w-full bg-white dark:bg-[#0f1419] border border-gray-200 dark:border-[#30363d] rounded-lg px-3 py-2 text-gray-900 dark:text-white file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-[#ff8c42] file:text-white hover:file:bg-[#ff9a58] file:cursor-pointer disabled:opacity-50"
           />
@@ -153,12 +258,12 @@ export const ImportCsvModal: React.FC<ImportCsvModalProps> = ({
         )}
 
         {/* Error List */}
-        {importErrors.length > 0 && (
+        {importErrors && importErrors.length > 0 && (
           <div className="mb-6">
             <div className="flex justify-between items-center mb-3">
               <h4 className="font-semibold text-red-500">❌ Import Errors ({importErrors.length})</h4>
               <button
-                onClick={onDownloadErrorReport}
+                onClick={handleDownloadErrorReport}
                 className="text-xs bg-red-500 hover:bg-red-600 text-white font-semibold px-3 py-1.5 rounded transition-colors"
               >
                 Download Error Report

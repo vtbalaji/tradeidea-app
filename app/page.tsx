@@ -418,6 +418,480 @@ export default function Home() {
         </div>
       </section>
 
+      {/* Investment Journey - Visual Flow */}
+      <section className="max-w-7xl mx-auto px-6 py-16">
+        <div className="text-center mb-12">
+          <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-4">Your Investment Journey</h2>
+          <p className="text-lg text-gray-600 dark:text-[#8b949e] max-w-3xl mx-auto mb-4">
+            From discovering opportunities to booking profits - automated alerts guide you every step of the way
+          </p>
+          <div className="inline-block bg-blue-50 dark:bg-blue-900/20 border border-blue-300 dark:border-blue-700 rounded-lg px-4 py-2">
+            <p className="text-sm text-blue-900 dark:text-blue-300 font-semibold">
+              Three Ways to Start: Use Screener • Create Idea • Import Portfolio
+            </p>
+          </div>
+        </div>
+
+        {/* Scenario 1: Starting with Screener */}
+        <div className="relative mb-16">
+          <div className="text-center mb-8">
+            <div className="inline-block bg-gradient-to-r from-blue-500 to-cyan-500 text-white px-6 py-2 rounded-full font-bold text-lg mb-2">
+              Scenario 1: Discover from Screener
+            </div>
+            <p className="text-sm text-gray-600 dark:text-[#8b949e] mt-2">
+              Use our automated screeners to find daily crossover opportunities
+            </p>
+          </div>
+
+          {/* Desktop Flow - Horizontal */}
+          <div className="hidden md:block">
+            <div className="flex items-start justify-between gap-3">
+              {/* Step 1: Screener */}
+              <div className="flex-1 text-center">
+                <div className="bg-gradient-to-br from-blue-50 to-cyan-50 dark:from-blue-900/20 dark:to-cyan-900/20 border-2 border-blue-500 rounded-xl p-5 h-full">
+                  <div className="text-4xl mb-2">🔍</div>
+                  <h3 className="text-base font-bold text-gray-900 dark:text-white mb-2">1. Screener</h3>
+                  <p className="text-xs text-gray-600 dark:text-[#8b949e] mb-2">
+                    Daily crossover signals: 50/200 MA, Supertrend
+                  </p>
+                  <div className="text-xs text-blue-600 dark:text-blue-400 font-semibold">
+                    Find opportunities
+                  </div>
+                </div>
+              </div>
+
+              {/* Arrow */}
+              <div className="flex items-center justify-center pt-12">
+                <div className="text-2xl text-[#ff8c42]">→</div>
+              </div>
+
+              {/* Step 2: Interest/Review */}
+              <div className="flex-1 text-center">
+                <div className="bg-gradient-to-br from-indigo-50 to-purple-50 dark:from-indigo-900/20 dark:to-purple-900/20 border-2 border-indigo-500 rounded-xl p-5 h-full">
+                  <div className="text-4xl mb-2">👀</div>
+                  <h3 className="text-base font-bold text-gray-900 dark:text-white mb-2">2. Review</h3>
+                  <p className="text-xs text-gray-600 dark:text-[#8b949e] mb-2">
+                    Analyze technical & fundamental data
+                  </p>
+                  <div className="text-xs text-indigo-600 dark:text-indigo-400 font-semibold">
+                    Research interest
+                  </div>
+                </div>
+              </div>
+
+              {/* Arrow */}
+              <div className="flex items-center justify-center pt-12">
+                <div className="text-2xl text-[#ff8c42]">→</div>
+              </div>
+
+              {/* Step 3: Investment Idea */}
+              <div className="flex-1 text-center">
+                <div className="bg-gradient-to-br from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 border-2 border-purple-500 rounded-xl p-5 h-full">
+                  <div className="text-4xl mb-2">💡</div>
+                  <h3 className="text-base font-bold text-gray-900 dark:text-white mb-2">3. Create Idea</h3>
+                  <p className="text-xs text-gray-600 dark:text-[#8b949e] mb-2">
+                    One-click conversion with auto entry, SL, target
+                  </p>
+                  <div className="text-xs text-purple-600 dark:text-purple-400 font-semibold">
+                    Create plan
+                  </div>
+                </div>
+              </div>
+
+              {/* Arrow */}
+              <div className="flex items-center justify-center pt-12">
+                <div className="text-2xl text-[#ff8c42]">→</div>
+              </div>
+
+              {/* Step 4: Right Price Alert */}
+              <div className="flex-1 text-center">
+                <div className="bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 border-2 border-green-500 rounded-xl p-5 h-full">
+                  <div className="text-4xl mb-2">🔔</div>
+                  <h3 className="text-base font-bold text-gray-900 dark:text-white mb-2">4. Entry Alert</h3>
+                  <p className="text-xs text-gray-600 dark:text-[#8b949e] mb-2">
+                    Alert when price hits entry level
+                  </p>
+                  <div className="text-xs text-green-600 dark:text-green-400 font-semibold">
+                    Perfect timing
+                  </div>
+                </div>
+              </div>
+
+              {/* Arrow */}
+              <div className="flex items-center justify-center pt-12">
+                <div className="text-2xl text-[#ff8c42]">→</div>
+              </div>
+
+              {/* Step 5: Portfolio */}
+              <div className="flex-1 text-center">
+                <div className="bg-gradient-to-br from-orange-50 to-amber-50 dark:from-orange-900/20 dark:to-amber-900/20 border-2 border-orange-500 rounded-xl p-5 h-full">
+                  <div className="text-4xl mb-2">📊</div>
+                  <h3 className="text-base font-bold text-gray-900 dark:text-white mb-2">5. Portfolio</h3>
+                  <p className="text-xs text-gray-600 dark:text-[#8b949e] mb-2">
+                    Track with exit criteria
+                  </p>
+                  <div className="text-xs text-orange-600 dark:text-orange-400 font-semibold">
+                    Monitor position
+                  </div>
+                </div>
+              </div>
+
+              {/* Arrow */}
+              <div className="flex items-center justify-center pt-12">
+                <div className="text-2xl text-[#ff8c42]">→</div>
+              </div>
+
+              {/* Step 6: Exit Alert & Book Profit */}
+              <div className="flex-1 text-center">
+                <div className="bg-gradient-to-br from-yellow-50 to-lime-50 dark:from-yellow-900/20 dark:to-lime-900/20 border-2 border-yellow-500 rounded-xl p-5 h-full">
+                  <div className="text-4xl mb-2">🎯</div>
+                  <h3 className="text-base font-bold text-gray-900 dark:text-white mb-2">6. Book Profit</h3>
+                  <p className="text-xs text-gray-600 dark:text-[#8b949e] mb-2">
+                    Target/SL alerts at exit
+                  </p>
+                  <div className="text-xs text-yellow-600 dark:text-yellow-400 font-semibold">
+                    Lock gains
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Mobile Flow - Vertical */}
+          <div className="md:hidden space-y-3">
+            <div className="bg-gradient-to-br from-blue-50 to-cyan-50 dark:from-blue-900/20 dark:to-cyan-900/20 border-2 border-blue-500 rounded-xl p-5">
+              <div className="flex items-center gap-3 mb-2">
+                <div className="text-3xl">🔍</div>
+                <h3 className="text-base font-bold text-gray-900 dark:text-white">1. Screener</h3>
+              </div>
+              <p className="text-xs text-gray-600 dark:text-[#8b949e]">Daily crossover signals</p>
+            </div>
+            <div className="text-center text-2xl text-[#ff8c42]">↓</div>
+
+            <div className="bg-gradient-to-br from-indigo-50 to-purple-50 dark:from-indigo-900/20 dark:to-purple-900/20 border-2 border-indigo-500 rounded-xl p-5">
+              <div className="flex items-center gap-3 mb-2">
+                <div className="text-3xl">👀</div>
+                <h3 className="text-base font-bold text-gray-900 dark:text-white">2. Review</h3>
+              </div>
+              <p className="text-xs text-gray-600 dark:text-[#8b949e]">Analyze technical & fundamentals</p>
+            </div>
+            <div className="text-center text-2xl text-[#ff8c42]">↓</div>
+
+            <div className="bg-gradient-to-br from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 border-2 border-purple-500 rounded-xl p-5">
+              <div className="flex items-center gap-3 mb-2">
+                <div className="text-3xl">💡</div>
+                <h3 className="text-base font-bold text-gray-900 dark:text-white">3. Create Idea</h3>
+              </div>
+              <p className="text-xs text-gray-600 dark:text-[#8b949e]">One-click conversion</p>
+            </div>
+            <div className="text-center text-2xl text-[#ff8c42]">↓</div>
+
+            <div className="bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 border-2 border-green-500 rounded-xl p-5">
+              <div className="flex items-center gap-3 mb-2">
+                <div className="text-3xl">🔔</div>
+                <h3 className="text-base font-bold text-gray-900 dark:text-white">4. Entry Alert</h3>
+              </div>
+              <p className="text-xs text-gray-600 dark:text-[#8b949e]">Alert at entry price</p>
+            </div>
+            <div className="text-center text-2xl text-[#ff8c42]">↓</div>
+
+            <div className="bg-gradient-to-br from-orange-50 to-amber-50 dark:from-orange-900/20 dark:to-amber-900/20 border-2 border-orange-500 rounded-xl p-5">
+              <div className="flex items-center gap-3 mb-2">
+                <div className="text-3xl">📊</div>
+                <h3 className="text-base font-bold text-gray-900 dark:text-white">5. Portfolio</h3>
+              </div>
+              <p className="text-xs text-gray-600 dark:text-[#8b949e]">Track with exit criteria</p>
+            </div>
+            <div className="text-center text-2xl text-[#ff8c42]">↓</div>
+
+            <div className="bg-gradient-to-br from-yellow-50 to-lime-50 dark:from-yellow-900/20 dark:to-lime-900/20 border-2 border-yellow-500 rounded-xl p-5">
+              <div className="flex items-center gap-3 mb-2">
+                <div className="text-3xl">🎯</div>
+                <h3 className="text-base font-bold text-gray-900 dark:text-white">6. Book Profit</h3>
+              </div>
+              <p className="text-xs text-gray-600 dark:text-[#8b949e]">Target/SL alerts at exit</p>
+            </div>
+          </div>
+        </div>
+
+        {/* Scenario 2: Starting with Own Idea */}
+        <div className="relative mb-16">
+          <div className="text-center mb-8">
+            <div className="inline-block bg-gradient-to-r from-purple-500 to-pink-500 text-white px-6 py-2 rounded-full font-bold text-lg mb-2">
+              Scenario 2: Create Your Own Idea
+            </div>
+            <p className="text-sm text-gray-600 dark:text-[#8b949e] mt-2">
+              Start with your own research and create investment ideas from scratch
+            </p>
+          </div>
+
+          {/* Desktop Flow - Horizontal */}
+          <div className="hidden md:block">
+            <div className="flex items-start justify-between gap-4">
+              {/* Step 1: Investment Idea */}
+              <div className="flex-1 text-center">
+                <div className="bg-gradient-to-br from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 border-2 border-purple-500 rounded-xl p-6 h-full">
+                  <div className="text-4xl mb-3">💡</div>
+                  <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2">1. Investment Idea</h3>
+                  <p className="text-sm text-gray-600 dark:text-[#8b949e] mb-3">
+                    Create idea with entry, SL, and target manually
+                  </p>
+                  <div className="text-xs text-purple-600 dark:text-purple-400 font-semibold">
+                    Your research
+                  </div>
+                </div>
+              </div>
+
+              {/* Arrow */}
+              <div className="flex items-center justify-center pt-16">
+                <div className="text-3xl text-[#ff8c42]">→</div>
+              </div>
+
+              {/* Step 2: Right Price Alert */}
+              <div className="flex-1 text-center">
+                <div className="bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 border-2 border-green-500 rounded-xl p-6 h-full">
+                  <div className="text-4xl mb-3">🔔</div>
+                  <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2">2. Entry Alert</h3>
+                  <p className="text-sm text-gray-600 dark:text-[#8b949e] mb-3">
+                    Automatic alert when price hits your entry level
+                  </p>
+                  <div className="text-xs text-green-600 dark:text-green-400 font-semibold">
+                    Perfect timing
+                  </div>
+                </div>
+              </div>
+
+              {/* Arrow */}
+              <div className="flex items-center justify-center pt-16">
+                <div className="text-3xl text-[#ff8c42]">→</div>
+              </div>
+
+              {/* Step 3: Portfolio */}
+              <div className="flex-1 text-center">
+                <div className="bg-gradient-to-br from-orange-50 to-amber-50 dark:from-orange-900/20 dark:to-amber-900/20 border-2 border-orange-500 rounded-xl p-6 h-full">
+                  <div className="text-4xl mb-3">📊</div>
+                  <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2">3. Portfolio</h3>
+                  <p className="text-sm text-gray-600 dark:text-[#8b949e] mb-3">
+                    Add to portfolio, track with exit criteria
+                  </p>
+                  <div className="text-xs text-orange-600 dark:text-orange-400 font-semibold">
+                    Monitor position
+                  </div>
+                </div>
+              </div>
+
+              {/* Arrow */}
+              <div className="flex items-center justify-center pt-16">
+                <div className="text-3xl text-[#ff8c42]">→</div>
+              </div>
+
+              {/* Step 4: Exit Alert & Book Profit */}
+              <div className="flex-1 text-center">
+                <div className="bg-gradient-to-br from-yellow-50 to-lime-50 dark:from-yellow-900/20 dark:to-lime-900/20 border-2 border-yellow-500 rounded-xl p-6 h-full">
+                  <div className="text-4xl mb-3">🎯</div>
+                  <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2">4. Book Profit</h3>
+                  <p className="text-sm text-gray-600 dark:text-[#8b949e] mb-3">
+                    Target/SL/Technical alerts help you exit at right time
+                  </p>
+                  <div className="text-xs text-yellow-600 dark:text-yellow-400 font-semibold">
+                    Lock gains
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Mobile Flow - Vertical */}
+          <div className="md:hidden space-y-3">
+            <div className="bg-gradient-to-br from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 border-2 border-purple-500 rounded-xl p-5">
+              <div className="flex items-center gap-3 mb-2">
+                <div className="text-3xl">💡</div>
+                <h3 className="text-base font-bold text-gray-900 dark:text-white">1. Investment Idea</h3>
+              </div>
+              <p className="text-xs text-gray-600 dark:text-[#8b949e]">Create with entry, SL, target</p>
+            </div>
+            <div className="text-center text-2xl text-[#ff8c42]">↓</div>
+
+            <div className="bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 border-2 border-green-500 rounded-xl p-5">
+              <div className="flex items-center gap-3 mb-2">
+                <div className="text-3xl">🔔</div>
+                <h3 className="text-base font-bold text-gray-900 dark:text-white">2. Entry Alert</h3>
+              </div>
+              <p className="text-xs text-gray-600 dark:text-[#8b949e]">Alert at entry price</p>
+            </div>
+            <div className="text-center text-2xl text-[#ff8c42]">↓</div>
+
+            <div className="bg-gradient-to-br from-orange-50 to-amber-50 dark:from-orange-900/20 dark:to-amber-900/20 border-2 border-orange-500 rounded-xl p-5">
+              <div className="flex items-center gap-3 mb-2">
+                <div className="text-3xl">📊</div>
+                <h3 className="text-base font-bold text-gray-900 dark:text-white">3. Portfolio</h3>
+              </div>
+              <p className="text-xs text-gray-600 dark:text-[#8b949e]">Track with exit criteria</p>
+            </div>
+            <div className="text-center text-2xl text-[#ff8c42]">↓</div>
+
+            <div className="bg-gradient-to-br from-yellow-50 to-lime-50 dark:from-yellow-900/20 dark:to-lime-900/20 border-2 border-yellow-500 rounded-xl p-5">
+              <div className="flex items-center gap-3 mb-2">
+                <div className="text-3xl">🎯</div>
+                <h3 className="text-base font-bold text-gray-900 dark:text-white">4. Book Profit</h3>
+              </div>
+              <p className="text-xs text-gray-600 dark:text-[#8b949e]">Target/SL/Technical alerts at exit</p>
+            </div>
+          </div>
+        </div>
+
+        {/* Scenario 3: Import Existing Portfolio */}
+        <div className="relative">
+          <div className="text-center mb-8">
+            <div className="inline-block bg-gradient-to-r from-emerald-500 to-teal-500 text-white px-6 py-2 rounded-full font-bold text-lg mb-2">
+              Scenario 3: Import Existing Portfolio
+            </div>
+            <p className="text-sm text-gray-600 dark:text-[#8b949e] mt-2">
+              Already invested? Import your holdings from Zerodha, ICICI, or any broker
+            </p>
+          </div>
+
+          {/* Desktop Flow - Horizontal */}
+          <div className="hidden md:block">
+            <div className="flex items-start justify-between gap-4">
+              {/* Step 1: Import Portfolio */}
+              <div className="flex-1 text-center">
+                <div className="bg-gradient-to-br from-emerald-50 to-teal-50 dark:from-emerald-900/20 dark:to-teal-900/20 border-2 border-emerald-500 rounded-xl p-6 h-full">
+                  <div className="text-4xl mb-3">📥</div>
+                  <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2">1. Import Portfolio</h3>
+                  <p className="text-sm text-gray-600 dark:text-[#8b949e] mb-3">
+                    Upload CSV from broker - auto-sets SL & targets
+                  </p>
+                  <div className="text-xs text-emerald-600 dark:text-emerald-400 font-semibold">
+                    One-click import
+                  </div>
+                </div>
+              </div>
+
+              {/* Arrow */}
+              <div className="flex items-center justify-center pt-16">
+                <div className="text-3xl text-[#ff8c42]">→</div>
+              </div>
+
+              {/* Step 2: Portfolio Tracking */}
+              <div className="flex-1 text-center">
+                <div className="bg-gradient-to-br from-orange-50 to-amber-50 dark:from-orange-900/20 dark:to-amber-900/20 border-2 border-orange-500 rounded-xl p-6 h-full">
+                  <div className="text-4xl mb-3">📊</div>
+                  <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2">2. Portfolio</h3>
+                  <p className="text-sm text-gray-600 dark:text-[#8b949e] mb-3">
+                    Automatic tracking with exit criteria & technical analysis
+                  </p>
+                  <div className="text-xs text-orange-600 dark:text-orange-400 font-semibold">
+                    Hands-free monitoring
+                  </div>
+                </div>
+              </div>
+
+              {/* Arrow */}
+              <div className="flex items-center justify-center pt-16">
+                <div className="text-3xl text-[#ff8c42]">→</div>
+              </div>
+
+              {/* Step 3: Trailing Stop Loss & Target Alerts */}
+              <div className="flex-1 text-center">
+                <div className="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 border-2 border-blue-500 rounded-xl p-6 h-full">
+                  <div className="text-4xl mb-3">🔔</div>
+                  <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2">3. Smart Alerts</h3>
+                  <p className="text-sm text-gray-600 dark:text-[#8b949e] mb-3">
+                    Trailing SL, target price, & technical exit alerts
+                  </p>
+                  <div className="text-xs text-blue-600 dark:text-blue-400 font-semibold">
+                    Never miss exits
+                  </div>
+                </div>
+              </div>
+
+              {/* Arrow */}
+              <div className="flex items-center justify-center pt-16">
+                <div className="text-3xl text-[#ff8c42]">→</div>
+              </div>
+
+              {/* Step 4: Book Profit */}
+              <div className="flex-1 text-center">
+                <div className="bg-gradient-to-br from-yellow-50 to-lime-50 dark:from-yellow-900/20 dark:to-lime-900/20 border-2 border-yellow-500 rounded-xl p-6 h-full">
+                  <div className="text-4xl mb-3">🎯</div>
+                  <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2">4. Book Profit</h3>
+                  <p className="text-sm text-gray-600 dark:text-[#8b949e] mb-3">
+                    Exit at optimal prices with automated alerts
+                  </p>
+                  <div className="text-xs text-yellow-600 dark:text-yellow-400 font-semibold">
+                    Maximize returns
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Mobile Flow - Vertical */}
+          <div className="md:hidden space-y-3">
+            <div className="bg-gradient-to-br from-emerald-50 to-teal-50 dark:from-emerald-900/20 dark:to-teal-900/20 border-2 border-emerald-500 rounded-xl p-5">
+              <div className="flex items-center gap-3 mb-2">
+                <div className="text-3xl">📥</div>
+                <h3 className="text-base font-bold text-gray-900 dark:text-white">1. Import Portfolio</h3>
+              </div>
+              <p className="text-xs text-gray-600 dark:text-[#8b949e]">Upload CSV from broker</p>
+            </div>
+            <div className="text-center text-2xl text-[#ff8c42]">↓</div>
+
+            <div className="bg-gradient-to-br from-orange-50 to-amber-50 dark:from-orange-900/20 dark:to-amber-900/20 border-2 border-orange-500 rounded-xl p-5">
+              <div className="flex items-center gap-3 mb-2">
+                <div className="text-3xl">📊</div>
+                <h3 className="text-base font-bold text-gray-900 dark:text-white">2. Portfolio</h3>
+              </div>
+              <p className="text-xs text-gray-600 dark:text-[#8b949e]">Automatic tracking with exit criteria</p>
+            </div>
+            <div className="text-center text-2xl text-[#ff8c42]">↓</div>
+
+            <div className="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 border-2 border-blue-500 rounded-xl p-5">
+              <div className="flex items-center gap-3 mb-2">
+                <div className="text-3xl">🔔</div>
+                <h3 className="text-base font-bold text-gray-900 dark:text-white">3. Smart Alerts</h3>
+              </div>
+              <p className="text-xs text-gray-600 dark:text-[#8b949e]">Trailing SL & target alerts</p>
+            </div>
+            <div className="text-center text-2xl text-[#ff8c42]">↓</div>
+
+            <div className="bg-gradient-to-br from-yellow-50 to-lime-50 dark:from-yellow-900/20 dark:to-lime-900/20 border-2 border-yellow-500 rounded-xl p-5">
+              <div className="flex items-center gap-3 mb-2">
+                <div className="text-3xl">🎯</div>
+                <h3 className="text-base font-bold text-gray-900 dark:text-white">4. Book Profit</h3>
+              </div>
+              <p className="text-xs text-gray-600 dark:text-[#8b949e]">Exit at optimal prices</p>
+            </div>
+          </div>
+        </div>
+
+        {/* Key Benefits */}
+        <div className="mt-12 grid md:grid-cols-3 gap-6">
+          <div className="bg-white dark:bg-[#1c2128] rounded-lg p-6 border border-gray-200 dark:border-[#30363d] text-center">
+            <div className="text-3xl mb-3">⏰</div>
+            <h4 className="font-bold text-gray-900 dark:text-white mb-2">Save Time</h4>
+            <p className="text-sm text-gray-600 dark:text-[#8b949e]">
+              No manual tracking - automated alerts notify you at every step
+            </p>
+          </div>
+          <div className="bg-white dark:bg-[#1c2128] rounded-lg p-6 border border-gray-200 dark:border-[#30363d] text-center">
+            <div className="text-3xl mb-3">💰</div>
+            <h4 className="font-bold text-gray-900 dark:text-white mb-2">Maximize Profits</h4>
+            <p className="text-sm text-gray-600 dark:text-[#8b949e]">
+              Enter at perfect prices, exit at targets - never miss opportunities
+            </p>
+          </div>
+          <div className="bg-white dark:bg-[#1c2128] rounded-lg p-6 border border-gray-200 dark:border-[#30363d] text-center">
+            <div className="text-3xl mb-3">🛡️</div>
+            <h4 className="font-bold text-gray-900 dark:text-white mb-2">Protect Capital</h4>
+            <p className="text-sm text-gray-600 dark:text-[#8b949e]">
+              Stop-loss and technical exit alerts prevent large losses
+            </p>
+          </div>
+        </div>
+      </section>
+
       {/* How It Works Section */}
       <section className="max-w-7xl mx-auto px-6 py-16">
         <h2 className="text-3xl font-bold text-gray-900 dark:text-white text-center mb-12">How It Works</h2>
