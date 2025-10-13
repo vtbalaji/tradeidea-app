@@ -55,12 +55,20 @@ export default function IdeasHubPage() {
     // Sort by likes (most liked first)
     filteredIdeas = [...filteredIdeas].sort((a, b) => (b.likes || 0) - (a.likes || 0));
   } else if (activeTab === 'recent') {
-    // Sort by creation date (newest first)
-    filteredIdeas = [...filteredIdeas].sort((a, b) => {
-      const dateA = a.createdAt?.toDate ? a.createdAt.toDate().getTime() : 0;
-      const dateB = b.createdAt?.toDate ? b.createdAt.toDate().getTime() : 0;
-      return dateB - dateA;
-    });
+    // Filter ideas from last 7 days and sort by creation date (newest first)
+    const sevenDaysAgo = new Date();
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+
+    filteredIdeas = filteredIdeas
+      .filter(idea => {
+        const ideaDate = idea.createdAt?.toDate ? idea.createdAt.toDate() : null;
+        return ideaDate && ideaDate >= sevenDaysAgo;
+      })
+      .sort((a, b) => {
+        const dateA = a.createdAt?.toDate ? a.createdAt.toDate().getTime() : 0;
+        const dateB = b.createdAt?.toDate ? b.createdAt.toDate().getTime() : 0;
+        return dateB - dateA;
+      });
   }
 
   // Group ideas by status

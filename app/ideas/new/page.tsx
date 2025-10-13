@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Navigation from '../../../components/Navigation';
 import { useTrading } from '../../../contexts/TradingContext';
@@ -8,7 +8,7 @@ import { useAuth } from '../../../contexts/AuthContext';
 import { useSymbols, Symbol } from '../../../contexts/SymbolsContext';
 import { TargetIcon, SparklesIcon } from '@/components/icons';
 
-export default function ShareIdeaPage() {
+function ShareIdeaForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { user } = useAuth();
@@ -436,5 +436,21 @@ export default function ShareIdeaPage() {
         </form>
       </div>
     </div>
+  );
+}
+
+export default function ShareIdeaPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-white dark:bg-[#0f1419]">
+        <Navigation />
+        <div className="p-5 pt-8 pb-5 border-b border-gray-200 dark:border-[#30363d]">
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">Share Trading Idea</h1>
+          <p className="text-gray-600 dark:text-[#8b949e]">Loading...</p>
+        </div>
+      </div>
+    }>
+      <ShareIdeaForm />
+    </Suspense>
   );
 }

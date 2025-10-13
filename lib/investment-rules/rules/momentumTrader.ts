@@ -34,7 +34,7 @@ export function checkMomentumTraderEntry(
     volumeConfirmation: signals.volumeSpike === true ||
                         (technical.volume / technical.avgVolume20) >= 0.8,
     // positiveChange: technical.changePercent > 0,
-    aboveSupertrend: technical.supertrend ? technical.lastPrice > technical.supertrend : false
+    Supertrend: technical.supertrend ? technical.lastPrice > technical.supertrend : false
   };
 
   const allMet = Object.values(conditions).every(v => v === true);

@@ -39,12 +39,74 @@ db = firestore.client()
 # Initialize NSE data fetcher
 nse_fetcher = NSEDataFetcher()
 
+# Market cap cache for performance
+market_cap_cache = {}
+
+def get_market_cap(symbol):
+    """
+    Get market cap for a symbol from Firebase symbols collection
+    Returns market cap in INR, or 0 if not found
+    """
+    # Check cache first
+    if symbol in market_cap_cache:
+        return market_cap_cache[symbol]
+
+    try:
+        # Add NS_ prefix to match Firebase document IDs
+        symbol_with_prefix = f"NS_{symbol}" if not symbol.startswith('NS_') else symbol
+
+        doc_ref = db.collection('symbols').document(symbol_with_prefix)
+        doc = doc_ref.get()
+
+        if doc.exists:
+            data = doc.to_dict()
+            # Market cap is stored in the fundamental data section
+            market_cap = 0
+            if 'fundamental' in data and data['fundamental']:
+                market_cap = data['fundamental'].get('marketCap', 0)
+
+            # Cache it for future lookups
+            market_cap_cache[symbol] = market_cap
+            return market_cap
+        else:
+            market_cap_cache[symbol] = 0
+            return 0
+
+    except Exception as e:
+        print(f"  ⚠️  Error fetching market cap for {symbol}: {str(e)}")
+        market_cap_cache[symbol] = 0
+        return 0
+
+def check_market_cap_filter(symbol, min_market_cap_cr=1000):
+    """
+    Check if symbol meets minimum market cap requirement
+    Returns True if meets requirement, False otherwise
+    """
+    market_cap = get_market_cap(symbol)
+
+    # If market cap is None or 0, skip the symbol
+    if market_cap is None or market_cap == 0:
+        return False, 0
+
+    min_market_cap_inr = min_market_cap_cr * 10_000_000  # Convert crores to INR
+
+    if market_cap < min_market_cap_inr:
+        market_cap_cr = market_cap / 10_000_000  # Convert to Crores
+        return False, market_cap_cr
+
+    return True, market_cap / 10_000_000
+
 def detect_ma_crossover(symbol, ma_period=50):
     """
     Detect if a stock crossed a moving average today
     Returns: 'bullish_cross', 'bearish_cross', 'no_cross', or None (error)
     """
     try:
+        # Check market cap filter first (>1000 Cr)
+        meets_filter, market_cap_cr = check_market_cap_filter(symbol)
+        if not meets_filter:
+            return None  # Skip stocks with market cap < 1000 Cr
+
         # Get 300 days of data (enough for 200 MA calculation)
         df = nse_fetcher.get_data(symbol, days=300)
 
@@ -161,6 +223,11 @@ def detect_supertrend_crossover(symbol, period=10, multiplier=3):
     Returns: 'bullish_cross', 'bearish_cross', 'no_cross', or None (error)
     """
     try:
+        # Check market cap filter first (>1000 Cr)
+        meets_filter, market_cap_cr = check_market_cap_filter(symbol)
+        if not meets_filter:
+            return None  # Skip stocks with market cap < 1000 Cr
+
         # Get 100 days of data (enough for supertrend calculation)
         df = nse_fetcher.get_data(symbol, days=100)
 
@@ -216,6 +283,63 @@ def detect_supertrend_crossover(symbol, period=10, multiplier=3):
         print(f"  ❌ Error for {symbol}: {str(e)}")
         return None
 
+def detect_volume_spike(symbol, ma_period=20):
+    """
+    Detect if a stock has volume spike (volume > 20 MA of volume) today
+    Returns: dict with spike details or None (error) or 'no_spike'
+    """
+    try:
+        # Check market cap filter first (>1000 Cr)
+        meets_filter, market_cap_cr = check_market_cap_filter(symbol)
+        if not meets_filter:
+            return None  # Skip stocks with market cap < 1000 Cr
+
+        # Get 100 days of data (enough for 20 MA volume calculation)
+        df = nse_fetcher.get_data(symbol, days=100)
+
+        if df.empty or len(df) < ma_period + 1:
+            return None
+
+        # Rename columns to uppercase
+        df = df.rename(columns={
+            'date': 'Date',
+            'close': 'Close',
+            'volume': 'Volume'
+        })
+
+        # Calculate 20 MA on volume
+        volume_ma20 = df['Volume'].rolling(window=ma_period).mean()
+
+        # Get last 2 days data
+        today_volume = int(df['Volume'].iloc[-1])
+        today_close = float(df['Close'].iloc[-1])
+        yesterday_close = float(df['Close'].iloc[-2])
+        today_volume_ma = float(volume_ma20.iloc[-1]) if not pd.isna(volume_ma20.iloc[-1]) else 0
+
+        if today_volume_ma == 0:
+            return None
+
+        # Check for volume spike (volume > 20 MA)
+        if today_volume > today_volume_ma:
+            spike_percent = ((today_volume - today_volume_ma) / today_volume_ma) * 100
+            price_change_percent = ((today_close - yesterday_close) / yesterday_close) * 100
+
+            return {
+                'type': 'volume_spike',
+                'today_volume': today_volume,
+                'volume_ma20': int(today_volume_ma),
+                'spike_percent': spike_percent,
+                'today_close': today_close,
+                'yesterday_close': yesterday_close,
+                'price_change_percent': price_change_percent
+            }
+        else:
+            return {'type': 'no_spike'}
+
+    except Exception as e:
+        print(f"  ❌ Error for {symbol}: {str(e)}")
+        return None
+
 def get_symbols_from_duckdb():
     """Get all symbols that have data in DuckDB"""
     try:
@@ -239,8 +363,8 @@ def get_last_trading_day():
         last_trading_day = today
     return last_trading_day.strftime('%Y-%m-%d')
 
-def save_to_firebase(crossovers_50, crossovers_200, supertrend_crosses):
-    """Save crossover data to Firebase collections"""
+def save_to_firebase(crossovers_50, crossovers_200, supertrend_crosses, volume_spikes):
+    """Save crossover and volume spike data to Firebase collections"""
     try:
         today = get_last_trading_day()
 
@@ -260,6 +384,11 @@ def save_to_firebase(crossovers_50, crossovers_200, supertrend_crosses):
         # Delete old supertrend crossovers
         supertrend_ref = db.collection('supertrendcrossover')
         for doc in supertrend_ref.where('date', '==', today).stream():
+            doc.reference.delete()
+
+        # Delete old volume spikes
+        volume_spike_ref = db.collection('volumespike')
+        for doc in volume_spike_ref.where('date', '==', today).stream():
             doc.reference.delete()
 
         # Save 50 MA crossovers
@@ -318,6 +447,24 @@ def save_to_firebase(crossovers_50, crossovers_200, supertrend_crosses):
                 'createdAt': firestore.SERVER_TIMESTAMP
             })
 
+        # Save volume spikes
+        print(f'💾 Saving {len(volume_spikes)} stocks to volumespike collection...')
+        for spike in volume_spikes:
+            # Add NS_ prefix to match symbols collection format
+            symbol_with_prefix = f"NS_{spike['symbol']}" if not spike['symbol'].startswith('NS_') else spike['symbol']
+            doc_ref = volume_spike_ref.document(f"{symbol_with_prefix}_{today}")
+            doc_ref.set({
+                'symbol': symbol_with_prefix,
+                'date': today,
+                'todayVolume': spike['today_volume'],
+                'volumeMA20': spike['volume_ma20'],
+                'spikePercent': spike['spike_percent'],
+                'todayClose': spike['today_close'],
+                'yesterdayClose': spike['yesterday_close'],
+                'priceChangePercent': spike['price_change_percent'],
+                'createdAt': firestore.SERVER_TIMESTAMP
+            })
+
         print('✅ Data saved to Firebase successfully')
 
     except Exception as e:
@@ -326,8 +473,8 @@ def save_to_firebase(crossovers_50, crossovers_200, supertrend_crosses):
         traceback.print_exc()
 
 def main():
-    """Main function to detect MA and Supertrend crossovers"""
-    print('🔍 Stock Screeners: MA & Supertrend Crossovers')
+    """Main function to detect MA, Supertrend crossovers, and Volume Spikes"""
+    print('🔍 Stock Screeners: MA & Supertrend Crossovers & Volume Spikes')
     print('=' * 80)
 
     # Get all symbols
@@ -346,11 +493,13 @@ def main():
     bearish_200ma_crosses = []
     bullish_supertrend_crosses = []
     bearish_supertrend_crosses = []
+    volume_spikes = []
     all_50ma_crosses = []  # Combined for Firebase
     all_200ma_crosses = []  # Combined for Firebase
     all_supertrend_crosses = []  # Combined for Firebase
+    all_volume_spikes = []  # For Firebase
 
-    print('🔄 Scanning for crossovers...\n')
+    print('🔄 Scanning for crossovers and volume spikes...\n')
 
     for i, symbol in enumerate(symbols):
         if (i + 1) % 50 == 0:
@@ -386,8 +535,15 @@ def main():
             elif result_supertrend['type'] == 'bearish_cross':
                 bearish_supertrend_crosses.append(data_supertrend)
 
+        # Check Volume Spike
+        result_volume = detect_volume_spike(symbol, ma_period=20)
+        if result_volume and result_volume['type'] == 'volume_spike':
+            data_volume = {'symbol': symbol, **result_volume}
+            all_volume_spikes.append(data_volume)
+            volume_spikes.append(data_volume)
+
     # Save to Firebase
-    save_to_firebase(all_50ma_crosses, all_200ma_crosses, all_supertrend_crosses)
+    save_to_firebase(all_50ma_crosses, all_200ma_crosses, all_supertrend_crosses, all_volume_spikes)
 
     # Print results
     print('\n' + '=' * 80)
@@ -491,6 +647,23 @@ def main():
     else:
         print('  No bearish supertrend crossovers today')
 
+    # Volume Spikes
+    print(f'\n📊 VOLUME SPIKES ({len(volume_spikes)} stocks):')
+    print('-' * 80)
+    if volume_spikes:
+        # Sort by spike percentage (highest spikes first)
+        volume_spikes.sort(key=lambda x: x['spike_percent'], reverse=True)
+        print(f"{'Symbol':<12} {'Volume':<15} {'20MA Vol':<15} {'Spike %':<12} {'Price Δ%':<12}")
+        print('-' * 80)
+        for spike in volume_spikes:
+            print(f"{spike['symbol']:<12} "
+                  f"{spike['today_volume']:<15,} "
+                  f"{spike['volume_ma20']:<15,} "
+                  f"{spike['spike_percent']:>10.2f}% "
+                  f"{spike['price_change_percent']:>10.2f}%")
+    else:
+        print('  No volume spikes today')
+
     # Summary
     print('\n' + '=' * 80)
     print('📈 SUMMARY')
@@ -502,6 +675,7 @@ def main():
     print(f'  Bearish 200 MA Crosses: {len(bearish_200ma_crosses)}')
     print(f'  Bullish Supertrend Crosses: {len(bullish_supertrend_crosses)}')
     print(f'  Bearish Supertrend Crosses: {len(bearish_supertrend_crosses)}')
+    print(f'  Volume Spikes: {len(volume_spikes)}')
     print('=' * 80)
 
 if __name__ == '__main__':

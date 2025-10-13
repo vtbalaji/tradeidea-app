@@ -25,13 +25,26 @@ interface Crossover {
   ma_period?: number;
 }
 
+interface VolumeSpike {
+  id: string;
+  symbol: string;
+  date: string;
+  todayVolume: number;
+  volumeMA20: number;
+  spikePercent: number;
+  todayClose: number;
+  yesterdayClose: number;
+  priceChangePercent: number;
+}
+
 export default function Cross50200Page() {
   const router = useRouter();
   const { user } = useAuth();
-  const [activeTab, setActiveTab] = useState<'both' | '50ma' | '200ma' | 'supertrend'>('both');
+  const [activeTab, setActiveTab] = useState<'both' | '50ma' | '200ma' | 'supertrend' | 'volume'>('both');
   const [crossovers50, setCrossovers50] = useState<Crossover[]>([]);
   const [crossovers200, setCrossovers200] = useState<Crossover[]>([]);
   const [supertrendCrossovers, setSupertrendCrossovers] = useState<Crossover[]>([]);
+  const [volumeSpikes, setVolumeSpikes] = useState<VolumeSpike[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showAnalysisModal, setShowAnalysisModal] = useState<string | null>(null);
@@ -121,11 +134,27 @@ export default function Cross50200Page() {
         // Sort in memory
         dataSupertrend = dataSupertrend.sort((a, b) => Math.abs(b.crossPercent) - Math.abs(a.crossPercent));
 
+        // Fetch Volume Spikes
+        const volumeSpikeRef = collection(db, 'volumespike');
+        const qVolumeSpike = query(
+          volumeSpikeRef,
+          where('date', '==', today)
+        );
+        const snapshotVolumeSpike = await getDocs(qVolumeSpike);
+        let dataVolumeSpike: VolumeSpike[] = snapshotVolumeSpike.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data()
+        } as VolumeSpike));
+
+        // Sort by spike percentage
+        dataVolumeSpike = dataVolumeSpike.sort((a, b) => b.spikePercent - a.spikePercent);
+
         setCrossovers50(data50);
         setCrossovers200(data200);
         setSupertrendCrossovers(dataSupertrend);
+        setVolumeSpikes(dataVolumeSpike);
 
-        console.log('Fetched crossovers:', { ma50: data50.length, ma200: data200.length, supertrend: dataSupertrend.length });
+        console.log('Fetched crossovers:', { ma50: data50.length, ma200: data200.length, supertrend: dataSupertrend.length, volumeSpikes: dataVolumeSpike.length });
       } catch (error: any) {
         console.error('Error fetching crossovers:', error);
         setError(error.message || 'Failed to load crossover data. Please check Firestore permissions.');
@@ -186,6 +215,189 @@ export default function Cross50200Page() {
       console.error('Error fetching symbol data:', error);
       alert('⚠️ Failed to fetch symbol data.');
     }
+  };
+
+  const handleConvertToIdea = async (e: React.MouseEvent, symbol: string, displaySymbol: string, currentPrice: number, isBullish: boolean, analysisText: string) => {
+    e.stopPropagation();
+
+    // Fetch symbol data to get technical levels (Supertrend, 100MA, 50MA)
+    let entryPrice = currentPrice;
+    let stopLoss = isBullish ? currentPrice * 0.95 : currentPrice * 1.05;
+    let target = isBullish ? currentPrice * 1.10 : currentPrice * 0.90;
+    let supertrendLevel = null;
+    let sma100Level = null;
+    let sma50Level = null;
+
+    try {
+      const symbolDoc = await getDoc(doc(db, 'symbols', symbol));
+      if (symbolDoc.exists()) {
+        const data = symbolDoc.data();
+        const technicals = data.technicals || data.technical;
+
+        if (technicals) {
+          supertrendLevel = technicals.supertrend || technicals.supertrendLevel || null;
+          sma100Level = technicals.sma100 || technicals.ma100 || null;
+          sma50Level = technicals.sma50 || technicals.ema50 || technicals.ma50 || null;
+
+          console.log('Fetched technicals from symbols collection:', {
+            symbol,
+            supertrend: supertrendLevel,
+            sma100: sma100Level,
+            sma50: sma50Level
+          });
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching symbol data:', error);
+    }
+
+    // For bullish signals, use the higher of Supertrend or 100MA as entry
+    if (isBullish) {
+      // Build array of valid support levels
+      const supportLevels = [];
+
+      if (supertrendLevel && supertrendLevel > 0) {
+        supportLevels.push(supertrendLevel);
+      }
+      if (sma100Level && sma100Level > 0) {
+        supportLevels.push(sma100Level);
+      }
+      if (sma50Level && sma50Level > 0) {
+        supportLevels.push(sma50Level);
+      }
+
+      // Entry is the highest of available support levels
+      if (supportLevels.length > 0) {
+        entryPrice = Math.max(...supportLevels);
+        // Stop loss: 2% below the highest support level
+        stopLoss = entryPrice * 0.98;
+      } else {
+        // Fallback if no technical levels available
+        entryPrice = currentPrice;
+        stopLoss = entryPrice * 0.95;
+      }
+    } else {
+      // For bearish/short ideas
+      entryPrice = currentPrice;
+
+      // Build array of valid resistance levels
+      const resistanceLevels = [currentPrice * 1.05];
+      if (supertrendLevel && supertrendLevel > 0) resistanceLevels.push(supertrendLevel);
+      if (sma100Level && sma100Level > 0) resistanceLevels.push(sma100Level);
+
+      // Stop loss at the lowest resistance level + 2%
+      if (resistanceLevels.length > 0) {
+        stopLoss = Math.min(...resistanceLevels) * 1.02;
+      }
+    }
+
+    // Calculate target based on risk-reward ratio (2:1)
+    const riskAmount = Math.abs(entryPrice - stopLoss);
+    target = entryPrice + (riskAmount * 2); // 2x risk for reward
+
+    console.log('Final entry calculation:', {
+      symbol,
+      isBullish,
+      currentPrice,
+      supertrend: supertrendLevel,
+      sma100: sma100Level,
+      sma50: sma50Level,
+      calculatedEntry: entryPrice,
+      calculatedSL: stopLoss,
+      calculatedTarget: target,
+      riskAmount: riskAmount
+    });
+
+    // Navigate to new idea page with pre-populated data
+    router.push(`/ideas/new?symbol=${encodeURIComponent(displaySymbol)}&analysis=${encodeURIComponent(analysisText)}&entryPrice=${entryPrice.toFixed(2)}&stopLoss=${stopLoss.toFixed(2)}&target=${target.toFixed(2)}`);
+  };
+
+  const renderVolumeSpikeCard = (spike: VolumeSpike) => {
+    const displaySymbol = spike.symbol.replace(/^NS_/, '');
+    const isPriceUp = spike.priceChangePercent >= 0;
+
+    return (
+      <div className="bg-gray-50 dark:bg-[#1c2128] border border-gray-200 dark:border-[#30363d] rounded-xl p-4 hover:border-[#ff8c42] transition-colors">
+        {/* Header */}
+        <div className="flex justify-between items-center mb-3">
+          <div>
+            <h3 className="text-xl font-bold text-gray-900 dark:text-white">{displaySymbol}</h3>
+            <p className="text-xs text-gray-600 dark:text-[#8b949e] mt-0.5">Volume Spike</p>
+          </div>
+          <span className="px-3 py-1 text-xs font-semibold rounded bg-gray-200 dark:bg-[#30363d] text-gray-700 dark:text-gray-300">
+            📊 {spike.spikePercent.toFixed(1)}% ↑
+          </span>
+        </div>
+
+        {/* Volume Info */}
+        <div className="grid grid-cols-2 gap-3 mb-3">
+          <div className="bg-white dark:bg-[#0f1419] border border-gray-200 dark:border-[#30363d] rounded-lg p-3">
+            <p className="text-xs text-gray-600 dark:text-[#8b949e] mb-1">Today Volume</p>
+            <p className="text-sm font-semibold text-gray-900 dark:text-white">{spike.todayVolume.toLocaleString()}</p>
+          </div>
+          <div className="bg-white dark:bg-[#0f1419] border border-gray-200 dark:border-[#30363d] rounded-lg p-3">
+            <p className="text-xs text-gray-600 dark:text-[#8b949e] mb-1">20MA Volume</p>
+            <p className="text-sm font-semibold text-gray-900 dark:text-white">{spike.volumeMA20.toLocaleString()}</p>
+          </div>
+        </div>
+
+        {/* Price Change */}
+        <div className="bg-white dark:bg-[#0f1419] border border-gray-200 dark:border-[#30363d] rounded-lg p-3 mb-3">
+          <div className="grid grid-cols-2 gap-2 text-xs">
+            <div>
+              <span className="text-gray-600 dark:text-[#8b949e]">Yesterday:</span>
+              <span className="ml-1 font-semibold text-gray-900 dark:text-white">₹{spike.yesterdayClose.toFixed(2)}</span>
+            </div>
+            <div>
+              <span className="text-gray-600 dark:text-[#8b949e]">Today:</span>
+              <span className={`ml-1 font-semibold ${isPriceUp ? 'text-green-500' : 'text-red-500'}`}>
+                ₹{spike.todayClose.toFixed(2)} ({isPriceUp ? '+' : ''}{spike.priceChangePercent.toFixed(2)}%)
+              </span>
+            </div>
+          </div>
+        </div>
+
+        {/* Volume Description */}
+        <div className="bg-gray-100 dark:bg-[#30363d] border border-gray-200 dark:border-[#444c56] rounded-lg p-2 mb-3">
+          <p className="text-xs text-gray-700 dark:text-gray-300">
+            💡 Volume is {spike.spikePercent.toFixed(1)}% above 20-day average. {isPriceUp ? 'Combined with price increase, this indicates strong buying interest.' : 'Despite price decline, high volume suggests potential reversal or capitulation.'}
+          </p>
+        </div>
+
+        {/* Action Buttons */}
+        <div className="flex gap-2 pt-3 border-t border-gray-200 dark:border-[#30363d]">
+          <button
+            onClick={(e) => {
+              const analysisText = `High volume spike detected (${spike.spikePercent.toFixed(1)}% above 20MA).\n\nKey Points:\n- Today's Volume: ${spike.todayVolume.toLocaleString()}\n- 20MA Volume: ${spike.volumeMA20.toLocaleString()}\n- Price Change: ${isPriceUp ? '+' : ''}${spike.priceChangePercent.toFixed(2)}%\n- Current Price: ₹${spike.todayClose.toFixed(2)}\n\n${isPriceUp ? 'Strong volume with price increase suggests bullish momentum. Consider entry on pullbacks with proper stop loss.' : 'High volume despite price decline may indicate selling climax or distribution. Monitor for reversal signals.'}`;
+
+              handleConvertToIdea(e, spike.symbol, displaySymbol, spike.todayClose, isPriceUp, analysisText);
+            }}
+            className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 bg-gray-100 dark:bg-[#30363d] hover:bg-gray-200 dark:hover:bg-[#3c444d] border border-gray-200 dark:border-[#444c56] text-gray-700 dark:text-gray-300 text-xs font-semibold rounded-lg transition-colors"
+          >
+            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+            </svg>
+            <span>Convert to Idea</span>
+          </button>
+          <AnalysisButton onClick={async (e) => {
+            e.stopPropagation();
+
+            // Create a temporary crossover object for the handleAnalyze function
+            const tempCrossover: Crossover = {
+              id: spike.id,
+              symbol: spike.symbol,
+              date: spike.date,
+              crossoverType: 'bullish_cross',
+              yesterdayClose: spike.yesterdayClose,
+              todayClose: spike.todayClose,
+              crossPercent: 0,
+            };
+
+            await handleAnalyze(e, tempCrossover);
+          }} />
+        </div>
+      </div>
+    );
   };
 
   const renderCrossoverCard = (crossover: Crossover, showBothLabel: boolean = false, isSupertrend: boolean = false) => {
@@ -449,6 +661,16 @@ export default function Cross50200Page() {
           >
             Supertrend
           </button>
+          <button
+            onClick={() => setActiveTab('volume')}
+            className={`px-4 py-2 rounded-lg text-sm font-semibold transition-colors ${
+              activeTab === 'volume'
+                ? 'bg-[#ff8c42] text-gray-900 dark:text-white'
+                : 'bg-gray-50 dark:bg-[#1c2128] text-gray-600 dark:text-[#8b949e] hover:bg-gray-100 dark:hover:bg-[#30363d]'
+            }`}
+          >
+            Volume Spikes
+          </button>
         </div>
       </div>
 
@@ -484,8 +706,38 @@ export default function Cross50200Page() {
             displayCrossovers = crossovers50;
           } else if (activeTab === '200ma') {
             displayCrossovers = crossovers200;
-          } else {
+          } else if (activeTab === 'supertrend') {
             displayCrossovers = supertrendCrossovers;
+          }
+
+          // Handle volume spikes separately
+          if (activeTab === 'volume') {
+            return volumeSpikes.length === 0 ? (
+              <div className="text-center py-16">
+                <div className="text-6xl mb-4">📊</div>
+                <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">No volume spikes found</h3>
+                <p className="text-gray-600 dark:text-[#8b949e]">No stocks with volume above 20MA today</p>
+              </div>
+            ) : (
+              <>
+                {/* Summary */}
+                <div className="mb-4 flex items-center gap-2">
+                  <h2 className="text-xl font-bold text-gray-900 dark:text-white">Volume Spikes Today</h2>
+                  <span className="px-2 py-0.5 bg-[#ff8c42]/20 text-[#ff8c42] text-xs font-semibold rounded-full">
+                    {volumeSpikes.length} {volumeSpikes.length === 1 ? 'stock' : 'stocks'}
+                  </span>
+                </div>
+
+                {/* Cards Grid */}
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {volumeSpikes.map((spike) => (
+                    <div key={spike.id}>
+                      {renderVolumeSpikeCard(spike)}
+                    </div>
+                  ))}
+                </div>
+              </>
+            );
           }
 
           return displayCrossovers.length === 0 ? (
