@@ -15,19 +15,22 @@ interface Crossover {
   date: string;
   crossoverType: 'bullish_cross' | 'bearish_cross';
   yesterdayClose: number;
-  yesterdayMA: number;
+  yesterdayMA?: number;
   todayClose: number;
-  todayMA: number;
+  todayMA?: number;
+  yesterdaySupertrend?: number;
+  todaySupertrend?: number;
   crossPercent: number;
-  ma_period: number;
+  ma_period?: number;
 }
 
 export default function Cross50200Page() {
   const router = useRouter();
   const { user } = useAuth();
-  const [activeTab, setActiveTab] = useState<'both' | '50ma' | '200ma'>('both');
+  const [activeTab, setActiveTab] = useState<'both' | '50ma' | '200ma' | 'supertrend'>('both');
   const [crossovers50, setCrossovers50] = useState<Crossover[]>([]);
   const [crossovers200, setCrossovers200] = useState<Crossover[]>([]);
+  const [supertrendCrossovers, setSupertrendCrossovers] = useState<Crossover[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showAnalysisModal, setShowAnalysisModal] = useState<string | null>(null);
@@ -102,10 +105,26 @@ export default function Cross50200Page() {
         // Sort in memory instead of using orderBy
         data200 = data200.sort((a, b) => Math.abs(b.crossPercent) - Math.abs(a.crossPercent));
 
+        // Fetch Supertrend crossovers
+        const supertrendRef = collection(db, 'supertrendcrossover');
+        const qSupertrend = query(
+          supertrendRef,
+          where('date', '==', today)
+        );
+        const snapshotSupertrend = await getDocs(qSupertrend);
+        let dataSupertrend: Crossover[] = snapshotSupertrend.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data()
+        } as Crossover));
+
+        // Sort in memory
+        dataSupertrend = dataSupertrend.sort((a, b) => Math.abs(b.crossPercent) - Math.abs(a.crossPercent));
+
         setCrossovers50(data50);
         setCrossovers200(data200);
+        setSupertrendCrossovers(dataSupertrend);
 
-        console.log('Fetched crossovers:', { ma50: data50.length, ma200: data200.length });
+        console.log('Fetched crossovers:', { ma50: data50.length, ma200: data200.length, supertrend: dataSupertrend.length });
       } catch (error: any) {
         console.error('Error fetching crossovers:', error);
         setError(error.message || 'Failed to load crossover data. Please check Firestore permissions.');
@@ -168,7 +187,7 @@ export default function Cross50200Page() {
     }
   };
 
-  const renderCrossoverCard = (crossover: Crossover, showBothLabel: boolean = false) => {
+  const renderCrossoverCard = (crossover: Crossover, showBothLabel: boolean = false, isSupertrend: boolean = false) => {
     const isBullish = crossover.crossoverType === 'bullish_cross';
     const changePercent = ((crossover.todayClose - crossover.yesterdayClose) / crossover.yesterdayClose) * 100;
     // Display symbol without NS_ prefix
@@ -183,7 +202,7 @@ export default function Cross50200Page() {
           <div>
             <h3 className="text-xl font-bold text-gray-900 dark:text-white">{displaySymbol}</h3>
             <p className="text-xs text-gray-600 dark:text-[#8b949e] mt-0.5">
-              {showBothLabel ? '50 & 200 MA Crossover' : `${crossover.ma_period} MA Crossover`}
+              {isSupertrend ? 'Supertrend Crossover' : (showBothLabel ? '50 & 200 MA Crossover' : `${crossover.ma_period} MA Crossover`)}
             </p>
           </div>
           <span className={`px-3 py-1 text-xs font-semibold rounded ${
@@ -209,10 +228,12 @@ export default function Cross50200Page() {
           </div>
         </div>
 
-        {/* MA Info */}
+        {/* MA/Supertrend Info */}
         <div className="bg-white dark:bg-[#0f1419] border border-gray-200 dark:border-[#30363d] rounded-lg p-3 mb-3">
           <div className="flex justify-between items-center mb-2">
-            <p className="text-xs font-semibold text-[#ff8c42]">{crossover.ma_period} MA Level</p>
+            <p className="text-xs font-semibold text-[#ff8c42]">
+              {isSupertrend ? 'Supertrend Level' : `${crossover.ma_period} MA Level`}
+            </p>
             <p className={`text-xs font-semibold ${
               isBullish ? 'text-green-500' : 'text-red-500'
             }`}>
@@ -221,12 +242,24 @@ export default function Cross50200Page() {
           </div>
           <div className="grid grid-cols-2 gap-2 text-xs">
             <div>
-              <span className="text-gray-600 dark:text-[#8b949e]">Yesterday MA:</span>
-              <span className="ml-1 font-semibold text-gray-900 dark:text-white">₹{crossover.yesterdayMA.toFixed(2)}</span>
+              <span className="text-gray-600 dark:text-[#8b949e]">
+                Yesterday {isSupertrend ? 'ST' : 'MA'}:
+              </span>
+              <span className="ml-1 font-semibold text-gray-900 dark:text-white">
+                ₹{isSupertrend
+                  ? crossover.yesterdaySupertrend?.toFixed(2)
+                  : crossover.yesterdayMA?.toFixed(2)}
+              </span>
             </div>
             <div>
-              <span className="text-gray-600 dark:text-[#8b949e]">Today MA:</span>
-              <span className="ml-1 font-semibold text-gray-900 dark:text-white">₹{crossover.todayMA.toFixed(2)}</span>
+              <span className="text-gray-600 dark:text-[#8b949e]">
+                Today {isSupertrend ? 'ST' : 'MA'}:
+              </span>
+              <span className="ml-1 font-semibold text-gray-900 dark:text-white">
+                ₹{isSupertrend
+                  ? crossover.todaySupertrend?.toFixed(2)
+                  : crossover.todayMA?.toFixed(2)}
+              </span>
             </div>
           </div>
         </div>
@@ -234,9 +267,13 @@ export default function Cross50200Page() {
         {/* Crossover Description */}
         <div className="bg-blue-500/10 border border-blue-500/30 rounded-lg p-2 mb-3">
           <p className="text-xs text-blue-600 dark:text-blue-400">
-            {isBullish
-              ? `💡 Price crossed above ${crossover.ma_period} MA today - Potential bullish signal`
-              : `⚠️ Price crossed below ${crossover.ma_period} MA today - Potential bearish signal`
+            {isSupertrend
+              ? (isBullish
+                  ? `💡 Supertrend turned bullish today - Strong buy signal`
+                  : `⚠️ Supertrend turned bearish today - Consider exit`)
+              : (isBullish
+                  ? `💡 Price crossed above ${crossover.ma_period} MA today - Potential bullish signal`
+                  : `⚠️ Price crossed below ${crossover.ma_period} MA today - Potential bearish signal`)
             }
           </p>
         </div>
@@ -300,6 +337,16 @@ export default function Cross50200Page() {
           >
             200 MA Only
           </button>
+          <button
+            onClick={() => setActiveTab('supertrend')}
+            className={`px-4 py-2 rounded-lg text-sm font-semibold transition-colors ${
+              activeTab === 'supertrend'
+                ? 'bg-[#ff8c42] text-gray-900 dark:text-white'
+                : 'bg-gray-50 dark:bg-[#1c2128] text-gray-600 dark:text-[#8b949e] hover:bg-gray-100 dark:hover:bg-[#30363d]'
+            }`}
+          >
+            Supertrend
+          </button>
         </div>
       </div>
 
@@ -333,8 +380,10 @@ export default function Cross50200Page() {
               .sort((a, b) => Math.abs(b.crossPercent) - Math.abs(a.crossPercent));
           } else if (activeTab === '50ma') {
             displayCrossovers = crossovers50;
-          } else {
+          } else if (activeTab === '200ma') {
             displayCrossovers = crossovers200;
+          } else {
+            displayCrossovers = supertrendCrossovers;
           }
 
           return displayCrossovers.length === 0 ? (
@@ -344,7 +393,9 @@ export default function Cross50200Page() {
               <p className="text-gray-600 dark:text-[#8b949e]">
                 {activeTab === 'both'
                   ? 'No stocks crossed both 50 MA and 200 MA today'
-                  : `No stocks crossed the ${activeTab === '50ma' ? '50' : '200'} MA today`
+                  : activeTab === 'supertrend'
+                    ? 'No supertrend crossovers found today'
+                    : `No stocks crossed the ${activeTab === '50ma' ? '50' : '200'} MA today`
                 }
               </p>
             </div>
@@ -355,7 +406,9 @@ export default function Cross50200Page() {
                 <h2 className="text-xl font-bold text-gray-900 dark:text-white">
                   {activeTab === 'both'
                     ? 'Stocks Crossing Both 50 MA & 200 MA Today'
-                    : `${activeTab === '50ma' ? '50 MA' : '200 MA'} Crossovers Today`
+                    : activeTab === 'supertrend'
+                      ? 'Supertrend Crossovers Today'
+                      : `${activeTab === '50ma' ? '50 MA' : '200 MA'} Crossovers Today`
                   }
                 </h2>
                 <span className="px-2 py-0.5 bg-[#ff8c42]/20 text-[#ff8c42] text-xs font-semibold rounded-full">
@@ -369,8 +422,8 @@ export default function Cross50200Page() {
               {/* Cards Grid */}
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {displayCrossovers.map((crossover) => (
-                  <div key={`${crossover.symbol}-${crossover.ma_period}-${crossover.id}`}>
-                    {renderCrossoverCard(crossover, activeTab === 'both')}
+                  <div key={`${crossover.symbol}-${crossover.ma_period || 'st'}-${crossover.id}`}>
+                    {renderCrossoverCard(crossover, activeTab === 'both', activeTab === 'supertrend')}
                   </div>
                 ))}
               </div>

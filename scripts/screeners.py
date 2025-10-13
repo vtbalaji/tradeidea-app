@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Detect stocks that crossed 50 MA or 200 MA today
+Stock Screeners: MA Crossovers & Supertrend Crossovers
 Uses DuckDB EOD data to find crossover signals
 Stores results in Firebase for user display
 """
@@ -97,6 +97,125 @@ def detect_ma_crossover(symbol, ma_period=50):
         print(f"  ❌ Error for {symbol}: {str(e)}")
         return None
 
+def calculate_supertrend(df, period=10, multiplier=3):
+    """
+    Calculate Supertrend indicator
+    Returns DataFrame with supertrend and trend columns
+    """
+    high = df['High']
+    low = df['Low']
+    close = df['Close']
+
+    # Calculate ATR
+    df['tr1'] = abs(high - low)
+    df['tr2'] = abs(high - close.shift())
+    df['tr3'] = abs(low - close.shift())
+    df['tr'] = df[['tr1', 'tr2', 'tr3']].max(axis=1)
+    df['atr'] = df['tr'].rolling(window=period).mean()
+
+    # Calculate basic upper and lower bands
+    hl_avg = (high + low) / 2
+    df['basic_ub'] = hl_avg + (multiplier * df['atr'])
+    df['basic_lb'] = hl_avg - (multiplier * df['atr'])
+
+    # Calculate final bands
+    df['final_ub'] = 0.0
+    df['final_lb'] = 0.0
+    df['supertrend'] = 0.0
+    df['trend'] = 1  # 1 for uptrend, -1 for downtrend
+
+    for i in range(period, len(df)):
+        # Final upper band
+        if df['basic_ub'].iloc[i] < df['final_ub'].iloc[i-1] or close.iloc[i-1] > df['final_ub'].iloc[i-1]:
+            df.loc[df.index[i], 'final_ub'] = df['basic_ub'].iloc[i]
+        else:
+            df.loc[df.index[i], 'final_ub'] = df['final_ub'].iloc[i-1]
+
+        # Final lower band
+        if df['basic_lb'].iloc[i] > df['final_lb'].iloc[i-1] or close.iloc[i-1] < df['final_lb'].iloc[i-1]:
+            df.loc[df.index[i], 'final_lb'] = df['basic_lb'].iloc[i]
+        else:
+            df.loc[df.index[i], 'final_lb'] = df['final_lb'].iloc[i-1]
+
+        # Supertrend
+        if df['trend'].iloc[i-1] == 1:
+            if close.iloc[i] <= df['final_lb'].iloc[i]:
+                df.loc[df.index[i], 'trend'] = -1
+                df.loc[df.index[i], 'supertrend'] = df['final_ub'].iloc[i]
+            else:
+                df.loc[df.index[i], 'trend'] = 1
+                df.loc[df.index[i], 'supertrend'] = df['final_lb'].iloc[i]
+        else:
+            if close.iloc[i] >= df['final_ub'].iloc[i]:
+                df.loc[df.index[i], 'trend'] = 1
+                df.loc[df.index[i], 'supertrend'] = df['final_lb'].iloc[i]
+            else:
+                df.loc[df.index[i], 'trend'] = -1
+                df.loc[df.index[i], 'supertrend'] = df['final_ub'].iloc[i]
+
+    return df
+
+def detect_supertrend_crossover(symbol, period=10, multiplier=3):
+    """
+    Detect if a stock crossed supertrend today
+    Returns: 'bullish_cross', 'bearish_cross', 'no_cross', or None (error)
+    """
+    try:
+        # Get 100 days of data (enough for supertrend calculation)
+        df = nse_fetcher.get_data(symbol, days=100)
+
+        if df.empty or len(df) < period + 20:
+            return None
+
+        # Rename columns to uppercase
+        df = df.rename(columns={
+            'date': 'Date',
+            'open': 'Open',
+            'high': 'High',
+            'low': 'Low',
+            'close': 'Close',
+            'volume': 'Volume'
+        })
+
+        # Calculate supertrend
+        df = calculate_supertrend(df, period=period, multiplier=multiplier)
+
+        # Get last 2 days data
+        today_close = float(df['Close'].iloc[-1])
+        yesterday_close = float(df['Close'].iloc[-2])
+        today_trend = int(df['trend'].iloc[-1])
+        yesterday_trend = int(df['trend'].iloc[-2])
+        today_supertrend = float(df['supertrend'].iloc[-1])
+        yesterday_supertrend = float(df['supertrend'].iloc[-2])
+
+        # Check for trend change (crossover)
+        # Bullish: trend changes from -1 to 1
+        if yesterday_trend == -1 and today_trend == 1:
+            return {
+                'type': 'bullish_cross',
+                'yesterday_close': yesterday_close,
+                'yesterday_supertrend': yesterday_supertrend,
+                'today_close': today_close,
+                'today_supertrend': today_supertrend,
+                'cross_percent': ((today_close - today_supertrend) / today_supertrend) * 100
+            }
+        # Bearish: trend changes from 1 to -1
+        elif yesterday_trend == 1 and today_trend == -1:
+            return {
+                'type': 'bearish_cross',
+                'yesterday_close': yesterday_close,
+                'yesterday_supertrend': yesterday_supertrend,
+                'today_close': today_close,
+                'today_supertrend': today_supertrend,
+                'cross_percent': ((today_supertrend - today_close) / today_supertrend) * 100
+            }
+        else:
+            return {'type': 'no_cross'}
+
+    except Exception as e:
+        print(f"  ❌ Error for {symbol}: {str(e)}")
+        return None
+
 def get_symbols_from_duckdb():
     """Get all symbols that have data in DuckDB"""
     try:
@@ -120,7 +239,7 @@ def get_last_trading_day():
         last_trading_day = today
     return last_trading_day.strftime('%Y-%m-%d')
 
-def save_to_firebase(crossovers_50, crossovers_200):
+def save_to_firebase(crossovers_50, crossovers_200, supertrend_crosses):
     """Save crossover data to Firebase collections"""
     try:
         today = get_last_trading_day()
@@ -136,6 +255,11 @@ def save_to_firebase(crossovers_50, crossovers_200):
         # Delete old 200 MA crossovers
         ma200_ref = db.collection('macrossover200')
         for doc in ma200_ref.where('date', '==', today).stream():
+            doc.reference.delete()
+
+        # Delete old supertrend crossovers
+        supertrend_ref = db.collection('supertrendcrossover')
+        for doc in supertrend_ref.where('date', '==', today).stream():
             doc.reference.delete()
 
         # Save 50 MA crossovers
@@ -176,6 +300,24 @@ def save_to_firebase(crossovers_50, crossovers_200):
                 'createdAt': firestore.SERVER_TIMESTAMP
             })
 
+        # Save supertrend crossovers
+        print(f'💾 Saving {len(supertrend_crosses)} stocks to supertrendcrossover collection...')
+        for cross in supertrend_crosses:
+            # Add NS_ prefix to match symbols collection format
+            symbol_with_prefix = f"NS_{cross['symbol']}" if not cross['symbol'].startswith('NS_') else cross['symbol']
+            doc_ref = supertrend_ref.document(f"{symbol_with_prefix}_{today}")
+            doc_ref.set({
+                'symbol': symbol_with_prefix,
+                'date': today,
+                'crossoverType': cross['type'],  # 'bullish_cross' or 'bearish_cross'
+                'yesterdayClose': cross['yesterday_close'],
+                'yesterdaySupertrend': cross['yesterday_supertrend'],
+                'todayClose': cross['today_close'],
+                'todaySupertrend': cross['today_supertrend'],
+                'crossPercent': cross['cross_percent'],
+                'createdAt': firestore.SERVER_TIMESTAMP
+            })
+
         print('✅ Data saved to Firebase successfully')
 
     except Exception as e:
@@ -184,8 +326,8 @@ def save_to_firebase(crossovers_50, crossovers_200):
         traceback.print_exc()
 
 def main():
-    """Main function to detect MA crossovers"""
-    print('🔍 Detecting MA Crossovers Today')
+    """Main function to detect MA and Supertrend crossovers"""
+    print('🔍 Stock Screeners: MA & Supertrend Crossovers')
     print('=' * 80)
 
     # Get all symbols
@@ -202,8 +344,11 @@ def main():
     bearish_50ma_crosses = []
     bullish_200ma_crosses = []
     bearish_200ma_crosses = []
+    bullish_supertrend_crosses = []
+    bearish_supertrend_crosses = []
     all_50ma_crosses = []  # Combined for Firebase
     all_200ma_crosses = []  # Combined for Firebase
+    all_supertrend_crosses = []  # Combined for Firebase
 
     print('🔄 Scanning for crossovers...\n')
 
@@ -231,8 +376,18 @@ def main():
             elif result_200['type'] == 'bearish_cross':
                 bearish_200ma_crosses.append(data_200)
 
+        # Check Supertrend crossover
+        result_supertrend = detect_supertrend_crossover(symbol, period=10, multiplier=3)
+        if result_supertrend and result_supertrend['type'] != 'no_cross':
+            data_supertrend = {'symbol': symbol, **result_supertrend}
+            all_supertrend_crosses.append(data_supertrend)
+            if result_supertrend['type'] == 'bullish_cross':
+                bullish_supertrend_crosses.append(data_supertrend)
+            elif result_supertrend['type'] == 'bearish_cross':
+                bearish_supertrend_crosses.append(data_supertrend)
+
     # Save to Firebase
-    save_to_firebase(all_50ma_crosses, all_200ma_crosses)
+    save_to_firebase(all_50ma_crosses, all_200ma_crosses, all_supertrend_crosses)
 
     # Print results
     print('\n' + '=' * 80)
@@ -304,6 +459,38 @@ def main():
     else:
         print('  No bearish 200 MA crossovers today')
 
+    # Bullish Supertrend Crosses
+    print(f'\n🟢 BULLISH SUPERTREND CROSSOVERS ({len(bullish_supertrend_crosses)} stocks):')
+    print('-' * 80)
+    if bullish_supertrend_crosses:
+        bullish_supertrend_crosses.sort(key=lambda x: x['cross_percent'], reverse=True)
+        print(f"{'Symbol':<12} {'Yesterday':<12} {'Supertrend':<12} {'Today':<12} {'% Above ST':<12}")
+        print('-' * 80)
+        for cross in bullish_supertrend_crosses:
+            print(f"{cross['symbol']:<12} "
+                  f"₹{cross['yesterday_close']:<11.2f} "
+                  f"₹{cross['yesterday_supertrend']:<11.2f} "
+                  f"₹{cross['today_close']:<11.2f} "
+                  f"{cross['cross_percent']:>10.2f}%")
+    else:
+        print('  No bullish supertrend crossovers today')
+
+    # Bearish Supertrend Crosses
+    print(f'\n🔴 BEARISH SUPERTREND CROSSOVERS ({len(bearish_supertrend_crosses)} stocks):')
+    print('-' * 80)
+    if bearish_supertrend_crosses:
+        bearish_supertrend_crosses.sort(key=lambda x: x['cross_percent'], reverse=True)
+        print(f"{'Symbol':<12} {'Yesterday':<12} {'Supertrend':<12} {'Today':<12} {'% Below ST':<12}")
+        print('-' * 80)
+        for cross in bearish_supertrend_crosses:
+            print(f"{cross['symbol']:<12} "
+                  f"₹{cross['yesterday_close']:<11.2f} "
+                  f"₹{cross['yesterday_supertrend']:<11.2f} "
+                  f"₹{cross['today_close']:<11.2f} "
+                  f"{cross['cross_percent']:>10.2f}%")
+    else:
+        print('  No bearish supertrend crossovers today')
+
     # Summary
     print('\n' + '=' * 80)
     print('📈 SUMMARY')
@@ -313,6 +500,8 @@ def main():
     print(f'  Bearish 50 MA Crosses: {len(bearish_50ma_crosses)}')
     print(f'  Bullish 200 MA Crosses: {len(bullish_200ma_crosses)}')
     print(f'  Bearish 200 MA Crosses: {len(bearish_200ma_crosses)}')
+    print(f'  Bullish Supertrend Crosses: {len(bullish_supertrend_crosses)}')
+    print(f'  Bearish Supertrend Crosses: {len(bearish_supertrend_crosses)}')
     print('=' * 80)
 
 if __name__ == '__main__':

@@ -287,10 +287,156 @@ export default function InvestorAnalysisModal({
                 Raw Data
               </h3>
 
+              {/* Technical Levels Summary */}
+              {technicals && (
+                <div className="mb-6 bg-white dark:bg-[#1c2128] border border-gray-200 dark:border-[#30363d] rounded-lg p-4">
+                  <div className="flex items-center justify-between mb-3">
+                    <h4 className="text-sm font-semibold text-gray-900 dark:text-white">Technical Levels</h4>
+                    <span className={`px-2 py-0.5 text-xs font-bold rounded ${
+                      recommendation.suitableFor.includes('momentum' as InvestorType)
+                        ? 'bg-green-500 text-white'
+                        : recommendation.suitableFor.length > 0
+                          ? 'bg-yellow-500 text-white'
+                          : 'bg-gray-500 text-white'
+                    }`}>
+                      {recommendation.suitableFor.includes('momentum' as InvestorType)
+                        ? 'STRONG BUY'
+                        : recommendation.suitableFor.length > 0
+                          ? 'BUY'
+                          : 'NEUTRAL'
+                      }
+                    </span>
+                  </div>
+
+                  <div className="space-y-2 text-xs">
+                    {/* 50 EMA */}
+                    {technicals.ema50 && (
+                      <div className="flex justify-between items-center">
+                        <span className="text-gray-600 dark:text-[#8b949e]">50 EMA:</span>
+                        <div className="flex items-center gap-1">
+                          <span className="text-gray-900 dark:text-white font-semibold">
+                            ₹{technicals.ema50.toFixed(2)}
+                          </span>
+                          {technicals.lastPrice && (
+                            <span className={technicals.lastPrice > technicals.ema50 ? 'text-green-500' : 'text-red-500'}>
+                              {technicals.lastPrice > technicals.ema50 ? '↑' : '↓'}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* 100 MA */}
+                    {technicals.sma100 && (
+                      <div className="flex justify-between items-center">
+                        <span className="text-gray-600 dark:text-[#8b949e]">100 MA:</span>
+                        <div className="flex items-center gap-1">
+                          <span className="text-gray-900 dark:text-white font-semibold">
+                            ₹{technicals.sma100.toFixed(2)}
+                          </span>
+                          {technicals.lastPrice && (
+                            <span className={technicals.lastPrice > technicals.sma100 ? 'text-green-500' : 'text-red-500'}>
+                              {technicals.lastPrice > technicals.sma100 ? '↑' : '↓'}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* 200 MA */}
+                    {technicals.sma200 && (
+                      <div className="flex justify-between items-center">
+                        <span className="text-gray-600 dark:text-[#8b949e]">200 MA:</span>
+                        <div className="flex items-center gap-1">
+                          <span className="text-gray-900 dark:text-white font-semibold">
+                            ₹{technicals.sma200.toFixed(2)}
+                          </span>
+                          {technicals.lastPrice && (
+                            <span className={technicals.lastPrice > technicals.sma200 ? 'text-green-500' : 'text-red-500'}>
+                              {technicals.lastPrice > technicals.sma200 ? '↑' : '↓'}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Supertrend */}
+                    {technicals.supertrend && (
+                      <div className="flex justify-between items-center">
+                        <span className="text-gray-600 dark:text-[#8b949e]">Supertrend:</span>
+                        <div className="flex items-center gap-1">
+                          <span className="text-gray-900 dark:text-white font-semibold">
+                            ₹{technicals.supertrend.toFixed(2)}
+                          </span>
+                          {technicals.lastPrice && (
+                            <span className={technicals.lastPrice > technicals.supertrend ? 'text-green-500' : 'text-red-500'}>
+                              {technicals.lastPrice > technicals.supertrend ? '↑' : '↓'}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* Fundamentals Summary */}
+              {fundamentals && (
+                <div className="mb-6 bg-white dark:bg-[#1c2128] border border-gray-200 dark:border-[#30363d] rounded-lg p-4">
+                  <div className="flex items-center justify-between mb-3">
+                    <h4 className="text-sm font-semibold text-gray-900 dark:text-white">Fundamentals</h4>
+                    <span className={`px-2 py-0.5 text-xs font-bold rounded ${
+                      recommendation.suitableFor.includes('value' as InvestorType) || recommendation.suitableFor.includes('quality' as InvestorType)
+                        ? 'bg-yellow-500 text-white'
+                        : 'bg-gray-500 text-white'
+                    }`}>
+                      {recommendation.suitableFor.includes('value' as InvestorType) || recommendation.suitableFor.includes('quality' as InvestorType)
+                        ? 'AVERAGE'
+                        : 'BELOW AVG'
+                      }
+                    </span>
+                  </div>
+
+                  <div className="space-y-2 text-xs">
+                    {/* PE Ratio */}
+                    {fundamentals.pe && (
+                      <div className="flex justify-between items-center">
+                        <span className="text-gray-600 dark:text-[#8b949e]">PE:</span>
+                        <span className="text-gray-900 dark:text-white font-semibold">
+                          {fundamentals.pe.toFixed(2)}
+                        </span>
+                      </div>
+                    )}
+
+                    {/* Debt to Equity */}
+                    {fundamentals.debtToEquity !== undefined && (
+                      <div className="flex justify-between items-center">
+                        <span className="text-gray-600 dark:text-[#8b949e]">Debt-to-Equity:</span>
+                        <span className="text-gray-900 dark:text-white font-semibold">
+                          {fundamentals.debtToEquity.toFixed(1)}
+                        </span>
+                      </div>
+                    )}
+
+                    {/* Earnings Growth */}
+                    {fundamentals.earningsGrowth !== undefined && (
+                      <div className="flex justify-between items-center">
+                        <span className="text-gray-600 dark:text-[#8b949e]">Earnings Growth:</span>
+                        <span className={`font-semibold ${
+                          fundamentals.earningsGrowth > 0 ? 'text-green-500' : 'text-red-500'
+                        }`}>
+                          {fundamentals.earningsGrowth > 0 ? '+' : ''}{fundamentals.earningsGrowth.toFixed(1)}%
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
               {/* Technical Data */}
               {technicals && (
                 <div className="mb-6">
-                  <h4 className="text-sm font-semibold text-[#ff8c42] mb-3">Technical Indicators</h4>
+                  <h4 className="text-sm font-semibold text-[#ff8c42] mb-3">All Technical Indicators</h4>
                   <div className="space-y-2 text-xs">
                     {Object.entries(technicals).map(([key, value]) => (
                       <div key={key} className="flex justify-between py-1 border-b border-gray-200 dark:border-[#30363d]">
@@ -309,7 +455,7 @@ export default function InvestorAnalysisModal({
               {/* Fundamental Data */}
               {fundamentals && (
                 <div>
-                  <h4 className="text-sm font-semibold text-[#ff8c42] mb-3">Fundamental Data</h4>
+                  <h4 className="text-sm font-semibold text-[#ff8c42] mb-3">All Fundamental Data</h4>
                   <div className="space-y-2 text-xs">
                     {Object.entries(fundamentals).map(([key, value]) => (
                       <div key={key} className="flex justify-between py-1 border-b border-gray-200 dark:border-[#30363d]">

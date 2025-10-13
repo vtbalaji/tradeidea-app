@@ -88,7 +88,7 @@ export default function Navigation() {
             } font-semibold text-sm hover:bg-gray-100 dark:hover:bg-[#30363d] hover:text-gray-900 dark:hover:text-white transition-colors`}
           >
             <FilterIcon size={18} />
-            <span>Screens</span>
+            <span>Screener</span>
           </Link>
         </div>
 
@@ -310,7 +310,7 @@ export default function Navigation() {
                 } font-semibold text-sm hover:bg-gray-100 dark:hover:bg-[#30363d] hover:text-gray-900 dark:hover:text-white transition-colors`}
               >
                 <FilterIcon size={20} />
-                <span>Screens</span>
+                <span>Screener</span>
               </Link>
             </div>
           </div>
