@@ -40,6 +40,15 @@ const FIELD_MAPPINGS: { [key: string]: { [key: string]: string } } = {
   'Current Market Price': 'currentPrice',
   'current market price': 'currentPrice',
 
+  // Bala/Generic broker format
+  'Stock Name': 'symbol',
+  'stock name': 'symbol',
+  'Average buy price': 'entryPrice',
+  'average buy price': 'entryPrice',
+  'Closing price': 'currentPrice',
+  'closing price': 'currentPrice',
+  'ISIN': 'isin',
+
   // Standard format
   'symbol': 'symbol',
   'entryPrice': 'entryPrice',
@@ -179,8 +188,41 @@ const KNOWN_NSE_SYMBOLS = [
   'UPL', 'APOLLOHOSP', 'VEDL', 'TATAELXSI', 'PERSISTENT', 'COFORGE', 'MPHASIS', 'LTTS', 'LTIM', 'OFSS',
   'KEI', 'POLYCAB', 'DIXON', 'RAIN', 'ETERNAL', 'BHEL', 'THERMAX', 'EMAMILTD', 'HATSUN', 'LICHSGFIN',
   'TATACHEM', 'NMDC', 'COCHINSHIP', 'GATEWAY', 'BALRAMCHIN', 'FINOLEXCAB', 'SARDAEN', 'AMARAJABAT', 'WHEELS',
-  'ARE&M', 'SDBL'
+  'ARE&M', 'SDBL',
+  // Additional symbols from various broker formats
+  'BALKRISIND', 'BEL', 'CEATLTD', 'CDSL', 'AXISBANK'
 ];
+
+/**
+ * Extract NSE symbol from stock name
+ * Handles full company names like "AXIS BANK LIMITED" → "AXISBANK"
+ */
+function extractSymbolFromName(stockName: string): string {
+  // Remove common suffixes and clean up
+  const cleaned = stockName
+    .toUpperCase()
+    .replace(/\s+LIMITED$/i, '')
+    .replace(/\s+LTD\.?$/i, '')
+    .replace(/\s+LTD$/i, '')
+    .replace(/\s+LTDS$/i, '')
+    .replace(/\s+CORPORATION$/i, '')
+    .replace(/\s+CORP\.?$/i, '')
+    .replace(/\s+COMPANY$/i, '')
+    .replace(/\s+CO\.?$/i, '')
+    .replace(/\s+INC\.?$/i, '')
+    .replace(/\s+PLC$/i, '')
+    .replace(/\s+\(INDIA\)$/i, '')
+    .replace(/\s+\(I\)$/i, '')
+    .replace(/\s+IND\.?$/i, '')
+    .replace(/\s+INDUSTRIES$/i, '')
+    .replace(/\s+INTERNATIONAL$/i, '')
+    .trim();
+
+  // Remove spaces and special characters to create potential symbol
+  const symbol = cleaned.replace(/\s+/g, '').replace(/[^A-Z0-9&]/g, '');
+
+  return symbol;
+}
 
 /**
  * Validate symbol against NSE symbols
@@ -189,6 +231,12 @@ const KNOWN_NSE_SYMBOLS = [
 export async function validateSymbol(symbol: string, firestoreDb: any): Promise<string | null> {
   try {
     let upperSymbol = symbol.toUpperCase().trim();
+
+    // If it looks like a full company name (has spaces), try to extract symbol
+    if (upperSymbol.includes(' ')) {
+      upperSymbol = extractSymbolFromName(upperSymbol);
+      console.log(`Extracted symbol from name: ${symbol} → ${upperSymbol}`);
+    }
 
     // First, check if this is an ICICI symbol that needs mapping
     if (upperSymbol in ICICI_SYMBOL_MAP) {
@@ -245,6 +293,63 @@ export async function validateSymbol(symbol: string, firestoreDb: any): Promise<
     }
     return null;
   }
+}
+
+/**
+ * Consolidate duplicate symbols by summing quantities and averaging prices
+ * Uses weighted average for entry price based on quantities
+ */
+function consolidateDuplicateSymbols(rows: CSVRow[]): CSVRow[] {
+  const symbolMap = new Map<string, {
+    totalQuantity: number;
+    totalValue: number; // quantity * entryPrice
+    symbol: string;
+    dateTaken?: string;
+    target1?: string;
+    stopLoss?: string;
+    tradeType?: string;
+  }>();
+
+  // Group by symbol and calculate weighted averages
+  for (const row of rows) {
+    const symbol = row.symbol.toUpperCase();
+    const quantity = parseFloat(row.quantity);
+    const entryPrice = parseFloat(row.entryPrice);
+    const value = quantity * entryPrice;
+
+    if (symbolMap.has(symbol)) {
+      const existing = symbolMap.get(symbol)!;
+      existing.totalQuantity += quantity;
+      existing.totalValue += value;
+    } else {
+      symbolMap.set(symbol, {
+        totalQuantity: quantity,
+        totalValue: value,
+        symbol: row.symbol,
+        dateTaken: row.dateTaken,
+        target1: row.target1,
+        stopLoss: row.stopLoss,
+        tradeType: row.tradeType,
+      });
+    }
+  }
+
+  // Convert back to CSVRow array with averaged prices
+  const consolidated: CSVRow[] = [];
+  for (const [symbol, data] of symbolMap.entries()) {
+    const avgEntryPrice = data.totalValue / data.totalQuantity;
+    consolidated.push({
+      symbol: data.symbol,
+      quantity: data.totalQuantity.toString(),
+      entryPrice: avgEntryPrice.toFixed(2),
+      dateTaken: data.dateTaken || '',
+      target1: data.target1 || '',
+      stopLoss: data.stopLoss || '',
+      tradeType: data.tradeType,
+    });
+  }
+
+  return consolidated;
 }
 
 /**
@@ -408,13 +513,21 @@ export async function parseAndValidateCSV(
     }
   }
 
+  // Consolidate duplicate symbols (sum quantities, average prices)
+  const consolidatedRows = validRows.length > 0 ? consolidateDuplicateSymbols(validRows) : validRows;
+
+  // Log consolidation info
+  if (consolidatedRows.length < validRows.length) {
+    console.log(`📊 Consolidated ${validRows.length} rows into ${consolidatedRows.length} unique symbols`);
+  }
+
   return {
     success: errors.length === 0,
-    validRows,
+    validRows: consolidatedRows,
     errors,
     summary: {
       total: lines.length - 1,
-      valid: validRows.length,
+      valid: consolidatedRows.length,
       invalid: errors.length > 0 ? lines.length - 1 - validRows.length : 0
     }
   };

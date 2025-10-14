@@ -14,6 +14,64 @@ A Next.js trading ideas and portfolio management application with real-time tech
 
 ## User Guide
 
+### How to Read an Idea Card
+
+Each idea card provides comprehensive information to help you make informed trading decisions:
+
+#### Header Section
+- **Symbol Name** (e.g., "HEG") - The stock ticker symbol
+- **Industry/Sector** - Business category (e.g., "Electrical Equipment & Parts")
+- **Status Badge** (Top-right corner):
+  - 🟢 **Ready to Enter** (Green) - All conditions met for entry
+  - 🟠 **You can Enter** (Orange) - Excellent fundamentals, price below entry
+  - ⚪ **Waiting** (Gray) - Conditions not yet met
+
+#### Tags Section
+- **Risk Level** - #low risk, #medium risk, or #high risk
+- **Timeframe** - #short term, #medium term, or #long term
+- **Analysis Type** - #technical analysis, #fundamental analysis, etc.
+
+#### Technical Levels Card
+Shows real-time technical indicators with trend arrows (↑/↓):
+- **Technical Signal** - STRONG_BUY, BUY, NEUTRAL, SELL, STRONG_SELL
+- **50 EMA** - 50-day Exponential Moving Average
+- **100 MA** - 100-day Simple Moving Average
+- **200 MA** - 200-day Simple Moving Average
+- **Supertrend** - Trend-following indicator
+- **BB Middle** - Bollinger Bands middle line
+- **RSI** - Relative Strength Index (14-period)
+  - RSI > 70: Overbought
+  - RSI < 30: Oversold
+  - RSI 30-70: Normal range
+
+**Trend Arrows**:
+- ↑ Green arrow = Price is above the indicator (bullish)
+- ↓ Red arrow = Price is below the indicator (bearish)
+
+#### Fundamentals Card
+Shows company financial health metrics:
+- **Fundamental Rating** - EXCELLENT, GOOD, AVERAGE, POOR, WEAK
+- **PE (Price-to-Earnings)** - Valuation metric (lower is generally better)
+- **ROE (Return on Equity)** - Profitability measure (higher is better)
+- **Debt-to-Equity** - Financial leverage (lower is generally safer)
+- **Earnings Growth** - Year-over-year earnings growth percentage
+
+#### Price Levels Section
+Four key price points displayed in a grid:
+- **LTP (Last Traded Price)** - Current market price (₹519.45)
+- **Entry** - Recommended entry price (₹510)
+- **Target** - Price target with expected gain % (₹585, +14.7%)
+- **Stop Loss** - Risk management level (₹495)
+
+#### Action Buttons
+- **📊 Analysis** - View detailed technical and fundamental analysis with AI recommendation
+- **➕ Add Position** - Enter this trade into your portfolio
+- **✏️ Edit** - Modify idea details (if you're the creator)
+
+#### Footer Section
+- **Engagement Metrics**: Likes (❤️), Comments (💬), and Post Date (📅)
+- **Creator Info**: Posted by username with avatar
+
 ### Understanding Idea Card Badges
 
 Each idea card displays a badge in the top-right corner indicating its entry readiness:
