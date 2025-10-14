@@ -7,6 +7,7 @@ import { useTrading } from '../../../contexts/TradingContext';
 import { useAuth } from '../../../contexts/AuthContext';
 import { IdeaIcon, TargetIcon, EntryIcon, HeartIcon, EyeIcon } from '@/components/icons';
 import { getCurrentISTDate, formatDateForDisplay, formatDateForStorage } from '@/lib/dateUtils';
+import { trackIdeaViewed, trackIdeaLiked, trackIdeaFollowed, trackPositionAdded } from '@/lib/analytics';
 
 export default function IdeaDetailPage() {
   const params = useParams();
@@ -52,6 +53,8 @@ export default function IdeaDetailPage() {
 
     if (foundIdea) {
       loadComments();
+      // Track idea view
+      trackIdeaViewed(ideaId, foundIdea.symbol || 'Unknown');
     }
   }, [ideaId, ideas]);
 
@@ -67,6 +70,8 @@ export default function IdeaDetailPage() {
   const handleLike = async () => {
     try {
       await toggleLike(ideaId);
+      // Track like
+      trackIdeaLiked(ideaId);
     } catch (error: any) {
       setError(error.message);
     }
@@ -75,6 +80,8 @@ export default function IdeaDetailPage() {
   const handleFollow = async () => {
     try {
       await toggleFollow(ideaId);
+      // Track follow
+      trackIdeaFollowed(ideaId);
     } catch (error: any) {
       setError(error.message);
     }
@@ -136,6 +143,10 @@ export default function IdeaDetailPage() {
       };
 
       await addToPortfolio(ideaId, positionData);
+
+      // Track position added from idea
+      trackPositionAdded(idea.symbol || 'Unknown', 'idea');
+
       setShowTradeModal(false);
       setTradeDetails({
         quantity: '',

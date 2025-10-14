@@ -10,6 +10,7 @@ import { db } from '@/lib/firebase';
 import { getSymbolData } from '@/lib/symbolDataService';
 import InvestorAnalysisModal from '@/components/InvestorAnalysisModal';
 import { createInvestmentEngine } from '@/lib/investment-rules';
+import { trackPositionExited, trackPositionAdded, trackAnalysisViewed } from '@/lib/analytics';
 import {
   PortfolioMetrics,
   SummaryPositionCard,
@@ -138,12 +139,18 @@ export default function PortfolioPage() {
     if (!selectedPosition || !exitDetails.exitPrice) return;
 
     try {
+      const exitPrice = parseFloat(exitDetails.exitPrice);
+      const pnl = (exitPrice - selectedPosition.entryPrice) * selectedPosition.quantity;
+
       await exitTrade(
         selectedPosition.id,
-        parseFloat(exitDetails.exitPrice),
+        exitPrice,
         formatDateForStorage(exitDetails.exitDate),
         exitDetails.exitReason
       );
+
+      // Track position exit
+      trackPositionExited(selectedPosition.symbol, pnl);
 
       setShowExitModal(false);
       setSelectedPosition(null);
@@ -163,6 +170,9 @@ export default function PortfolioPage() {
       alert('Technical or fundamental data not available for this symbol yet. Please wait for the next analysis cycle.');
       return;
     }
+
+    // Track analysis viewed
+    trackAnalysisViewed(position.symbol, 'portfolio');
 
     const engine = createInvestmentEngine(position.technicals, position.fundamentals);
     const rec = engine.getRecommendation();
@@ -189,6 +199,14 @@ export default function PortfolioPage() {
   const handleToggleExpand = useCallback((positionId: string) => {
     setExpandedPositionId(prev => prev === positionId ? null : positionId);
   }, []);
+
+  // Wrapper for addToPortfolio to add tracking
+  const handleAddToPortfolio = useCallback(async (ideaId: string, position: any) => {
+    await addToPortfolio(ideaId, position);
+    // Track manual position add (ideaId will be empty for manual adds)
+    const source = ideaId ? 'idea' : 'manual';
+    trackPositionAdded(position.symbol, source);
+  }, [addToPortfolio]);
 
   // Render position cards based on view mode
   const renderPositions = useCallback((positions: any[]) => {
@@ -405,7 +423,7 @@ export default function PortfolioPage() {
         <AddPositionModal
           isOpen={showAddPositionModal}
           onClose={() => setShowAddPositionModal(false)}
-          onAddPosition={addToPortfolio}
+          onAddPosition={handleAddToPortfolio}
         />
       )}
 
@@ -415,7 +433,7 @@ export default function PortfolioPage() {
           activeAccount={activeAccount}
           accounts={accounts}
           onClose={() => setShowImportModal(false)}
-          onAddPosition={addToPortfolio}
+          onAddPosition={handleAddToPortfolio}
           db={db}
         />
       )}

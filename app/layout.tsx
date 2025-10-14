@@ -6,6 +6,7 @@ import { AccountsProvider } from "../contexts/AccountsContext";
 import { TradingProvider } from "../contexts/TradingContext";
 import { SymbolsProvider } from "../contexts/SymbolsContext";
 import { ThemeProvider } from "../contexts/ThemeContext";
+import GoogleAnalytics from "../components/GoogleAnalytics";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -75,6 +76,7 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
+        <GoogleAnalytics />
         <ThemeProvider>
           <AuthProvider>
             <AccountsProvider>

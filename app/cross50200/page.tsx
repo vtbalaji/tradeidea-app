@@ -9,6 +9,7 @@ import { collection, query, where, getDocs, orderBy, doc, getDoc } from 'firebas
 import { createInvestmentEngine } from '@/lib/investment-rules';
 import InvestorAnalysisModal from '@/components/InvestorAnalysisModal';
 import AnalysisButton from '@/components/AnalysisButton';
+import { trackScreenerViewed, trackScreenerConvertedToIdea, trackAnalysisViewed } from '@/lib/analytics';
 
 interface Crossover {
   id: string;
@@ -41,6 +42,12 @@ export default function Cross50200Page() {
   const router = useRouter();
   const { user } = useAuth();
   const [activeTab, setActiveTab] = useState<'both' | '50ma' | '200ma' | 'supertrend' | 'volume'>('both');
+
+  // Track tab change
+  const handleTabChange = (tab: 'both' | '50ma' | '200ma' | 'supertrend' | 'volume') => {
+    setActiveTab(tab);
+    trackScreenerViewed(tab);
+  };
   const [crossovers50, setCrossovers50] = useState<Crossover[]>([]);
   const [crossovers200, setCrossovers200] = useState<Crossover[]>([]);
   const [supertrendCrossovers, setSupertrendCrossovers] = useState<Crossover[]>([]);
@@ -168,6 +175,9 @@ export default function Cross50200Page() {
 
   const handleAnalyze = async (e: React.MouseEvent, crossover: Crossover) => {
     e.stopPropagation();
+
+    // Track analysis viewed
+    trackAnalysisViewed(crossover.symbol, 'screener');
 
     // Check if we already have the data cached
     if (symbolData[crossover.symbol]) {
@@ -323,6 +333,9 @@ export default function Cross50200Page() {
       calculatedTarget: target,
       riskAmount: riskAmount
     });
+
+    // Track screener converted to idea
+    trackScreenerConvertedToIdea(displaySymbol, activeTab);
 
     // Navigate to new idea page with pre-populated data
     router.push(`/ideas/new?symbol=${encodeURIComponent(displaySymbol)}&analysis=${encodeURIComponent(analysisText)}&entryPrice=${entryPrice.toFixed(2)}&stopLoss=${stopLoss.toFixed(2)}&target=${target.toFixed(2)}`);
@@ -624,6 +637,9 @@ export default function Cross50200Page() {
                 ? `${isBullish ? 'Bullish' : 'Bearish'} Supertrend crossover detected.\n\nKey Points:\n- Price is ${isBullish ? 'above' : 'below'} Supertrend level by ${Math.abs(crossover.crossPercent).toFixed(2)}%\n- Current Price: ₹${crossover.todayClose.toFixed(2)}\n- Supertrend Level: ₹${(isSupertrend ? crossover.todaySupertrend : crossover.todayMA)?.toFixed(2)}\n\n${isBullish ? 'This signals potential upward momentum. Consider entering on pullbacks to support levels.' : 'This signals potential downward pressure. Consider exiting long positions or avoiding new entries.'}`
                 : `${isBullish ? 'Bullish' : 'Bearish'} ${crossover.ma_period} MA crossover detected.\n\nKey Points:\n- Price crossed ${isBullish ? 'above' : 'below'} ${crossover.ma_period} MA today\n- Current Price: ₹${crossover.todayClose.toFixed(2)}\n- ${crossover.ma_period} MA Level: ₹${crossover.todayMA?.toFixed(2)}\n- Price change: ${((crossover.todayClose - crossover.yesterdayClose) / crossover.yesterdayClose * 100).toFixed(2)}%\n\n${isBullish ? 'This crossover suggests potential bullish momentum. Entry recommended near support levels with proper risk management.' : 'This crossover indicates potential bearish pressure. Consider profit booking or avoiding fresh longs.'}`;
 
+              // Track screener converted to idea
+              trackScreenerConvertedToIdea(displaySymbol, activeTab);
+
               // Navigate to new idea page with pre-populated data
               router.push(`/ideas/new?symbol=${encodeURIComponent(displaySymbol)}&analysis=${encodeURIComponent(analysisText)}&entryPrice=${entryPrice.toFixed(2)}&stopLoss=${stopLoss.toFixed(2)}&target=${target.toFixed(2)}`);
             }}
@@ -654,7 +670,7 @@ export default function Cross50200Page() {
       <div className="px-5 mb-4">
         <div className="flex gap-2">
           <button
-            onClick={() => setActiveTab('both')}
+            onClick={() => handleTabChange('both')}
             className={`px-4 py-2 rounded-lg text-sm font-semibold transition-colors ${
               activeTab === 'both'
                 ? 'bg-[#ff8c42] text-gray-900 dark:text-white'
@@ -664,7 +680,7 @@ export default function Cross50200Page() {
             50 & 200 MA Both
           </button>
           <button
-            onClick={() => setActiveTab('50ma')}
+            onClick={() => handleTabChange('50ma')}
             className={`px-4 py-2 rounded-lg text-sm font-semibold transition-colors ${
               activeTab === '50ma'
                 ? 'bg-[#ff8c42] text-gray-900 dark:text-white'
@@ -674,7 +690,7 @@ export default function Cross50200Page() {
             50 MA Only
           </button>
           <button
-            onClick={() => setActiveTab('200ma')}
+            onClick={() => handleTabChange('200ma')}
             className={`px-4 py-2 rounded-lg text-sm font-semibold transition-colors ${
               activeTab === '200ma'
                 ? 'bg-[#ff8c42] text-gray-900 dark:text-white'
@@ -684,7 +700,7 @@ export default function Cross50200Page() {
             200 MA Only
           </button>
           <button
-            onClick={() => setActiveTab('supertrend')}
+            onClick={() => handleTabChange('supertrend')}
             className={`px-4 py-2 rounded-lg text-sm font-semibold transition-colors ${
               activeTab === 'supertrend'
                 ? 'bg-[#ff8c42] text-gray-900 dark:text-white'
@@ -694,7 +710,7 @@ export default function Cross50200Page() {
             Supertrend
           </button>
           <button
-            onClick={() => setActiveTab('volume')}
+            onClick={() => handleTabChange('volume')}
             className={`px-4 py-2 rounded-lg text-sm font-semibold transition-colors ${
               activeTab === 'volume'
                 ? 'bg-[#ff8c42] text-gray-900 dark:text-white'
