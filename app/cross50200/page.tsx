@@ -235,15 +235,17 @@ export default function Cross50200Page() {
         const technicals = data.technicals || data.technical;
 
         if (technicals) {
-          supertrendLevel = technicals.supertrend || technicals.supertrendLevel || null;
-          sma100Level = technicals.sma100 || technicals.ma100 || null;
-          sma50Level = technicals.sma50 || technicals.ema50 || technicals.ma50 || null;
+          // Parse values as numbers to ensure they're not strings
+          supertrendLevel = parseFloat(technicals.supertrend || technicals.supertrendLevel) || null;
+          sma100Level = parseFloat(technicals.sma100 || technicals.ma100) || null;
+          sma50Level = parseFloat(technicals.sma50 || technicals.ema50 || technicals.ma50) || null;
 
-          console.log('Fetched technicals from symbols collection:', {
+          console.log('Fetched technicals from symbols collection (handleConvertToIdea):', {
             symbol,
             supertrend: supertrendLevel,
             sma100: sma100Level,
-            sma50: sma50Level
+            sma50: sma50Level,
+            currentPrice: currentPrice
           });
         }
       }
@@ -256,15 +258,21 @@ export default function Cross50200Page() {
       // Build array of valid support levels
       const supportLevels = [];
 
-      if (supertrendLevel && supertrendLevel > 0) {
+      if (supertrendLevel && supertrendLevel > 0 && !isNaN(supertrendLevel)) {
         supportLevels.push(supertrendLevel);
       }
-      if (sma100Level && sma100Level > 0) {
+      if (sma100Level && sma100Level > 0 && !isNaN(sma100Level)) {
         supportLevels.push(sma100Level);
       }
-      if (sma50Level && sma50Level > 0) {
+      if (sma50Level && sma50Level > 0 && !isNaN(sma50Level)) {
         supportLevels.push(sma50Level);
       }
+
+      console.log('Support levels for entry calculation (handleConvertToIdea):', {
+        symbol,
+        supportLevels,
+        currentPrice: currentPrice
+      });
 
       // Entry is the highest of available support levels
       if (supportLevels.length > 0) {
@@ -275,6 +283,10 @@ export default function Cross50200Page() {
         // Fallback if no technical levels available
         entryPrice = currentPrice;
         stopLoss = entryPrice * 0.95;
+        console.warn('No support levels found, using current price as entry:', {
+          symbol,
+          entry: entryPrice
+        });
       }
     } else {
       // For bearish/short ideas
@@ -282,8 +294,12 @@ export default function Cross50200Page() {
 
       // Build array of valid resistance levels
       const resistanceLevels = [currentPrice * 1.05];
-      if (supertrendLevel && supertrendLevel > 0) resistanceLevels.push(supertrendLevel);
-      if (sma100Level && sma100Level > 0) resistanceLevels.push(sma100Level);
+      if (supertrendLevel && supertrendLevel > 0 && !isNaN(supertrendLevel)) {
+        resistanceLevels.push(supertrendLevel);
+      }
+      if (sma100Level && sma100Level > 0 && !isNaN(sma100Level)) {
+        resistanceLevels.push(sma100Level);
+      }
 
       // Stop loss at the lowest resistance level + 2%
       if (resistanceLevels.length > 0) {
@@ -497,7 +513,7 @@ export default function Cross50200Page() {
             onClick={async (e) => {
               e.stopPropagation();
 
-              // Fetch symbol data to get technical levels (Supertrend, 100MA)
+              // Fetch symbol data to get technical levels (Supertrend, 100MA, 50MA)
               let entryPrice = crossover.todayClose;
               let stopLoss = crossover.todayClose * 0.95; // Default -5%
               let target = crossover.todayClose * 1.10; // Default +10%
@@ -512,15 +528,17 @@ export default function Cross50200Page() {
                   const technicals = data.technicals || data.technical;
 
                   if (technicals) {
-                    supertrendLevel = technicals.supertrend || technicals.supertrendLevel || null;
-                    sma100Level = technicals.sma100 || technicals.ma100 || null;
-                    sma50Level = technicals.sma50 || technicals.ema50 || technicals.ma50 || null;
+                    // Parse values as numbers to ensure they're not strings
+                    supertrendLevel = parseFloat(technicals.supertrend || technicals.supertrendLevel) || null;
+                    sma100Level = parseFloat(technicals.sma100 || technicals.ma100) || null;
+                    sma50Level = parseFloat(technicals.sma50 || technicals.ema50 || technicals.ma50) || null;
 
                     console.log('Fetched technicals from symbols collection:', {
                       symbol: crossover.symbol,
                       supertrend: supertrendLevel,
                       sma100: sma100Level,
                       sma50: sma50Level,
+                      currentPrice: crossover.todayClose,
                       allTechnicals: technicals
                     });
                   }
@@ -534,15 +552,21 @@ export default function Cross50200Page() {
                 // Build array of valid support levels (excluding current price)
                 const supportLevels = [];
 
-                if (supertrendLevel && supertrendLevel > 0) {
+                if (supertrendLevel && supertrendLevel > 0 && !isNaN(supertrendLevel)) {
                   supportLevels.push(supertrendLevel);
                 }
-                if (sma100Level && sma100Level > 0) {
+                if (sma100Level && sma100Level > 0 && !isNaN(sma100Level)) {
                   supportLevels.push(sma100Level);
                 }
-                if (sma50Level && sma50Level > 0) {
+                if (sma50Level && sma50Level > 0 && !isNaN(sma50Level)) {
                   supportLevels.push(sma50Level);
                 }
+
+                console.log('Support levels for entry calculation:', {
+                  symbol: crossover.symbol,
+                  supportLevels,
+                  currentPrice: crossover.todayClose
+                });
 
                 // Entry is the highest of available support levels (Supertrend/100MA/50MA)
                 // NOT the current price if it's already above these levels
@@ -554,6 +578,10 @@ export default function Cross50200Page() {
                   // Fallback if no technical levels available
                   entryPrice = crossover.todayClose;
                   stopLoss = entryPrice * 0.95;
+                  console.warn('No support levels found, using current price as entry:', {
+                    symbol: crossover.symbol,
+                    entry: entryPrice
+                  });
                 }
               } else {
                 // For bearish/short ideas
@@ -561,8 +589,12 @@ export default function Cross50200Page() {
 
                 // Build array of valid resistance levels
                 const resistanceLevels = [crossover.todayClose * 1.05];
-                if (supertrendLevel && supertrendLevel > 0) resistanceLevels.push(supertrendLevel);
-                if (sma100Level && sma100Level > 0) resistanceLevels.push(sma100Level);
+                if (supertrendLevel && supertrendLevel > 0 && !isNaN(supertrendLevel)) {
+                  resistanceLevels.push(supertrendLevel);
+                }
+                if (sma100Level && sma100Level > 0 && !isNaN(sma100Level)) {
+                  resistanceLevels.push(sma100Level);
+                }
 
                 // Stop loss at the lowest resistance level + 2%
                 if (resistanceLevels.length > 0) {

@@ -157,15 +157,15 @@ export default function Home() {
           </div>
           <div className="flex items-center gap-2">
             <span className="text-green-500">✓</span>
-            <span>Portfolio Import (Zerodha, ICICI)</span>
+            <span>Technical / Fundamentals Score</span>
           </div>
           <div className="flex items-center gap-2">
             <span className="text-green-500">✓</span>
-            <span>Real-time Analysis</span>
+            <span>Screeners to Identify Scripts</span>
           </div>
           <div className="flex items-center gap-2">
             <span className="text-green-500">✓</span>
-            <span>Exit Alerts</span>
+            <span>Exit Alerts / Trailing Stoploss</span>
           </div>
         </div>
       </section>
@@ -377,12 +377,12 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Coming Soon - Smart Alerts */}
+      
       <section className="max-w-7xl mx-auto px-6 py-16">
         <div className="bg-gradient-to-r from-[#ff8c42]/10 to-purple-500/10 border-2 border-[#ff8c42] dark:border-[#ff8c42] rounded-2xl p-12 text-center relative overflow-hidden">
-          <div className="absolute top-4 right-4 px-4 py-1 bg-[#ff8c42] text-white text-sm font-bold rounded-full">
+          {/* <div className="absolute top-4 right-4 px-4 py-1 bg-[#ff8c42] text-white text-sm font-bold rounded-full">
             Coming Soon
-          </div>
+          </div> */}
           <div className="text-6xl mb-6">🔔</div>
           <h2 className="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mb-4">
             Smart Signal Alerts
@@ -618,7 +618,7 @@ export default function Home() {
         <div className="relative mb-16">
           <div className="text-center mb-8">
             <div className="inline-block bg-gradient-to-r from-purple-500 to-pink-500 text-white px-6 py-2 rounded-full font-bold text-lg mb-2">
-              Scenario 2: Create Your Own Idea
+              Scenario 2: Create Your Own Idea or Community Idea 
             </div>
             <p className="text-sm text-gray-600 dark:text-[#8b949e] mt-2">
               Start with your own research and create investment ideas from scratch
@@ -968,9 +968,9 @@ export default function Home() {
 
       {/* CTA Section */}
       <section className="max-w-7xl mx-auto px-6 py-20 text-center">
-        <h2 className="text-4xl font-bold text-gray-900 dark:text-white mb-4">Ready to Start Trading Smarter?</h2>
+        <h2 className="text-4xl font-bold text-gray-900 dark:text-white mb-4">Ready to Start Smarter Portfolio Mangagement?</h2>
         <p className="text-xl text-gray-600 dark:text-[#8b949e] mb-8">
-          Join TradeIdea today and connect with traders worldwide.
+          Join TradeIdea today and connect with traders.
         </p>
         <button
           onClick={() => router.push('/login')}

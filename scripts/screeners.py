@@ -77,6 +77,44 @@ def get_market_cap(symbol):
         market_cap_cache[symbol] = 0
         return 0
 
+# Cache for technical data (lastPrice)
+technical_data_cache = {}
+
+def get_last_price(symbol):
+    """
+    Get lastPrice from Firebase symbols collection (technical data)
+    Returns lastPrice, or None if not found
+    """
+    # Check cache first
+    if symbol in technical_data_cache:
+        return technical_data_cache[symbol]
+
+    try:
+        # Add NS_ prefix to match Firebase document IDs
+        symbol_with_prefix = f"NS_{symbol}" if not symbol.startswith('NS_') else symbol
+
+        doc_ref = db.collection('symbols').document(symbol_with_prefix)
+        doc = doc_ref.get()
+
+        if doc.exists:
+            data = doc.to_dict()
+            # lastPrice is stored in the technical data section
+            last_price = None
+            if 'technical' in data and data['technical']:
+                last_price = data['technical'].get('lastPrice', None)
+
+            # Cache it for future lookups
+            technical_data_cache[symbol] = last_price
+            return last_price
+        else:
+            technical_data_cache[symbol] = None
+            return None
+
+    except Exception as e:
+        print(f"  ⚠️  Error fetching technical data for {symbol}: {str(e)}")
+        technical_data_cache[symbol] = None
+        return None
+
 def check_market_cap_filter(symbol, min_market_cap_cr=1000):
     """
     Check if symbol meets minimum market cap requirement
@@ -352,16 +390,43 @@ def get_symbols_from_duckdb():
         return []
 
 def get_last_trading_day():
-    """Get the last trading day (skip weekends)"""
-    today = datetime.now()
-    # If today is Saturday (5) or Sunday (6), go back to Friday
-    if today.weekday() == 5:  # Saturday
-        last_trading_day = today - timedelta(days=1)
-    elif today.weekday() == 6:  # Sunday
-        last_trading_day = today - timedelta(days=2)
+    """
+    Get the last trading day based on current time and day of week
+
+    Rules:
+    - If time < 16:00 (4 PM IST): fetch yesterday's data
+    - If time >= 16:00: fetch today's data
+    - If Saturday: fetch Friday's data
+    - If Sunday: fetch Friday's data
+
+    Returns:
+        str: Last trading day in YYYY-MM-DD format
+    """
+    import pytz
+
+    # Get current time in IST
+    ist = pytz.timezone('Asia/Kolkata')
+    now = datetime.now(ist)
+    today = now.date()
+    current_hour = now.hour
+
+    # Determine the target date based on time
+    if current_hour < 16:
+        # Before 4 PM: fetch yesterday's data
+        target_date = today - timedelta(days=1)
     else:
-        last_trading_day = today
-    return last_trading_day.strftime('%Y-%m-%d')
+        # After 4 PM: fetch today's data
+        target_date = today
+
+    # Adjust for weekends
+    weekday = target_date.weekday()
+
+    if weekday == 5:  # Saturday
+        target_date = target_date - timedelta(days=1)  # Go to Friday
+    elif weekday == 6:  # Sunday
+        target_date = target_date - timedelta(days=2)  # Go to Friday
+
+    return target_date.strftime('%Y-%m-%d')
 
 def save_to_firebase(crossovers_50, crossovers_200, supertrend_crosses, volume_spikes):
     """Save crossover and volume spike data to Firebase collections"""
@@ -396,8 +461,12 @@ def save_to_firebase(crossovers_50, crossovers_200, supertrend_crosses, volume_s
         for cross in crossovers_50:
             # Add NS_ prefix to match symbols collection format
             symbol_with_prefix = f"NS_{cross['symbol']}" if not cross['symbol'].startswith('NS_') else cross['symbol']
+
+            # Get lastPrice from technical data (Yahoo Finance)
+            last_price = get_last_price(cross['symbol'])
+
             doc_ref = ma50_ref.document(f"{symbol_with_prefix}_{today}")
-            doc_ref.set({
+            doc_data = {
                 'symbol': symbol_with_prefix,
                 'date': today,
                 'crossoverType': cross['type'],  # 'bullish_cross' or 'bearish_cross'
@@ -408,15 +477,25 @@ def save_to_firebase(crossovers_50, crossovers_200, supertrend_crosses, volume_s
                 'crossPercent': cross['cross_percent'],
                 'ma_period': 50,
                 'createdAt': firestore.SERVER_TIMESTAMP
-            })
+            }
+
+            # Add lastPrice if available (from Yahoo Finance/technical analysis)
+            if last_price is not None:
+                doc_data['lastPrice'] = last_price
+
+            doc_ref.set(doc_data)
 
         # Save 200 MA crossovers
         print(f'💾 Saving {len(crossovers_200)} stocks to macrossover200 collection...')
         for cross in crossovers_200:
             # Add NS_ prefix to match symbols collection format
             symbol_with_prefix = f"NS_{cross['symbol']}" if not cross['symbol'].startswith('NS_') else cross['symbol']
+
+            # Get lastPrice from technical data (Yahoo Finance)
+            last_price = get_last_price(cross['symbol'])
+
             doc_ref = ma200_ref.document(f"{symbol_with_prefix}_{today}")
-            doc_ref.set({
+            doc_data = {
                 'symbol': symbol_with_prefix,
                 'date': today,
                 'crossoverType': cross['type'],  # 'bullish_cross' or 'bearish_cross'
@@ -427,15 +506,25 @@ def save_to_firebase(crossovers_50, crossovers_200, supertrend_crosses, volume_s
                 'crossPercent': cross['cross_percent'],
                 'ma_period': 200,
                 'createdAt': firestore.SERVER_TIMESTAMP
-            })
+            }
+
+            # Add lastPrice if available (from Yahoo Finance/technical analysis)
+            if last_price is not None:
+                doc_data['lastPrice'] = last_price
+
+            doc_ref.set(doc_data)
 
         # Save supertrend crossovers
         print(f'💾 Saving {len(supertrend_crosses)} stocks to supertrendcrossover collection...')
         for cross in supertrend_crosses:
             # Add NS_ prefix to match symbols collection format
             symbol_with_prefix = f"NS_{cross['symbol']}" if not cross['symbol'].startswith('NS_') else cross['symbol']
+
+            # Get lastPrice from technical data (Yahoo Finance)
+            last_price = get_last_price(cross['symbol'])
+
             doc_ref = supertrend_ref.document(f"{symbol_with_prefix}_{today}")
-            doc_ref.set({
+            doc_data = {
                 'symbol': symbol_with_prefix,
                 'date': today,
                 'crossoverType': cross['type'],  # 'bullish_cross' or 'bearish_cross'
@@ -445,15 +534,25 @@ def save_to_firebase(crossovers_50, crossovers_200, supertrend_crosses, volume_s
                 'todaySupertrend': cross['today_supertrend'],
                 'crossPercent': cross['cross_percent'],
                 'createdAt': firestore.SERVER_TIMESTAMP
-            })
+            }
+
+            # Add lastPrice if available (from Yahoo Finance/technical analysis)
+            if last_price is not None:
+                doc_data['lastPrice'] = last_price
+
+            doc_ref.set(doc_data)
 
         # Save volume spikes
         print(f'💾 Saving {len(volume_spikes)} stocks to volumespike collection...')
         for spike in volume_spikes:
             # Add NS_ prefix to match symbols collection format
             symbol_with_prefix = f"NS_{spike['symbol']}" if not spike['symbol'].startswith('NS_') else spike['symbol']
+
+            # Get lastPrice from technical data (Yahoo Finance)
+            last_price = get_last_price(spike['symbol'])
+
             doc_ref = volume_spike_ref.document(f"{symbol_with_prefix}_{today}")
-            doc_ref.set({
+            doc_data = {
                 'symbol': symbol_with_prefix,
                 'date': today,
                 'todayVolume': spike['today_volume'],
@@ -463,7 +562,13 @@ def save_to_firebase(crossovers_50, crossovers_200, supertrend_crosses, volume_s
                 'yesterdayClose': spike['yesterday_close'],
                 'priceChangePercent': spike['price_change_percent'],
                 'createdAt': firestore.SERVER_TIMESTAMP
-            })
+            }
+
+            # Add lastPrice if available (from Yahoo Finance/technical analysis)
+            if last_price is not None:
+                doc_data['lastPrice'] = last_price
+
+            doc_ref.set(doc_data)
 
         print('✅ Data saved to Firebase successfully')
 

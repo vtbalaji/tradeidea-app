@@ -1,3 +1,60 @@
+# Scripts - EOD Data & Technical Analysis
+
+## ⚡ Quick Start (2 Commands)
+
+### First Time Setup
+```bash
+cd /Volumes/ssd-backup/git/SmartFarm/myportfolio-web
+./scripts/setup-venv.sh
+```
+
+### Daily EOD Batch (Run after 4 PM IST)
+```bash
+./scripts/daily-eod-batch.sh
+```
+
+This automatically:
+1. ✅ **Activates virtual environment**
+2. ✅ **Fetches NSE EOD data** → DuckDB (official NSE data with smart date logic)
+3. ✅ **Runs technical analysis** → Firebase (calculates indicators)
+4. ✅ **Runs screeners** → Firebase (finds crossovers & volume spikes)
+5. ✅ **Deactivates virtual environment**
+
+## 📚 Documentation
+
+- **[QUICK_START.md](QUICK_START.md)** - Get started in 5 minutes
+- **[HOW_TO_RUN.md](HOW_TO_RUN.md)** - Detailed usage guide
+- **[WORKFLOW.md](WORKFLOW.md)** - Visual workflow & data flow
+- **[EOD_SMART_DATE_LOGIC.md](EOD_SMART_DATE_LOGIC.md)** - Date logic details
+
+## 🐍 Virtual Environment
+
+## ⚠️ CRITICAL: NEVER USE SYSTEM PYTHON
+
+**All Python scripts MUST run in virtual environment (`venv/`).**
+
+### ❌ WRONG - DON'T DO THIS:
+```bash
+python3 scripts/fetch-eod-data.py     # ❌ Uses system Python
+python scripts/screeners.py           # ❌ Will fail
+```
+
+### ✅ CORRECT - ALWAYS DO THIS:
+```bash
+./venv/bin/python3 scripts/fetch-eod-data.py  # ✅ Uses venv Python
+./scripts/daily-eod-batch.sh                   # ✅ Batch script uses venv
+```
+
+**See [IMPORTANT_VENV.md](IMPORTANT_VENV.md) for complete details.**
+
+**Why?**
+- ✅ Isolated dependencies (jugaad-data, duckdb, etc.)
+- ✅ No conflicts with system Python
+- ✅ Reproducible environment
+- ✅ Works reliably everywhere (manual, cron, scripts)
+
+---
+
 # EOD Technical Analysis Batch Job
 
 This script analyzes stock symbols from your TradeIdea platform and calculates technical indicators.

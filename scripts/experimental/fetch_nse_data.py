@@ -83,6 +83,46 @@ class NSEDataFetcher:
 
         return result[0] if result else 0
 
+    def get_last_trading_day(self):
+        """
+        Get the last trading day based on current time and day of week
+
+        Rules:
+        - If time < 16:00 (4 PM IST): fetch yesterday's data
+        - If time >= 16:00: fetch today's data
+        - If Saturday: fetch Friday's data
+        - If Sunday: fetch Friday's data
+
+        Returns:
+            date: Last trading day
+        """
+        from datetime import datetime
+        import pytz
+
+        # Get current time in IST
+        ist = pytz.timezone('Asia/Kolkata')
+        now = datetime.now(ist)
+        today = now.date()
+        current_hour = now.hour
+
+        # Determine the target date based on time
+        if current_hour < 16:
+            # Before 4 PM: fetch yesterday's data
+            target_date = today - timedelta(days=1)
+        else:
+            # After 4 PM: fetch today's data
+            target_date = today
+
+        # Adjust for weekends
+        weekday = target_date.weekday()
+
+        if weekday == 5:  # Saturday
+            target_date = target_date - timedelta(days=1)  # Go to Friday
+        elif weekday == 6:  # Sunday
+            target_date = target_date - timedelta(days=2)  # Go to Friday
+
+        return target_date
+
     def fetch_and_store(self, symbol, from_date=None, to_date=None, retry_count=3):
         """
         Fetch data from NSE and store in DuckDB
@@ -99,7 +139,7 @@ class NSEDataFetcher:
             try:
                 # Set default dates if not provided
                 if to_date is None:
-                    to_date = date.today()
+                    to_date = self.get_last_trading_day()
 
                 if from_date is None:
                     # Check if we have data for this symbol

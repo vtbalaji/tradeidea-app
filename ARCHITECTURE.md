@@ -300,22 +300,290 @@ service cloud.firestore {
 | Hosting | Vercel | Latest |
 | Runtime | Node.js | 20.x |
 
+## 🤖 Batch Processing Architecture
+
+### Overview
+TradeIdea uses automated batch jobs to fetch EOD (End-of-Day) market data, calculate technical indicators, and update Firestore with the latest analysis. The system supports two data sources with automatic fallback.
+
+### Batch Job Types
+
+#### 1. EOD Technical Analysis (Daily)
+**Primary Script**: `eod_batch.sh` (uses DuckDB + NSE)
+**Backup Script**: `eod_batch_yahoo.sh` (uses Yahoo Finance)
+**Frequency**: Daily at 6 PM (weekdays)
+**Duration**: ~1-2 seconds per symbol (after initial load)
+
+**What it does:**
+- Fetches EOD price data for all symbols
+- Calculates 20+ technical indicators
+- Updates Firestore `symbols/{symbolId}/technical`
+- Stores historical data in DuckDB for incremental updates
+
+#### 2. Fundamentals Analysis (Weekly)
+**Script**: `fundamentals_batch.sh`
+**Frequency**: Weekly (Sundays recommended)
+**Duration**: ~5-10 seconds per symbol
+
+**What it does:**
+- Fetches company fundamentals (market cap, P/E, etc.)
+- Updates Firestore `symbols/{symbolId}/fundamentals`
+- Skips symbols with market cap < 1000 Cr
+
+### Data Pipeline Architecture
+
+```mermaid
+graph TB
+    A[Cron Job Trigger] --> B{Data Source}
+    B -->|Primary| C[NSE via jugaad-data]
+    B -->|Fallback| D[Yahoo Finance API]
+    C --> E[DuckDB Storage]
+    D --> E
+    E --> F[Technical Analysis Engine]
+    F --> G[Indicator Calculations]
+    G --> H[Firestore Update]
+    H --> I[symbols/{id}/technical]
+    I --> J[Frontend Real-time Access]
+```
+
+### Technical Indicators Calculated
+
+| Category | Indicators |
+|----------|-----------|
+| **Moving Averages** | SMA20, SMA50, SMA100, SMA200, EMA9, EMA21, EMA50 |
+| **Trend** | Supertrend (Daily), Weekly Supertrend, MACD, MACD Signal, MACD Histogram |
+| **Momentum** | RSI14 |
+| **Volatility** | Bollinger Bands (Upper, Middle, Lower) |
+| **Volume** | Volume, 20-day Average Volume |
+| **Period Changes** | Weekly, Monthly, Quarterly % changes |
+
+### Batch Processing Scripts
+
+```
+myportfolio-web/
+├── eod_batch.sh              # Main: DuckDB + NSE (PRODUCTION)
+├── eod_batch_yahoo.sh        # Backup: Yahoo Finance
+├── fundamentals_batch.sh     # Weekly fundamentals
+├── scripts/
+│   ├── analyze-symbols.py           # Yahoo Finance version
+│   └── experimental/
+│       ├── analyze-symbols-duckdb.py   # DuckDB + NSE version
+│       └── fetch_nse_data.py           # NSE data fetcher
+└── data/
+    └── eod.duckdb           # Local DuckDB database (auto-created)
+```
+
+### Data Source Comparison
+
+#### Primary: DuckDB + NSE
+```bash
+./eod_batch.sh
+```
+
+**Advantages:**
+- ✅ Official NSE data (more accurate)
+- ✅ Incremental updates (only fetches new data)
+- ✅ 2-3x faster after initial load
+- ✅ Offline capable (uses cached data)
+- ✅ No rate limits
+
+**Disadvantages:**
+- ⚠️ Initial load takes 30-60s per symbol (fetches 2 years of data)
+- ⚠️ Requires DuckDB and jugaad-data Python packages
+
+#### Fallback: Yahoo Finance
+```bash
+./eod_batch_yahoo.sh
+```
+
+**Advantages:**
+- ✅ Reliable and battle-tested
+- ✅ No initial setup required
+- ✅ Consistent 3-5s per symbol
+
+**Disadvantages:**
+- ⚠️ Rate limits (can throttle on high volume)
+- ⚠️ Fetches full history every time
+- ⚠️ Slightly slower than DuckDB incremental updates
+
+### Cron Job Setup
+
+#### Daily Technical Analysis (Recommended)
+```bash
+# Run weekdays at 6 PM (after market close)
+0 18 * * 1-5 cd /path/to/myportfolio-web && ./eod_batch.sh >> logs/eod.log 2>&1
+```
+
+#### Weekly Fundamentals
+```bash
+# Run Sundays at 8 PM
+0 20 * * 0 cd /path/to/myportfolio-web && ./fundamentals_batch.sh >> logs/fundamentals.log 2>&1
+```
+
+### Batch Job Workflow
+
+1. **Symbol Discovery**
+   - Fetch symbols from Firestore `symbols` collection
+   - Include symbols from active portfolios and ideas
+   - Deduplicate and prepare list
+
+2. **Data Fetching (Per Symbol)**
+   - Check DuckDB for existing data
+   - Fetch only new data from NSE (incremental)
+   - Store in DuckDB for future runs
+
+3. **Technical Analysis**
+   - Load 730 days of data (2 years for weekly calculations)
+   - Calculate all technical indicators
+   - Generate buy/sell/neutral signals
+
+4. **Firestore Update**
+   - Update `symbols/{symbolId}/technical` document
+   - Merge with existing data (preserves fundamentals)
+   - Set `lastFetched` timestamp
+
+5. **Logging & Statistics**
+   - Display success/failure counts
+   - Show DuckDB statistics
+   - Log errors for debugging
+
+### Technical Indicator Details
+
+#### Daily Supertrend
+- **Period**: 10
+- **Multiplier**: 3
+- **Timeframe**: Daily candles
+- **Use Case**: Entry signals, intraday/swing trading
+- **Fields**: `supertrend`, `supertrendDirection`
+
+#### Weekly Supertrend
+- **Period**: 10
+- **Multiplier**: 3
+- **Timeframe**: Weekly candles (5-day aggregation)
+- **Use Case**: Exit criteria, reduces whipsaws
+- **Fields**: `weeklySupertrend`, `weeklySupertrendDirection`
+
+#### Signal Scoring System
+The batch job calculates an overall signal score:
+- **STRONG_BUY**: Score ≥ 5
+- **BUY**: Score ≥ 2
+- **NEUTRAL**: -2 < Score < 2
+- **SELL**: Score ≤ -2
+- **STRONG_SELL**: Score ≤ -5
+
+**Scoring Logic:**
+- Price above SMA200: +2
+- Price above EMA50: +1
+- Supertrend bullish: +2
+- RSI oversold (<30): +2
+- Golden cross: +2
+- MACD bullish: +1
+- Volume spike: +1
+
+### Performance Metrics
+
+#### First Run (Initial Load)
+| Metric | DuckDB + NSE | Yahoo Finance |
+|--------|-------------|---------------|
+| Time per symbol | ~30-60s | ~3-5s |
+| Total for 100 symbols | ~50-100 min | ~5-8 min |
+
+#### Subsequent Runs (Daily Updates)
+| Metric | DuckDB + NSE | Yahoo Finance |
+|--------|-------------|---------------|
+| Time per symbol | **~1-2s** ⚡ | ~3-5s |
+| Total for 100 symbols | **~2-3 min** | ~5-8 min |
+
+### Error Handling
+
+#### Automatic Recovery
+- Symbol fetch timeout: 60 seconds
+- Skips symbols with insufficient data (<200 days)
+- Continues processing on individual failures
+- Logs all errors for debugging
+
+#### Manual Intervention
+```bash
+# Check batch job status
+tail -f logs/eod.log
+
+# Rerun for specific symbols (if needed)
+source venv/bin/activate
+python3 scripts/analyze-symbols.py
+
+# Switch to fallback if DuckDB has issues
+./eod_batch_yahoo.sh
+```
+
+### DuckDB Database Schema
+
+```sql
+-- Table: eod_data
+CREATE TABLE eod_data (
+  symbol VARCHAR,
+  date DATE,
+  open DOUBLE,
+  high DOUBLE,
+  low DOUBLE,
+  close DOUBLE,
+  volume BIGINT,
+  PRIMARY KEY (symbol, date)
+);
+```
+
+### Monitoring & Maintenance
+
+#### Daily Checks
+- Verify Firestore `lastFetched` timestamps
+- Check log files for errors
+- Monitor DuckDB database size
+
+#### Weekly Tasks
+- Review failed symbols
+- Update symbols collection if new stocks listed
+- Backup DuckDB database
+
+#### Monthly Tasks
+- Analyze batch job performance
+- Optimize slow-running symbols
+- Update Python dependencies
+
+### Future Enhancements
+
+#### Planned Features
+- [ ] Real-time intraday data updates
+- [ ] Multi-timeframe analysis (5min, 15min, 1hour)
+- [ ] Options data integration
+- [ ] Sector/index correlations
+- [ ] Machine learning price predictions
+
+#### Scalability Improvements
+- [ ] Parallel processing (multiple symbols simultaneously)
+- [ ] Redis caching layer
+- [ ] Distributed batch processing
+- [ ] Cloud-based DuckDB (S3-backed)
+
 ## 📞 Maintenance & Support
 
 ### Monitoring
 - Vercel Analytics (built-in)
 - Firebase Console for database metrics
 - Error tracking via Vercel logs
+- Batch job logs in `logs/` directory
 
 ### Backup Strategy
 - Firestore automatic backups (daily)
 - Git repository backup on GitHub
 - Environment variables stored in Vercel
+- DuckDB database backed up weekly
 
 ### Update Process
 ```bash
 # Update dependencies
 npm update
+
+# Update Python packages
+source venv/bin/activate
+pip install --upgrade -r requirements.txt
 
 # Check for breaking changes
 npm outdated
