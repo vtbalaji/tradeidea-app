@@ -44,5 +44,9 @@ serviceAccountKey.json
 *.duckdb
 *.duckdb.wal
 
+# logs
+/logs/*.log
+!/logs/.gitkeep
+
 # unused scripts (scheduled for deletion)
 /scripts/unused/

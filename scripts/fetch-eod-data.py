@@ -50,6 +50,7 @@ def get_symbols_from_firebase():
     # From symbols collection (master list)
     print('  📋 From symbols collection...')
     symbols_ref = db.collection('symbols')
+  
     symbols_count = 0
     for doc in symbols_ref.stream():
         data = doc.to_dict()
@@ -67,11 +68,11 @@ def get_symbols_from_firebase():
     active_symbols = set()
 
     # From ideas
-    ideas_ref = db.collection('ideas')
-    for doc in ideas_ref.stream():
-        data = doc.to_dict()
-        if 'symbol' in data:
-            active_symbols.add(data['symbol'])
+    # ideas_ref = db.collection('ideas')
+    # for doc in ideas_ref.stream():
+    #     data = doc.to_dict()
+    #     if 'symbol' in data:
+    #         active_symbols.add(data['symbol'])
 
     # From tradingIdeas
     trading_ideas_ref = db.collection('tradingIdeas')
@@ -81,25 +82,26 @@ def get_symbols_from_firebase():
             active_symbols.add(data['symbol'])
 
     # From portfolios
-    portfolios_ref = db.collection('portfolios')
-    for doc in portfolios_ref.stream():
-        data = doc.to_dict()
-        if 'symbol' in data:
-            active_symbols.add(data['symbol'])
+    # portfolios_ref = db.collection('portfolios')
+    # for doc in portfolios_ref.stream():
+    #     data = doc.to_dict()
+    #     if 'symbol' in data:
+    #         active_symbols.add(data['symbol'])
 
     # From user positions
-    users_ref = db.collection('users')
-    for user_doc in users_ref.stream():
-        positions_ref = db.collection(f'users/{user_doc.id}/positions')
-        for pos_doc in positions_ref.stream():
-            data = pos_doc.to_dict()
-            if 'symbol' in data:
-                active_symbols.add(data['symbol'])
+    # users_ref = db.collection('users')
+    # for user_doc in users_ref.stream():
+    #     positions_ref = db.collection(f'users/{user_doc.id}/positions')
+    #     for pos_doc in positions_ref.stream():
+    #         data = pos_doc.to_dict()
+    #         if 'symbol' in data:
+    #             active_symbols.add(data['symbol'])
 
     print(f'  ✅ Found {len(active_symbols)} active symbols')
 
     # Combine both sources
     symbols = symbols.union(active_symbols)
+    # symbols = active_symbols
 
     print(f'✅ Total unique symbols: {len(symbols)}\n')
     return sorted(list(symbols))

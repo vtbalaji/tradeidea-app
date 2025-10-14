@@ -1,0 +1,36 @@
+Option 1: Direct CLI access
+
+  duckdb /Volumes/ssd-backup/git/SmartFarm/myportfolio-web/data/eod.duckdb -readonly
+
+  Option 2: Quick helper script (easier)
+
+  # Interactive mode
+  ./scripts/view-duckdb.sh
+
+  # Or run a quick query
+  ./scripts/view-duckdb.sh "SELECT COUNT(*) FROM ohlcv"
+  ./scripts/view-duckdb.sh "SELECT DISTINCT symbol FROM ohlcv LIMIT 10"
+
+  Useful SQL queries once inside:
+
+  -- Show all tables
+  SHOW TABLES;
+
+  -- Table structure
+  DESCRIBE ohlcv;
+
+  -- Database stats
+  SELECT
+      COUNT(*) as total_rows,
+      COUNT(DISTINCT symbol) as total_symbols,
+      MIN(date) as earliest_date,
+      MAX(date) as latest_date
+  FROM ohlcv;
+
+  -- Recent data for a symbol
+  SELECT * FROM ohlcv
+  WHERE symbol = 'RELIANCE'
+  ORDER BY date DESC
+  LIMIT 5;
+
+  The -readonly flag allows you to view data even while the fetch script is running!

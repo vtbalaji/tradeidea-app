@@ -1,8 +1,13 @@
 #!/usr/bin/env python3
 """
 Stock Screeners: MA Crossovers & Supertrend Crossovers
-Uses DuckDB EOD data to find crossover signals
+Uses DuckDB EOD data to find crossover signals and get latest prices
 Stores results in Firebase for user display
+
+Data Sources:
+- OHLCV Data: DuckDB (local)
+- Last Price: DuckDB (latest close)
+- Market Cap: Firebase (for filtering - requires analyze-fundamentals.py)
 """
 
 import pandas as pd
@@ -82,7 +87,7 @@ technical_data_cache = {}
 
 def get_last_price(symbol):
     """
-    Get lastPrice from Firebase symbols collection (technical data)
+    Get lastPrice from DuckDB (latest close price)
     Returns lastPrice, or None if not found
     """
     # Check cache first
@@ -90,20 +95,18 @@ def get_last_price(symbol):
         return technical_data_cache[symbol]
 
     try:
-        # Add NS_ prefix to match Firebase document IDs
-        symbol_with_prefix = f"NS_{symbol}" if not symbol.startswith('NS_') else symbol
+        # Query DuckDB for the latest close price
+        query = """
+            SELECT close
+            FROM ohlcv
+            WHERE symbol = ?
+            ORDER BY date DESC
+            LIMIT 1
+        """
+        result = nse_fetcher.conn.execute(query, [symbol]).fetchone()
 
-        doc_ref = db.collection('symbols').document(symbol_with_prefix)
-        doc = doc_ref.get()
-
-        if doc.exists:
-            data = doc.to_dict()
-            # lastPrice is stored in the technical data section
-            last_price = None
-            if 'technical' in data and data['technical']:
-                last_price = data['technical'].get('lastPrice', None)
-
-            # Cache it for future lookups
+        if result:
+            last_price = float(result[0])
             technical_data_cache[symbol] = last_price
             return last_price
         else:
@@ -111,7 +114,7 @@ def get_last_price(symbol):
             return None
 
     except Exception as e:
-        print(f"  ⚠️  Error fetching technical data for {symbol}: {str(e)}")
+        print(f"  ⚠️  Error fetching last price for {symbol}: {str(e)}")
         technical_data_cache[symbol] = None
         return None
 
@@ -462,7 +465,7 @@ def save_to_firebase(crossovers_50, crossovers_200, supertrend_crosses, volume_s
             # Add NS_ prefix to match symbols collection format
             symbol_with_prefix = f"NS_{cross['symbol']}" if not cross['symbol'].startswith('NS_') else cross['symbol']
 
-            # Get lastPrice from technical data (Yahoo Finance)
+            # Get lastPrice from DuckDB
             last_price = get_last_price(cross['symbol'])
 
             doc_ref = ma50_ref.document(f"{symbol_with_prefix}_{today}")
@@ -479,7 +482,7 @@ def save_to_firebase(crossovers_50, crossovers_200, supertrend_crosses, volume_s
                 'createdAt': firestore.SERVER_TIMESTAMP
             }
 
-            # Add lastPrice if available (from Yahoo Finance/technical analysis)
+            # Add lastPrice if available (from DuckDB)
             if last_price is not None:
                 doc_data['lastPrice'] = last_price
 
@@ -491,7 +494,7 @@ def save_to_firebase(crossovers_50, crossovers_200, supertrend_crosses, volume_s
             # Add NS_ prefix to match symbols collection format
             symbol_with_prefix = f"NS_{cross['symbol']}" if not cross['symbol'].startswith('NS_') else cross['symbol']
 
-            # Get lastPrice from technical data (Yahoo Finance)
+            # Get lastPrice from DuckDB
             last_price = get_last_price(cross['symbol'])
 
             doc_ref = ma200_ref.document(f"{symbol_with_prefix}_{today}")
@@ -508,7 +511,7 @@ def save_to_firebase(crossovers_50, crossovers_200, supertrend_crosses, volume_s
                 'createdAt': firestore.SERVER_TIMESTAMP
             }
 
-            # Add lastPrice if available (from Yahoo Finance/technical analysis)
+            # Add lastPrice if available (from DuckDB)
             if last_price is not None:
                 doc_data['lastPrice'] = last_price
 
@@ -520,7 +523,7 @@ def save_to_firebase(crossovers_50, crossovers_200, supertrend_crosses, volume_s
             # Add NS_ prefix to match symbols collection format
             symbol_with_prefix = f"NS_{cross['symbol']}" if not cross['symbol'].startswith('NS_') else cross['symbol']
 
-            # Get lastPrice from technical data (Yahoo Finance)
+            # Get lastPrice from DuckDB
             last_price = get_last_price(cross['symbol'])
 
             doc_ref = supertrend_ref.document(f"{symbol_with_prefix}_{today}")
@@ -536,7 +539,7 @@ def save_to_firebase(crossovers_50, crossovers_200, supertrend_crosses, volume_s
                 'createdAt': firestore.SERVER_TIMESTAMP
             }
 
-            # Add lastPrice if available (from Yahoo Finance/technical analysis)
+            # Add lastPrice if available (from DuckDB)
             if last_price is not None:
                 doc_data['lastPrice'] = last_price
 
@@ -564,7 +567,7 @@ def save_to_firebase(crossovers_50, crossovers_200, supertrend_crosses, volume_s
                 'createdAt': firestore.SERVER_TIMESTAMP
             }
 
-            # Add lastPrice if available (from Yahoo Finance/technical analysis)
+            # Add lastPrice if available (from DuckDB)
             if last_price is not None:
                 doc_data['lastPrice'] = last_price
 
