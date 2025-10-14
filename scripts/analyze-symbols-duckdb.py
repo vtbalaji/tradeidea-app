@@ -269,6 +269,10 @@ def calculate_indicators(df):
         'goldenCross': latest['sma50'] > latest['sma200'] and latest['sma50'] > 0 and latest['sma200'] > 0,
         'deathCross': latest['sma50'] < latest['sma200'] and latest['sma50'] > 0 and latest['sma200'] > 0,
         'ema50CrossSMA200': 'above' if latest['ema50'] > 0 and latest['sma200'] > 0 and latest['ema50'] > latest['sma200'] else 'below' if latest['ema50'] > 0 and latest['sma200'] > 0 else None,
+        'priceBelowBBMiddle': latest['bollingerMiddle'] > 0 and last_price < latest['bollingerMiddle'],
+        'priceAboveBBMiddle': latest['bollingerMiddle'] > 0 and last_price > latest['bollingerMiddle'],
+        'priceBelowBBLower': latest['bollingerLower'] > 0 and last_price < latest['bollingerLower'],
+        'priceAboveBBUpper': latest['bollingerUpper'] > 0 and last_price > latest['bollingerUpper'],
     }
 
     # Calculate overall signal score
@@ -295,6 +299,13 @@ def calculate_indicators(df):
     elif signals['deathCross']: score -= 2
 
     if signals['volumeSpike']: score += 1
+
+    # Bollinger Bands signals
+    if signals['priceBelowBBMiddle']: score += 1  # Bullish - price below middle band
+    elif signals['priceAboveBBMiddle']: score -= 1  # Bearish - price above middle band
+
+    if signals['priceBelowBBLower']: score += 2  # Strong Bullish - price below lower band (oversold)
+    if signals['priceAboveBBUpper']: score -= 2  # Strong Bearish - price above upper band (overbought)
 
     if score >= 5: overall_signal = 'STRONG_BUY'
     elif score >= 2: overall_signal = 'BUY'

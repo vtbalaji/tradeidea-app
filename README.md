@@ -12,6 +12,64 @@ A Next.js trading ideas and portfolio management application with real-time tech
 - 🔐 Firebase Authentication
 - 💾 Firestore Database
 
+## User Guide
+
+### Understanding Idea Card Badges
+
+Each idea card displays a badge in the top-right corner indicating its entry readiness:
+
+- **🟢 Ready to Enter** (Green) - All conditions met:
+  - Technical signal is BUY or STRONG_BUY
+  - Current price (LTP) is within 2% of entry price
+  - Fundamental rating is AVERAGE or better
+
+- **🟠 You can Enter** (Orange) - Excellent opportunity:
+  - Current price (LTP) is below entry price (buying at discount)
+  - Fundamental rating is EXCELLENT
+  - Technical signal can be any (prioritizes fundamentals)
+
+- **⚪ Waiting** (Gray) - Conditions not yet met:
+  - Wait for better technical/fundamental alignment
+  - Or price to reach optimal entry zone
+
+### How to Enter a Position from an Idea Card
+
+1. **Browse Ideas Hub** (`/ideas` page)
+   - Review idea cards with technical and fundamental data
+   - Look for "Ready to Enter" or "You can Enter" badges
+
+2. **Click "Add Position" button** on the desired idea card
+   - A modal will open with pre-filled entry price
+
+3. **Fill in Trade Details**:
+   - **Quantity**: Number of shares to buy
+   - **Entry Price Taken**: Price at which you're entering (can modify)
+   - **Date Taken**: Date of entry (defaults to today)
+
+4. **Set Exit Strategy** (Optional but recommended):
+   - ✅ Exit at Stop Loss (default: on)
+   - ✅ Exit at Target (default: on)
+   - Exit if price goes below 50 EMA
+   - Exit if price goes below 100 MA
+   - Exit if price goes below 200 MA
+   - Exit based on Weekly Supertrend
+   - Add custom exit notes
+
+5. **Click "Add to Portfolio"**
+   - Position will be added to your portfolio
+   - You'll be redirected to Portfolio page
+
+### Analyzing Ideas
+
+Click the **"Analyze"** button or click anywhere on an idea card to view:
+- Detailed technical analysis
+- Fundamental metrics
+- AI-powered recommendation
+- Risk assessment
+- Entry/Exit suggestions
+
+**Note**: Analysis requires both technical and fundamental data to be available.
+
 ## Getting Started
 
 ### Prerequisites

@@ -172,6 +172,47 @@ export default function IdeasHubPage() {
       ? (((idea.target1 - idea.entryPrice) / idea.entryPrice) * 100).toFixed(1)
       : null;
 
+    // Calculate badge status: "Ready to Enter", "You can Enter", or "Waiting"
+    const calculateBadgeStatus = () => {
+      // Check if we have required data
+      if (!idea.technicals || !idea.fundamentals || !idea.entryPrice) {
+        return { text: 'Waiting', color: 'bg-gray-500/20 text-gray-500 dark:text-gray-400' };
+      }
+
+      const lastPrice = idea.technicals.lastPrice;
+      if (!lastPrice) {
+        return { text: 'Waiting', color: 'bg-gray-500/20 text-gray-500 dark:text-gray-400' };
+      }
+
+      // Check if entry price is higher than LTP (price is below entry) AND fundamentals are EXCELLENT
+      if (lastPrice < idea.entryPrice && idea.fundamentals.fundamentalRating === 'EXCELLENT') {
+        return { text: 'You can Enter', color: 'bg-orange-500/20 text-orange-500 dark:text-orange-400' };
+      }
+
+      // Check technical condition: overallSignal is BUY or STRONG_BUY
+      const technicalReady =
+        idea.technicals.overallSignal === 'BUY' ||
+        idea.technicals.overallSignal === 'STRONG_BUY';
+
+      // Check fundamental condition: AVERAGE or better
+      const fundamentalReady =
+        idea.fundamentals.fundamentalRating === 'AVERAGE' ||
+        idea.fundamentals.fundamentalRating === 'GOOD' ||
+        idea.fundamentals.fundamentalRating === 'EXCELLENT';
+
+      // Check price condition: within 2% of entry price
+      const priceReady = Math.abs((lastPrice - idea.entryPrice) / idea.entryPrice) <= 0.02;
+
+      // All conditions must be met for "Ready to Enter"
+      if (technicalReady && priceReady && fundamentalReady) {
+        return { text: 'Ready to Enter', color: 'bg-green-500/20 text-green-500 dark:text-green-400' };
+      }
+
+      return { text: 'Waiting', color: 'bg-gray-500/20 text-gray-500 dark:text-gray-400' };
+    };
+
+    const badgeStatus = calculateBadgeStatus();
+
     return (
       <div
         key={idea.id}
@@ -193,8 +234,8 @@ export default function IdeasHubPage() {
               </p>
             )}
           </div>
-          <span className="px-2 py-1 bg-orange-500/20 text-orange-500 dark:text-orange-400 text-xs font-semibold rounded">
-            {idea.status === 'cooking' ? 'in progress' : idea.status}
+          <span className={`px-2 py-1 ${badgeStatus.color} text-xs font-semibold rounded`}>
+            {badgeStatus.text}
           </span>
         </div>
 
@@ -222,14 +263,14 @@ export default function IdeasHubPage() {
         )}
 
         {/* When to Enter */}
-        {idea.whenToEnter && (
+        {/* {idea.whenToEnter && (
           <div className="bg-white dark:bg-[#0f1419] border border-gray-200 dark:border-[#30363d] rounded-lg p-3 mb-3">
             <p className="text-base text-gray-600 dark:text-[#8b949e] leading-relaxed whitespace-pre-wrap">
               <span className="font-semibold text-[#ff8c42]">When to Enter: </span>
               {idea.whenToEnter}
             </p>
           </div>
-        )}
+        )} */}
 
         {/* Technical Levels & Fundamentals */}
         {(idea.technicals || idea.fundamentals) && (

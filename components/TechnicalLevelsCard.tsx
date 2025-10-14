@@ -8,6 +8,14 @@ interface TechnicalData {
   sma200?: number;
   supertrend?: number;
   supertrendDirection?: number;
+  rsi?: number | null;
+  rsi14?: number; // Legacy field name
+  bollingerBands?: {
+    upper: number;
+    middle: number;
+    lower: number;
+  } | null;
+  bollingerMiddle?: number; // Legacy field name
   overallSignal?: 'STRONG_BUY' | 'BUY' | 'NEUTRAL' | 'SELL' | 'STRONG_SELL';
 }
 
@@ -26,6 +34,16 @@ export const TechnicalLevelsCard: React.FC<TechnicalLevelsCardProps> = ({
   className = '',
   currentPrice
 }) => {
+  // Debug: Log technicals to see what data is available
+  React.useEffect(() => {
+    console.log('TechnicalLevelsCard - technicals:', {
+      rsi: technicals.rsi,
+      rsi14: technicals.rsi14,
+      bollingerBands: technicals.bollingerBands,
+      bollingerMiddle: technicals.bollingerMiddle
+    });
+  }, [technicals]);
+
   // Use provided currentPrice or fallback to technicals.lastPrice
   const priceToCompare = currentPrice ?? technicals.lastPrice;
   const getSignalColor = (signal: string) => {
@@ -108,6 +126,38 @@ export const TechnicalLevelsCard: React.FC<TechnicalLevelsCardProps> = ({
             </div>
           </div>
         )}
+
+        {/* Middle Bollinger Band */}
+        {(() => {
+          const bbMiddle = technicals.bollingerBands?.middle ?? technicals.bollingerMiddle;
+          return bbMiddle !== undefined && bbMiddle !== null ? (
+            <div className="flex items-center justify-between">
+              <span className="text-gray-600 dark:text-[#8b949e]">BB Middle:</span>
+              <div className="flex items-center gap-1">
+                <span className="font-semibold text-gray-900 dark:text-white">
+                  ₹{bbMiddle.toFixed(2)}
+                </span>
+                <div className="w-3" />
+              </div>
+            </div>
+          ) : null;
+        })()}
+
+        {/* RSI */}
+        {(() => {
+          const rsiValue = technicals.rsi ?? technicals.rsi14;
+          return rsiValue !== undefined && rsiValue !== null ? (
+            <div className="flex items-center justify-between">
+              <span className="text-gray-600 dark:text-[#8b949e]">RSI:</span>
+              <div className="flex items-center gap-1">
+                <span className="font-semibold text-gray-900 dark:text-white">
+                  {rsiValue.toFixed(2)}
+                </span>
+                <div className="w-3" />
+              </div>
+            </div>
+          ) : null;
+        })()}
       </div>
     </div>
   );
