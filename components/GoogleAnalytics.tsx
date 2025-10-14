@@ -2,10 +2,10 @@
 
 import Script from 'next/script';
 import { usePathname, useSearchParams } from 'next/navigation';
-import { useEffect } from 'react';
+import { useEffect, Suspense } from 'react';
 import { pageview, GA_MEASUREMENT_ID } from '@/lib/analytics';
 
-export default function GoogleAnalytics() {
+function GoogleAnalyticsTracking() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
 
@@ -16,6 +16,10 @@ export default function GoogleAnalytics() {
     pageview(url);
   }, [pathname, searchParams]);
 
+  return null;
+}
+
+export default function GoogleAnalytics() {
   if (!GA_MEASUREMENT_ID) {
     return null;
   }
@@ -38,6 +42,9 @@ export default function GoogleAnalytics() {
           });
         `}
       </Script>
+      <Suspense fallback={null}>
+        <GoogleAnalyticsTracking />
+      </Suspense>
     </>
   );
 }
