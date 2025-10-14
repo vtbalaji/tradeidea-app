@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
-import { IdeaIcon, SparklesIcon, TrendingIcon, MyPortfolioIcon, FilterIcon, UserIcon, BookIcon, HelpIcon, LogoutIcon } from '@/components/icons';
+import { IdeaIcon, SparklesIcon, TrendingIcon, MyPortfolioIcon, FilterIcon, UserIcon, BookIcon, HelpIcon, LogoutIcon, AccountsIcon } from '@/components/icons';
 import NotificationBell from './NotificationBell';
 import Logo from './Logo';
 
@@ -49,16 +49,6 @@ export default function Navigation() {
           </Link>
 
           <Link
-            href="/ideas/new"
-            className={`flex items-center gap-1.5 px-4 py-2 rounded-md ${
-              pathname === '/ideas/new' ? 'bg-gray-100 dark:bg-[#30363d] text-gray-900 dark:text-white' : 'text-gray-600 dark:text-[#8b949e]'
-            } font-semibold text-sm hover:bg-gray-100 dark:hover:bg-[#30363d] hover:text-gray-900 dark:hover:text-white transition-colors`}
-          >
-            <SparklesIcon size={18} />
-            <span>New Idea</span>
-          </Link>
-
-          <Link
             href="/portfolio"
             className={`flex items-center gap-1.5 px-4 py-2 rounded-md ${
               pathname === '/portfolio' ? 'bg-gray-100 dark:bg-[#30363d] text-gray-900 dark:text-white' : 'text-gray-600 dark:text-[#8b949e]'
@@ -88,6 +78,16 @@ export default function Navigation() {
           >
             <FilterIcon size={18} />
             <span>Screener</span>
+          </Link>
+
+          <Link
+            href="/ideas/new"
+            className={`flex items-center gap-1.5 px-4 py-2 rounded-md ${
+              pathname === '/ideas/new' ? 'bg-gray-100 dark:bg-[#30363d] text-gray-900 dark:text-white' : 'text-gray-600 dark:text-[#8b949e]'
+            } font-semibold text-sm hover:bg-gray-100 dark:hover:bg-[#30363d] hover:text-gray-900 dark:hover:text-white transition-colors`}
+          >
+            <SparklesIcon size={18} />
+            <span>New Idea</span>
           </Link>
         </div>
 
@@ -189,18 +189,16 @@ export default function Navigation() {
                     <span className="text-sm font-semibold text-gray-900 dark:text-white">Profile</span>
                   </button>
 
-                  {/* <button
+                  <button
                     onClick={() => {
                       setShowProfileMenu(false);
                       router.push('/accounts');
                     }}
                     className="w-full flex items-center gap-3 px-4 py-3 hover:bg-gray-100 dark:hover:bg-[#30363d] transition-colors"
                   >
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                      <path d="M16 21V19C16 17.9391 15.5786 16.9217 14.8284 16.1716C14.0783 15.4214 13.0609 15 12 15H5C3.93913 15 2.92172 15.4214 2.17157 16.1716C1.42143 16.9217 1 17.9391 1 19V21M19 8V14M22 11H16M12.5 7C12.5 9.20914 10.7091 11 8.5 11C6.29086 11 4.5 9.20914 4.5 7C4.5 4.79086 6.29086 3 8.5 3C10.7091 3 12.5 4.79086 12.5 7Z" stroke="#ff8c42" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                    </svg>
+                    <AccountsIcon size={18} className="text-[#ff8c42]" />
                     <span className="text-sm font-semibold text-gray-900 dark:text-white">Accounts</span>
-                  </button> */}
+                  </button>
 
                   <button
                     onClick={() => {
@@ -267,17 +265,6 @@ export default function Navigation() {
               </Link>
 
               <Link
-                href="/ideas/new"
-                onClick={() => setShowMobileMenu(false)}
-                className={`flex items-center gap-3 px-4 py-3 rounded-md ${
-                  pathname === '/ideas/new' ? 'bg-gray-100 dark:bg-[#30363d] text-gray-900 dark:text-white' : 'text-gray-600 dark:text-[#8b949e]'
-                } font-semibold text-sm hover:bg-gray-100 dark:hover:bg-[#30363d] hover:text-gray-900 dark:hover:text-white transition-colors`}
-              >
-                <SparklesIcon size={20} />
-                <span>New Idea</span>
-              </Link>
-
-              <Link
                 href="/portfolio"
                 onClick={() => setShowMobileMenu(false)}
                 className={`flex items-center gap-3 px-4 py-3 rounded-md ${
@@ -310,6 +297,17 @@ export default function Navigation() {
               >
                 <FilterIcon size={20} />
                 <span>Screener</span>
+              </Link>
+
+              <Link
+                href="/ideas/new"
+                onClick={() => setShowMobileMenu(false)}
+                className={`flex items-center gap-3 px-4 py-3 rounded-md ${
+                  pathname === '/ideas/new' ? 'bg-gray-100 dark:bg-[#30363d] text-gray-900 dark:text-white' : 'text-gray-600 dark:text-[#8b949e]'
+                } font-semibold text-sm hover:bg-gray-100 dark:hover:bg-[#30363d] hover:text-gray-900 dark:hover:text-white transition-colors`}
+              >
+                <SparklesIcon size={20} />
+                <span>New Idea</span>
               </Link>
             </div>
           </div>

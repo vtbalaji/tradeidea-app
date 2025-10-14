@@ -275,29 +275,28 @@ def calculate_indicators(df):
         'priceAboveBBUpper': latest['bollingerUpper'] > 0 and last_price > latest['bollingerUpper'],
     }
 
-    # Calculate overall signal score
+    # Calculate overall signal score (excluding Supertrend and MACD)
     score = 0
+
+    # Moving Average signals (price position)
     if signals['priceCrossSMA200'] == 'above': score += 2
     elif signals['priceCrossSMA200'] == 'below': score -= 2
 
-    if signals['priceCrossSMA100'] == 'above': score += 1
-    elif signals['priceCrossSMA100'] == 'below': score -= 1
+    if signals['priceCrossSMA100'] == 'above': score += 2
+    elif signals['priceCrossSMA100'] == 'below': score -= 2
 
-    if signals['priceCrossEMA50'] == 'above': score += 1
-    elif signals['priceCrossEMA50'] == 'below': score -= 1
+    if signals['priceCrossEMA50'] == 'above': score += 2
+    elif signals['priceCrossEMA50'] == 'below': score -= 2
 
-    if signals['supertrendBullish']: score += 2
-    elif signals['supertrendBearish']: score -= 2
-
+    # RSI signals
     if signals['rsiOversold']: score += 2
     elif signals['rsiOverbought']: score -= 2
 
-    if signals['macdBullish']: score += 1
-    elif signals['macdBearish']: score -= 1
-
+    # Moving Average crossovers
     if signals['goldenCross']: score += 2
     elif signals['deathCross']: score -= 2
 
+    # Volume spike
     if signals['volumeSpike']: score += 1
 
     # Bollinger Bands signals
@@ -307,9 +306,10 @@ def calculate_indicators(df):
     if signals['priceBelowBBLower']: score += 2  # Strong Bullish - price below lower band (oversold)
     if signals['priceAboveBBUpper']: score -= 2  # Strong Bearish - price above upper band (overbought)
 
-    if score >= 5: overall_signal = 'STRONG_BUY'
+    # Normalized thresholds (max score is now 13, min is -13)
+    if score >= 6: overall_signal = 'STRONG_BUY'
     elif score >= 2: overall_signal = 'BUY'
-    elif score <= -5: overall_signal = 'STRONG_SELL'
+    elif score <= -6: overall_signal = 'STRONG_SELL'
     elif score <= -2: overall_signal = 'SELL'
     else: overall_signal = 'NEUTRAL'
 

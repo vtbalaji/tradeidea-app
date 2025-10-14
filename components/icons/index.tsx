@@ -23,3 +23,4 @@ export { ChevronDownIcon } from './ChevronDownIcon';
 export { CloseIcon } from './CloseIcon';
 export { BuySellIcon } from './BuySellIcon';
 export { ExitIcon } from './ExitIcon';
+export { AccountsIcon } from './AccountsIcon';

@@ -12,28 +12,15 @@
     <rect x="124" y="55" width="12" height="85" fill="#ffb080" rx="2"/>
   </g>
 
-  <!-- Green upward trending arrow -->
-  <defs>
-    <linearGradient id="greenGradient" x1="0%" y1="0%" x2="100%" y2="0%">
-      <stop offset="0%" style="stop-color:#2d5016;stop-opacity:1" />
-      <stop offset="50%" style="stop-color:#4a7c2c;stop-opacity:1" />
-      <stop offset="100%" style="stop-color:#6fa842;stop-opacity:1" />
-    </linearGradient>
-  </defs>
-
-  <!-- Arrow path with zigzag upward trend -->
-  <polyline points="55,140 75,115 85,125 105,95 115,105 135,70 145,60"
-            stroke="url(#greenGradient)" stroke-width="6" fill="none"
-            stroke-linecap="round" stroke-linejoin="round"/>
-
-  <!-- Arrow head -->
-  <polygon points="145,60 155,52 150,64 145,60" fill="#6fa842"/>
-  <polygon points="145,60 152,66 142,68 145,60" fill="#4a7c2c"/>
-
   <!-- Community dots at top -->
   <g>
     <circle cx="85" cy="50" r="4" fill="#ff8c42"/>
     <circle cx="100" cy="45" r="4" fill="#ff8c42"/>
     <circle cx="115" cy="50" r="4" fill="#ff8c42"/>
   </g>
+
+  <!-- Checkmark for smart tracking -->
+  <path d="M 75 120 L 85 130 L 105 105"
+        stroke="#ff8c42" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"
+        fill="none" opacity="0.5"/>
 </svg>

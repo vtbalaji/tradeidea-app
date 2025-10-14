@@ -12,23 +12,13 @@
     <rect x="124" y="55" width="12" height="85" fill="#ffb080" rx="2"/>
   </g>
 
-  <!-- Green upward trending arrow -->
-  <defs>
-    <linearGradient id="greenGradient" x1="0%" y1="0%" x2="100%" y2="0%">
-      <stop offset="0%" style="stop-color:#2d5016;stop-opacity:1" />
-      <stop offset="50%" style="stop-color:#4a7c2c;stop-opacity:1" />
-      <stop offset="100%" style="stop-color:#6fa842;stop-opacity:1" />
-    </linearGradient>
-  </defs>
-
-  <!-- Arrow path with zigzag upward trend -->
-  <polyline points="55,140 75,115 85,125 105,95 115,105 135,70 145,60"
-            stroke="url(#greenGradient)" stroke-width="6" fill="none"
+  <!-- Upward trend line / growth arrow with zigzag -->
+  <polyline points="60,135 76,110 88,125 106,85 118,100 135,60"
+            stroke="#ff8c42" stroke-width="3.5" fill="none"
             stroke-linecap="round" stroke-linejoin="round"/>
 
   <!-- Arrow head -->
-  <polygon points="145,60 155,52 150,64 145,60" fill="#6fa842"/>
-  <polygon points="145,60 152,66 142,68 145,60" fill="#4a7c2c"/>
+  <polygon points="135,60 140,66 131,64" fill="#ff8c42"/>
 
   <!-- Community dots at top -->
   <g>
