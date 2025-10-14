@@ -6,8 +6,9 @@ import Navigation from '../../components/Navigation';
 import { useTrading } from '../../contexts/TradingContext';
 import { useAuth } from '../../contexts/AuthContext';
 import { IdeaIcon, TargetIcon, EntryIcon, HeartIcon, HeartFilledIcon, EditIcon } from '@/components/icons';
-import { formatIndianDate } from '@/lib/dateUtils';
+import { formatIndianDate, getCurrentISTDate, formatDateForDisplay, formatDateForStorage } from '@/lib/dateUtils';
 import { createInvestmentEngine } from '@/lib/investment-rules';
+import { trackPositionAdded } from '@/lib/analytics';
 import InvestorAnalysisModal from '@/components/InvestorAnalysisModal';
 import TechnicalLevelsCard from '@/components/TechnicalLevelsCard';
 import FundamentalsCard from '@/components/FundamentalsCard';
@@ -15,12 +16,27 @@ import AnalysisButton from '@/components/AnalysisButton';
 
 export default function IdeasHubPage() {
   const router = useRouter();
-  const { ideas, loading } = useTrading();
+  const { ideas, loading, addToPortfolio } = useTrading();
   const { user } = useAuth();
   const [searchQuery, setSearchQuery] = useState('');
   const [activeTab, setActiveTab] = useState('all');
   const [showAnalysisModal, setShowAnalysisModal] = useState<string | null>(null);
   const [currentRecommendation, setCurrentRecommendation] = useState<any>(null);
+  const [showTradeModal, setShowTradeModal] = useState<string | null>(null);
+  const [tradeDetails, setTradeDetails] = useState({
+    quantity: '',
+    entryPrice: '',
+    dateTaken: '',
+  });
+  const [exitCriteria, setExitCriteria] = useState({
+    exitAtStopLoss: true,
+    exitAtTarget: true,
+    exitBelow50EMA: false,
+    exitBelow100MA: false,
+    exitBelow200MA: false,
+    exitOnWeeklySupertrend: false,
+    customNote: '',
+  });
 
   // Check authentication and email verification
   useEffect(() => {
@@ -90,6 +106,65 @@ export default function IdeasHubPage() {
     const rec = engine.getRecommendation();
     setCurrentRecommendation(rec);
     setShowAnalysisModal(idea.id);
+  };
+
+  const handleConvertToPosition = (e: React.MouseEvent, idea: any) => {
+    e.stopPropagation();
+    setTradeDetails({
+      quantity: '',
+      entryPrice: idea.entryPrice?.toString() || '',
+      dateTaken: formatDateForDisplay(getCurrentISTDate()),
+    });
+    setShowTradeModal(idea.id);
+  };
+
+  const handleTakeTrade = async (ideaId: string) => {
+    const idea = ideas.find(i => i.id === ideaId);
+    if (!idea || !tradeDetails.quantity || !tradeDetails.entryPrice) {
+      alert('Please fill in quantity and entry price');
+      return;
+    }
+
+    try {
+      const quantity = parseFloat(tradeDetails.quantity);
+      const entryPrice = parseFloat(tradeDetails.entryPrice);
+
+      const positionData = {
+        symbol: idea.symbol || '',
+        tradeType: idea.tradeType || 'Long',
+        entryPrice: entryPrice,
+        currentPrice: entryPrice,
+        target1: idea.target1 || 0,
+        stopLoss: idea.stopLoss || 0,
+        quantity: quantity,
+        totalValue: entryPrice * quantity,
+        dateTaken: formatDateForStorage(tradeDetails.dateTaken),
+        exitCriteria: exitCriteria,
+      };
+
+      await addToPortfolio(ideaId, positionData);
+      trackPositionAdded(idea.symbol || 'Unknown', 'idea');
+
+      setShowTradeModal(null);
+      setTradeDetails({
+        quantity: '',
+        entryPrice: '',
+        dateTaken: formatDateForDisplay(getCurrentISTDate()),
+      });
+      setExitCriteria({
+        exitAtStopLoss: true,
+        exitAtTarget: true,
+        exitBelow50EMA: false,
+        exitBelow100MA: false,
+        exitBelow200MA: false,
+        exitOnWeeklySupertrend: false,
+        customNote: '',
+      });
+      alert('Trade added to your portfolio!');
+      router.push('/portfolio');
+    } catch (error: any) {
+      alert(error.message || 'Failed to add position');
+    }
   };
 
   const renderIdeaCard = (idea: any) => {
@@ -202,22 +277,25 @@ export default function IdeasHubPage() {
         </div>
 
         {/* Footer */}
-        <div className="flex justify-between items-center pt-3 border-t border-gray-200 dark:border-[#30363d]">
-          <div className="flex gap-3 text-sm text-gray-600 dark:text-[#8b949e]">
-            <span className="flex items-center gap-1">
-              <HeartFilledIcon size={14} />
-              {idea.likes}
-            </span>
-            <span>💬 {idea.commentCount}</span>
-            <span>📅 {formatIndianDate(idea.createdAt, 'relative')}</span>
-          </div>
-
-          <div className="flex gap-2">
+        <div className="pt-3 border-t border-gray-200 dark:border-[#30363d]">
+          {/* Action Buttons */}
+          <div className="grid grid-cols-3 gap-2 mb-3">
             {/* Analyze Button */}
             <AnalysisButton
               onClick={(e) => handleAnalyze(e, idea)}
               disabled={!idea.technicals || !idea.fundamentals}
             />
+
+            {/* Convert to Position Button */}
+            <button
+              onClick={(e) => handleConvertToPosition(e, idea)}
+              className="flex items-center justify-center gap-1.5 px-3 py-1.5 bg-gray-100 dark:bg-[#30363d] hover:bg-gray-200 dark:hover:bg-[#3c444d] border border-gray-200 dark:border-[#444c56] text-gray-700 dark:text-gray-300 text-xs font-semibold rounded-lg transition-colors"
+            >
+              <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
+                <path d="M2 8h12M8 2v12" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+              <span>Add Position</span>
+            </button>
 
             {/* Edit Button */}
             <button
@@ -225,11 +303,30 @@ export default function IdeasHubPage() {
                 e.stopPropagation();
                 router.push(`/ideas/${idea.id}`);
               }}
-              className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-100 dark:bg-[#30363d] hover:bg-gray-200 dark:hover:bg-[#3c444d] border border-gray-200 dark:border-[#444c56] text-gray-700 dark:text-gray-300 text-xs font-semibold rounded-lg transition-colors"
+              className="flex items-center justify-center gap-1.5 px-3 py-1.5 bg-gray-100 dark:bg-[#30363d] hover:bg-gray-200 dark:hover:bg-[#3c444d] border border-gray-200 dark:border-[#444c56] text-gray-700 dark:text-gray-300 text-xs font-semibold rounded-lg transition-colors"
             >
               <EditIcon size={14} className="w-3.5 h-3.5" />
               <span>Edit</span>
             </button>
+          </div>
+
+          {/* Stats and Creator Info */}
+          <div className="flex justify-between items-center">
+            <div className="flex gap-3 text-sm text-gray-600 dark:text-[#8b949e]">
+              <span className="flex items-center gap-1">
+                <HeartFilledIcon size={14} />
+                {idea.likes}
+              </span>
+              <span>💬 {idea.commentCount}</span>
+              <span>📅 {formatIndianDate(idea.createdAt, 'relative')}</span>
+            </div>
+
+            <div className="flex items-center gap-1.5 text-xs text-gray-600 dark:text-[#8b949e]">
+              <div className="w-4 h-4 rounded-full bg-[#ff8c42] flex items-center justify-center text-white text-[10px] font-bold">
+                {idea.userName?.charAt(0).toUpperCase() || '?'}
+              </div>
+              <span>Posted by <span className="font-medium">{idea.userName || 'Anonymous'}</span></span>
+            </div>
           </div>
         </div>
       </div>
@@ -464,6 +561,177 @@ export default function IdeasHubPage() {
           technicals={ideas.find(i => i.id === showAnalysisModal)?.technicals}
           fundamentals={ideas.find(i => i.id === showAnalysisModal)?.fundamentals}
         />
+      )}
+
+      {/* Trade Modal */}
+      {showTradeModal && (
+        <div
+          className="fixed inset-0 bg-black/70 flex items-center justify-center z-50"
+          onClick={() => setShowTradeModal(null)}
+        >
+          <div
+            className="bg-gray-50 dark:bg-[#1c2128] border border-gray-200 dark:border-[#30363d] rounded-xl p-6 w-full max-w-md mx-4"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Modal Header */}
+            <div className="flex justify-between items-center mb-6">
+              <h3 className="text-xl font-bold text-gray-900 dark:text-white">Add Trade to Portfolio</h3>
+              <button
+                onClick={() => setShowTradeModal(null)}
+                className="text-gray-600 dark:text-[#8b949e] hover:text-gray-900 dark:hover:text-white transition-colors text-2xl"
+              >
+                ×
+              </button>
+            </div>
+
+            {/* Modal Body */}
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-600 dark:text-[#8b949e] mb-2">
+                  Quantity
+                </label>
+                <input
+                  type="number"
+                  value={tradeDetails.quantity}
+                  onChange={(e) =>
+                    setTradeDetails({ ...tradeDetails, quantity: e.target.value })
+                  }
+                  placeholder="Enter quantity"
+                  required
+                  className="w-full bg-white dark:bg-[#0f1419] border border-gray-200 dark:border-[#30363d] rounded-lg px-3 py-2 text-gray-900 dark:text-white placeholder-[#8b949e] outline-none focus:border-[#ff8c42] transition-colors"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-600 dark:text-[#8b949e] mb-2">
+                  Entry Price Taken
+                </label>
+                <input
+                  type="number"
+                  value={tradeDetails.entryPrice}
+                  onChange={(e) =>
+                    setTradeDetails({ ...tradeDetails, entryPrice: e.target.value })
+                  }
+                  placeholder="Enter entry price"
+                  required
+                  className="w-full bg-white dark:bg-[#0f1419] border border-gray-200 dark:border-[#30363d] rounded-lg px-3 py-2 text-gray-900 dark:text-white placeholder-[#8b949e] outline-none focus:border-[#ff8c42] transition-colors"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-600 dark:text-[#8b949e] mb-2">
+                  Date Taken (DD-MM-YYYY)
+                </label>
+                <input
+                  type="text"
+                  value={tradeDetails.dateTaken}
+                  onChange={(e) =>
+                    setTradeDetails({ ...tradeDetails, dateTaken: e.target.value })
+                  }
+                  placeholder="DD-MM-YYYY"
+                  pattern="\d{2}-\d{2}-\d{4}"
+                  className="w-full bg-white dark:bg-[#0f1419] border border-gray-200 dark:border-[#30363d] rounded-lg px-3 py-2 text-gray-900 dark:text-white placeholder-[#8b949e] outline-none focus:border-[#ff8c42] transition-colors"
+                />
+              </div>
+
+              {/* Exit Criteria Section */}
+              <div className="border-t border-gray-200 dark:border-[#30363d] pt-4">
+                <label className="block text-sm font-semibold text-gray-900 dark:text-white mb-2">
+                  📤 Exit Strategy
+                </label>
+                <p className="text-xs text-gray-600 dark:text-[#8b949e] mb-3">
+                  By default, position will exit at Stop Loss (₹{ideas.find(i => i.id === showTradeModal)?.stopLoss}) or Target (₹{ideas.find(i => i.id === showTradeModal)?.target1})
+                </p>
+
+                <div className="space-y-3">
+                  {/* Exit Below 50 EMA */}
+                  <label className="flex items-center gap-3 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={exitCriteria.exitBelow50EMA}
+                      onChange={(e) =>
+                        setExitCriteria({ ...exitCriteria, exitBelow50EMA: e.target.checked })
+                      }
+                      className="w-4 h-4 rounded border-gray-300 text-[#ff8c42] focus:ring-[#ff8c42]"
+                    />
+                    <span className="text-sm text-gray-600 dark:text-[#8b949e]">Exit if price goes below 50 EMA</span>
+                  </label>
+
+                  {/* Exit Below 100 MA */}
+                  <label className="flex items-center gap-3 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={exitCriteria.exitBelow100MA}
+                      onChange={(e) =>
+                        setExitCriteria({ ...exitCriteria, exitBelow100MA: e.target.checked })
+                      }
+                      className="w-4 h-4 rounded border-gray-300 text-[#ff8c42] focus:ring-[#ff8c42]"
+                    />
+                    <span className="text-sm text-gray-600 dark:text-[#8b949e]">Exit if price goes below 100 MA</span>
+                  </label>
+
+                  {/* Exit Below 200 MA */}
+                  <label className="flex items-center gap-3 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={exitCriteria.exitBelow200MA}
+                      onChange={(e) =>
+                        setExitCriteria({ ...exitCriteria, exitBelow200MA: e.target.checked })
+                      }
+                      className="w-4 h-4 rounded border-gray-300 text-[#ff8c42] focus:ring-[#ff8c42]"
+                    />
+                    <span className="text-sm text-gray-600 dark:text-[#8b949e]">Exit if price goes below 200 MA</span>
+                  </label>
+
+                  {/* Exit on Weekly Supertrend */}
+                  <label className="flex items-center gap-3 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={exitCriteria.exitOnWeeklySupertrend}
+                      onChange={(e) =>
+                        setExitCriteria({ ...exitCriteria, exitOnWeeklySupertrend: e.target.checked })
+                      }
+                      className="w-4 h-4 rounded border-gray-300 text-[#ff8c42] focus:ring-[#ff8c42]"
+                    />
+                    <span className="text-sm text-gray-600 dark:text-[#8b949e]">Exit based on Weekly Supertrend</span>
+                  </label>
+
+                  {/* Custom Note */}
+                  <div>
+                    <label className="block text-xs text-gray-600 dark:text-[#8b949e] mb-1">
+                      Additional Exit Notes (Optional)
+                    </label>
+                    <textarea
+                      value={exitCriteria.customNote}
+                      onChange={(e) =>
+                        setExitCriteria({ ...exitCriteria, customNote: e.target.value })
+                      }
+                      placeholder="e.g., Exit if RSI goes below 30, or any other custom criteria"
+                      rows={2}
+                      className="w-full bg-white dark:bg-[#0f1419] border border-gray-200 dark:border-[#30363d] rounded-lg px-3 py-2 text-sm text-gray-900 dark:text-white placeholder-[#8b949e] outline-none focus:border-[#ff8c42] transition-colors resize-none"
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Modal Footer */}
+            <div className="flex gap-3 mt-6">
+              <button
+                onClick={() => setShowTradeModal(null)}
+                className="flex-1 bg-[#30363d] hover:bg-[#3e4651] text-white font-semibold py-3 rounded-lg transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => showTradeModal && handleTakeTrade(showTradeModal)}
+                className="flex-1 bg-[#ff8c42] hover:bg-[#ff9a58] text-gray-900 dark:text-white font-semibold py-3 rounded-lg transition-colors"
+              >
+                Add to Portfolio
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

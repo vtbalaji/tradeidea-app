@@ -333,9 +333,17 @@ export default function IdeaDetailPage() {
                 {idea.analysisType}
               </span>
             </div>
-            <span className="text-sm text-gray-600 dark:text-[#8b949e]">
-              {idea.createdAt?.toDate ? idea.createdAt.toDate().toLocaleDateString() : 'Recent'}
-            </span>
+            <div className="flex flex-col items-end gap-1">
+              <span className="text-sm text-gray-600 dark:text-[#8b949e]">
+                {idea.createdAt?.toDate ? idea.createdAt.toDate().toLocaleDateString() : 'Recent'}
+              </span>
+              <div className="flex items-center gap-1.5 text-xs text-gray-600 dark:text-[#8b949e]">
+                <div className="w-4 h-4 rounded-full bg-[#ff8c42] flex items-center justify-center text-white text-[10px] font-bold">
+                  {idea.userName?.charAt(0).toUpperCase() || '?'}
+                </div>
+                <span>{idea.userName || 'Anonymous'}</span>
+              </div>
+            </div>
           </div>
 
           <div className="bg-white dark:bg-[#0f1419] border border-gray-200 dark:border-[#30363d] rounded-lg p-4 mb-4">
