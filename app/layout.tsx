@@ -22,6 +22,10 @@ export const metadata: Metadata = {
   title: "TradeIdea - Smart Portfolio Management Made Simple",
   description: "Track multiple portfolios, analyze stocks with real-time technical & fundamental data, import holdings from any broker (Zerodha, ICICI), and get instant portfolio health insights. Set smart exit criteria and share trading ideas with the community.",
   keywords: ["portfolio management", "stock analysis", "technical analysis", "fundamental analysis", "trading ideas", "CSV import", "Zerodha", "ICICI Direct", "portfolio tracking", "exit alerts", "multi-account portfolio"],
+  icons: {
+    icon: '/icon.svg',
+    apple: '/icon.svg',
+  },
   openGraph: {
     title: "TradeIdea - Smart Portfolio Management Made Simple",
     description: "Track multiple portfolios with instant health insights. Real-time technical & fundamental analysis, CSV import from any broker, smart exit alerts, and community-driven trading ideas.",
@@ -29,20 +33,20 @@ export const metadata: Metadata = {
     siteName: "TradeIdea",
     images: [
       {
-        url: "/icon.svg",
-        width: 64,
-        height: 64,
-        alt: "TradeIdea Logo",
+        url: "/opengraph-image",
+        width: 1200,
+        height: 630,
+        alt: "TradeIdea - Smart Portfolio Management",
       },
     ],
     locale: "en_IN",
     type: "website",
   },
   twitter: {
-    card: "summary_large_card",
+    card: "summary_large_image",
     title: "TradeIdea - Smart Portfolio Management",
     description: "Track portfolios, analyze stocks with real-time data, import from Zerodha/ICICI, get instant health insights & exit alerts",
-    images: ["/icon.svg"],
+    images: ["/twitter-image"],
   },
   metadataBase: new URL("https://tradeidea.co.in"),
 };

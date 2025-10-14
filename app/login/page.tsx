@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '../../contexts/AuthContext';
 import { MyPortfolioIcon } from '@/components/icons';
+import Logo from '../../components/Logo';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -142,9 +143,7 @@ export default function LoginPage() {
 
         {/* Logo */}
         <div className="flex justify-center mb-6 mt-4">
-          <div className="w-20 h-20 rounded-full bg-[#ff8c42] flex items-center justify-center">
-            <MyPortfolioIcon size={48} />
-          </div>
+          <Logo size={80} />
         </div>
 
         {/* Title */}

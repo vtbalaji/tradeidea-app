@@ -7,6 +7,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
 import { IdeaIcon, SparklesIcon, TrendingIcon, MyPortfolioIcon, FilterIcon, UserIcon, BookIcon, HelpIcon, LogoutIcon } from '@/components/icons';
 import NotificationBell from './NotificationBell';
+import Logo from './Logo';
 
 export default function Navigation() {
   const pathname = usePathname();
@@ -31,9 +32,7 @@ export default function Navigation() {
       <div className="flex justify-between items-center">
         {/* Left - Brand */}
         <Link href="/ideas" className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-lg bg-[#ff8c42] flex items-center justify-center">
-            <MyPortfolioIcon size={24} />
-          </div>
+          <Logo size={40} />
           <div className="text-base font-bold text-gray-900 dark:text-white leading-tight">TradeIdea</div>
         </Link>
 

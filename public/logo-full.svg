@@ -1,0 +1,40 @@
+<svg width="400" height="100" viewBox="0 0 400 100" xmlns="http://www.w3.org/2000/svg">
+  <!-- Logo icon -->
+  <g transform="translate(10, 10)">
+    <!-- Shield shape -->
+    <path d="M 40 10 L 60 18 L 60 40 Q 60 56, 40 68 Q 20 56, 20 40 L 20 18 Z"
+          fill="#ff8c42"/>
+
+    <!-- Inner white shield -->
+    <path d="M 40 14 L 56 20 L 56 40 Q 56 52, 40 62 Q 24 52, 24 40 L 24 20 Z"
+          fill="white"/>
+
+    <!-- Chart bars -->
+    <rect x="28" y="40" width="5" height="16" fill="#ff8c42" rx="1"/>
+    <rect x="35" y="34" width="5" height="22" fill="#ff9a58" rx="1"/>
+    <rect x="42" y="28" width="5" height="28" fill="#ffa066" rx="1"/>
+    <rect x="49" y="22" width="5" height="34" fill="#ffb080" rx="1"/>
+
+    <!-- Community dots -->
+    <circle cx="34" cy="20" r="2" fill="#ff8c42"/>
+    <circle cx="40" cy="17" r="2" fill="#ff8c42"/>
+    <circle cx="46" cy="20" r="2" fill="#ff8c42"/>
+  </g>
+
+  <!-- Text: TradeIdea -->
+  <text x="100" y="55"
+        font-family="Arial, sans-serif"
+        font-size="36"
+        font-weight="bold"
+        fill="#0f1419">
+    TradeIdea
+  </text>
+
+  <!-- Tagline -->
+  <text x="100" y="75"
+        font-family="Arial, sans-serif"
+        font-size="14"
+        fill="#8b949e">
+    Community Investment • Smart Tracking
+  </text>
+</svg>

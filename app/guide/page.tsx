@@ -4,6 +4,7 @@ import React from 'react';
 import Link from 'next/link';
 import Navigation from '../../components/Navigation';
 import { MyPortfolioIcon } from '@/components/icons';
+import Logo from '../../components/Logo';
 
 export default function GuidePage() {
   return (
@@ -13,8 +14,8 @@ export default function GuidePage() {
       <div className="max-w-5xl mx-auto px-4 py-8">
         {/* Header */}
         <div className="mb-12 text-center">
-          <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-[#ff8c42] flex items-center justify-center">
-            <MyPortfolioIcon size={36} />
+          <div className="mx-auto mb-4 flex justify-center">
+            <Logo size={64} />
           </div>
           <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-3">TradeIdea User Guide</h1>
           <p className="text-lg text-gray-600 dark:text-[#8b949e] mb-4">

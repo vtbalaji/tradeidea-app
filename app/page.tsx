@@ -4,6 +4,7 @@ import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '../contexts/AuthContext';
 import { MyPortfolioIcon } from '@/components/icons';
+import Logo from '../components/Logo';
 
 export default function Home() {
   const router = useRouter();
@@ -25,8 +26,8 @@ export default function Home() {
     return (
       <div className="min-h-screen bg-white dark:bg-[#0f1419] flex items-center justify-center">
         <div className="text-center">
-          <div className="w-20 h-20 mx-auto mb-4 rounded-full bg-[#ff8c42] flex items-center justify-center">
-            <MyPortfolioIcon size={48} />
+          <div className="mx-auto mb-4">
+            <Logo size={80} />
           </div>
           <div className="inline-block w-8 h-8 border-4 border-[#ff8c42] border-t-transparent rounded-full animate-spin"></div>
         </div>
@@ -76,9 +77,7 @@ export default function Home() {
       <nav className="border-b border-gray-200 dark:border-[#30363d]">
         <div className="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-[#ff8c42] flex items-center justify-center">
-              <MyPortfolioIcon size={24} />
-            </div>
+            <Logo size={40} />
             <span className="text-2xl font-bold text-gray-900 dark:text-white">TradeIdea</span>
           </div>
           <div className="flex gap-3">
@@ -985,9 +984,7 @@ export default function Home() {
         <div className="max-w-7xl mx-auto px-6 py-8">
           <div className="flex flex-col md:flex-row justify-between items-center gap-4">
             <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-full bg-[#ff8c42] flex items-center justify-center">
-                <MyPortfolioIcon size={18} />
-              </div>
+              <Logo size={32} />
               <span className="text-lg font-bold text-gray-900 dark:text-white">TradeIdea</span>
             </div>
             <div className="text-sm text-gray-600 dark:text-[#8b949e]">
