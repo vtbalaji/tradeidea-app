@@ -359,14 +359,14 @@ export default function IdeasHubPage() {
                 {idea.likes}
               </span>
               <span>💬 {idea.commentCount}</span>
-              <span>📅 {formatIndianDate(idea.createdAt, 'relative')}</span>
+              {/* <span>📅 {formatIndianDate(idea.createdAt, 'relative')}</span> */}
             </div>
 
             <div className="flex items-center gap-1.5 text-xs text-gray-600 dark:text-[#8b949e]">
               <div className="w-4 h-4 rounded-full bg-[#ff8c42] flex items-center justify-center text-white text-[10px] font-bold">
                 {idea.userName?.charAt(0).toUpperCase() || '?'}
               </div>
-              <span>Posted by <span className="font-medium">{idea.userName || 'Anonymous'}</span></span>
+              <span>Posted by <span className="font-medium">{idea.userName || 'Anonymous'}</span><span className="font-medium">  {formatIndianDate(idea.createdAt, 'relative')}</span></span>
             </div>
           </div>
         </div>
