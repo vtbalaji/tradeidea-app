@@ -23,8 +23,14 @@ export const metadata: Metadata = {
   description: "Track multiple portfolios, analyze stocks with real-time technical & fundamental data, import holdings from any broker (Zerodha, ICICI), and get instant portfolio health insights. Set smart exit criteria and share trading ideas with the community.",
   keywords: ["portfolio management", "stock analysis", "technical analysis", "fundamental analysis", "trading ideas", "CSV import", "Zerodha", "ICICI Direct", "portfolio tracking", "exit alerts", "multi-account portfolio"],
   icons: {
-    icon: '/icon.svg',
-    apple: '/icon.svg',
+    icon: [
+      { url: '/icon', sizes: '32x32', type: 'image/png' },
+      { url: '/icon.svg', sizes: 'any', type: 'image/svg+xml' },
+    ],
+    apple: [
+      { url: '/apple-icon', sizes: '180x180', type: 'image/png' },
+    ],
+    shortcut: '/icon',
   },
   openGraph: {
     title: "TradeIdea - Smart Portfolio Management Made Simple",
