@@ -7,6 +7,25 @@ and updates Firebase Firestore.
 
 This version reads from the local DuckDB database instead of Yahoo Finance,
 providing faster access and offline capability.
+
+Usage:
+    # Single symbol mode (with split adjustment option):
+    python3 scripts/analyze-symbols-duckdb.py ADANIPOWER
+
+    # Batch mode (all symbols, no split adjustment):
+    python3 scripts/analyze-symbols-duckdb.py
+
+Single Symbol Mode:
+    - Asks user if split/bonus needs adjustment
+    - Gets split details from user (ex-date, ratio, type)
+    - Adjusts DuckDB historical data if confirmed
+    - Runs technical analysis on adjusted data
+    - Saves to Firestore
+
+Batch Mode:
+    - Processes all symbols from Firestore
+    - Runs technical analysis only
+    - NO split adjustment
 """
 
 import sys
@@ -220,6 +239,105 @@ def calculate_bb_position_history(df, bb_middle, days=5):
 
     return positions
 
+def detect_corporate_action(df, symbol):
+    """
+    Detect potential stock splits or bonus issues based on price movements
+    Returns: dict with detection info or None
+    """
+    if len(df) < 2:
+        return None
+
+    last_price = float(df['Close'].iloc[-1])
+    previous_close = float(df['Close'].iloc[-2])
+    change_percent = ((last_price - previous_close) / previous_close) * 100
+
+    # DETECTION THRESHOLDS
+    # Split detection: price drop of 40-90% (covers 1:2 to 1:10 splits)
+    if -90 < change_percent < -40:
+        ratio = last_price / previous_close
+
+        # Check common split ratios
+        split_types = [
+            (0.5, '1:2 split', 0.05),    # 50% price = 1:2 split (±5% tolerance)
+            (0.33, '1:3 split', 0.03),   # 33% price = 1:3 split (±3% tolerance)
+            (0.25, '1:4 split', 0.02),   # 25% price = 1:4 split (±2% tolerance)
+            (0.2, '1:5 split', 0.02),    # 20% price = 1:5 split (±2% tolerance)
+            (0.1, '1:10 split', 0.01),   # 10% price = 1:10 split (±1% tolerance)
+        ]
+
+        for target_ratio, split_type, tolerance in split_types:
+            if abs(ratio - target_ratio) < tolerance:
+                return {
+                    'symbol': symbol,
+                    'type': 'split',
+                    'detectedDate': df.index[-1].strftime('%Y-%m-%d'),
+                    'priceChange': change_percent,
+                    'oldPrice': previous_close,
+                    'newPrice': last_price,
+                    'ratio': ratio,
+                    'splitType': split_type,
+                    'confidence': 'high'
+                }
+
+    # Bonus issue detection: price drop of 10-35% (common for bonus issues)
+    elif -35 < change_percent < -10:
+        ratio = last_price / previous_close
+
+        bonus_types = [
+            (0.67, '1:2 bonus', 0.03),   # 33% drop = 1:2 bonus (1 free for 2 held)
+            (0.5, '1:1 bonus', 0.05),    # 50% drop = 1:1 bonus (1 free for 1 held)
+            (0.75, '1:3 bonus', 0.03),   # 25% drop = 1:3 bonus
+        ]
+
+        for target_ratio, bonus_type, tolerance in bonus_types:
+            if abs(ratio - target_ratio) < tolerance:
+                return {
+                    'symbol': symbol,
+                    'type': 'bonus',
+                    'detectedDate': df.index[-1].strftime('%Y-%m-%d'),
+                    'priceChange': change_percent,
+                    'oldPrice': previous_close,
+                    'newPrice': last_price,
+                    'ratio': ratio,
+                    'bonusType': bonus_type,
+                    'confidence': 'medium'
+                }
+
+    return None
+
+def log_corporate_action(action_data):
+    """
+    Log detected corporate action to Firestore for manual review
+    Saves to: corporateActions collection
+    """
+    try:
+        # Create document ID from symbol and date
+        doc_id = f"{action_data['symbol']}_{action_data['detectedDate']}"
+
+        # Check if already logged
+        action_ref = db.collection('corporateActions').document(doc_id)
+        existing = action_ref.get()
+
+        if existing.exists:
+            # Already logged, skip
+            return
+
+        # Log new corporate action
+        action_ref.set({
+            **action_data,
+            'processed': False,  # Flag for manual processing
+            'createdAt': firestore.SERVER_TIMESTAMP,
+            'needsReview': True
+        })
+
+        print(f'  🚨 CORPORATE ACTION DETECTED!')
+        print(f'     Type: {action_data.get("splitType") or action_data.get("bonusType")}')
+        print(f'     Price: ₹{action_data["oldPrice"]:.2f} → ₹{action_data["newPrice"]:.2f} ({action_data["priceChange"]:+.1f}%)')
+        print(f'     Logged to Firestore for review')
+
+    except Exception as e:
+        print(f'  ⚠️  Failed to log corporate action: {str(e)}')
+
 def calculate_indicators(df):
     """Calculate all technical indicators"""
 
@@ -379,8 +497,8 @@ def calculate_indicators(df):
     if signals['volumeSpike']: score += 1
 
     # Bollinger Bands signals
-    if signals['priceBelowBBMiddle']: score += 1  # Bullish - price below middle band
-    elif signals['priceAboveBBMiddle']: score -= 1  # Bearish - price above middle band
+    if signals['priceBelowBBMiddle']: score -= 1  # Bearish - price below middle band
+    elif signals['priceAboveBBMiddle']: score += 1  #  Bullish - price above middle band
 
     if signals['priceBelowBBLower']: score += 2  # Strong Bullish - price below lower band (oversold)
     if signals['priceAboveBBUpper']: score -= 2  # Strong Bearish - price above upper band (overbought)
@@ -484,6 +602,190 @@ def save_to_firestore(symbol, analysis):
         'lastFetched': firestore.SERVER_TIMESTAMP
     }, merge=True)  # merge=True preserves fundamental data if it exists
 
+def adjust_duckdb_for_split(fetcher, symbol, ex_date_str, ratio_str, action_type):
+    """
+    Adjust historical data in DuckDB for a detected split
+    """
+    import duckdb
+    from datetime import datetime
+
+    # Parse ratio
+    parts = ratio_str.split(':')
+    old_shares = int(parts[0])
+    new_shares = int(parts[1])
+
+    # Calculate multiplier based on action type
+    if action_type == 'bonus':
+        # Bonus: 1:1 means 1 old + 1 new = 2 total shares
+        # Example: 1:1 bonus → multiplier = (1+1)/1 = 2
+        multiplier = (old_shares + new_shares) / old_shares
+    else:  # split
+        # Split: 1:5 means 1 share becomes 5 shares
+        # Example: 1:5 split → multiplier = 5/1 = 5
+        multiplier = new_shares / old_shares
+
+    price_multiplier = 1 / multiplier
+    volume_multiplier = multiplier
+
+    print(f'\n📊 Split Adjustment Parameters:')
+    print(f'   Price Multiplier: {price_multiplier:.4f} (prices divided)')
+    print(f'   Volume Multiplier: {volume_multiplier:.4f} (volumes multiplied)')
+
+    # Connect to DuckDB directly
+    db_path = os.path.join(os.getcwd(), 'data', 'eod.duckdb')
+    conn = duckdb.connect(db_path)
+
+    try:
+        # Create backup
+        backup_table = f'ohlcv_backup_{datetime.now().strftime("%Y%m%d_%H%M%S")}'
+        print(f'\n💾 Creating backup: {backup_table}')
+        conn.execute(f"""
+            CREATE TABLE {backup_table} AS
+            SELECT * FROM ohlcv WHERE symbol = ?
+        """, [symbol])
+
+        # Perform adjustment
+        print(f'🔧 Adjusting historical data before {ex_date_str}...')
+        update_query = """
+            UPDATE ohlcv
+            SET
+                open = open * ?,
+                high = high * ?,
+                low = low * ?,
+                close = close * ?,
+                volume = CAST(volume * ? AS BIGINT)
+            WHERE symbol = ?
+              AND date < ?
+        """
+
+        conn.execute(update_query, [
+            price_multiplier,
+            price_multiplier,
+            price_multiplier,
+            price_multiplier,
+            volume_multiplier,
+            symbol,
+            ex_date_str
+        ])
+
+        print(f'✅ DuckDB data adjusted successfully!')
+        print(f'   Backup table: {backup_table}')
+
+    finally:
+        conn.close()
+
+def analyze_single_symbol(symbol):
+    """
+    Analyze a single symbol with optional split adjustment
+
+    Workflow:
+    1. Ask user if split/bonus happened
+    2. If yes, get split details and adjust DuckDB
+    3. Run technical analysis
+    4. Save to Firestore
+    """
+    print('='*70)
+    print(f'🔍 Single Symbol Analysis: {symbol}')
+    print('='*70)
+
+    # Initialize DuckDB fetcher
+    print('📦 Connecting to DuckDB...')
+    fetcher = NSEDataFetcher()
+
+    try:
+        # Fetch data
+        print(f'\n📥 Fetching historical data for {symbol}...')
+        df = fetch_eod_data(fetcher, symbol)
+
+        if df is None or len(df) < 200:
+            print(f'❌ Insufficient data for {symbol}')
+            return
+
+        # STEP 1: Ask user about corporate action
+        print(f'\n📋 Corporate Action Check:')
+        has_action = input(f'   Did {symbol} have a split/bonus that needs DuckDB adjustment? (yes/no): ').strip().lower()
+
+        if has_action == 'yes':
+            # STEP 2: Get split details from user
+            print(f'\n📝 Please provide split/bonus details:')
+
+            ex_date = input(f'   Ex-date (YYYY-MM-DD): ').strip()
+            if not ex_date:
+                print('   ❌ Ex-date is required')
+                return
+
+            ratio = input(f'   Ratio (e.g., 1:2, 1:5, 1:1): ').strip()
+            if not ratio:
+                print('   ❌ Ratio is required')
+                return
+
+            action_type = input(f'   Type (split/bonus): ').strip().lower()
+            if action_type not in ['split', 'bonus']:
+                print('   ❌ Type must be "split" or "bonus"')
+                return
+
+            # STEP 3: Show what will be adjusted
+            print(f'\n⚠️  About to adjust DuckDB historical data:')
+            print(f'   Symbol: {symbol}')
+            print(f'   Ex-date: {ex_date}')
+            print(f'   Ratio: {ratio}')
+            print(f'   Type: {action_type}')
+            print(f'\n   All prices BEFORE {ex_date} will be divided')
+            print(f'   All volumes BEFORE {ex_date} will be multiplied')
+
+            confirm = input(f'\n🚨 Proceed with adjustment? (yes/no): ').strip().lower()
+
+            if confirm == 'yes':
+                # STEP 4: Adjust DuckDB
+                print(f'\n🔧 Adjusting DuckDB historical data...')
+                adjust_duckdb_for_split(fetcher, symbol, ex_date, ratio, action_type)
+
+                # Re-fetch data after adjustment
+                print(f'\n📥 Re-fetching adjusted data...')
+                df = fetch_eod_data(fetcher, symbol)
+
+                print(f'✅ DuckDB adjustment complete!')
+            else:
+                print(f'\n⏭️  Skipping DuckDB adjustment')
+        else:
+            print(f'   ✅ Proceeding without adjustment')
+
+        # STEP 5: Calculate technical indicators
+        print(f'\n📈 Calculating technical indicators...')
+        analysis = calculate_indicators(df)
+
+        # STEP 6: Save to Firestore
+        print(f'\n💾 Saving to Firestore...')
+        save_to_firestore(symbol, analysis)
+
+        # STEP 7: Display results
+        print(f'\n📊 Technical Analysis Results:')
+        print('='*70)
+        print(f'Signal: {analysis["overallSignal"]}')
+        print(f'Price: ₹{analysis["lastPrice"]:.2f} ({analysis["changePercent"]:+.2f}%)')
+        print(f'Weekly: {analysis["weeklyChangePercent"]:+.2f}% | Monthly: {analysis["monthlyChangePercent"]:+.2f}% | Quarterly: {analysis["quarterlyChangePercent"]:+.2f}%')
+        print(f'RSI: {analysis["rsi14"]:.1f}')
+        print(f'50 EMA: ₹{analysis["ema50"]:.2f}')
+        print(f'100 MA: ₹{analysis["sma100"]:.2f}')
+        print(f'200 MA: ₹{analysis["sma200"]:.2f}')
+        print(f'Supertrend: ₹{analysis["supertrend"]:.2f} {"🟢 Bullish" if analysis["supertrendDirection"] == 1 else "🔴 Bearish"}')
+
+        if analysis['signals']['goldenCross']:
+            print(f'⭐ GOLDEN CROSS!')
+        if analysis['signals']['deathCross']:
+            print(f'💀 DEATH CROSS!')
+
+        print('='*70)
+        print(f'✅ Analysis complete for {symbol}')
+
+    except Exception as e:
+        print(f'❌ Error: {str(e)}')
+        import traceback
+        traceback.print_exc()
+
+    finally:
+        fetcher.close()
+
 def analyze_symbols():
     """Main analysis function"""
     print('🚀 Starting Technical Analysis (DuckDB)\n')
@@ -527,6 +829,11 @@ def analyze_symbols():
                 # Calculate indicators
                 print(f'  📈 Calculating indicators...')
                 analysis = calculate_indicators(df)
+
+                # CHECK FOR CORPORATE ACTIONS (NEW)
+                corporate_action = detect_corporate_action(df, symbol)
+                if corporate_action:
+                    log_corporate_action(corporate_action)
 
                 # Save to Firestore
                 print(f'  💾 Saving to Firestore...')
@@ -575,7 +882,15 @@ def analyze_symbols():
 
 if __name__ == '__main__':
     try:
-        analyze_symbols()
+        # Check if symbol provided as command line argument
+        if len(sys.argv) > 1:
+            # SINGLE SYMBOL MODE: Split detection + Technical analysis
+            symbol = sys.argv[1].upper()
+            analyze_single_symbol(symbol)
+        else:
+            # BATCH MODE: Full technical analysis (no split detection)
+            analyze_symbols()
+
         print('\n✅ Job completed')
         sys.exit(0)
     except Exception as e:

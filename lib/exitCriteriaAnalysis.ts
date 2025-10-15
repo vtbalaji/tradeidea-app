@@ -116,7 +116,71 @@ export function analyzeExitCriteria(position: any): ExitAlert[] | null {
 }
 
 /**
- * Calculates overall recommendation based on technical data with price action
+ * Formats the signal from Python script to match UI format
+ */
+function formatScriptSignal(overallSignal: string): {
+  recommendation: 'STRONG SELL' | 'SELL' | 'HOLD' | 'BUY' | 'STRONG BUY';
+  bgColor: string;
+  borderColor: string;
+  textColor: string;
+  icon: string;
+} {
+  switch (overallSignal) {
+    case 'STRONG_BUY':
+      return {
+        recommendation: 'STRONG BUY',
+        bgColor: 'bg-green-600/20',
+        borderColor: 'border-green-600/30',
+        textColor: 'text-green-700 dark:text-green-500',
+        icon: '▲▲',
+      };
+    case 'BUY':
+      return {
+        recommendation: 'BUY',
+        bgColor: 'bg-green-500/20',
+        borderColor: 'border-green-500/30',
+        textColor: 'text-green-600 dark:text-green-400',
+        icon: '▲',
+      };
+    case 'NEUTRAL':
+      return {
+        recommendation: 'HOLD',
+        bgColor: 'bg-blue-500/20',
+        borderColor: 'border-blue-500/30',
+        textColor: 'text-blue-600 dark:text-blue-400',
+        icon: '■',
+      };
+    case 'SELL':
+      return {
+        recommendation: 'SELL',
+        bgColor: 'bg-orange-500/20',
+        borderColor: 'border-orange-500/30',
+        textColor: 'text-orange-600 dark:text-orange-400',
+        icon: '▼',
+      };
+    case 'STRONG_SELL':
+      return {
+        recommendation: 'STRONG SELL',
+        bgColor: 'bg-red-500/20',
+        borderColor: 'border-red-500/30',
+        textColor: 'text-red-600 dark:text-red-400',
+        icon: '▼▼',
+      };
+    default:
+      return {
+        recommendation: 'HOLD',
+        bgColor: 'bg-gray-500/20',
+        borderColor: 'border-gray-500/30',
+        textColor: 'text-gray-600 dark:text-gray-400',
+        icon: '●',
+      };
+  }
+}
+
+/**
+ * Calculates overall recommendation based on technical data
+ * PRIMARY: Uses overallSignal from Python script (single source of truth)
+ * FALLBACK: Uses rule-based logic if overallSignal not available
  */
 export function getOverallRecommendation(position: any): {
   recommendation: 'STRONG SELL' | 'SELL' | 'HOLD' | 'BUY' | 'STRONG BUY';
@@ -136,6 +200,14 @@ export function getOverallRecommendation(position: any): {
     };
   }
 
+  // PRIMARY: Trust the signal calculated by the Python script
+  // This ensures consistency between batch analysis and portfolio display
+  if (tech.overallSignal) {
+    return formatScriptSignal(tech.overallSignal);
+  }
+
+  // FALLBACK: Calculate recommendation using rule-based logic
+  // This is only used when overallSignal is not available (legacy data)
   const currentPrice = position.currentPrice;
   const rsi = tech.rsi14 || 50;
   const isAbove50MA = tech.sma50 && currentPrice > tech.sma50;
@@ -195,9 +267,9 @@ export function getOverallRecommendation(position: any): {
     volumeHigh
   ) {
     recommendation = 'STRONG BUY';
-    bgColor = 'bg-[#ff8c42]/20';
-    borderColor = 'border-[#ff8c42]/30';
-    textColor = 'text-[#ff8c42]';
+    bgColor = 'bg-green-600/20';
+    borderColor = 'border-green-600/30';
+    textColor = 'text-green-700 dark:text-green-500';
     icon = '▲▲';
   }
   // BUY: Good momentum building
