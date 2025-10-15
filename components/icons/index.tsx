@@ -1,4 +1,17 @@
-// Icon components for the trading portfolio app
+/**
+ * Icon exports for the trading portfolio app
+ *
+ * Two ways to import icons:
+ *
+ * 1. Direct import (loads immediately, use for critical icons):
+ *    import { IdeaIcon } from '@/components/icons';
+ *
+ * 2. Dynamic import (lazy loaded, better for bundle size):
+ *    import { DynamicIcon } from '@/components/icons';
+ *    <DynamicIcon name="IdeaIcon" size={24} />
+ */
+
+// Direct exports (for backward compatibility and critical icons)
 export { IdeaIcon } from './IdeaIcon';
 export { TargetIcon } from './TargetIcon';
 export { EntryIcon } from './EntryIcon';
@@ -24,3 +37,7 @@ export { CloseIcon } from './CloseIcon';
 export { BuySellIcon } from './BuySellIcon';
 export { ExitIcon } from './ExitIcon';
 export { AccountsIcon } from './AccountsIcon';
+
+// Dynamic icon loader (recommended for better performance)
+export { DynamicIcon } from './DynamicIcon';
+export type { IconName } from './DynamicIcon';

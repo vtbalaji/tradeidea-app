@@ -1,5 +1,6 @@
 import React from 'react';
 import { TrendArrow } from './icons/TrendArrow';
+import { getOverallRecommendation } from '@/lib/exitCriteriaAnalysis';
 
 interface TechnicalData {
   lastPrice?: number;
@@ -17,6 +18,14 @@ interface TechnicalData {
   } | null;
   bollingerMiddle?: number; // Legacy field name
   overallSignal?: 'STRONG_BUY' | 'BUY' | 'NEUTRAL' | 'SELL' | 'STRONG_SELL';
+  trendStructure?: 'UPTREND' | 'DOWNTREND' | 'SIDEWAYS' | 'UNKNOWN';
+  pricePattern?: {
+    higherHighs: boolean;
+    higherLows: boolean;
+    lowerHighs: boolean;
+    lowerLows: boolean;
+  };
+  bbPositionHistory?: ('ABOVE' | 'MIDDLE' | 'BELOW')[];
 }
 
 interface TechnicalLevelsCardProps {
@@ -46,31 +55,21 @@ export const TechnicalLevelsCard: React.FC<TechnicalLevelsCardProps> = ({
 
   // Use provided currentPrice or fallback to technicals.lastPrice
   const priceToCompare = currentPrice ?? technicals.lastPrice;
-  const getSignalColor = (signal: string) => {
-    switch (signal) {
-      case 'STRONG_BUY':
-        return 'bg-green-600/20 text-green-600 dark:text-green-400';
-      case 'BUY':
-        return 'bg-green-500/20 text-green-600 dark:text-green-500';
-      case 'STRONG_SELL':
-        return 'bg-red-600/20 text-red-600 dark:text-red-400';
-      case 'SELL':
-        return 'bg-red-500/20 text-red-600 dark:text-red-500';
-      default:
-        return 'bg-gray-500/20 text-gray-600 dark:text-gray-400';
-    }
-  };
+
+  // Get enhanced recommendation using price action analysis
+  const { recommendation, bgColor, textColor, icon } = getOverallRecommendation({
+    technicals,
+    currentPrice: priceToCompare
+  });
 
   return (
     <div className={className}>
-      {/* Header with Overall Signal */}
+      {/* Header with Enhanced Recommendation */}
       <div className="flex items-center justify-between mb-2">
         <p className="text-xs font-bold text-[#ff8c42]">Technical Levels</p>
-        {technicals.overallSignal && (
-          <span className={`px-2 py-1 text-xs font-bold rounded ${getSignalColor(technicals.overallSignal)}`}>
-            {technicals.overallSignal.replace('_', ' ')}
-          </span>
-        )}
+        <span className={`px-2 py-1 text-xs font-bold rounded ${bgColor} ${textColor}`}>
+          {icon} {recommendation}
+        </span>
       </div>
 
       {/* Technical Indicators Grid */}

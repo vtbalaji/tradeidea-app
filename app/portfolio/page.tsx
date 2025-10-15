@@ -11,6 +11,7 @@ import { getSymbolData } from '@/lib/symbolDataService';
 import InvestorAnalysisModal from '@/components/InvestorAnalysisModal';
 import { createInvestmentEngine } from '@/lib/investment-rules';
 import { trackPositionExited, trackPositionAdded, trackAnalysisViewed } from '@/lib/analytics';
+import { getOverallRecommendation } from '@/lib/exitCriteriaAnalysis';
 import {
   PortfolioMetrics,
   SummaryPositionCard,
@@ -32,6 +33,7 @@ export default function PortfolioPage() {
   const [activeTab, setActiveTab] = useState<'open' | 'closed'>('open');
   const [viewMode, setViewMode] = useState<'summary' | 'detailed'>('detailed');
   const [expandedPositionId, setExpandedPositionId] = useState<string | null>(null);
+  const [recommendationFilter, setRecommendationFilter] = useState<string>('all');
 
   // Modal State
   const [showExitModal, setShowExitModal] = useState(false);
@@ -122,6 +124,17 @@ export default function PortfolioPage() {
     accountPositions.filter(p => p.status === 'closed'),
     [accountPositions]
   );
+
+  // Filter positions by recommendation
+  const filteredOpenPositions = useMemo(() => {
+    if (recommendationFilter === 'all') return openPositions;
+
+    return openPositions.filter(position => {
+      if (!position.technicals) return false;
+      const { recommendation } = getOverallRecommendation(position);
+      return recommendation === recommendationFilter;
+    });
+  }, [openPositions, recommendationFilter]);
 
   // Memoized portfolio metrics
   const portfolioMetrics = useMemo(() => {
@@ -255,7 +268,7 @@ export default function PortfolioPage() {
     );
   }, [viewMode, expandedPositionId, openPositions.length, closedPositions.length, activeTab, handleToggleExpand, handleOpenAnalysis, handleBuySell, handleExit]);
 
-  const displayedPositions = activeTab === 'open' ? openPositions : closedPositions;
+  const displayedPositions = activeTab === 'open' ? filteredOpenPositions : closedPositions;
 
   return (
     <div className="min-h-screen bg-white dark:bg-[#0f1419]">
@@ -336,8 +349,8 @@ export default function PortfolioPage() {
           )}
         </div>
 
-        {/* Tabs */}
-        <div className="flex items-center justify-between mb-5 gap-2">
+        {/* Tabs and Filter */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-5 gap-3">
           <div className="flex gap-2">
             <button
               onClick={() => setActiveTab('open')}
@@ -360,6 +373,49 @@ export default function PortfolioPage() {
               Closed ({closedPositions.length})
             </button>
           </div>
+
+          {/* Recommendation Filter - Only show for Open tab */}
+          {activeTab === 'open' && (
+            <div className="flex items-center gap-2">
+              <label className="text-xs font-semibold text-gray-600 dark:text-[#8b949e] whitespace-nowrap">
+                Filter:
+              </label>
+              <select
+                value={recommendationFilter}
+                onChange={(e) => setRecommendationFilter(e.target.value)}
+                className="bg-white dark:bg-[#1c2128] border border-gray-200 dark:border-[#30363d] rounded-lg px-3 py-2 text-xs font-semibold text-gray-900 dark:text-white hover:border-[#ff8c42] transition-colors"
+              >
+                <option value="all">All ({openPositions.length})</option>
+                <option value="STRONG BUY">▲▲ Strong Buy</option>
+                <option value="BUY">▲ Buy</option>
+                <option value="HOLD">■ Hold</option>
+                <option value="SELL">▼ Sell</option>
+                <option value="STRONG SELL">▼▼ Strong Sell</option>
+              </select>
+            </div>
+          )}
+        </div>
+
+        {/* Filter Results Info */}
+        {activeTab === 'open' && recommendationFilter !== 'all' && (
+          <div className="mb-4 px-3 py-2 bg-[#ff8c42]/10 border border-[#ff8c42]/30 rounded-lg">
+            <p className="text-xs font-semibold text-[#ff8c42]">
+              Showing {filteredOpenPositions.length} position{filteredOpenPositions.length !== 1 ? 's' : ''} with "{recommendationFilter}" recommendation
+              {filteredOpenPositions.length > 0 && (
+                <button
+                  onClick={() => setRecommendationFilter('all')}
+                  className="ml-2 underline hover:no-underline"
+                >
+                  Clear filter
+                </button>
+              )}
+            </p>
+          </div>
+        )}
+
+        {/* View Mode Toggle - Move to right side */}
+        <div className="flex items-center justify-between mb-3">
+          <div></div>
 
           {/* View Mode Toggle */}
           <div className="flex gap-1.5 sm:gap-2">

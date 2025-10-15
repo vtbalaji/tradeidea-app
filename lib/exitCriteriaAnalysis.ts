@@ -116,36 +116,114 @@ export function analyzeExitCriteria(position: any): ExitAlert[] | null {
 }
 
 /**
- * Calculates overall recommendation based on technical data
+ * Calculates overall recommendation based on technical data with price action
  */
 export function getOverallRecommendation(position: any): {
-  recommendation: 'ACCUMULATE' | 'HOLD' | 'EXIT';
+  recommendation: 'STRONG SELL' | 'SELL' | 'HOLD' | 'BUY' | 'STRONG BUY';
   bgColor: string;
   borderColor: string;
   textColor: string;
   icon: string;
 } {
-  const isAbove200MA = position.technicals?.sma200 && position.currentPrice > position.technicals.sma200;
-  const isSupertrendBullish = position.technicals?.supertrendDirection === 1;
+  const tech = position.technicals;
+  if (!tech) {
+    return {
+      recommendation: 'HOLD',
+      bgColor: 'bg-gray-500/20',
+      borderColor: 'border-gray-500/30',
+      textColor: 'text-gray-400',
+      icon: '●',
+    };
+  }
 
-  let recommendation: 'ACCUMULATE' | 'HOLD' | 'EXIT' = 'HOLD';
-  let bgColor = 'bg-yellow-500/20';
-  let borderColor = 'border-yellow-500/30';
-  let textColor = 'text-yellow-400';
-  let icon = '⏸️';
+  const currentPrice = position.currentPrice;
+  const rsi = tech.rsi14 || 50;
+  const isAbove50MA = tech.sma50 && currentPrice > tech.sma50;
+  const isAbove100MA = tech.sma100 && currentPrice > tech.sma100;
+  const isAbove200MA = tech.sma200 && currentPrice > tech.sma200;
+  const isSupertrendBullish = tech.supertrendDirection === 1;
+  const trendStructure = tech.trendStructure || 'UNKNOWN';
+  const pricePattern = tech.pricePattern;
+  const macdBullish = tech.macdHistogram > 0;
+  const volumeHigh = tech.volume > tech.avgVolume20;
 
-  if (isAbove200MA && isSupertrendBullish) {
-    recommendation = 'ACCUMULATE';
-    bgColor = 'bg-green-500/20';
-    borderColor = 'border-green-500/30';
-    textColor = 'text-green-400';
-    icon = '📈';
-  } else if (!isAbove200MA) {
-    recommendation = 'EXIT';
+  // Check BB position consistency (last 3 days)
+  const bbHistory = tech.bbPositionHistory || [];
+  const aboveBBMiddle3Days = bbHistory.length >= 3 && bbHistory.slice(-3).every((pos: string) => pos === 'ABOVE');
+  const belowBBMiddle3Days = bbHistory.length >= 3 && bbHistory.slice(-3).every((pos: string) => pos === 'BELOW');
+
+  let recommendation: 'STRONG SELL' | 'SELL' | 'HOLD' | 'BUY' | 'STRONG BUY' = 'HOLD';
+  let bgColor = 'bg-gray-500/20';
+  let borderColor = 'border-gray-500/30';
+  let textColor = 'text-gray-600 dark:text-gray-400';
+  let icon = '●';
+
+  // STRONG SELL: Downtrend + bearish indicators
+  if (
+    trendStructure === 'DOWNTREND' &&
+    (rsi < 30 || (rsi > 70 && !isAbove50MA)) &&
+    !isAbove50MA &&
+    belowBBMiddle3Days
+  ) {
+    recommendation = 'STRONG SELL';
     bgColor = 'bg-red-500/20';
     borderColor = 'border-red-500/30';
-    textColor = 'text-red-400';
-    icon = '🚨';
+    textColor = 'text-red-600 dark:text-red-400';
+    icon = '▼▼';
+  }
+  // SELL: Weak trend or below MAs
+  else if (
+    (trendStructure === 'DOWNTREND' || !isAbove50MA) &&
+    rsi < 50 &&
+    tech.bollingerMiddle && currentPrice < tech.bollingerMiddle
+  ) {
+    recommendation = 'SELL';
+    bgColor = 'bg-orange-500/20';
+    borderColor = 'border-orange-500/30';
+    textColor = 'text-orange-600 dark:text-orange-400';
+    icon = '▼';
+  }
+  // STRONG BUY: Uptrend + golden cross + bullish indicators
+  else if (
+    trendStructure === 'UPTREND' &&
+    rsi >= 50 && rsi <= 70 &&
+    isAbove50MA &&
+    isAbove200MA &&
+    isSupertrendBullish &&
+    aboveBBMiddle3Days &&
+    macdBullish &&
+    volumeHigh
+  ) {
+    recommendation = 'STRONG BUY';
+    bgColor = 'bg-[#ff8c42]/20';
+    borderColor = 'border-[#ff8c42]/30';
+    textColor = 'text-[#ff8c42]';
+    icon = '▲▲';
+  }
+  // BUY: Good momentum building
+  else if (
+    (trendStructure === 'UPTREND' || trendStructure === 'SIDEWAYS') &&
+    rsi > 50 &&
+    isAbove50MA &&
+    (aboveBBMiddle3Days || macdBullish)
+  ) {
+    recommendation = 'BUY';
+    bgColor = 'bg-green-500/20';
+    borderColor = 'border-green-500/30';
+    textColor = 'text-green-600 dark:text-green-400';
+    icon = '▲';
+  }
+  // HOLD: Consolidation or mixed signals
+  else if (
+    trendStructure === 'SIDEWAYS' &&
+    rsi >= 40 && rsi <= 60 &&
+    isAbove50MA
+  ) {
+    recommendation = 'HOLD';
+    bgColor = 'bg-blue-500/20';
+    borderColor = 'border-blue-500/30';
+    textColor = 'text-blue-600 dark:text-blue-400';
+    icon = '■';
   }
 
   return { recommendation, bgColor, borderColor, textColor, icon };

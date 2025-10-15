@@ -150,6 +150,76 @@ def calculate_supertrend(df, period=10, multiplier=3):
 
     return supertrend, direction
 
+def calculate_trend_structure(df, lookback=10):
+    """
+    Calculate price trend structure (higher highs/lows, lower highs/lows)
+    Returns trend type and price pattern details
+    """
+    if len(df) < lookback:
+        return 'UNKNOWN', {'higherHighs': False, 'higherLows': False, 'lowerHighs': False, 'lowerLows': False}
+
+    # Get last N days of data
+    recent = df.tail(lookback)
+
+    # Find swing highs and lows (simple approach using rolling max/min)
+    # Get two most recent significant highs and lows
+    highs = recent['High'].values
+    lows = recent['Low'].values
+
+    # Split into two halves to compare
+    mid = lookback // 2
+    first_half_high = max(highs[:mid])
+    second_half_high = max(highs[mid:])
+    first_half_low = min(lows[:mid])
+    second_half_low = min(lows[mid:])
+
+    # Determine pattern
+    higher_highs = second_half_high > first_half_high
+    higher_lows = second_half_low > first_half_low
+    lower_highs = second_half_high < first_half_high
+    lower_lows = second_half_low < first_half_low
+
+    # Determine trend structure
+    if higher_highs and higher_lows:
+        trend = 'UPTREND'
+    elif lower_highs and lower_lows:
+        trend = 'DOWNTREND'
+    else:
+        trend = 'SIDEWAYS'
+
+    pattern = {
+        'higherHighs': bool(higher_highs),
+        'higherLows': bool(higher_lows),
+        'lowerHighs': bool(lower_highs),
+        'lowerLows': bool(lower_lows)
+    }
+
+    return trend, pattern
+
+def calculate_bb_position_history(df, bb_middle, days=5):
+    """
+    Calculate Bollinger Band position for last N days
+    Returns array of positions: ABOVE, MIDDLE, or BELOW
+    """
+    if len(df) < days:
+        return []
+
+    recent = df.tail(days)
+    positions = []
+
+    for i in range(len(recent)):
+        close = recent['Close'].iloc[i]
+        bb_mid = bb_middle.iloc[-(days-i)]  # Get corresponding BB middle value
+
+        if close > bb_mid:
+            positions.append('ABOVE')
+        elif close < bb_mid:
+            positions.append('BELOW')
+        else:
+            positions.append('MIDDLE')
+
+    return positions
+
 def calculate_indicators(df):
     """Calculate all technical indicators"""
 
@@ -187,6 +257,10 @@ def calculate_indicators(df):
 
     # Volume Average
     avg_volume20 = df['Volume'].rolling(window=20).mean()
+
+    # Price Action Analysis
+    trend_structure, price_pattern = calculate_trend_structure(df, lookback=10)
+    bb_position_history = calculate_bb_position_history(df, bb_middle, days=5)
 
     # Get latest values
     last_price = float(df['Close'].iloc[-1])
@@ -252,6 +326,11 @@ def calculate_indicators(df):
 
         'volume': int(df['Volume'].iloc[-1]),
         'avgVolume20': int(avg_volume20.iloc[-1]) if not pd.isna(avg_volume20.iloc[-1]) else int(df['Volume'].iloc[-1]),
+
+        # Price Action / Trend Structure
+        'trendStructure': trend_structure,
+        'pricePattern': price_pattern,
+        'bbPositionHistory': bb_position_history,
     }
 
     # Calculate signals

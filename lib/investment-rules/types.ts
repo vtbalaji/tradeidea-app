@@ -76,6 +76,18 @@ export interface TechnicalData {
   volume: number;
   avgVolume20: number;
 
+  // Price Action / Trend Structure
+  trendStructure?: 'UPTREND' | 'DOWNTREND' | 'SIDEWAYS' | 'UNKNOWN';
+  pricePattern?: {
+    higherHighs: boolean;  // Making higher highs
+    higherLows: boolean;   // Making higher lows
+    lowerHighs: boolean;   // Making lower highs
+    lowerLows: boolean;    // Making lower lows
+  };
+
+  // Bollinger Band Position (historical - last 3 days)
+  bbPositionHistory?: ('ABOVE' | 'MIDDLE' | 'BELOW')[];  // Last 3-5 days
+
   // Overall signal
   overallSignal?: 'STRONG_BUY' | 'BUY' | 'NEUTRAL' | 'SELL' | 'STRONG_SELL';
 
