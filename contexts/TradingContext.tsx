@@ -183,7 +183,7 @@ interface TradingProviderProps {
 
 export const TradingProvider: React.FC<TradingProviderProps> = ({ children }) => {
   const { user } = useAuth();
-  const { selectedAccount } = useAccounts();
+  const { activeAccount } = useAccounts();
   const [ideas, setIdeas] = useState<TradingIdea[]>([]);
   const [myPortfolio, setMyPortfolio] = useState<PortfolioPosition[]>([]);
   const [notifications, setNotifications] = useState<Notification[]>([]);
@@ -255,31 +255,29 @@ export const TradingProvider: React.FC<TradingProviderProps> = ({ children }) =>
     return () => unsubscribe();
   }, [user]);
 
-  // Fetch user's portfolio
-  useEffect(() => {
+  // Fetch user's portfolio from API
+  const fetchPortfolio = async () => {
     if (!user) {
       setMyPortfolio([]);
       return;
     }
 
-    const portfolioRef = collection(db, 'portfolios');
-    const q = query(portfolioRef, where('userId', '==', user.uid));
-
-    const unsubscribe = onSnapshot(q, async (snapshot) => {
-      const portfolioData = snapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
-      })) as PortfolioPosition[];
+    try {
+      const { apiClient } = await import('@/lib/apiClient');
+      const response = await apiClient.portfolio.list(activeAccount?.id);
+      const portfolioData = response.positions as PortfolioPosition[];
 
       // Enrich with central symbol data
       const enrichedPortfolio = await enrichWithSymbolData(portfolioData);
       setMyPortfolio(enrichedPortfolio);
-    }, (error) => {
+    } catch (error) {
       console.error('Error fetching portfolio:', error);
-    });
+    }
+  };
 
-    return () => unsubscribe();
-  }, [user]);
+  useEffect(() => {
+    fetchPortfolio();
+  }, [user, activeAccount]);
 
   // Fetch user's notifications
   useEffect(() => {
@@ -780,36 +778,24 @@ export const TradingProvider: React.FC<TradingProviderProps> = ({ children }) =>
     if (!user) throw new Error('User must be logged in');
 
     try {
-      const portfoliosRef = collection(db, 'portfolios');
+      const { apiClient } = await import('@/lib/apiClient');
 
-      // Create initial buy transaction
-      const initialTransaction = {
-        type: 'buy' as const,
-        quantity: positionData.quantity || 0,
-        price: positionData.entryPrice || 0,
-        date: positionData.dateTaken || new Date().toISOString().split('T')[0],
-        totalValue: (positionData.quantity || 0) * (positionData.entryPrice || 0),
-        timestamp: Timestamp.now()
-      };
-
-      // Clean undefined values from positionData
-      const cleanedData = Object.fromEntries(
-        Object.entries(positionData).filter(([_, value]) => value !== undefined)
-      );
-
-      const newPosition = {
-        ...cleanedData,
+      const response = await apiClient.portfolio.create({
         ideaId,
-        userId: user.uid,
-        accountId: cleanedData.accountId || selectedAccount?.id || `${user.uid}-primary`, // Use provided accountId, selected account, or default to user's primary
-        status: 'open',
-        transactions: [initialTransaction],
-        createdAt: serverTimestamp(),
-        updatedAt: serverTimestamp()
-      };
+        accountId: positionData.accountId || activeAccount?.id,
+        symbol: positionData.symbol || '',
+        direction: positionData.tradeType || 'long',
+        quantity: positionData.quantity || 0,
+        entryPrice: positionData.entryPrice || 0,
+        entryDate: (positionData as any).dateTaken || new Date().toISOString().split('T')[0],
+        stopLoss: positionData.stopLoss,
+        target: positionData.target1,
+        notes: (positionData as any).notes || '',
+      });
 
-      const docRef = await addDoc(portfoliosRef, newPosition);
-      return docRef.id;
+      // Refresh portfolio after adding
+      await fetchPortfolio();
+      return response.id;
     } catch (error) {
       console.error('Error adding to portfolio:', error);
       throw error;
@@ -821,11 +807,17 @@ export const TradingProvider: React.FC<TradingProviderProps> = ({ children }) =>
     if (!user) throw new Error('User must be logged in');
 
     try {
-      const positionRef = doc(db, 'portfolios', positionId);
-      await updateDoc(positionRef, {
-        ...updates,
-        updatedAt: serverTimestamp()
+      const { apiClient } = await import('@/lib/apiClient');
+
+      await apiClient.portfolio.update(positionId, {
+        stopLoss: updates.stopLoss,
+        target: updates.target1,
+        notes: (updates as any).notes,
+        currentPrice: updates.currentPrice,
       });
+
+      // Refresh portfolio after update
+      await fetchPortfolio();
     } catch (error) {
       console.error('Error updating position:', error);
       throw error;
@@ -837,13 +829,16 @@ export const TradingProvider: React.FC<TradingProviderProps> = ({ children }) =>
     if (!user) throw new Error('User must be logged in');
 
     try {
-      const positionRef = doc(db, 'portfolios', positionId);
-      await updateDoc(positionRef, {
-        ...closeData,
-        status: 'closed',
-        closedAt: serverTimestamp(),
-        updatedAt: serverTimestamp()
+      const { apiClient } = await import('@/lib/apiClient');
+
+      await apiClient.portfolio.close(positionId, {
+        exitPrice: closeData.exitPrice || 0,
+        exitDate: closeData.exitDate || new Date().toISOString().split('T')[0],
+        exitReason: closeData.exitReason,
       });
+
+      // Refresh portfolio after closing
+      await fetchPortfolio();
     } catch (error) {
       console.error('Error closing position:', error);
       throw error;
@@ -855,55 +850,17 @@ export const TradingProvider: React.FC<TradingProviderProps> = ({ children }) =>
     if (!user) throw new Error('User must be logged in');
 
     try {
-      const positionRef = doc(db, 'portfolios', positionId);
-      const positionDoc = await getDoc(positionRef);
+      const { apiClient } = await import('@/lib/apiClient');
 
-      if (!positionDoc.exists()) {
-        throw new Error('Position not found');
-      }
+      await apiClient.portfolio.addTransaction(positionId, {
+        type: transaction.type,
+        quantity: transaction.quantity,
+        price: transaction.price,
+        date: transaction.date,
+      });
 
-      const positionData = positionDoc.data() as PortfolioPosition;
-      const transactions = positionData.transactions || [];
-
-      const newTransaction = {
-        ...transaction,
-        timestamp: Timestamp.now()
-      };
-
-      // Calculate new average price and quantity
-      let totalQuantity = positionData.quantity;
-      let totalInvested = positionData.entryPrice * positionData.quantity;
-
-      if (transaction.type === 'buy') {
-        totalQuantity += transaction.quantity;
-        totalInvested += transaction.totalValue;
-      } else {
-        totalQuantity -= transaction.quantity;
-      }
-
-      const newAvgPrice = totalQuantity > 0 ? totalInvested / totalQuantity : positionData.entryPrice;
-
-      // If quantity becomes zero or negative after sell, close the position
-      if (totalQuantity <= 0) {
-        await updateDoc(positionRef, {
-          transactions: [...transactions, newTransaction],
-          quantity: 0,
-          status: 'closed',
-          exitPrice: transaction.price,
-          exitDate: transaction.date,
-          exitReason: 'Sold all shares',
-          closedAt: serverTimestamp(),
-          updatedAt: serverTimestamp()
-        });
-      } else {
-        await updateDoc(positionRef, {
-          transactions: [...transactions, newTransaction],
-          quantity: totalQuantity,
-          entryPrice: newAvgPrice,
-          totalValue: totalQuantity * positionData.currentPrice,
-          updatedAt: serverTimestamp()
-        });
-      }
+      // Refresh portfolio after adding transaction
+      await fetchPortfolio();
     } catch (error) {
       console.error('Error adding transaction:', error);
       throw error;
@@ -915,36 +872,16 @@ export const TradingProvider: React.FC<TradingProviderProps> = ({ children }) =>
     if (!user) throw new Error('User must be logged in');
 
     try {
-      const positionRef = doc(db, 'portfolios', positionId);
-      const positionDoc = await getDoc(positionRef);
+      const { apiClient } = await import('@/lib/apiClient');
 
-      if (!positionDoc.exists()) {
-        throw new Error('Position not found');
-      }
-
-      const positionData = positionDoc.data() as PortfolioPosition;
-      const transactions = positionData.transactions || [];
-
-      // Create exit transaction
-      const exitTransaction = {
-        type: 'sell' as const,
-        quantity: positionData.quantity,
-        price: exitPrice,
-        date: exitDate,
-        totalValue: exitPrice * positionData.quantity,
-        timestamp: Timestamp.now()
-      };
-
-      await updateDoc(positionRef, {
-        status: 'closed',
+      await apiClient.portfolio.close(positionId, {
         exitPrice,
         exitDate,
         exitReason: exitReason || 'Manual exit',
-        currentPrice: exitPrice,
-        transactions: [...transactions, exitTransaction],
-        closedAt: serverTimestamp(),
-        updatedAt: serverTimestamp()
       });
+
+      // Refresh portfolio after exiting
+      await fetchPortfolio();
     } catch (error) {
       console.error('Error exiting trade:', error);
       throw error;

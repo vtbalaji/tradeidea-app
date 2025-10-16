@@ -1,22 +1,9 @@
 'use client';
 
 import React, { createContext, useState, useContext, useEffect, ReactNode } from 'react';
-import {
-  collection,
-  addDoc,
-  setDoc,
-  updateDoc,
-  doc,
-  getDocs,
-  query,
-  where,
-  orderBy,
-  onSnapshot,
-  serverTimestamp,
-  Timestamp
-} from 'firebase/firestore';
-import { db } from '../lib/firebase';
+import { Timestamp } from 'firebase/firestore';
 import { useAuth } from './AuthContext';
+import { apiClient } from '@/lib/apiClient';
 
 interface Account {
   id: string;
@@ -25,8 +12,8 @@ interface Account {
   description?: string;
   isDefault: boolean;
   color?: string;
-  createdAt: Timestamp;
-  updatedAt: Timestamp;
+  createdAt: Timestamp | string;
+  updatedAt: Timestamp | string;
 }
 
 interface AccountsContextType {
@@ -36,6 +23,7 @@ interface AccountsContextType {
   createAccount: (name: string, description?: string, color?: string) => Promise<void>;
   updateAccount: (accountId: string, updates: Partial<Account>) => Promise<void>;
   setDefaultAccount: (accountId: string) => Promise<void>;
+  refreshAccounts: () => Promise<void>;
   loading: boolean;
 }
 
@@ -47,8 +35,8 @@ export function AccountsProvider({ children }: { children: ReactNode }) {
   const [activeAccount, setActiveAccountState] = useState<Account | null>(null);
   const [loading, setLoading] = useState(true);
 
-  // Load accounts when user logs in
-  useEffect(() => {
+  // Fetch accounts from API
+  const fetchAccounts = async () => {
     if (!user) {
       setAccounts([]);
       setActiveAccountState(null);
@@ -56,29 +44,21 @@ export function AccountsProvider({ children }: { children: ReactNode }) {
       return;
     }
 
-    const accountsQuery = query(
-      collection(db, 'accounts'),
-      where('userId', '==', user.uid)
-    );
+    try {
+      setLoading(true);
+      const response = await apiClient.accounts.list();
+      const accountsList = response.accounts as Account[];
 
-    const unsubscribe = onSnapshot(accountsQuery, async (snapshot) => {
-      const accountsList = snapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
-      })) as Account[];
-
-      console.log('AccountsContext - snapshot received, count:', accountsList.length);
-      console.log('AccountsContext - accounts:', accountsList);
+      console.log('AccountsContext - fetched accounts, count:', accountsList.length);
 
       // If no accounts exist, create default account
       if (accountsList.length === 0) {
         console.log('AccountsContext - No accounts found, creating default...');
-        await createDefaultAccount(user.uid);
-        return;
+        await createAccount('Primary', 'Main portfolio account', '#ff8c42');
+        return; // fetchAccounts will be called again after creation
       }
 
       setAccounts(accountsList);
-      console.log('AccountsContext - Set accounts:', accountsList);
 
       // Set active account to default or first account
       const defaultAccount = accountsList.find(a => a.isDefault) || accountsList[0];
@@ -87,46 +67,25 @@ export function AccountsProvider({ children }: { children: ReactNode }) {
       if (!activeAccount || !accountsList.find(a => a.id === activeAccount.id)) {
         setActiveAccountState(defaultAccount);
       }
-
-      setLoading(false);
-    });
-
-    return () => unsubscribe();
-  }, [user]);
-
-  const createDefaultAccount = async (userId: string) => {
-    try {
-      // Use userId-specific ID for the primary account to avoid conflicts
-      const primaryAccountId = `${userId}-primary`;
-      const primaryAccountRef = doc(db, 'accounts', primaryAccountId);
-      await setDoc(primaryAccountRef, {
-        userId,
-        name: 'Primary',
-        description: 'Main portfolio account',
-        isDefault: true,
-        color: '#ff8c42',
-        createdAt: serverTimestamp(),
-        updatedAt: serverTimestamp()
-      });
-      console.log('Created default account with ID:', primaryAccountId);
     } catch (error) {
-      console.error('Error creating default account:', error);
+      console.error('Error fetching accounts:', error);
+    } finally {
+      setLoading(false);
     }
   };
 
+  // Load accounts when user logs in
+  useEffect(() => {
+    fetchAccounts();
+  }, [user]);
+
   const createAccount = async (name: string, description?: string, color?: string) => {
-    if (!user) return;
+    if (!user) throw new Error('Not authenticated');
 
     try {
-      await addDoc(collection(db, 'accounts'), {
-        userId: user.uid,
-        name,
-        description: description || '',
-        isDefault: false,
-        color: color || '#6b7280',
-        createdAt: serverTimestamp(),
-        updatedAt: serverTimestamp()
-      });
+      await apiClient.accounts.create({ name, description, color });
+      // Refresh accounts after creation
+      await fetchAccounts();
     } catch (error) {
       console.error('Error creating account:', error);
       throw error;
@@ -135,33 +94,49 @@ export function AccountsProvider({ children }: { children: ReactNode }) {
 
   const updateAccount = async (accountId: string, updates: Partial<Account>) => {
     try {
-      await updateDoc(doc(db, 'accounts', accountId), {
-        ...updates,
-        updatedAt: serverTimestamp()
+      await apiClient.accounts.update(accountId, {
+        name: updates.name,
+        description: updates.description,
+        color: updates.color,
       });
+
+      // Optimistically update local state
+      setAccounts(prev =>
+        prev.map(acc =>
+          acc.id === accountId ? { ...acc, ...updates } : acc
+        )
+      );
+
+      // Refresh accounts to ensure consistency
+      await fetchAccounts();
     } catch (error) {
       console.error('Error updating account:', error);
+      // Revert on error
+      await fetchAccounts();
       throw error;
     }
   };
 
   const setDefaultAccount = async (accountId: string) => {
-    if (!user) return;
+    if (!user) throw new Error('Not authenticated');
 
     try {
-      // Remove default from all accounts
-      const batch = accounts.map(account =>
-        updateDoc(doc(db, 'accounts', account.id), { isDefault: false })
-      );
-      await Promise.all(batch);
+      await apiClient.accounts.setDefault(accountId);
 
-      // Set new default
-      await updateDoc(doc(db, 'accounts', accountId), {
-        isDefault: true,
-        updatedAt: serverTimestamp()
-      });
+      // Optimistically update local state
+      setAccounts(prev =>
+        prev.map(acc => ({
+          ...acc,
+          isDefault: acc.id === accountId,
+        }))
+      );
+
+      // Refresh accounts to ensure consistency
+      await fetchAccounts();
     } catch (error) {
       console.error('Error setting default account:', error);
+      // Revert on error
+      await fetchAccounts();
       throw error;
     }
   };
@@ -196,6 +171,7 @@ export function AccountsProvider({ children }: { children: ReactNode }) {
         createAccount,
         updateAccount,
         setDefaultAccount,
+        refreshAccounts: fetchAccounts,
         loading
       }}
     >
