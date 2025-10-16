@@ -28,12 +28,16 @@ export function SummaryPositionCard({
   const pnlPercent = (pnl / investedAmount) * 100;
   const isProfit = pnl >= 0;
   const alerts = analyzeExitCriteria(position);
-  const { recommendation, bgColor, textColor } = getOverallRecommendation(position);
 
   // Calculate price change from technicals data
   const priceChange = position.technicals?.change || 0;
   const priceChangePercent = position.technicals?.changePercent || 0;
   const isPriceUp = priceChange >= 0;
+
+  // Check if stop-loss is hit (critical alert with "STOP LOSS HIT")
+  const stopLossHit = alerts?.some(alert =>
+    alert.type === 'critical' && alert.message.includes('STOP LOSS HIT')
+  );
 
   return (
     <div>
@@ -78,12 +82,23 @@ export function SummaryPositionCard({
           </div>
         </div>
 
-        {/* Second Row: Recommendation (if available) */}
-        {position.technicals && position.status === 'open' && (
-          <div className={`px-3 py-1.5 rounded-lg ${bgColor} inline-block`}>
-            <p className={`text-xs font-bold ${textColor}`}>
-              {recommendation}
-            </p>
+        {/* Second Row: Stop Loss Status (only if SL is hit) */}
+        {stopLossHit && position.status === 'open' && alerts && (
+          <div>
+            {alerts
+              .filter(alert =>
+                alert.type === 'critical' && alert.message.includes('STOP LOSS HIT')
+              )
+              .map((alert, idx) => (
+                <div
+                  key={idx}
+                  className="px-3 py-1.5 rounded-lg bg-red-500/20 border border-red-500/30 inline-block"
+                >
+                  <p className="text-xs font-bold text-red-400">
+                    {alert.message}
+                  </p>
+                </div>
+              ))}
           </div>
         )}
       </div>
@@ -95,22 +110,6 @@ export function SummaryPositionCard({
           {position.exitReason && position.status === 'closed' && (
             <div className="mb-3 px-3 py-2 bg-orange-500/20 border border-orange-500/30 rounded-lg">
               <p className="text-sm text-orange-400 font-semibold">📤 Exited: {position.exitReason}</p>
-            </div>
-          )}
-
-          {/* Overall Recommendation */}
-          {position.technicals && position.status === 'open' && (
-            <div className="mb-4">
-              {(() => {
-                const { recommendation, bgColor, borderColor, textColor, icon } = getOverallRecommendation(position);
-                return (
-                  <div className={`px-3 py-2 rounded-lg ${bgColor} border ${borderColor}`}>
-                    <p className={`text-sm font-bold ${textColor}`}>
-                      {icon} Overall Recommendation: {recommendation}
-                    </p>
-                  </div>
-                );
-              })()}
             </div>
           )}
 

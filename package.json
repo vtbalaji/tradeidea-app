@@ -10,6 +10,8 @@
     "analyze": "source venv/bin/activate && python3 scripts/analyze-symbols.py",
     "analyze-duckdb": "source venv/bin/activate && python3 scripts/analyze-symbols-duckdb.py",
     "fetch-nse": "source venv/bin/activate && python3 scripts/fetch-nse-data.py",
+    "manage-sl": "source venv/bin/activate && python3 scripts/manage-portfolio-stoploss.py",
+    "eod": "source venv/bin/activate && python3 scripts/analyze-symbols.py && python3 scripts/manage-portfolio-stoploss.py",
     "load-symbols": "tsx scripts/load-symbols.ts",
     "load-symbols-csv": "tsx scripts/load-symbols-from-csv.ts"
   },

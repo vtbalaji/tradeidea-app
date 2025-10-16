@@ -30,6 +30,11 @@ export function DetailedPositionCard({
   const priceChangePercent = position.technicals?.changePercent || 0;
   const isPriceUp = priceChange >= 0;
 
+  // Check if stop-loss is hit (critical alert with "STOP LOSS HIT")
+  const stopLossHit = alerts?.some(alert =>
+    alert.type === 'critical' && alert.message.includes('STOP LOSS HIT')
+  );
+
   return (
     <div className="bg-gray-50 dark:bg-[#1c2128] border border-gray-200 dark:border-[#30363d] rounded-xl p-5 hover:border-[#ff8c42] transition-colors">
       {/* Header */}
@@ -61,22 +66,6 @@ export function DetailedPositionCard({
       {position.exitReason && position.status === 'closed' && (
         <div className="mb-3 px-3 py-2 bg-orange-500/20 border border-orange-500/30 rounded-lg">
           <p className="text-sm text-orange-400 font-semibold">📤 Exited: {position.exitReason}</p>
-        </div>
-      )}
-
-      {/* Overall Recommendation */}
-      {position.technicals && position.status === 'open' && (
-        <div className="mb-4">
-          {(() => {
-            const { recommendation, bgColor, borderColor, textColor, icon } = getOverallRecommendation(position);
-            return (
-              <div className={`px-3 py-2 rounded-lg ${bgColor} border ${borderColor}`}>
-                <p className={`text-sm font-bold ${textColor}`}>
-                  {icon} Overall Recommendation: {recommendation}
-                </p>
-              </div>
-            );
-          })()}
         </div>
       )}
 

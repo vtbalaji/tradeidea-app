@@ -17,33 +17,33 @@ export function analyzeExitCriteria(position: any): ExitAlert[] | null {
   const alerts: ExitAlert[] = [];
   const { exitCriteria, currentPrice, stopLoss, target1, technicals } = position;
 
-  // Determine effective stop loss (LOWEST among user SL, Supertrend, 100MA)
-  // Using the lowest value provides the most conservative protection
-  let effectiveStopLoss = stopLoss;
+  // Build Smart SL label based on phase
   let stopLossSource = 'User SL';
+  if (position.smartSLTrigger === 'yes') {
+    const phase = position.smartSLPhase;
+    const source = position.smartSLSource;
 
-  // Check Supertrend - use if it's LOWER than current effective SL
-  if (technicals?.supertrend && technicals.supertrend < effectiveStopLoss) {
-    effectiveStopLoss = technicals.supertrend;
-    stopLossSource = 'Supertrend';
-  }
-
-  // Check 100MA - use if it's LOWER than current effective SL
-  if (technicals?.sma100 && technicals.sma100 < effectiveStopLoss) {
-    effectiveStopLoss = technicals.sma100;
-    stopLossSource = '100MA';
+    if (phase === 'protection') {
+      stopLossSource = 'Smart SL: Protection';
+    } else if (phase === 'breakeven') {
+      stopLossSource = 'Smart SL: Breakeven';
+    } else if (phase === 'trailing') {
+      stopLossSource = source ? `Smart SL: Trailing (${source})` : 'Smart SL: Trailing';
+    } else {
+      stopLossSource = 'Smart SL';
+    }
   }
 
   // Check stop loss
   if (exitCriteria.exitAtStopLoss) {
-    if (currentPrice <= effectiveStopLoss) {
-      alerts.push({ type: 'critical', message: `🚨 STOP LOSS HIT at ₹${effectiveStopLoss.toFixed(2)} (${stopLossSource})` });
+    if (currentPrice <= stopLoss) {
+      alerts.push({ type: 'critical', message: `🚨 STOP LOSS HIT at ₹${stopLoss.toFixed(2)} (${stopLossSource})` });
     } else {
-      const percentAbove = ((currentPrice - effectiveStopLoss) / effectiveStopLoss) * 100;
+      const percentAbove = ((currentPrice - stopLoss) / stopLoss) * 100;
       if (percentAbove <= 5) {
-        alerts.push({ type: 'warning', message: `⚠️ Near SL: ₹${effectiveStopLoss.toFixed(2)} (${stopLossSource})` });
+        alerts.push({ type: 'warning', message: `⚠️ Near SL: ₹${stopLoss.toFixed(2)} (${stopLossSource})` });
       } else {
-        alerts.push({ type: 'info', message: `✅ SL Safe: ₹${effectiveStopLoss.toFixed(2)} (${stopLossSource})` });
+        alerts.push({ type: 'info', message: `✅ SL Safe: ₹${stopLoss.toFixed(2)} (${stopLossSource})` });
       }
     }
   }

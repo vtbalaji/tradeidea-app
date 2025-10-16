@@ -59,7 +59,7 @@ if [ ! -f "serviceAccountKey.json" ]; then
 fi
 
 # 1. Fetch NSE EOD Data
-log "📥 Step 1/3: Fetching NSE EOD Data..."
+log "📥 Step 1/4: Fetching NSE EOD Data..."
 START_TIME=$(date +%s)
 if $PYTHON scripts/fetch-eod-data.py >> "$LOG_FILE" 2>&1; then
     END_TIME=$(date +%s)
@@ -73,7 +73,7 @@ fi
 
 # 2. Run Technical Analysis
 log ""
-log "📊 Step 2/3: Running Technical Analysis..."
+log "📊 Step 2/4: Running Technical Analysis..."
 START_TIME=$(date +%s)
 if $PYTHON scripts/analyze-symbols-duckdb.py >> "$LOG_FILE" 2>&1; then
     END_TIME=$(date +%s)
@@ -87,7 +87,7 @@ fi
 
 # 3. Run Screeners
 log ""
-log "🔍 Step 3/3: Running Screeners..."
+log "🔍 Step 3/4: Running Screeners..."
 START_TIME=$(date +%s)
 if $PYTHON scripts/screeners.py >> "$LOG_FILE" 2>&1; then
     END_TIME=$(date +%s)
@@ -96,6 +96,20 @@ if $PYTHON scripts/screeners.py >> "$LOG_FILE" 2>&1; then
 else
     EXIT_CODE=$?
     log_error "Screeners failed with exit code $EXIT_CODE"
+    exit 1
+fi
+
+# 4. Manage Portfolio Stop-Loss
+log ""
+log "🛡️  Step 4/4: Managing Portfolio Stop-Loss..."
+START_TIME=$(date +%s)
+if $PYTHON scripts/manage-portfolio-stoploss.py >> "$LOG_FILE" 2>&1; then
+    END_TIME=$(date +%s)
+    DURATION=$((END_TIME - START_TIME))
+    log "✅ Stop-loss management completed in ${DURATION}s"
+else
+    EXIT_CODE=$?
+    log_error "Stop-loss management failed with exit code $EXIT_CODE"
     exit 1
 fi
 
