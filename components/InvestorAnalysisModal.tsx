@@ -6,6 +6,7 @@ import { InvestorType, InvestorRecommendation, EntryAnalysis } from '@/lib/inves
 import { TrendArrow, ChevronLeftIcon, ChevronRightIcon, CloseIcon } from '@/components/icons';
 import TechnicalLevelsCard from '@/components/TechnicalLevelsCard';
 import FundamentalsCard from '@/components/FundamentalsCard';
+import PriceChart from '@/components/PriceChart';
 
 interface InvestorAnalysisModalProps {
   isOpen: boolean;
@@ -228,6 +229,43 @@ export default function InvestorAnalysisModal({
 
         {/* Content */}
         <div className="p-4">
+          {/* Price Chart + Technical/Fundamentals Cards */}
+          <div className="mb-6 grid grid-cols-1 md:grid-cols-3 gap-4">
+            {/* Chart - Left side (2 columns on desktop) */}
+            <div className="md:col-span-2">
+              <div className="bg-white dark:bg-[#1c2128] border border-gray-200 dark:border-[#30363d] rounded-lg p-4">
+                <div className="flex items-center justify-between mb-3">
+                  <h3 className="text-sm font-bold text-gray-900 dark:text-white">
+                    Price Chart (1 Year)
+                  </h3>
+                  {technicals?.lastPrice && (
+                    <span className="text-xs font-semibold text-[#ff8c42]">
+                      LTP: ₹{technicals.lastPrice.toFixed(2)}
+                    </span>
+                  )}
+                </div>
+                <PriceChart symbol={symbol} days={365} height="400px" />
+              </div>
+            </div>
+
+            {/* Technical & Fundamentals Cards - Right side (1 column on desktop) */}
+            <div className="space-y-4">
+              {/* Technical Levels Card */}
+              {technicals && (
+                <div className="bg-white dark:bg-[#1c2128] border border-gray-200 dark:border-[#30363d] rounded-lg p-4">
+                  <TechnicalLevelsCard technicals={technicals} />
+                </div>
+              )}
+
+              {/* Fundamentals Card */}
+              {fundamentals && (
+                <div className="bg-white dark:bg-[#1c2128] border border-gray-200 dark:border-[#30363d] rounded-lg p-4">
+                  <FundamentalsCard fundamentals={fundamentals} showBorder={false} />
+                </div>
+              )}
+            </div>
+          </div>
+
           {/* Summary */}
           {recommendation.suitableFor.length > 0 ? (
             <div className="mb-4 p-4 bg-green-500/10 border border-green-500/30 rounded-lg">
@@ -257,23 +295,6 @@ export default function InvestorAnalysisModal({
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {Object.entries(recommendation.details).map(([type, analysis]) =>
               renderAnalysisCard(type as InvestorType, analysis)
-            )}
-          </div>
-
-          {/* Technical Levels & Fundamentals Summary - Mobile Friendly */}
-          <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-4">
-            {/* Technical Levels Summary */}
-            {technicals && (
-              <div className="bg-white dark:bg-[#1c2128] border border-gray-200 dark:border-[#30363d] rounded-lg p-4">
-                <TechnicalLevelsCard technicals={technicals} />
-              </div>
-            )}
-
-            {/* Fundamentals Summary */}
-            {fundamentals && (
-              <div className="bg-white dark:bg-[#1c2128] border border-gray-200 dark:border-[#30363d] rounded-lg p-4">
-                <FundamentalsCard fundamentals={fundamentals} showBorder={false} />
-              </div>
             )}
           </div>
 
