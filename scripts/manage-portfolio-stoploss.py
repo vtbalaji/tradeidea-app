@@ -64,8 +64,7 @@ def get_symbol_data(symbol):
 def get_technical_sl(position, technical_data):
     """
     Calculate technical SL from 100MA and Daily Supertrend
-    Only use levels ABOVE entry price
-    Return the higher of the two (most conservative)
+    Returns the HIGHEST of 100MA and Supertrend (both must be above entry)
     """
     entry_price = position['entryPrice']
 
@@ -79,16 +78,25 @@ def get_technical_sl(position, technical_data):
 
     # 100MA (only if above entry)
     if sma100 > 0 and sma100 > entry_price:
-        candidates.append(('100MA', sma100))
+        candidates.append(sma100)
 
     # Daily Supertrend (only if bullish and above entry)
     if supertrend > 0 and supertrend_direction == 1 and supertrend > entry_price:
-        candidates.append(('Supertrend', supertrend))
+        candidates.append(supertrend)
 
-    # Return highest technical level
+    # Return HIGHEST technical level (max of 100MA and Supertrend)
     if candidates:
-        best = max(candidates, key=lambda x: x[1])
-        return best[1], best[0]  # (value, source)
+        technical_sl = max(candidates)
+
+        # Determine which sources contributed
+        sources = []
+        if sma100 > 0 and sma100 > entry_price:
+            sources.append(f'100MA:₹{sma100:.2f}')
+        if supertrend > 0 and supertrend_direction == 1 and supertrend > entry_price:
+            sources.append(f'ST:₹{supertrend:.2f}')
+
+        source_label = ' | '.join(sources) if sources else 'Technical'
+        return technical_sl, source_label
 
     return None, None
 

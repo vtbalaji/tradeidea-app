@@ -50,23 +50,24 @@ export function SummaryPositionCard({
       >
         {/* First Row: Symbol, Trade Type, P&L, Expand Icon */}
         <div className="flex items-center justify-between gap-3 mb-2">
-          {/* Symbol and Trade Type */}
-          <div className="flex items-center gap-2 flex-1 min-w-0">
-            <div>
+          {/* Symbol */}
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2">
               <h3 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white truncate">{position.symbol}</h3>
-              {position.fundamentals?.industry && (
-                <p className="text-xs font-medium text-gray-600 dark:text-[#8b949e] mt-0.5">
-                  {position.fundamentals?.industry}
-                </p>
+              {position.smartSLTrigger === 'yes' && (
+                <img
+                  src="/logo.svg"
+                  alt="Smart SL"
+                  className="h-4 w-4 opacity-80 flex-shrink-0"
+                  title="Protected by Smart SL"
+                />
               )}
             </div>
-            <span className={`px-2 py-0.5 text-xs font-semibold rounded flex-shrink-0 ${
-              position.tradeType === 'Long'
-                ? 'bg-green-500/20 text-green-400'
-                : 'bg-red-500/20 text-red-400'
-            }`}>
-              {position.tradeType || 'Long'}
-            </span>
+            {position.fundamentals?.industry && (
+              <p className="text-xs font-medium text-gray-600 dark:text-[#8b949e] mt-0.5">
+                {position.fundamentals?.industry}
+              </p>
+            )}
           </div>
 
           {/* P&L and Expand Icon */}
