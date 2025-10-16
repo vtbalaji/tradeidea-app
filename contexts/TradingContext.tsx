@@ -554,6 +554,7 @@ export const TradingProvider: React.FC<TradingProviderProps> = ({ children }) =>
         userId: user.uid,
         userEmail: user.email,
         userName: user.displayName || user.email,
+        status: 'active', // All new ideas start as active
         likes: 0,
         likedBy: [],
         followers: [],
@@ -627,19 +628,19 @@ export const TradingProvider: React.FC<TradingProviderProps> = ({ children }) =>
     }
   };
 
-  // Delete an idea (actually marks it as closed instead of deleting)
+  // Delete an idea (actually marks it as cancelled instead of deleting)
   const deleteIdea = async (ideaId: string): Promise<void> => {
     if (!user) throw new Error('User must be logged in');
 
     try {
       const ideaRef = doc(db, 'tradingIdeas', ideaId);
-      // Instead of deleting, update status to 'closed'
+      // Instead of deleting, update status to 'cancelled'
       await updateDoc(ideaRef, {
-        status: 'closed',
+        status: 'cancelled',
         updatedAt: serverTimestamp()
       });
     } catch (error) {
-      console.error('Error closing idea:', error);
+      console.error('Error cancelling idea:', error);
       throw error;
     }
   };

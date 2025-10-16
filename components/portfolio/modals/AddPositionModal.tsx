@@ -1,10 +1,18 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useSymbols } from '../../../contexts/SymbolsContext';
+import { getCurrentISTDate, formatDateForDisplay } from '../../../lib/dateUtils';
 
 interface AddPositionModalProps {
   isOpen: boolean;
   onClose: () => void;
   onAddPosition: (ideaId: string, position: any) => Promise<void>;
+  initialData?: {
+    symbol?: string;
+    stopLoss?: number;
+    target1?: number;
+    entryPrice?: number;
+    tradeType?: 'Long' | 'Short';
+  };
 }
 
 /**
@@ -13,7 +21,8 @@ interface AddPositionModalProps {
 export const AddPositionModal: React.FC<AddPositionModalProps> = ({
   isOpen,
   onClose,
-  onAddPosition
+  onAddPosition,
+  initialData
 }) => {
   const { symbols, searchSymbols } = useSymbols();
 
@@ -30,6 +39,22 @@ export const AddPositionModal: React.FC<AddPositionModalProps> = ({
 
   const [symbolSuggestions, setSymbolSuggestions] = useState<any[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
+
+  // Reset form with initialData when modal opens
+  useEffect(() => {
+    if (isOpen) {
+      setNewPosition({
+        symbol: initialData?.symbol || '',
+        tradeType: (initialData?.tradeType || 'Long') as 'Long' | 'Short',
+        entryPrice: initialData?.entryPrice?.toString() || '',
+        target1: initialData?.target1?.toString() || '',
+        stopLoss: initialData?.stopLoss?.toString() || '',
+        quantity: '',
+        dateTaken: formatDateForDisplay(getCurrentISTDate()),
+        notes: ''
+      });
+    }
+  }, [isOpen, initialData]);
 
   const handleSymbolSearch = async (value: string) => {
     setNewPosition({ ...newPosition, symbol: value });
@@ -73,7 +98,7 @@ export const AddPositionModal: React.FC<AddPositionModalProps> = ({
       target1: '',
       stopLoss: '',
       quantity: '',
-      dateTaken: '',
+      dateTaken: formatDateForDisplay(getCurrentISTDate()),
       notes: ''
     });
 
@@ -207,7 +232,7 @@ export const AddPositionModal: React.FC<AddPositionModalProps> = ({
           {/* Quantity and Date */}
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-600 dark:text-[#8b949e] mb-2">
+              <label className="block text-sm font-medium text-[#ff8c42] mb-2">
                 Quantity *
               </label>
               <input
@@ -215,7 +240,7 @@ export const AddPositionModal: React.FC<AddPositionModalProps> = ({
                 value={newPosition.quantity}
                 onChange={(e) => setNewPosition({ ...newPosition, quantity: e.target.value })}
                 placeholder="0"
-                className="w-full bg-white dark:bg-[#0f1419] border border-gray-200 dark:border-[#30363d] rounded-lg px-3 py-2 text-gray-900 dark:text-white placeholder-[#8b949e] outline-none focus:border-[#ff8c42] transition-colors"
+                className="w-full bg-white dark:bg-[#0f1419] border-2 border-[#ff8c42] rounded-lg px-3 py-2 text-gray-900 dark:text-white placeholder-[#8b949e] outline-none focus:border-[#ff9a58] transition-colors"
               />
             </div>
             <div>

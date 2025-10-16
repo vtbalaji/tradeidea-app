@@ -237,9 +237,6 @@ export default function IdeaDetailPage() {
           <div className="mb-5">
             <div className="flex items-center gap-3">
               <h1 className="text-4xl font-bold text-gray-900 dark:text-white">{idea.symbol}</h1>
-              <span className="px-3 py-1 bg-orange-500/20 text-orange-500 dark:text-orange-400 text-sm font-semibold rounded">
-                {idea.status === 'cooking' ? 'in progress' : idea.status}
-              </span>
               <IdeaIcon size={24} />
             </div>
           </div>
@@ -285,8 +282,7 @@ export default function IdeaDetailPage() {
                       analysis: idea.analysis,
                       entryPrice: idea.entryPrice,
                       target1: idea.target1,
-                      stopLoss: idea.stopLoss,
-                      status: idea.status
+                      stopLoss: idea.stopLoss
                     });
                     setShowEditModal(true);
                   }}
@@ -741,26 +737,6 @@ export default function IdeaDetailPage() {
                       className="w-full bg-white dark:bg-[#0f1419] border border-gray-200 dark:border-[#30363d] rounded-lg px-3 py-2 text-gray-900 dark:text-white placeholder-[#8b949e] outline-none focus:border-[#ff8c42] transition-colors"
                     />
                   </div>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-600 dark:text-[#8b949e] mb-2">
-                    Status
-                  </label>
-                  <select
-                    value={editFormData.status}
-                    onChange={(e) =>
-                      setEditFormData({ ...editFormData, status: e.target.value })
-                    }
-                    className="w-full bg-white dark:bg-[#0f1419] border border-gray-200 dark:border-[#30363d] rounded-lg px-3 py-2 text-gray-900 dark:text-white outline-none focus:border-[#ff8c42] transition-colors"
-                  >
-                    <option value="in progress">In Progress</option>
-                    <option value="cooking">In Progress (legacy)</option>
-                    <option value="active">Active</option>
-                    <option value="hit target">Hit Target</option>
-                    <option value="hit sl">Hit SL</option>
-                    <option value="cancelled">Cancelled</option>
-                  </select>
                 </div>
               </div>
 

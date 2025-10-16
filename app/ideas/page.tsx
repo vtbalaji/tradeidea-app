@@ -13,6 +13,46 @@ import InvestorAnalysisModal from '@/components/InvestorAnalysisModal';
 import TechnicalLevelsCard from '@/components/TechnicalLevelsCard';
 import FundamentalsCard from '@/components/FundamentalsCard';
 import AnalysisButton from '@/components/AnalysisButton';
+import AddPositionModal from '@/components/portfolio/modals/AddPositionModal';
+
+// Calculate badge status for an idea
+const calculateBadgeStatus = (idea: any) => {
+  // Check if we have required data
+  if (!idea.technicals || !idea.fundamentals || !idea.entryPrice) {
+    return { text: 'Waiting', color: 'bg-gray-500/20 text-gray-500 dark:text-gray-400', type: 'waiting' as const };
+  }
+
+  const lastPrice = idea.technicals.lastPrice;
+  if (!lastPrice) {
+    return { text: 'Waiting', color: 'bg-gray-500/20 text-gray-500 dark:text-gray-400', type: 'waiting' as const };
+  }
+
+  // Check if entry price is higher than LTP (price is below entry) AND fundamentals are EXCELLENT
+  if (lastPrice < idea.entryPrice && idea.fundamentals.fundamentalRating === 'EXCELLENT') {
+    return { text: 'You can Enter', color: 'bg-orange-500/20 text-orange-500 dark:text-orange-400', type: 'canEnter' as const };
+  }
+
+  // Check technical condition: overallSignal is BUY or STRONG_BUY
+  const technicalReady =
+    idea.technicals.overallSignal === 'BUY' ||
+    idea.technicals.overallSignal === 'STRONG_BUY';
+
+  // Check fundamental condition: AVERAGE or better
+  const fundamentalReady =
+    idea.fundamentals.fundamentalRating === 'AVERAGE' ||
+    idea.fundamentals.fundamentalRating === 'GOOD' ||
+    idea.fundamentals.fundamentalRating === 'EXCELLENT';
+
+  // Check price condition: within 2% of entry price
+  const priceReady = Math.abs((lastPrice - idea.entryPrice) / idea.entryPrice) <= 0.02;
+
+  // All conditions must be met for "Ready to Enter"
+  if (technicalReady && priceReady && fundamentalReady) {
+    return { text: 'Ready to Enter', color: 'bg-green-500/20 text-green-500 dark:text-green-400', type: 'ready' as const };
+  }
+
+  return { text: 'Waiting', color: 'bg-gray-500/20 text-gray-500 dark:text-gray-400', type: 'waiting' as const };
+};
 
 export default function IdeasHubPage() {
   const router = useRouter();
@@ -20,23 +60,11 @@ export default function IdeasHubPage() {
   const { user } = useAuth();
   const [searchQuery, setSearchQuery] = useState('');
   const [activeTab, setActiveTab] = useState('all');
+  const [statusFilter, setStatusFilter] = useState<'all' | 'ready' | 'canEnter' | 'waiting'>('all');
   const [showAnalysisModal, setShowAnalysisModal] = useState<string | null>(null);
   const [currentRecommendation, setCurrentRecommendation] = useState<any>(null);
-  const [showTradeModal, setShowTradeModal] = useState<string | null>(null);
-  const [tradeDetails, setTradeDetails] = useState({
-    quantity: '',
-    entryPrice: '',
-    dateTaken: '',
-  });
-  const [exitCriteria, setExitCriteria] = useState({
-    exitAtStopLoss: true,
-    exitAtTarget: true,
-    exitBelow50EMA: false,
-    exitBelow100MA: false,
-    exitBelow200MA: false,
-    exitOnWeeklySupertrend: false,
-    customNote: '',
-  });
+  const [showAddPositionModal, setShowAddPositionModal] = useState(false);
+  const [selectedIdeaForPosition, setSelectedIdeaForPosition] = useState<any>(null);
 
   // Check authentication and email verification
   useEffect(() => {
@@ -50,8 +78,8 @@ export default function IdeasHubPage() {
   }, [user, router]);
 
   // Filter ideas based on search and tab
-  // First filter out closed ideas
-  let filteredIdeas = ideas.filter(idea => idea.status !== 'closed');
+  // Only show active ideas (filter out cancelled)
+  let filteredIdeas = ideas.filter(idea => idea.status === 'active');
 
   if (searchQuery) {
     filteredIdeas = filteredIdeas.filter(idea =>
@@ -62,10 +90,7 @@ export default function IdeasHubPage() {
   }
 
   // Apply tab filters
-  if (activeTab === 'active') {
-    // Show only active ideas
-    filteredIdeas = filteredIdeas.filter(idea => idea.status === 'active');
-  } else if (activeTab === 'following') {
+  if (activeTab === 'following') {
     filteredIdeas = filteredIdeas.filter(idea => idea.followers?.includes(user?.uid || ''));
   } else if (activeTab === 'trending') {
     // Sort by likes (most liked first)
@@ -87,12 +112,27 @@ export default function IdeasHubPage() {
       });
   }
 
-  // Group ideas by status
-  const cookingIdeas = filteredIdeas.filter(idea => idea.status === 'cooking' || idea.status === 'in progress');
-  const activeIdeas = filteredIdeas.filter(idea => idea.status === 'active');
-  const hitTargetIdeas = filteredIdeas.filter(idea => idea.status === 'hit target');
-  const hitSLIdeas = filteredIdeas.filter(idea => idea.status === 'hit sl');
-  const cancelledIdeas = filteredIdeas.filter(idea => idea.status === 'cancelled');
+  // Calculate status counts (before applying status filter)
+  const statusCounts = {
+    ready: 0,
+    canEnter: 0,
+    waiting: 0
+  };
+
+  filteredIdeas.forEach(idea => {
+    const badgeStatus = calculateBadgeStatus(idea);
+    if (badgeStatus.type === 'ready') statusCounts.ready++;
+    else if (badgeStatus.type === 'canEnter') statusCounts.canEnter++;
+    else if (badgeStatus.type === 'waiting') statusCounts.waiting++;
+  });
+
+  // Apply status filter
+  if (statusFilter !== 'all') {
+    filteredIdeas = filteredIdeas.filter(idea => {
+      const badgeStatus = calculateBadgeStatus(idea);
+      return badgeStatus.type === statusFilter;
+    });
+  }
 
   const handleAnalyze = (e: React.MouseEvent, idea: any) => {
     e.stopPropagation();
@@ -110,57 +150,18 @@ export default function IdeasHubPage() {
 
   const handleConvertToPosition = (e: React.MouseEvent, idea: any) => {
     e.stopPropagation();
-    setTradeDetails({
-      quantity: '',
-      entryPrice: idea.entryPrice?.toString() || '',
-      dateTaken: formatDateForDisplay(getCurrentISTDate()),
-    });
-    setShowTradeModal(idea.id);
+    setSelectedIdeaForPosition(idea);
+    setShowAddPositionModal(true);
   };
 
-  const handleTakeTrade = async (ideaId: string) => {
-    const idea = ideas.find(i => i.id === ideaId);
-    if (!idea || !tradeDetails.quantity || !tradeDetails.entryPrice) {
-      alert('Please fill in quantity and entry price');
-      return;
-    }
-
+  const handleAddPositionFromIdea = async (ideaId: string, positionData: any) => {
     try {
-      const quantity = parseFloat(tradeDetails.quantity);
-      const entryPrice = parseFloat(tradeDetails.entryPrice);
+      await addToPortfolio(selectedIdeaForPosition?.id || '', positionData);
+      trackPositionAdded(selectedIdeaForPosition?.symbol || 'Unknown', 'idea');
 
-      const positionData = {
-        symbol: idea.symbol || '',
-        tradeType: idea.tradeType || 'Long',
-        entryPrice: entryPrice,
-        currentPrice: entryPrice,
-        target1: idea.target1 || 0,
-        stopLoss: idea.stopLoss || 0,
-        quantity: quantity,
-        totalValue: entryPrice * quantity,
-        dateTaken: formatDateForStorage(tradeDetails.dateTaken),
-        exitCriteria: exitCriteria,
-      };
-
-      await addToPortfolio(ideaId, positionData);
-      trackPositionAdded(idea.symbol || 'Unknown', 'idea');
-
-      setShowTradeModal(null);
-      setTradeDetails({
-        quantity: '',
-        entryPrice: '',
-        dateTaken: formatDateForDisplay(getCurrentISTDate()),
-      });
-      setExitCriteria({
-        exitAtStopLoss: true,
-        exitAtTarget: true,
-        exitBelow50EMA: false,
-        exitBelow100MA: false,
-        exitBelow200MA: false,
-        exitOnWeeklySupertrend: false,
-        customNote: '',
-      });
-      alert('Trade added to your portfolio!');
+      setShowAddPositionModal(false);
+      setSelectedIdeaForPosition(null);
+      alert('Position added to your portfolio!');
       router.push('/portfolio');
     } catch (error: any) {
       alert(error.message || 'Failed to add position');
@@ -172,46 +173,7 @@ export default function IdeasHubPage() {
       ? (((idea.target1 - idea.entryPrice) / idea.entryPrice) * 100).toFixed(1)
       : null;
 
-    // Calculate badge status: "Ready to Enter", "You can Enter", or "Waiting"
-    const calculateBadgeStatus = () => {
-      // Check if we have required data
-      if (!idea.technicals || !idea.fundamentals || !idea.entryPrice) {
-        return { text: 'Waiting', color: 'bg-gray-500/20 text-gray-500 dark:text-gray-400' };
-      }
-
-      const lastPrice = idea.technicals.lastPrice;
-      if (!lastPrice) {
-        return { text: 'Waiting', color: 'bg-gray-500/20 text-gray-500 dark:text-gray-400' };
-      }
-
-      // Check if entry price is higher than LTP (price is below entry) AND fundamentals are EXCELLENT
-      if (lastPrice < idea.entryPrice && idea.fundamentals.fundamentalRating === 'EXCELLENT') {
-        return { text: 'You can Enter', color: 'bg-orange-500/20 text-orange-500 dark:text-orange-400' };
-      }
-
-      // Check technical condition: overallSignal is BUY or STRONG_BUY
-      const technicalReady =
-        idea.technicals.overallSignal === 'BUY' ||
-        idea.technicals.overallSignal === 'STRONG_BUY';
-
-      // Check fundamental condition: AVERAGE or better
-      const fundamentalReady =
-        idea.fundamentals.fundamentalRating === 'AVERAGE' ||
-        idea.fundamentals.fundamentalRating === 'GOOD' ||
-        idea.fundamentals.fundamentalRating === 'EXCELLENT';
-
-      // Check price condition: within 2% of entry price
-      const priceReady = Math.abs((lastPrice - idea.entryPrice) / idea.entryPrice) <= 0.02;
-
-      // All conditions must be met for "Ready to Enter"
-      if (technicalReady && priceReady && fundamentalReady) {
-        return { text: 'Ready to Enter', color: 'bg-green-500/20 text-green-500 dark:text-green-400' };
-      }
-
-      return { text: 'Waiting', color: 'bg-gray-500/20 text-gray-500 dark:text-gray-400' };
-    };
-
-    const badgeStatus = calculateBadgeStatus();
+    const badgeStatus = calculateBadgeStatus(idea);
 
     return (
       <div
@@ -403,16 +365,6 @@ export default function IdeasHubPage() {
             All Ideas
           </button>
           <button
-            onClick={() => setActiveTab('active')}
-            className={`px-3 py-1.5 rounded-md text-xs font-semibold transition-colors whitespace-nowrap ${
-              activeTab === 'active'
-                ? 'bg-[#ff8c42] text-gray-900 dark:text-white'
-                : 'bg-gray-50 dark:bg-[#1c2128] text-gray-600 dark:text-[#8b949e] hover:bg-[#30363d]'
-            }`}
-          >
-            🟢 Active
-          </button>
-          <button
             onClick={() => setActiveTab('trending')}
             className={`px-3 py-1.5 rounded-md text-xs font-semibold transition-colors whitespace-nowrap ${
               activeTab === 'trending'
@@ -446,134 +398,107 @@ export default function IdeasHubPage() {
         </div>
       </div>
 
-      {/* Ideas Sections */}
+      {/* Status Filter */}
+      <div className="px-5 mb-4">
+        <div className="flex items-center gap-2 mb-2">
+          <span className="text-xs font-semibold text-gray-600 dark:text-[#8b949e]">Filter by Status:</span>
+        </div>
+        <div className="flex gap-2 overflow-x-auto pb-1">
+          <button
+            onClick={() => setStatusFilter('all')}
+            className={`px-3 py-1.5 rounded-md text-xs font-semibold transition-colors whitespace-nowrap flex items-center gap-1.5 ${
+              statusFilter === 'all'
+                ? 'bg-[#ff8c42] text-gray-900 dark:text-white'
+                : 'bg-gray-50 dark:bg-[#1c2128] text-gray-600 dark:text-[#8b949e] hover:bg-[#30363d]'
+            }`}
+          >
+            <span>All Status</span>
+            <span className="px-1.5 py-0.5 bg-gray-500/20 rounded-full text-[10px]">
+              {statusCounts.ready + statusCounts.canEnter + statusCounts.waiting}
+            </span>
+          </button>
+          <button
+            onClick={() => setStatusFilter('ready')}
+            className={`px-3 py-1.5 rounded-md text-xs font-semibold transition-colors whitespace-nowrap flex items-center gap-1.5 ${
+              statusFilter === 'ready'
+                ? 'bg-green-500/20 text-green-600 dark:text-green-400 border border-green-500/30'
+                : 'bg-gray-50 dark:bg-[#1c2128] text-gray-600 dark:text-[#8b949e] hover:bg-green-500/10'
+            }`}
+          >
+            <span>✓ Ready to Enter</span>
+            <span className="px-1.5 py-0.5 bg-green-500/20 text-green-600 dark:text-green-400 rounded-full text-[10px]">
+              {statusCounts.ready}
+            </span>
+          </button>
+          <button
+            onClick={() => setStatusFilter('canEnter')}
+            className={`px-3 py-1.5 rounded-md text-xs font-semibold transition-colors whitespace-nowrap flex items-center gap-1.5 ${
+              statusFilter === 'canEnter'
+                ? 'bg-orange-500/20 text-orange-600 dark:text-orange-400 border border-orange-500/30'
+                : 'bg-gray-50 dark:bg-[#1c2128] text-gray-600 dark:text-[#8b949e] hover:bg-orange-500/10'
+            }`}
+          >
+            <span>⚡ You can Enter</span>
+            <span className="px-1.5 py-0.5 bg-orange-500/20 text-orange-600 dark:text-orange-400 rounded-full text-[10px]">
+              {statusCounts.canEnter}
+            </span>
+          </button>
+          <button
+            onClick={() => setStatusFilter('waiting')}
+            className={`px-3 py-1.5 rounded-md text-xs font-semibold transition-colors whitespace-nowrap flex items-center gap-1.5 ${
+              statusFilter === 'waiting'
+                ? 'bg-gray-500/20 text-gray-600 dark:text-gray-400 border border-gray-500/30'
+                : 'bg-gray-50 dark:bg-[#1c2128] text-gray-600 dark:text-[#8b949e] hover:bg-gray-500/10'
+            }`}
+          >
+            <span>⏳ Waiting</span>
+            <span className="px-1.5 py-0.5 bg-gray-500/20 text-gray-600 dark:text-gray-400 rounded-full text-[10px]">
+              {statusCounts.waiting}
+            </span>
+          </button>
+        </div>
+      </div>
+
+      {/* Ideas Section */}
       <div className="px-5 pb-8">
         {loading ? (
           <div className="text-center py-16">
             <div className="inline-block w-12 h-12 border-4 border-[#ff8c42] border-t-transparent rounded-full animate-spin mb-4"></div>
             <p className="text-gray-600 dark:text-[#8b949e] text-lg">Loading ideas...</p>
           </div>
+        ) : filteredIdeas.length > 0 ? (
+          <div>
+            {/* Show technical data update time if available */}
+            {filteredIdeas[0]?.technicals?.updatedAt && (
+              <div className="flex items-center gap-2 mb-4">
+                <span className="text-xs text-orange-600 dark:text-orange-400">
+                  Technical data updated: {(() => {
+                    const updatedAt = filteredIdeas[0].technicals.updatedAt.toDate();
+                    const now = new Date();
+                    const diffHours = Math.floor((now.getTime() - updatedAt.getTime()) / (1000 * 60 * 60));
+
+                    if (diffHours < 1) {
+                      return 'just now';
+                    } else if (diffHours < 24) {
+                      return `${diffHours}h ago`;
+                    } else {
+                      const diffDays = Math.floor(diffHours / 24);
+                      return `${diffDays}d ago`;
+                    }
+                  })()}
+                </span>
+              </div>
+            )}
+            {/* All Ideas in Flat Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {filteredIdeas.map((idea) => renderIdeaCard(idea))}
+            </div>
+          </div>
         ) : (
-          <div className="space-y-4">
-            {/* In Progress Ideas Section */}
-            {cookingIdeas.length > 0 && (
-              <div>
-                <div className="flex items-center gap-2 mb-2">
-                  <h2 className="text-xl font-bold text-gray-900 dark:text-white">In Progress</h2>
-                  <span className="px-2 py-0.5 bg-orange-500/20 text-orange-400 text-xs font-semibold rounded-full">
-                    {cookingIdeas.length}
-                  </span>
-                  {cookingIdeas[0]?.technicals?.updatedAt && (
-                    <span className="text-xs text-orange-600 dark:text-orange-400">
-                      Technical data updated: {(() => {
-                        const updatedAt = cookingIdeas[0].technicals.updatedAt.toDate();
-                        const now = new Date();
-                        const diffHours = Math.floor((now.getTime() - updatedAt.getTime()) / (1000 * 60 * 60));
-
-                        if (diffHours < 1) {
-                          return 'just now';
-                        } else if (diffHours < 24) {
-                          return `${diffHours}h ago`;
-                        } else {
-                          const diffDays = Math.floor(diffHours / 24);
-                          return `${diffDays}d ago`;
-                        }
-                      })()}
-                    </span>
-                  )}
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {cookingIdeas.map((idea) => renderIdeaCard(idea))}
-                </div>
-              </div>
-            )}
-
-            {/* Active Ideas Section */}
-            {activeIdeas.length > 0 && (
-              <div>
-                <div className="flex items-center gap-2 mb-2">
-                  <h2 className="text-xl font-bold text-gray-900 dark:text-white">🟢 Active Ideas</h2>
-                  <span className="px-2 py-0.5 bg-green-500/20 text-green-400 text-xs font-semibold rounded-full">
-                    {activeIdeas.length}
-                  </span>
-                  {activeIdeas[0]?.technicals?.updatedAt && (
-                    <span className="text-xs text-orange-600 dark:text-orange-400">
-                      Technical data updated: {(() => {
-                        const updatedAt = activeIdeas[0].technicals.updatedAt.toDate();
-                        const now = new Date();
-                        const diffHours = Math.floor((now.getTime() - updatedAt.getTime()) / (1000 * 60 * 60));
-
-                        if (diffHours < 1) {
-                          return 'just now';
-                        } else if (diffHours < 24) {
-                          return `${diffHours}h ago`;
-                        } else {
-                          const diffDays = Math.floor(diffHours / 24);
-                          return `${diffDays}d ago`;
-                        }
-                      })()}
-                    </span>
-                  )}
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {activeIdeas.map((idea) => renderIdeaCard(idea))}
-                </div>
-              </div>
-            )}
-
-            {/* Hit Target Ideas Section */}
-            {hitTargetIdeas.length > 0 && (
-              <div>
-                <div className="flex items-center gap-2 mb-2">
-                  <h2 className="text-xl font-bold text-gray-900 dark:text-white">🎯 Hit Target</h2>
-                  <span className="px-2 py-0.5 bg-green-500/20 text-green-400 text-xs font-semibold rounded-full">
-                    {hitTargetIdeas.length}
-                  </span>
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {hitTargetIdeas.map((idea) => renderIdeaCard(idea))}
-                </div>
-              </div>
-            )}
-
-            {/* Hit Stop Loss Ideas Section */}
-            {hitSLIdeas.length > 0 && (
-              <div>
-                <div className="flex items-center gap-2 mb-2">
-                  <h2 className="text-xl font-bold text-gray-900 dark:text-white">🛑 Hit Stop Loss</h2>
-                  <span className="px-2 py-0.5 bg-red-500/20 text-red-400 text-xs font-semibold rounded-full">
-                    {hitSLIdeas.length}
-                  </span>
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {hitSLIdeas.map((idea) => renderIdeaCard(idea))}
-                </div>
-              </div>
-            )}
-
-            {/* Cancelled Ideas Section */}
-            {cancelledIdeas.length > 0 && (
-              <div>
-                <div className="flex items-center gap-2 mb-2">
-                  <h2 className="text-xl font-bold text-gray-900 dark:text-white">❌ Cancelled</h2>
-                  <span className="px-2 py-0.5 bg-gray-500/20 text-gray-400 text-xs font-semibold rounded-full">
-                    {cancelledIdeas.length}
-                  </span>
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {cancelledIdeas.map((idea) => renderIdeaCard(idea))}
-                </div>
-              </div>
-            )}
-
-            {/* No ideas message */}
-            {cookingIdeas.length === 0 && activeIdeas.length === 0 && hitTargetIdeas.length === 0 && hitSLIdeas.length === 0 && cancelledIdeas.length === 0 && (
-              <div className="text-center py-16">
-                <div className="text-6xl mb-4">💡</div>
-                <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">No ideas found</h3>
-                <p className="text-gray-600 dark:text-[#8b949e]">Try adjusting your search or filters</p>
-              </div>
-            )}
+          <div className="text-center py-16">
+            <div className="text-6xl mb-4">💡</div>
+            <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">No ideas found</h3>
+            <p className="text-gray-600 dark:text-[#8b949e]">Try adjusting your search or filters</p>
           </div>
         )}
       </div>
@@ -593,176 +518,22 @@ export default function IdeasHubPage() {
         />
       )}
 
-      {/* Trade Modal */}
-      {showTradeModal && (
-        <div
-          className="fixed inset-0 bg-black/70 flex items-center justify-center z-50"
-          onClick={() => setShowTradeModal(null)}
-        >
-          <div
-            className="bg-gray-50 dark:bg-[#1c2128] border border-gray-200 dark:border-[#30363d] rounded-xl p-6 w-full max-w-md mx-4"
-            onClick={(e) => e.stopPropagation()}
-          >
-            {/* Modal Header */}
-            <div className="flex justify-between items-center mb-6">
-              <h3 className="text-xl font-bold text-gray-900 dark:text-white">Add Trade to Portfolio</h3>
-              <button
-                onClick={() => setShowTradeModal(null)}
-                className="text-gray-600 dark:text-[#8b949e] hover:text-gray-900 dark:hover:text-white transition-colors text-2xl"
-              >
-                ×
-              </button>
-            </div>
-
-            {/* Modal Body */}
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-600 dark:text-[#8b949e] mb-2">
-                  Quantity
-                </label>
-                <input
-                  type="number"
-                  value={tradeDetails.quantity}
-                  onChange={(e) =>
-                    setTradeDetails({ ...tradeDetails, quantity: e.target.value })
-                  }
-                  placeholder="Enter quantity"
-                  required
-                  className="w-full bg-white dark:bg-[#0f1419] border border-gray-200 dark:border-[#30363d] rounded-lg px-3 py-2 text-gray-900 dark:text-white placeholder-[#8b949e] outline-none focus:border-[#ff8c42] transition-colors"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-600 dark:text-[#8b949e] mb-2">
-                  Entry Price Taken
-                </label>
-                <input
-                  type="number"
-                  value={tradeDetails.entryPrice}
-                  onChange={(e) =>
-                    setTradeDetails({ ...tradeDetails, entryPrice: e.target.value })
-                  }
-                  placeholder="Enter entry price"
-                  required
-                  className="w-full bg-white dark:bg-[#0f1419] border border-gray-200 dark:border-[#30363d] rounded-lg px-3 py-2 text-gray-900 dark:text-white placeholder-[#8b949e] outline-none focus:border-[#ff8c42] transition-colors"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-600 dark:text-[#8b949e] mb-2">
-                  Date Taken (DD-MM-YYYY)
-                </label>
-                <input
-                  type="text"
-                  value={tradeDetails.dateTaken}
-                  onChange={(e) =>
-                    setTradeDetails({ ...tradeDetails, dateTaken: e.target.value })
-                  }
-                  placeholder="DD-MM-YYYY"
-                  pattern="\d{2}-\d{2}-\d{4}"
-                  className="w-full bg-white dark:bg-[#0f1419] border border-gray-200 dark:border-[#30363d] rounded-lg px-3 py-2 text-gray-900 dark:text-white placeholder-[#8b949e] outline-none focus:border-[#ff8c42] transition-colors"
-                />
-              </div>
-
-              {/* Exit Criteria Section */}
-              <div className="border-t border-gray-200 dark:border-[#30363d] pt-4">
-                <label className="block text-sm font-semibold text-gray-900 dark:text-white mb-2">
-                  📤 Exit Strategy
-                </label>
-                <p className="text-xs text-gray-600 dark:text-[#8b949e] mb-3">
-                  By default, position will exit at Stop Loss (₹{ideas.find(i => i.id === showTradeModal)?.stopLoss}) or Target (₹{ideas.find(i => i.id === showTradeModal)?.target1})
-                </p>
-
-                <div className="space-y-3">
-                  {/* Exit Below 50 EMA */}
-                  <label className="flex items-center gap-3 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={exitCriteria.exitBelow50EMA}
-                      onChange={(e) =>
-                        setExitCriteria({ ...exitCriteria, exitBelow50EMA: e.target.checked })
-                      }
-                      className="w-4 h-4 rounded border-gray-300 text-[#ff8c42] focus:ring-[#ff8c42]"
-                    />
-                    <span className="text-sm text-gray-600 dark:text-[#8b949e]">Exit if price goes below 50 EMA</span>
-                  </label>
-
-                  {/* Exit Below 100 MA */}
-                  <label className="flex items-center gap-3 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={exitCriteria.exitBelow100MA}
-                      onChange={(e) =>
-                        setExitCriteria({ ...exitCriteria, exitBelow100MA: e.target.checked })
-                      }
-                      className="w-4 h-4 rounded border-gray-300 text-[#ff8c42] focus:ring-[#ff8c42]"
-                    />
-                    <span className="text-sm text-gray-600 dark:text-[#8b949e]">Exit if price goes below 100 MA</span>
-                  </label>
-
-                  {/* Exit Below 200 MA */}
-                  <label className="flex items-center gap-3 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={exitCriteria.exitBelow200MA}
-                      onChange={(e) =>
-                        setExitCriteria({ ...exitCriteria, exitBelow200MA: e.target.checked })
-                      }
-                      className="w-4 h-4 rounded border-gray-300 text-[#ff8c42] focus:ring-[#ff8c42]"
-                    />
-                    <span className="text-sm text-gray-600 dark:text-[#8b949e]">Exit if price goes below 200 MA</span>
-                  </label>
-
-                  {/* Exit on Weekly Supertrend */}
-                  <label className="flex items-center gap-3 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={exitCriteria.exitOnWeeklySupertrend}
-                      onChange={(e) =>
-                        setExitCriteria({ ...exitCriteria, exitOnWeeklySupertrend: e.target.checked })
-                      }
-                      className="w-4 h-4 rounded border-gray-300 text-[#ff8c42] focus:ring-[#ff8c42]"
-                    />
-                    <span className="text-sm text-gray-600 dark:text-[#8b949e]">Exit based on Weekly Supertrend</span>
-                  </label>
-
-                  {/* Custom Note */}
-                  <div>
-                    <label className="block text-xs text-gray-600 dark:text-[#8b949e] mb-1">
-                      Additional Exit Notes (Optional)
-                    </label>
-                    <textarea
-                      value={exitCriteria.customNote}
-                      onChange={(e) =>
-                        setExitCriteria({ ...exitCriteria, customNote: e.target.value })
-                      }
-                      placeholder="e.g., Exit if RSI goes below 30, or any other custom criteria"
-                      rows={2}
-                      className="w-full bg-white dark:bg-[#0f1419] border border-gray-200 dark:border-[#30363d] rounded-lg px-3 py-2 text-sm text-gray-900 dark:text-white placeholder-[#8b949e] outline-none focus:border-[#ff8c42] transition-colors resize-none"
-                    />
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Modal Footer */}
-            <div className="flex gap-3 mt-6">
-              <button
-                onClick={() => setShowTradeModal(null)}
-                className="flex-1 bg-[#30363d] hover:bg-[#3e4651] text-white font-semibold py-3 rounded-lg transition-colors"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={() => showTradeModal && handleTakeTrade(showTradeModal)}
-                className="flex-1 bg-[#ff8c42] hover:bg-[#ff9a58] text-gray-900 dark:text-white font-semibold py-3 rounded-lg transition-colors"
-              >
-                Add to Portfolio
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* Add Position Modal */}
+      <AddPositionModal
+        isOpen={showAddPositionModal}
+        onClose={() => {
+          setShowAddPositionModal(false);
+          setSelectedIdeaForPosition(null);
+        }}
+        onAddPosition={handleAddPositionFromIdea}
+        initialData={selectedIdeaForPosition ? {
+          symbol: selectedIdeaForPosition.symbol,
+          stopLoss: selectedIdeaForPosition.stopLoss,
+          target1: selectedIdeaForPosition.target1,
+          entryPrice: selectedIdeaForPosition.entryPrice,
+          tradeType: selectedIdeaForPosition.tradeType || 'Long'
+        } : undefined}
+      />
     </div>
   );
 }
