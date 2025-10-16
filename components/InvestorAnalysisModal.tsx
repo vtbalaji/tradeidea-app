@@ -199,23 +199,18 @@ export default function InvestorAnalysisModal({
         {/* Main Content */}
         <div className="flex-1 overflow-y-auto">
         {/* Header */}
-        <div className="sticky top-0 bg-white dark:bg-[#1c2128] border-b border-gray-200 dark:border-[#30363d] p-4 flex justify-between items-center">
+        <div className="sticky top-0 bg-white dark:bg-[#1c2128] border-b border-gray-200 dark:border-[#30363d] px-4 py-2 flex justify-between items-center">
           <div>
-            <h2 className="text-xl font-bold text-gray-900 dark:text-white">
+            <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-1">
               Investor Type Analysis
             </h2>
-            <div className="flex flex-col gap-1">
-              <p className="text-sm text-gray-600 dark:text-[#8b949e]">
-                <span className="font-bold text-[#ff8c42]">{symbol}</span>
-                {technicals?.lastPrice && (
-                  <span className="font-bold text-gray-900 dark:text-white"> (LTP: ₹{technicals.lastPrice.toFixed(2)})</span>
-                )}
-                {' '}- Which investor types is this suitable for?
-              </p>
+            <div className="flex items-center gap-2">
+              <span className="text-sm font-bold text-[#ff8c42]">{symbol}</span>
+              {technicals?.lastPrice && (
+                <span className="text-sm font-bold text-gray-900 dark:text-white">(₹{technicals.lastPrice.toFixed(2)})</span>
+              )}
               {fundamentals?.sector && (
-                <p className="text-xs text-gray-500 dark:text-[#8b949e]">
-                  {fundamentals.sector}
-                </p>
+                <span className="text-sm text-gray-600 dark:text-[#8b949e]">- {fundamentals.sector}</span>
               )}
             </div>
           </div>
@@ -228,42 +223,39 @@ export default function InvestorAnalysisModal({
         </div>
 
         {/* Content */}
-        <div className="p-4">
-          {/* Price Chart + Technical/Fundamentals Cards */}
-          <div className="mb-6 grid grid-cols-1 md:grid-cols-3 gap-4">
-            {/* Chart - Left side (2 columns on desktop) */}
-            <div className="md:col-span-2">
-              <div className="bg-white dark:bg-[#1c2128] border border-gray-200 dark:border-[#30363d] rounded-lg p-4">
-                <div className="flex items-center justify-between mb-3">
-                  <h3 className="text-sm font-bold text-gray-900 dark:text-white">
-                    Price Chart (1 Year)
-                  </h3>
-                  {technicals?.lastPrice && (
-                    <span className="text-xs font-semibold text-[#ff8c42]">
-                      LTP: ₹{technicals.lastPrice.toFixed(2)}
-                    </span>
-                  )}
-                </div>
-                <PriceChart symbol={symbol} days={365} height="400px" />
+        <div className="p-3">
+          {/* Price Chart - Full Width */}
+          <div className="mb-3">
+            <div className="bg-white dark:bg-[#1c2128] border border-gray-200 dark:border-[#30363d] rounded-lg p-4">
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="text-sm font-bold text-gray-900 dark:text-white">
+                  Price Chart (1 Year)
+                </h3>
+                {technicals?.lastPrice && (
+                  <span className="text-xs font-semibold text-[#ff8c42]">
+                    LTP: ₹{technicals.lastPrice.toFixed(2)}
+                  </span>
+                )}
               </div>
+              <PriceChart symbol={symbol} days={365} height="400px" />
             </div>
+          </div>
 
-            {/* Technical & Fundamentals Cards - Right side (1 column on desktop) */}
-            <div className="space-y-4">
-              {/* Technical Levels Card */}
-              {technicals && (
-                <div className="bg-white dark:bg-[#1c2128] border border-gray-200 dark:border-[#30363d] rounded-lg p-4">
-                  <TechnicalLevelsCard technicals={technicals} />
-                </div>
-              )}
+          {/* Technical & Fundamentals Cards - Below Chart (Side by Side) */}
+          <div className="mb-3 grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* Technical Levels Card */}
+            {technicals && (
+              <div className="bg-white dark:bg-[#1c2128] border border-gray-200 dark:border-[#30363d] rounded-lg p-4">
+                <TechnicalLevelsCard technicals={technicals} />
+              </div>
+            )}
 
-              {/* Fundamentals Card */}
-              {fundamentals && (
-                <div className="bg-white dark:bg-[#1c2128] border border-gray-200 dark:border-[#30363d] rounded-lg p-4">
-                  <FundamentalsCard fundamentals={fundamentals} showBorder={false} />
-                </div>
-              )}
-            </div>
+            {/* Fundamentals Card */}
+            {fundamentals && (
+              <div className="bg-white dark:bg-[#1c2128] border border-gray-200 dark:border-[#30363d] rounded-lg p-4">
+                <FundamentalsCard fundamentals={fundamentals} showBorder={false} />
+              </div>
+            )}
           </div>
 
           {/* Summary */}
