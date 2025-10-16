@@ -33,11 +33,6 @@ export function getAdminApp(): App {
     process.env.FIREBASE_ADMIN_PRIVATE_KEY &&
     process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID
   ) {
-    console.log('Initializing Firebase Admin with individual env vars');
-    console.log('Has client email:', !!process.env.FIREBASE_ADMIN_CLIENT_EMAIL);
-    console.log('Has private key:', !!process.env.FIREBASE_ADMIN_PRIVATE_KEY);
-    console.log('Has project ID:', !!process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID);
-
     adminApp = initializeApp({
       credential: cert({
         projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
@@ -46,11 +41,6 @@ export function getAdminApp(): App {
       }),
     });
   } else {
-    console.error('Firebase Admin initialization failed:');
-    console.error('FIREBASE_ADMIN_CLIENT_EMAIL present:', !!process.env.FIREBASE_ADMIN_CLIENT_EMAIL);
-    console.error('FIREBASE_ADMIN_PRIVATE_KEY present:', !!process.env.FIREBASE_ADMIN_PRIVATE_KEY);
-    console.error('NEXT_PUBLIC_FIREBASE_PROJECT_ID present:', !!process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID);
-
     throw new Error(
       'Firebase Admin credentials not found. Please set FIREBASE_SERVICE_ACCOUNT_KEY or FIREBASE_ADMIN_CLIENT_EMAIL and FIREBASE_ADMIN_PRIVATE_KEY environment variables.'
     );

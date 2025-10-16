@@ -37,6 +37,11 @@ export const SymbolsProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const searchSymbols = async (searchQuery: string, maxResults: number = 10): Promise<Symbol[]> => {
     if (!searchQuery || searchQuery.length < 1) return [];
 
+    if (!db) {
+      console.error('Firebase not initialized');
+      return [];
+    }
+
     setLoading(true);
     try {
       const symbolsRef = collection(db, 'symbols');
@@ -80,6 +85,11 @@ export const SymbolsProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
   // Get single symbol by ID
   const getSymbol = async (symbolId: string): Promise<Symbol | null> => {
+    if (!db) {
+      console.error('Firebase not initialized');
+      return null;
+    }
+
     try {
       const symbolsRef = collection(db, 'symbols');
       const searchId = symbolId.toUpperCase();

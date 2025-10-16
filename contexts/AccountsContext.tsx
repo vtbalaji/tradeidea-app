@@ -93,26 +93,29 @@ export function AccountsProvider({ children }: { children: ReactNode }) {
   };
 
   const updateAccount = async (accountId: string, updates: Partial<Account>) => {
+    // Store old state for rollback
+    const oldAccounts = accounts;
+
     try {
+      // Optimistically update local state FIRST (instant UI update)
+      setAccounts(prev =>
+        prev.map(acc =>
+          acc.id === accountId ? { ...acc, ...updates, updatedAt: new Date().toISOString() } : acc
+        )
+      );
+
+      // Then update on server (in background)
       await apiClient.accounts.update(accountId, {
         name: updates.name,
         description: updates.description,
         color: updates.color,
       });
 
-      // Optimistically update local state
-      setAccounts(prev =>
-        prev.map(acc =>
-          acc.id === accountId ? { ...acc, ...updates } : acc
-        )
-      );
-
-      // Refresh accounts to ensure consistency
-      await fetchAccounts();
+      // No need to refetch - optimistic update is enough
     } catch (error) {
       console.error('Error updating account:', error);
-      // Revert on error
-      await fetchAccounts();
+      // Rollback on error
+      setAccounts(oldAccounts);
       throw error;
     }
   };
@@ -120,23 +123,27 @@ export function AccountsProvider({ children }: { children: ReactNode }) {
   const setDefaultAccount = async (accountId: string) => {
     if (!user) throw new Error('Not authenticated');
 
-    try {
-      await apiClient.accounts.setDefault(accountId);
+    // Store old state for rollback
+    const oldAccounts = accounts;
 
-      // Optimistically update local state
+    try {
+      // Optimistically update local state FIRST (instant UI update)
       setAccounts(prev =>
         prev.map(acc => ({
           ...acc,
           isDefault: acc.id === accountId,
+          updatedAt: new Date().toISOString(),
         }))
       );
 
-      // Refresh accounts to ensure consistency
-      await fetchAccounts();
+      // Then update on server (in background)
+      await apiClient.accounts.setDefault(accountId);
+
+      // No need to refetch - optimistic update is enough
     } catch (error) {
       console.error('Error setting default account:', error);
-      // Revert on error
-      await fetchAccounts();
+      // Rollback on error
+      setAccounts(oldAccounts);
       throw error;
     }
   };

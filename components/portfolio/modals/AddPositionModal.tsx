@@ -60,7 +60,7 @@ export const AddPositionModal: React.FC<AddPositionModalProps> = ({
     setNewPosition({ ...newPosition, symbol: value });
     if (value.length > 0) {
       const results = await searchSymbols(value);
-      setSymbolSuggestions(results.slice(0, 10));
+      setSymbolSuggestions(Array.isArray(results) ? results.slice(0, 10) : []);
       setShowSuggestions(true);
     } else {
       setSymbolSuggestions([]);
