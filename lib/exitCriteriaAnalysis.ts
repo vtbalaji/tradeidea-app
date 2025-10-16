@@ -37,13 +37,13 @@ export function analyzeExitCriteria(position: any): ExitAlert[] | null {
   // Check stop loss
   if (exitCriteria.exitAtStopLoss) {
     if (currentPrice <= stopLoss) {
-      alerts.push({ type: 'critical', message: `🚨 STOP LOSS HIT at ₹${stopLoss.toFixed(2)} (${stopLossSource})` });
+      alerts.push({ type: 'critical', message: `🚨 STOP LOSS HIT at ₹${Math.round(stopLoss)} (${stopLossSource})` });
     } else {
       const percentAbove = ((currentPrice - stopLoss) / stopLoss) * 100;
       if (percentAbove <= 5) {
-        alerts.push({ type: 'warning', message: `⚠️ Near SL: ₹${stopLoss.toFixed(2)} (${stopLossSource})` });
+        alerts.push({ type: 'warning', message: `⚠️ Near SL: ₹${Math.round(stopLoss)} (${stopLossSource})` });
       } else {
-        alerts.push({ type: 'info', message: `✅ SL Safe: ₹${stopLoss.toFixed(2)} (${stopLossSource})` });
+        alerts.push({ type: 'info', message: `SL Safe: ₹${Math.round(stopLoss)} (${stopLossSource})` });
       }
     }
   }
@@ -52,13 +52,13 @@ export function analyzeExitCriteria(position: any): ExitAlert[] | null {
   if (exitCriteria.exitBelow50EMA) {
     if (technicals?.ema50) {
       if (currentPrice < technicals.ema50) {
-        alerts.push({ type: 'critical', message: `📉 Below 50 EMA (₹${technicals.ema50.toFixed(2)}) - TIME TO EXIT` });
+        alerts.push({ type: 'critical', message: `📉 Below 50 EMA (₹${Math.round(technicals.ema50)}) - TIME TO EXIT` });
       } else {
         const percentAbove = ((currentPrice - technicals.ema50) / technicals.ema50) * 100;
         if (percentAbove <= 5) {
-          alerts.push({ type: 'warning', message: `⚠️ Near 50 EMA: ₹${technicals.ema50.toFixed(2)} (${percentAbove.toFixed(1)}% above)` });
+          alerts.push({ type: 'warning', message: `⚠️ Near 50 EMA: ₹${Math.round(technicals.ema50)} (${percentAbove.toFixed(1)}% above)` });
         } else {
-          alerts.push({ type: 'info', message: `✅ Above 50 EMA: ₹${technicals.ema50.toFixed(2)} (+${percentAbove.toFixed(1)}%)` });
+          alerts.push({ type: 'info', message: `✅ Above 50 EMA: ₹${Math.round(technicals.ema50)} (+${percentAbove.toFixed(1)}%)` });
         }
       }
     } else {
@@ -70,13 +70,13 @@ export function analyzeExitCriteria(position: any): ExitAlert[] | null {
   if (exitCriteria.exitBelow100MA) {
     if (technicals?.sma100) {
       if (currentPrice < technicals.sma100) {
-        alerts.push({ type: 'critical', message: `📉 Below 100 MA (₹${technicals.sma100.toFixed(2)}) - TIME TO EXIT` });
+        alerts.push({ type: 'critical', message: `📉 Below 100 MA (₹${Math.round(technicals.sma100)}) - TIME TO EXIT` });
       } else {
         const percentAbove = ((currentPrice - technicals.sma100) / technicals.sma100) * 100;
         if (percentAbove <= 5) {
-          alerts.push({ type: 'warning', message: `⚠️ Near 100 MA: ₹${technicals.sma100.toFixed(2)} (${percentAbove.toFixed(1)}% above)` });
+          alerts.push({ type: 'warning', message: `⚠️ Near 100 MA: ₹${Math.round(technicals.sma100)} (${percentAbove.toFixed(1)}% above)` });
         } else {
-          alerts.push({ type: 'info', message: `✅ Above 100 MA: ₹${technicals.sma100.toFixed(2)} (+${percentAbove.toFixed(1)}%)` });
+          alerts.push({ type: 'info', message: `✅ Above 100 MA: ₹${Math.round(technicals.sma100)} (+${percentAbove.toFixed(1)}%)` });
         }
       }
     } else {
@@ -88,13 +88,13 @@ export function analyzeExitCriteria(position: any): ExitAlert[] | null {
   if (exitCriteria.exitBelow200MA) {
     if (technicals?.sma200) {
       if (currentPrice < technicals.sma200) {
-        alerts.push({ type: 'critical', message: `📉 Below 200 MA (₹${technicals.sma200.toFixed(2)}) - TIME TO EXIT` });
+        alerts.push({ type: 'critical', message: `📉 Below 200 MA (₹${Math.round(technicals.sma200)}) - TIME TO EXIT` });
       } else {
         const percentAbove = ((currentPrice - technicals.sma200) / technicals.sma200) * 100;
         if (percentAbove <= 5) {
-          alerts.push({ type: 'warning', message: `⚠️ Near 200 MA: ₹${technicals.sma200.toFixed(2)} (${percentAbove.toFixed(1)}% above)` });
+          alerts.push({ type: 'warning', message: `⚠️ Near 200 MA: ₹${Math.round(technicals.sma200)} (${percentAbove.toFixed(1)}% above)` });
         } else {
-          alerts.push({ type: 'info', message: `✅ Above 200 MA: ₹${technicals.sma200.toFixed(2)} (+${percentAbove.toFixed(1)}%)` });
+          alerts.push({ type: 'info', message: `✅ Above 200 MA: ₹${Math.round(technicals.sma200)} (+${percentAbove.toFixed(1)}%)` });
         }
       }
     } else {
@@ -106,9 +106,9 @@ export function analyzeExitCriteria(position: any): ExitAlert[] | null {
   if (exitCriteria.exitOnWeeklySupertrend) {
     if (technicals?.supertrend && technicals?.supertrendDirection) {
       if (technicals.supertrendDirection === -1) {
-        alerts.push({ type: 'critical', message: `📉 Supertrend BEARISH (₹${technicals.supertrend.toFixed(2)}) - TIME TO EXIT` });
+        alerts.push({ type: 'critical', message: `📉 Supertrend BEARISH (₹${Math.round(technicals.supertrend)}) - TIME TO EXIT` });
       } else {
-        alerts.push({ type: 'info', message: `✅ Supertrend BULLISH (₹${technicals.supertrend.toFixed(2)})` });
+        alerts.push({ type: 'info', message: `✅ Supertrend BULLISH (₹${Math.round(technicals.supertrend)})` });
       }
     } else {
       alerts.push({ type: 'warning', message: `⚠️ Supertrend data not available - Run batch analysis` });

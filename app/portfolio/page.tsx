@@ -308,8 +308,8 @@ export default function PortfolioPage() {
 
         {/* Tabs, Filter, and View Mode */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-3 gap-3">
-          {/* Open/Closed Toggle */}
-          <div className="flex items-center gap-2">
+          {/* Open/Closed Toggle - Hidden on mobile */}
+          <div className="hidden sm:flex items-center gap-2">
             <button
               onClick={() => setActiveTab(activeTab === 'open' ? 'closed' : 'open')}
               className="relative inline-flex items-center bg-gray-200 dark:bg-[#30363d] rounded-full p-0.5 transition-colors"

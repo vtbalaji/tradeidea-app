@@ -58,7 +58,7 @@ export function DetailedPositionCard({
           )}
         </div>
         <div className={`text-right ${isProfit ? 'text-green-500' : 'text-red-500'}`}>
-          <p className="text-xl font-bold">{isProfit ? '+' : ''}₹{pnl.toFixed(2)}</p>
+          <p className="text-xl font-bold">{isProfit ? '+' : ''}₹{Math.round(pnl)}</p>
           <p className="text-sm">({isProfit ? '+' : ''}{pnlPercent.toFixed(2)}%)</p>
         </div>
       </div>
@@ -88,7 +88,7 @@ export function DetailedPositionCard({
                     ? 'bg-red-500/20 text-red-400 border border-red-500/30'
                     : alert.type === 'warning'
                     ? 'bg-yellow-500/20 text-yellow-400 border border-yellow-500/30'
-                    : 'bg-blue-500/20 text-blue-400 border border-blue-500/30'
+                    : 'bg-gray-500/20 text-gray-700 dark:text-gray-300 border border-gray-500/30'
                 }`}
               >
                 {alert.message}
@@ -105,12 +105,12 @@ export function DetailedPositionCard({
         </div>
         <div>
           <p className="text-xs text-gray-600 dark:text-[#8b949e] mb-1">Avg Buy Price</p>
-          <p className="text-sm font-semibold text-gray-900 dark:text-white">₹{position.entryPrice.toFixed(2)}</p>
+          <p className="text-sm font-semibold text-gray-900 dark:text-white">₹{Math.round(position.entryPrice)}</p>
         </div>
         <div>
           <p className="text-xs text-gray-600 dark:text-[#8b949e] mb-1">LTP</p>
           <div className="flex items-baseline gap-1.5">
-            <p className="text-sm font-semibold text-gray-900 dark:text-white">₹{position.currentPrice.toFixed(2)}</p>
+            <p className="text-sm font-semibold text-gray-900 dark:text-white">₹{Math.round(position.currentPrice)}</p>
             {position.technicals && (
               <p className={`text-xs font-semibold ${isPriceUp ? 'text-green-500' : 'text-red-500'}`}>
                 ({isPriceUp ? '+' : ''}{priceChangePercent.toFixed(2)}%)
@@ -120,7 +120,7 @@ export function DetailedPositionCard({
         </div>
         <div>
           <p className="text-xs text-gray-600 dark:text-[#8b949e] mb-1">Current Value</p>
-          <p className="text-sm font-semibold text-gray-900 dark:text-white">₹{currentValue.toFixed(2)}</p>
+          <p className="text-sm font-semibold text-gray-900 dark:text-white">₹{Math.round(currentValue)}</p>
         </div>
       </div>
 
