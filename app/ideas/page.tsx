@@ -252,6 +252,35 @@ export default function IdeasHubPage() {
           </span>
         </div>
 
+        {/* Trade Details */}
+        <div className="grid grid-cols-4 gap-3 mb-3">
+          <div className="text-center">
+            <div className="text-sm text-gray-600 dark:text-[#8b949e] mb-1">LTP</div>
+            <div className={`text-sm font-semibold ${
+              idea.technicals?.lastPrice
+                ? 'text-gray-900 dark:text-white'
+                : 'text-gray-500 dark:text-[#8b949e]'
+            }`}>
+              {idea.technicals?.lastPrice ? `₹${Math.round(idea.technicals.lastPrice)}` : 'N/A'}
+            </div>
+          </div>
+          <div className="text-center">
+            <div className="text-sm text-gray-600 dark:text-[#8b949e] mb-1">Entry</div>
+            <div className="text-sm font-semibold text-gray-900 dark:text-white">
+              {typeof idea.entryPrice === 'number' ? `₹${Math.round(idea.entryPrice)}` : idea.entryPrice}
+            </div>
+          </div>
+          <div className="text-center">
+            <div className="text-sm text-gray-600 dark:text-[#8b949e] mb-1">Target</div>
+            <div className="text-sm font-semibold text-gray-900 dark:text-white">
+              ₹{Math.round(idea.target1)} {target1Percent && <span className="text-xs text-gray-600 dark:text-[#8b949e]">+{target1Percent}%</span>}
+            </div>
+          </div>
+          <div className="text-center">
+            <div className="text-sm text-gray-600 dark:text-[#8b949e] mb-1">Stop Loss</div>
+            <div className="text-sm font-semibold text-gray-900 dark:text-white">₹{Math.round(idea.stopLoss)}</div>
+          </div>
+        </div>
 
         {/* Warning if no technical data available */}
         {!idea.technicals && (
@@ -261,16 +290,6 @@ export default function IdeasHubPage() {
             </p>
           </div>
         )}
-
-        {/* When to Enter */}
-        {/* {idea.whenToEnter && (
-          <div className="bg-white dark:bg-[#0f1419] border border-gray-200 dark:border-[#30363d] rounded-lg p-3 mb-3">
-            <p className="text-base text-gray-600 dark:text-[#8b949e] leading-relaxed whitespace-pre-wrap">
-              <span className="font-semibold text-[#ff8c42]">When to Enter: </span>
-              {idea.whenToEnter}
-            </p>
-          </div>
-        )} */}
 
         {/* Technical Levels & Fundamentals */}
         {(idea.technicals || idea.fundamentals) && (
@@ -286,36 +305,6 @@ export default function IdeasHubPage() {
             )}
           </div>
         )}
-
-        {/* Trade Details */}
-        <div className="grid grid-cols-4 gap-3 mb-4 pt-4 border-t border-gray-200 dark:border-[#30363d]">
-          <div className="text-center">
-            <div className="text-sm text-gray-600 dark:text-[#8b949e] mb-1">LTP</div>
-            <div className={`text-sm font-semibold ${
-              idea.technicals?.lastPrice
-                ? 'text-gray-900 dark:text-white'
-                : 'text-gray-500 dark:text-[#8b949e]'
-            }`}>
-              {idea.technicals?.lastPrice ? `₹${idea.technicals.lastPrice.toFixed(2)}` : 'N/A'}
-            </div>
-          </div>
-          <div className="text-center">
-            <div className="text-sm text-gray-600 dark:text-[#8b949e] mb-1">Entry</div>
-            <div className="text-sm font-semibold text-gray-900 dark:text-white">
-              {typeof idea.entryPrice === 'number' ? `₹${idea.entryPrice}` : idea.entryPrice}
-            </div>
-          </div>
-          <div className="text-center">
-            <div className="text-sm text-gray-600 dark:text-[#8b949e] mb-1">Target</div>
-            <div className="text-sm font-semibold text-gray-900 dark:text-white">
-              ₹{idea.target1} {target1Percent && <span className="text-xs text-gray-600 dark:text-[#8b949e]">+{target1Percent}%</span>}
-            </div>
-          </div>
-          <div className="text-center">
-            <div className="text-sm text-gray-600 dark:text-[#8b949e] mb-1">Stop Loss</div>
-            <div className="text-sm font-semibold text-gray-900 dark:text-white">₹{idea.stopLoss}</div>
-          </div>
-        </div>
 
         {/* Footer */}
         <div className="pt-3 border-t border-gray-200 dark:border-[#30363d]">

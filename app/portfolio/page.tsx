@@ -255,7 +255,6 @@ export default function PortfolioPage() {
             </button>
           </div>
         </div>
-        <p className="text-gray-600 dark:text-[#8b949e]">Track your portfolio performance</p>
 
         {/* Account Selector */}
         {accounts.length > 1 && activeAccount && (
@@ -290,7 +289,7 @@ export default function PortfolioPage() {
 
       {/* Positions Section */}
       <div className="px-5">
-        <div className="mb-4 flex items-center gap-3">
+        <div className="mb-2 flex items-center gap-3">
           <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Positions</h2>
           {activeTab === 'open' && openPositions.length > 0 && openPositions[0]?.technicals?.updatedAt && (
             <span className="text-xs text-orange-600 dark:text-orange-400">
@@ -307,51 +306,76 @@ export default function PortfolioPage() {
           )}
         </div>
 
-        {/* Tabs and Filter */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-5 gap-3">
-          <div className="flex gap-2">
+        {/* Tabs, Filter, and View Mode */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-3 gap-3">
+          {/* Open/Closed Toggle */}
+          <div className="flex items-center gap-2">
             <button
-              onClick={() => setActiveTab('open')}
-              className={`px-3 sm:px-5 py-2 rounded-lg text-xs font-semibold transition-colors ${
+              onClick={() => setActiveTab(activeTab === 'open' ? 'closed' : 'open')}
+              className="relative inline-flex items-center bg-gray-200 dark:bg-[#30363d] rounded-full p-0.5 transition-colors"
+            >
+              <span className={`px-4 py-2 rounded-full text-xs font-semibold transition-all whitespace-nowrap ${
                 activeTab === 'open'
-                  ? 'bg-[#ff8c42] text-gray-900 dark:text-white'
-                  : 'bg-gray-50 dark:bg-[#1c2128] text-gray-600 dark:text-[#8b949e]'
-              } whitespace-nowrap`}
-            >
-              Open ({openPositions.length})
-            </button>
-            <button
-              onClick={() => setActiveTab('closed')}
-              className={`px-3 sm:px-5 py-2 rounded-lg text-xs font-semibold transition-colors ${
+                  ? 'bg-[#ff8c42] text-white'
+                  : 'text-gray-600 dark:text-[#8b949e]'
+              }`}>
+                Open ({openPositions.length})
+              </span>
+              <span className={`px-4 py-2 rounded-full text-xs font-semibold transition-all whitespace-nowrap ${
                 activeTab === 'closed'
-                  ? 'bg-[#ff8c42] text-gray-900 dark:text-white'
-                  : 'bg-gray-50 dark:bg-[#1c2128] text-gray-600 dark:text-[#8b949e]'
-              } whitespace-nowrap`}
-            >
-              Closed ({closedPositions.length})
+                  ? 'bg-[#ff8c42] text-white'
+                  : 'text-gray-600 dark:text-[#8b949e]'
+              }`}>
+                Closed ({closedPositions.length})
+              </span>
             </button>
           </div>
 
-          {/* Recommendation Filter - Only show for Open tab */}
-          {activeTab === 'open' && (
+          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
+            {/* Recommendation Filter - Only show for Open tab */}
+            {activeTab === 'open' && (
+              <div className="flex items-center gap-2">
+                <label className="text-xs font-semibold text-gray-600 dark:text-[#8b949e] whitespace-nowrap">
+                  Filter by recommendation:
+                </label>
+                <select
+                  value={recommendationFilter}
+                  onChange={(e) => setRecommendationFilter(e.target.value)}
+                  className="bg-white dark:bg-[#1c2128] border border-gray-200 dark:border-[#30363d] rounded-lg px-3 py-2 text-xs font-semibold text-gray-900 dark:text-white hover:border-[#ff8c42] transition-colors"
+                >
+                  <option value="all">All ({openPositions.length})</option>
+                  <option value="STRONG BUY">▲▲ Strong Buy</option>
+                  <option value="BUY">▲ Buy</option>
+                  <option value="HOLD">■ Hold</option>
+                  <option value="SELL">▼ Sell</option>
+                  <option value="STRONG SELL">▼▼ Strong Sell</option>
+                </select>
+              </div>
+            )}
+
+            {/* View Mode Toggle */}
             <div className="flex items-center gap-2">
-              <label className="text-xs font-semibold text-gray-600 dark:text-[#8b949e] whitespace-nowrap">
-                Filter:
-              </label>
-              <select
-                value={recommendationFilter}
-                onChange={(e) => setRecommendationFilter(e.target.value)}
-                className="bg-white dark:bg-[#1c2128] border border-gray-200 dark:border-[#30363d] rounded-lg px-3 py-2 text-xs font-semibold text-gray-900 dark:text-white hover:border-[#ff8c42] transition-colors"
+              <button
+                onClick={() => setViewMode(viewMode === 'summary' ? 'detailed' : 'summary')}
+                className="relative inline-flex items-center bg-gray-200 dark:bg-[#30363d] rounded-full p-0.5 transition-colors"
               >
-                <option value="all">All ({openPositions.length})</option>
-                <option value="STRONG BUY">▲▲ Strong Buy</option>
-                <option value="BUY">▲ Buy</option>
-                <option value="HOLD">■ Hold</option>
-                <option value="SELL">▼ Sell</option>
-                <option value="STRONG SELL">▼▼ Strong Sell</option>
-              </select>
+                <span className={`px-3 py-1.5 rounded-full text-xs font-semibold transition-all ${
+                  viewMode === 'summary'
+                    ? 'bg-[#ff8c42] text-white'
+                    : 'text-gray-600 dark:text-[#8b949e]'
+                }`}>
+                  Summary
+                </span>
+                <span className={`px-3 py-1.5 rounded-full text-xs font-semibold transition-all ${
+                  viewMode === 'detailed'
+                    ? 'bg-[#ff8c42] text-white'
+                    : 'text-gray-600 dark:text-[#8b949e]'
+                }`}>
+                  Detailed
+                </span>
+              </button>
             </div>
-          )}
+          </div>
         </div>
 
         {/* Filter Results Info */}
@@ -370,35 +394,6 @@ export default function PortfolioPage() {
             </p>
           </div>
         )}
-
-        {/* View Mode Toggle - Move to right side */}
-        <div className="flex items-center justify-between mb-3">
-          <div></div>
-
-          {/* View Mode Toggle */}
-          <div className="flex gap-1.5 sm:gap-2">
-            <button
-              onClick={() => setViewMode('summary')}
-              className={`px-2.5 sm:px-4 py-2 rounded-lg text-xs font-semibold transition-colors ${
-                viewMode === 'summary'
-                  ? 'bg-[#ff8c42] text-gray-900 dark:text-white'
-                  : 'bg-gray-50 dark:bg-[#1c2128] text-gray-600 dark:text-[#8b949e] hover:bg-gray-100 dark:hover:bg-[#30363d]'
-              } whitespace-nowrap`}
-            >
-              Summary
-            </button>
-            <button
-              onClick={() => setViewMode('detailed')}
-              className={`px-2.5 sm:px-4 py-2 rounded-lg text-xs font-semibold transition-colors ${
-                viewMode === 'detailed'
-                  ? 'bg-[#ff8c42] text-gray-900 dark:text-white'
-                  : 'bg-gray-50 dark:bg-[#1c2128] text-gray-600 dark:text-[#8b949e] hover:bg-gray-100 dark:hover:bg-[#30363d]'
-              } whitespace-nowrap`}
-            >
-              Detailed
-            </button>
-          </div>
-        </div>
 
         {/* Holdings Cards */}
         <div className="pb-8">
