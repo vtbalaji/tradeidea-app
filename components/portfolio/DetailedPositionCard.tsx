@@ -1,5 +1,5 @@
 import React from 'react';
-import { BuySellIcon, ExitIcon } from '@/components/icons';
+import { EditIcon } from '@/components/icons';
 import TechnicalLevelsCard from '@/components/TechnicalLevelsCard';
 import FundamentalsCard from '@/components/FundamentalsCard';
 import AnalysisButton from '@/components/AnalysisButton';
@@ -9,14 +9,14 @@ interface DetailedPositionCardProps {
   position: any;
   onAnalyze: (position: any) => void;
   onBuySell: (position: any) => void;
-  onExit: (position: any) => void;
+  onEdit: (position: any) => void;
 }
 
 export function DetailedPositionCard({
   position,
   onAnalyze,
   onBuySell,
-  onExit,
+  onEdit,
 }: DetailedPositionCardProps) {
   const investedAmount = position.entryPrice * position.quantity;
   const currentValue = position.currentPrice * position.quantity;
@@ -24,6 +24,11 @@ export function DetailedPositionCard({
   const pnlPercent = (pnl / investedAmount) * 100;
   const isProfit = pnl >= 0;
   const alerts = analyzeExitCriteria(position);
+
+  // Calculate price change from technicals data
+  const priceChange = position.technicals?.change || 0;
+  const priceChangePercent = position.technicals?.changePercent || 0;
+  const isPriceUp = priceChange >= 0;
 
   return (
     <div className="bg-gray-50 dark:bg-[#1c2128] border border-gray-200 dark:border-[#30363d] rounded-xl p-5 hover:border-[#ff8c42] transition-colors">
@@ -114,7 +119,14 @@ export function DetailedPositionCard({
         </div>
         <div>
           <p className="text-xs text-gray-600 dark:text-[#8b949e] mb-1">LTP</p>
-          <p className="text-sm font-semibold text-gray-900 dark:text-white">₹{position.currentPrice.toFixed(2)}</p>
+          <div className="flex items-baseline gap-1.5">
+            <p className="text-sm font-semibold text-gray-900 dark:text-white">₹{position.currentPrice.toFixed(2)}</p>
+            {position.technicals && (
+              <p className={`text-xs font-semibold ${isPriceUp ? 'text-green-500' : 'text-red-500'}`}>
+                ({isPriceUp ? '+' : ''}{priceChangePercent.toFixed(2)}%)
+              </p>
+            )}
+          </div>
         </div>
         <div>
           <p className="text-xs text-gray-600 dark:text-[#8b949e] mb-1">Current Value</p>
@@ -161,15 +173,15 @@ export function DetailedPositionCard({
             onClick={() => onBuySell(position)}
             className="flex-1 px-3 py-2 bg-gray-100 dark:bg-[#30363d] hover:bg-gray-200 dark:hover:bg-[#3c444d] border border-gray-200 dark:border-[#444c56] text-gray-700 dark:text-gray-300 text-xs font-semibold rounded-lg transition-colors flex items-center justify-center gap-1.5"
           >
-            <BuySellIcon size={14} className="w-3.5 h-3.5" />
+            <EditIcon size={14} className="w-3.5 h-3.5" />
             <span>Buy/Sell</span>
           </button>
           <button
-            onClick={() => onExit(position)}
+            onClick={() => onEdit(position)}
             className="flex-1 px-3 py-2 bg-gray-100 dark:bg-[#30363d] hover:bg-gray-200 dark:hover:bg-[#3c444d] border border-gray-200 dark:border-[#444c56] text-gray-700 dark:text-gray-300 text-xs font-semibold rounded-lg transition-colors flex items-center justify-center gap-1.5"
           >
-            <ExitIcon size={14} className="w-3.5 h-3.5" />
-            <span>Exit</span>
+            <EditIcon size={14} className="w-3.5 h-3.5" />
+            <span>Edit</span>
           </button>
         </div>
       )}

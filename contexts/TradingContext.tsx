@@ -882,13 +882,27 @@ export const TradingProvider: React.FC<TradingProviderProps> = ({ children }) =>
 
       const newAvgPrice = totalQuantity > 0 ? totalInvested / totalQuantity : positionData.entryPrice;
 
-      await updateDoc(positionRef, {
-        transactions: [...transactions, newTransaction],
-        quantity: totalQuantity,
-        entryPrice: newAvgPrice,
-        totalValue: totalQuantity * positionData.currentPrice,
-        updatedAt: serverTimestamp()
-      });
+      // If quantity becomes zero or negative after sell, close the position
+      if (totalQuantity <= 0) {
+        await updateDoc(positionRef, {
+          transactions: [...transactions, newTransaction],
+          quantity: 0,
+          status: 'closed',
+          exitPrice: transaction.price,
+          exitDate: transaction.date,
+          exitReason: 'Sold all shares',
+          closedAt: serverTimestamp(),
+          updatedAt: serverTimestamp()
+        });
+      } else {
+        await updateDoc(positionRef, {
+          transactions: [...transactions, newTransaction],
+          quantity: totalQuantity,
+          entryPrice: newAvgPrice,
+          totalValue: totalQuantity * positionData.currentPrice,
+          updatedAt: serverTimestamp()
+        });
+      }
     } catch (error) {
       console.error('Error adding transaction:', error);
       throw error;

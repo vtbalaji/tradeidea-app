@@ -5,6 +5,7 @@ interface FundamentalsData {
   returnOnEquity?: number;
   debtToEquity?: number;
   earningsGrowth?: number;
+  operatingMargins?: number;
   fundamentalRating?: 'EXCELLENT' | 'GOOD' | 'AVERAGE' | 'POOR' | 'WEAK';
 }
 
@@ -90,6 +91,16 @@ export const FundamentalsCard: React.FC<FundamentalsCardProps> = ({
             <span className="text-gray-600 dark:text-[#8b949e]">Earnings Growth:</span>
             <span className="ml-1 font-semibold text-gray-900 dark:text-white">
               {fundamentals.earningsGrowth.toFixed(1)}%
+            </span>
+          </div>
+        )}
+
+        {/* Operating Margin */}
+        {fundamentals.operatingMargins && (
+          <div>
+            <span className="text-gray-600 dark:text-[#8b949e]">Operating Margin:</span>
+            <span className="ml-1 font-semibold text-gray-900 dark:text-white">
+              {fundamentals.operatingMargins.toFixed(1)}%
             </span>
           </div>
         )}

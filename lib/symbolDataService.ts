@@ -282,7 +282,44 @@ export async function saveSymbolFundamentalData(
 }
 
 /**
- * Check if symbol data exists and is recent (< 24 hours old)
+ * Helper: Check if current time is past market close (3:30 PM IST)
+ * Returns true if we should wait for new EOD data
+ */
+function isPastMarketClose(): boolean {
+  const now = new Date();
+
+  // Convert to IST
+  const istTime = new Date(now.toLocaleString('en-US', { timeZone: 'Asia/Kolkata' }));
+  const hours = istTime.getHours();
+  const minutes = istTime.getMinutes();
+
+  // Market closes at 3:30 PM IST (15:30)
+  // Consider data stale only after 6:00 PM IST (18:00) to account for EOD processing time
+  const currentTimeInMinutes = hours * 60 + minutes;
+  const marketCloseTime = 18 * 60; // 6:00 PM IST in minutes
+
+  return currentTimeInMinutes >= marketCloseTime;
+}
+
+/**
+ * Helper: Check if two dates are on the same calendar day (IST timezone)
+ */
+function isSameDay(date1: Date, date2: Date): boolean {
+  const d1 = new Date(date1.toLocaleString('en-US', { timeZone: 'Asia/Kolkata' }));
+  const d2 = new Date(date2.toLocaleString('en-US', { timeZone: 'Asia/Kolkata' }));
+
+  return d1.getDate() === d2.getDate() &&
+         d1.getMonth() === d2.getMonth() &&
+         d1.getFullYear() === d2.getFullYear();
+}
+
+/**
+ * Check if symbol data exists and is fresh for EOD data
+ *
+ * For EOD (End-of-Day) data:
+ * - Data from Oct 15 EOD is valid for the entire Oct 16 trading day
+ * - Data becomes stale only after market close (6:00 PM IST) on Oct 16
+ * - This ensures screener data remains valid until new EOD data is available
  */
 export async function isSymbolDataFresh(symbol: string, maxAgeHours: number = 24): Promise<boolean> {
   try {
@@ -298,9 +335,30 @@ export async function isSymbolDataFresh(symbol: string, maxAgeHours: number = 24
     }
 
     const lastFetched = data.lastFetched.toDate();
-    const ageHours = (Date.now() - lastFetched.getTime()) / (1000 * 60 * 60);
+    const now = new Date();
 
-    return ageHours < maxAgeHours;
+    // For EOD data: Check if we're still on the same trading day OR
+    // if we're on the next day but haven't passed market close yet
+    if (isSameDay(lastFetched, now)) {
+      // Same day - data is fresh
+      return true;
+    }
+
+    // Different day - check if we're past market close
+    // If we haven't passed market close yet, yesterday's EOD data is still valid
+    if (!isPastMarketClose()) {
+      // Still during today's trading session - yesterday's data is valid
+      return true;
+    }
+
+    // Past market close - check how old the data is
+    // Allow data from yesterday if it was fetched after market close
+    const ageHours = (now.getTime() - lastFetched.getTime()) / (1000 * 60 * 60);
+
+    // If data is from yesterday evening/night (less than 30 hours old), it's still fresh
+    // This handles the case where EOD data was processed late at night
+    return ageHours < 30;
+
   } catch (error) {
     console.error(`Error checking data freshness for ${symbol}:`, error);
     return false;

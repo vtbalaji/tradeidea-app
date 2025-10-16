@@ -124,37 +124,60 @@ export function checkTargetAlert(
 }
 
 /**
- * Check if stop loss is hit (with 100MA fallback)
+ * Check if stop loss is hit
+ * Uses the LOWEST value among: User SL, Supertrend, 100MA
+ * This matches the logic in exitCriteriaAnalysis.ts for consistency
  */
 export function checkStopLossAlert(
   symbol: string,
   stopLossPrice: number | undefined,
   currentPrice: number,
-  technicals?: TechnicalData,
+  technicals?: TechnicalData & { supertrend?: number; sma100?: number },
   fundamentals?: FundamentalData
 ): AlertNotification {
   if (!currentPrice) {
     return { type: 'stoploss_alert', message: '', shouldTrigger: false };
   }
 
-  let triggerPrice = stopLossPrice;
-  let triggerReason = 'stop loss';
+  // Determine effective stop loss (LOWEST among user SL, Supertrend, 100MA)
+  // Using the lowest value provides the most conservative protection
+  let effectiveStopLoss = stopLossPrice;
+  let stopLossSource = 'User SL';
 
-  // If no stop loss defined, use 100MA as fallback (using sma200 as proxy for 100MA)
-  if (!triggerPrice && technicals?.sma200) {
-    triggerPrice = technicals.sma200;
-    triggerReason = '100MA';
+  // If no manual stop loss provided, start with a high value
+  if (!effectiveStopLoss) {
+    effectiveStopLoss = Number.MAX_VALUE;
+    stopLossSource = 'None';
   }
 
-  if (triggerPrice && currentPrice <= triggerPrice) {
+  // Check Supertrend - use if it's LOWER than current effective SL
+  if (technicals?.supertrend && technicals.supertrend < effectiveStopLoss) {
+    effectiveStopLoss = technicals.supertrend;
+    stopLossSource = 'Supertrend';
+  }
+
+  // Check 100MA - use if it's LOWER than current effective SL
+  if (technicals?.sma100 && technicals.sma100 < effectiveStopLoss) {
+    effectiveStopLoss = technicals.sma100;
+    stopLossSource = '100MA';
+  }
+
+  // Fallback to 200MA if nothing else is available
+  if (effectiveStopLoss === Number.MAX_VALUE && technicals?.sma200) {
+    effectiveStopLoss = technicals.sma200;
+    stopLossSource = '200MA';
+  }
+
+  // Only trigger if we have a valid stop loss
+  if (effectiveStopLoss !== Number.MAX_VALUE && currentPrice <= effectiveStopLoss) {
     return {
       type: 'stoploss_alert',
-      message: `${symbol} hit ${triggerReason}! Current: ₹${currentPrice.toFixed(2)}, ${triggerReason === '100MA' ? '100MA' : 'SL'}: ₹${triggerPrice.toFixed(2)} - TradeIdea`,
+      message: `${symbol} hit stop loss! Current: ₹${currentPrice.toFixed(2)}, SL: ₹${effectiveStopLoss.toFixed(2)} (${stopLossSource}) - TradeIdea`,
       shouldTrigger: true,
       metadata: {
         currentPrice,
-        triggerPrice,
-        triggerReason
+        triggerPrice: effectiveStopLoss,
+        triggerReason: stopLossSource
       }
     };
   }

@@ -1,5 +1,5 @@
 import React from 'react';
-import { ChevronDownIcon, BuySellIcon, ExitIcon } from '@/components/icons';
+import { ChevronDownIcon, EditIcon } from '@/components/icons';
 import TechnicalLevelsCard from '@/components/TechnicalLevelsCard';
 import FundamentalsCard from '@/components/FundamentalsCard';
 import AnalysisButton from '@/components/AnalysisButton';
@@ -11,7 +11,7 @@ interface SummaryPositionCardProps {
   onToggleExpand: () => void;
   onAnalyze: (position: any) => void;
   onBuySell: (position: any) => void;
-  onExit: (position: any) => void;
+  onEdit: (position: any) => void;
 }
 
 export function SummaryPositionCard({
@@ -20,7 +20,7 @@ export function SummaryPositionCard({
   onToggleExpand,
   onAnalyze,
   onBuySell,
-  onExit,
+  onEdit,
 }: SummaryPositionCardProps) {
   const investedAmount = position.entryPrice * position.quantity;
   const currentValue = position.currentPrice * position.quantity;
@@ -29,6 +29,11 @@ export function SummaryPositionCard({
   const isProfit = pnl >= 0;
   const alerts = analyzeExitCriteria(position);
   const { recommendation, bgColor, textColor } = getOverallRecommendation(position);
+
+  // Calculate price change from technicals data
+  const priceChange = position.technicals?.change || 0;
+  const priceChangePercent = position.technicals?.changePercent || 0;
+  const isPriceUp = priceChange >= 0;
 
   return (
     <div>
@@ -148,7 +153,14 @@ export function SummaryPositionCard({
             </div>
             <div>
               <p className="text-xs text-gray-600 dark:text-[#8b949e] mb-1">LTP</p>
-              <p className="text-sm font-semibold text-gray-900 dark:text-white">₹{position.currentPrice.toFixed(2)}</p>
+              <div className="flex items-baseline gap-1.5">
+                <p className="text-sm font-semibold text-gray-900 dark:text-white">₹{position.currentPrice.toFixed(2)}</p>
+                {position.technicals && (
+                  <p className={`text-xs font-semibold ${isPriceUp ? 'text-green-500' : 'text-red-500'}`}>
+                    ({isPriceUp ? '+' : ''}{priceChangePercent.toFixed(2)}%)
+                  </p>
+                )}
+              </div>
             </div>
             <div>
               <p className="text-xs text-gray-600 dark:text-[#8b949e] mb-1">Current Value</p>
@@ -201,18 +213,18 @@ export function SummaryPositionCard({
                 }}
                 className="flex-1 px-3 py-2 bg-gray-100 dark:bg-[#30363d] hover:bg-gray-200 dark:hover:bg-[#3c444d] border border-gray-200 dark:border-[#444c56] text-gray-700 dark:text-gray-300 text-xs font-semibold rounded-lg transition-colors flex items-center justify-center gap-1.5"
               >
-                <BuySellIcon size={14} className="w-3.5 h-3.5" />
+                <EditIcon size={14} className="w-3.5 h-3.5" />
                 <span>Buy/Sell</span>
               </button>
               <button
                 onClick={(e) => {
                   e.stopPropagation();
-                  onExit(position);
+                  onEdit(position);
                 }}
                 className="flex-1 px-3 py-2 bg-gray-100 dark:bg-[#30363d] hover:bg-gray-200 dark:hover:bg-[#3c444d] border border-gray-200 dark:border-[#444c56] text-gray-700 dark:text-gray-300 text-xs font-semibold rounded-lg transition-colors flex items-center justify-center gap-1.5"
               >
-                <ExitIcon size={14} className="w-3.5 h-3.5" />
-                <span>Exit</span>
+                <EditIcon size={14} className="w-3.5 h-3.5" />
+                <span>Edit</span>
               </button>
             </div>
           )}

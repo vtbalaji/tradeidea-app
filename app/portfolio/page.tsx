@@ -5,28 +5,28 @@ import Navigation from '../../components/Navigation';
 import { useTrading } from '../../contexts/TradingContext';
 import { useAuth } from '../../contexts/AuthContext';
 import { useAccounts } from '../../contexts/AccountsContext';
-import { getCurrentISTDate, formatDateForDisplay, formatDateForStorage } from '@/lib/dateUtils';
+import { formatDateForDisplay } from '@/lib/dateUtils';
 import { db } from '@/lib/firebase';
 import { getSymbolData } from '@/lib/symbolDataService';
 import InvestorAnalysisModal from '@/components/InvestorAnalysisModal';
 import { createInvestmentEngine } from '@/lib/investment-rules';
-import { trackPositionExited, trackPositionAdded, trackAnalysisViewed } from '@/lib/analytics';
+import { trackPositionAdded, trackAnalysisViewed } from '@/lib/analytics';
 import { getOverallRecommendation } from '@/lib/exitCriteriaAnalysis';
 import {
   PortfolioMetrics,
   SummaryPositionCard,
   DetailedPositionCard,
   EmptyPositionState,
-  ExitTradeModal,
   AddTransactionModal,
   AddPositionModal,
   ImportCsvModal,
+  EditPositionModal,
 } from '@/components/portfolio';
 
 export default function PortfolioPage() {
   const router = useRouter();
   const { user } = useAuth();
-  const { myPortfolio, exitTrade, addTransaction, addToPortfolio } = useTrading();
+  const { myPortfolio, addTransaction, addToPortfolio, updatePosition } = useTrading();
   const { accounts, activeAccount, setActiveAccount } = useAccounts();
 
   // UI State
@@ -36,24 +36,17 @@ export default function PortfolioPage() {
   const [recommendationFilter, setRecommendationFilter] = useState<string>('all');
 
   // Modal State
-  const [showExitModal, setShowExitModal] = useState(false);
   const [showTransactionModal, setShowTransactionModal] = useState(false);
   const [showAddPositionModal, setShowAddPositionModal] = useState(false);
   const [showImportModal, setShowImportModal] = useState(false);
   const [showAnalysisModal, setShowAnalysisModal] = useState(false);
+  const [showEditPositionModal, setShowEditPositionModal] = useState(false);
 
   // Data State
   const [enrichedPositions, setEnrichedPositions] = useState<any[]>([]);
   const [selectedPosition, setSelectedPosition] = useState<any>(null);
   const [currentRecommendation, setCurrentRecommendation] = useState<any>(null);
   const [analysisPosition, setAnalysisPosition] = useState<any>(null);
-
-  // Exit Details
-  const [exitDetails, setExitDetails] = useState({
-    exitPrice: '',
-    exitDate: formatDateForDisplay(getCurrentISTDate()),
-    exitReason: ''
-  });
 
   // Check email verification
   useEffect(() => {
@@ -148,36 +141,6 @@ export default function PortfolioPage() {
   }, [openPositions]);
 
   // Handler functions with useCallback for optimization
-  const handleExitTrade = useCallback(async () => {
-    if (!selectedPosition || !exitDetails.exitPrice) return;
-
-    try {
-      const exitPrice = parseFloat(exitDetails.exitPrice);
-      const pnl = (exitPrice - selectedPosition.entryPrice) * selectedPosition.quantity;
-
-      await exitTrade(
-        selectedPosition.id,
-        exitPrice,
-        formatDateForStorage(exitDetails.exitDate),
-        exitDetails.exitReason
-      );
-
-      // Track position exit
-      trackPositionExited(selectedPosition.symbol, pnl);
-
-      setShowExitModal(false);
-      setSelectedPosition(null);
-      setExitDetails({
-        exitPrice: '',
-        exitDate: formatDateForDisplay(getCurrentISTDate()),
-        exitReason: ''
-      });
-    } catch (error) {
-      console.error('Error exiting trade:', error);
-      alert('Failed to exit trade');
-    }
-  }, [selectedPosition, exitDetails, exitTrade]);
-
   const handleOpenAnalysis = useCallback((position: any) => {
     if (!position.technicals || !position.fundamentals) {
       alert('Technical or fundamental data not available for this symbol yet. Please wait for the next analysis cycle.');
@@ -199,14 +162,9 @@ export default function PortfolioPage() {
     setShowTransactionModal(true);
   }, []);
 
-  const handleExit = useCallback((position: any) => {
+  const handleEdit = useCallback((position: any) => {
     setSelectedPosition(position);
-    setExitDetails({
-      exitPrice: position.currentPrice.toString(),
-      exitDate: formatDateForDisplay(getCurrentISTDate()),
-      exitReason: ''
-    });
-    setShowExitModal(true);
+    setShowEditPositionModal(true);
   }, []);
 
   const handleToggleExpand = useCallback((positionId: string) => {
@@ -246,7 +204,7 @@ export default function PortfolioPage() {
               onToggleExpand={() => handleToggleExpand(position.id)}
               onAnalyze={handleOpenAnalysis}
               onBuySell={handleBuySell}
-              onExit={handleExit}
+              onEdit={handleEdit}
             />
           ))}
         </div>
@@ -261,12 +219,12 @@ export default function PortfolioPage() {
             position={position}
             onAnalyze={handleOpenAnalysis}
             onBuySell={handleBuySell}
-            onExit={handleExit}
+            onEdit={handleEdit}
           />
         ))}
       </div>
     );
-  }, [viewMode, expandedPositionId, openPositions.length, closedPositions.length, activeTab, handleToggleExpand, handleOpenAnalysis, handleBuySell, handleExit]);
+  }, [viewMode, expandedPositionId, openPositions.length, closedPositions.length, activeTab, handleToggleExpand, handleOpenAnalysis, handleBuySell, handleEdit]);
 
   const displayedPositions = activeTab === 'open' ? filteredOpenPositions : closedPositions;
 
@@ -449,20 +407,6 @@ export default function PortfolioPage() {
       </div>
 
       {/* Modals */}
-      {showExitModal && selectedPosition && (
-        <ExitTradeModal
-          isOpen={showExitModal}
-          selectedPosition={selectedPosition}
-          exitDetails={exitDetails}
-          onClose={() => {
-            setShowExitModal(false);
-            setSelectedPosition(null);
-          }}
-          onExitDetailsChange={setExitDetails}
-          onSubmit={handleExitTrade}
-        />
-      )}
-
       {showTransactionModal && selectedPosition && (
         <AddTransactionModal
           isOpen={showTransactionModal}
@@ -506,6 +450,18 @@ export default function PortfolioPage() {
           recommendation={currentRecommendation}
           technicals={analysisPosition.technicals}
           fundamentals={analysisPosition.fundamentals}
+        />
+      )}
+
+      {showEditPositionModal && selectedPosition && (
+        <EditPositionModal
+          isOpen={showEditPositionModal}
+          position={selectedPosition}
+          onClose={() => {
+            setShowEditPositionModal(false);
+            setSelectedPosition(null);
+          }}
+          onUpdatePosition={updatePosition}
         />
       )}
     </div>

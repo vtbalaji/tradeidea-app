@@ -9,6 +9,9 @@ const nextConfig: NextConfig = {
     // Temporarily ignore linting errors for deployment
     ignoreDuringBuilds: true,
   },
+  turbopack: {
+    root: __dirname,
+  },
 };
 
 export default nextConfig;

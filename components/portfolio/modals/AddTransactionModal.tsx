@@ -1,4 +1,5 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
+import { getCurrentISTDate, formatDateForDisplay } from '@/lib/dateUtils';
 
 interface TransactionDetails {
   type: 'buy' | 'sell';
@@ -9,11 +10,9 @@ interface TransactionDetails {
 
 interface AddTransactionModalProps {
   isOpen: boolean;
-  selectedPosition: any;
-  transactionDetails: TransactionDetails;
+  position: any;
   onClose: () => void;
-  onTransactionDetailsChange: (details: TransactionDetails) => void;
-  onSubmit: () => void;
+  onAddTransaction: (positionId: string, transaction: any) => Promise<void>;
 }
 
 /**
@@ -21,13 +20,70 @@ interface AddTransactionModalProps {
  */
 export const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
   isOpen,
-  selectedPosition,
-  transactionDetails,
+  position,
   onClose,
-  onTransactionDetailsChange,
-  onSubmit
+  onAddTransaction
 }) => {
-  if (!isOpen || !selectedPosition) return null;
+  const [transactionDetails, setTransactionDetails] = useState<TransactionDetails>({
+    type: 'buy',
+    quantity: '',
+    price: position?.currentPrice?.toString() || '',
+    date: formatDateForDisplay(getCurrentISTDate())
+  });
+
+  // Reset form when position changes
+  useEffect(() => {
+    if (position) {
+      setTransactionDetails({
+        type: 'buy',
+        quantity: '',
+        price: position.currentPrice?.toString() || '',
+        date: formatDateForDisplay(getCurrentISTDate())
+      });
+    }
+  }, [position]);
+
+  const handleSubmit = async () => {
+    if (!position || !transactionDetails.quantity || !transactionDetails.price) {
+      alert('Please fill in all required fields');
+      return;
+    }
+
+    const quantity = parseInt(transactionDetails.quantity);
+    const price = parseFloat(transactionDetails.price);
+
+    if (isNaN(quantity) || quantity <= 0) {
+      alert('Please enter a valid quantity');
+      return;
+    }
+
+    if (isNaN(price) || price <= 0) {
+      alert('Please enter a valid price');
+      return;
+    }
+
+    // Check if selling more than available quantity
+    if (transactionDetails.type === 'sell' && quantity > position.quantity) {
+      alert(`Cannot sell more than available quantity (${position.quantity})`);
+      return;
+    }
+
+    try {
+      await onAddTransaction(position.id, {
+        type: transactionDetails.type,
+        quantity,
+        price,
+        date: transactionDetails.date,
+        totalValue: quantity * price
+      });
+      onClose();
+    } catch (error) {
+      console.error('Error adding transaction:', error);
+      alert('Failed to add transaction');
+    }
+  };
+
+  if (!isOpen || !position) return null;
 
   return (
     <div
@@ -39,13 +95,20 @@ export const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex justify-between items-center mb-6">
-          <h3 className="text-xl font-bold text-gray-900 dark:text-white">Add Transaction - {selectedPosition.symbol}</h3>
+          <h3 className="text-xl font-bold text-gray-900 dark:text-white">Add Transaction - {position.symbol}</h3>
           <button
             onClick={onClose}
-            className="text-gray-600 dark:text-[#8b949e] hover:text-gray-900 dark:text-white transition-colors text-2xl"
+            className="text-gray-600 dark:text-[#8b949e] hover:text-gray-900 dark:hover:text-white transition-colors text-2xl"
           >
             ×
           </button>
+        </div>
+
+        {/* Current Position Info */}
+        <div className="mb-4 p-3 bg-blue-500/10 border border-blue-500/30 rounded-lg">
+          <p className="text-xs text-blue-600 dark:text-blue-400">
+            <strong>Current Holdings:</strong> {position.quantity} shares @ ₹{position.entryPrice.toFixed(2)} avg
+          </p>
         </div>
 
         <div className="space-y-4">
@@ -55,21 +118,21 @@ export const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
             </label>
             <div className="flex gap-3">
               <button
-                onClick={() => onTransactionDetailsChange({ ...transactionDetails, type: 'buy' })}
+                onClick={() => setTransactionDetails({ ...transactionDetails, type: 'buy' })}
                 className={`flex-1 py-2 rounded-lg font-semibold transition-colors ${
                   transactionDetails.type === 'buy'
-                    ? 'bg-green-500 text-gray-900 dark:text-white'
-                    : 'bg-[#30363d] text-gray-600 dark:text-[#8b949e] hover:bg-[#3e4651]'
+                    ? 'bg-green-500 text-white'
+                    : 'bg-gray-100 dark:bg-[#30363d] text-gray-600 dark:text-[#8b949e] hover:bg-gray-200 dark:hover:bg-[#3e4651]'
                 }`}
               >
                 Buy
               </button>
               <button
-                onClick={() => onTransactionDetailsChange({ ...transactionDetails, type: 'sell' })}
+                onClick={() => setTransactionDetails({ ...transactionDetails, type: 'sell' })}
                 className={`flex-1 py-2 rounded-lg font-semibold transition-colors ${
                   transactionDetails.type === 'sell'
-                    ? 'bg-red-500 text-gray-900 dark:text-white'
-                    : 'bg-[#30363d] text-gray-600 dark:text-[#8b949e] hover:bg-[#3e4651]'
+                    ? 'bg-red-500 text-white'
+                    : 'bg-gray-100 dark:bg-[#30363d] text-gray-600 dark:text-[#8b949e] hover:bg-gray-200 dark:hover:bg-[#3e4651]'
                 }`}
               >
                 Sell
@@ -79,15 +142,16 @@ export const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
 
           <div>
             <label className="block text-sm font-medium text-gray-600 dark:text-[#8b949e] mb-2">
-              Quantity
+              Quantity {transactionDetails.type === 'sell' && `(Max: ${position.quantity})`}
             </label>
             <input
               type="number"
               value={transactionDetails.quantity}
               onChange={(e) =>
-                onTransactionDetailsChange({ ...transactionDetails, quantity: e.target.value })
+                setTransactionDetails({ ...transactionDetails, quantity: e.target.value })
               }
               placeholder="Enter quantity"
+              max={transactionDetails.type === 'sell' ? position.quantity : undefined}
               required
               className="w-full bg-white dark:bg-[#0f1419] border border-gray-200 dark:border-[#30363d] rounded-lg px-3 py-2 text-gray-900 dark:text-white placeholder-[#8b949e] outline-none focus:border-[#ff8c42] transition-colors"
             />
@@ -102,7 +166,7 @@ export const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
               step="0.01"
               value={transactionDetails.price}
               onChange={(e) =>
-                onTransactionDetailsChange({ ...transactionDetails, price: e.target.value })
+                setTransactionDetails({ ...transactionDetails, price: e.target.value })
               }
               placeholder="Enter price"
               required
@@ -118,7 +182,7 @@ export const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
               type="text"
               value={transactionDetails.date}
               onChange={(e) =>
-                onTransactionDetailsChange({ ...transactionDetails, date: e.target.value })
+                setTransactionDetails({ ...transactionDetails, date: e.target.value })
               }
               placeholder="DD-MM-YYYY"
               pattern="\d{2}-\d{2}-\d{4}"
@@ -130,19 +194,19 @@ export const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
         <div className="flex gap-3 mt-6">
           <button
             onClick={onClose}
-            className="flex-1 bg-[#30363d] hover:bg-[#3e4651] text-gray-900 dark:text-white font-semibold py-3 rounded-lg transition-colors"
+            className="flex-1 bg-gray-100 dark:bg-[#30363d] hover:bg-gray-200 dark:hover:bg-[#3e4651] text-gray-900 dark:text-white font-semibold py-3 rounded-lg transition-colors"
           >
             Cancel
           </button>
           <button
-            onClick={onSubmit}
+            onClick={handleSubmit}
             className={`flex-1 font-semibold py-3 rounded-lg transition-colors ${
               transactionDetails.type === 'buy'
-                ? 'bg-green-500 hover:bg-green-600 text-gray-900 dark:text-white'
-                : 'bg-red-500 hover:bg-red-600 text-gray-900 dark:text-white'
+                ? 'bg-green-500 hover:bg-green-600 text-white'
+                : 'bg-red-500 hover:bg-red-600 text-white'
             }`}
           >
-            Add {transactionDetails.type === 'buy' ? 'Buy' : 'Sell'}
+            {transactionDetails.type === 'buy' ? 'Buy' : 'Sell'}
           </button>
         </div>
       </div>

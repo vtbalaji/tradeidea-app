@@ -182,13 +182,20 @@ export default function InvestorAnalysisModal({
             <h2 className="text-xl font-bold text-gray-900 dark:text-white">
               Investor Type Analysis
             </h2>
-            <p className="text-sm text-gray-600 dark:text-[#8b949e]">
-              <span className="font-bold text-[#ff8c42]">{symbol}</span>
-              {technicals?.lastPrice && (
-                <span className="text-gray-600 dark:text-[#8b949e]"> (LTP: ₹{technicals.lastPrice.toFixed(2)})</span>
+            <div className="flex flex-col gap-1">
+              <p className="text-sm text-gray-600 dark:text-[#8b949e]">
+                <span className="font-bold text-[#ff8c42]">{symbol}</span>
+                {technicals?.lastPrice && (
+                  <span className="font-bold text-white"> (LTP: ₹{technicals.lastPrice.toFixed(2)})</span>
+                )}
+                {' '}- Which investor types is this suitable for?
+              </p>
+              {fundamentals?.sector && (
+                <p className="text-xs text-gray-500 dark:text-[#8b949e]">
+                  {fundamentals.sector}
+                </p>
               )}
-              {' '}- Which investor types is this suitable for?
-            </p>
+            </div>
           </div>
           <button
             onClick={onClose}

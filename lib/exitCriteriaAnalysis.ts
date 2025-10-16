@@ -17,16 +17,19 @@ export function analyzeExitCriteria(position: any): ExitAlert[] | null {
   const alerts: ExitAlert[] = [];
   const { exitCriteria, currentPrice, stopLoss, target1, technicals } = position;
 
-  // Determine effective stop loss (highest among user SL, Supertrend, 100MA)
+  // Determine effective stop loss (LOWEST among user SL, Supertrend, 100MA)
+  // Using the lowest value provides the most conservative protection
   let effectiveStopLoss = stopLoss;
   let stopLossSource = 'User SL';
 
-  if (technicals?.supertrend && technicals.supertrend > effectiveStopLoss) {
+  // Check Supertrend - use if it's LOWER than current effective SL
+  if (technicals?.supertrend && technicals.supertrend < effectiveStopLoss) {
     effectiveStopLoss = technicals.supertrend;
     stopLossSource = 'Supertrend';
   }
 
-  if (technicals?.sma100 && technicals.sma100 > effectiveStopLoss) {
+  // Check 100MA - use if it's LOWER than current effective SL
+  if (technicals?.sma100 && technicals.sma100 < effectiveStopLoss) {
     effectiveStopLoss = technicals.sma100;
     stopLossSource = '100MA';
   }
