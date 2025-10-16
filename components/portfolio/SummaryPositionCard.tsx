@@ -83,21 +83,26 @@ export function SummaryPositionCard({
           </div>
         </div>
 
-        {/* Second Row: Stop Loss Status (only if SL is hit) */}
-        {stopLossHit && position.status === 'open' && alerts && (
-          <div>
+        {/* Second Row: Stop Loss Status */}
+        {alerts && position.status === 'open' && (
+          <div className="space-y-1.5">
             {alerts
               .filter(alert =>
-                alert.type === 'critical' && alert.message.includes('STOP LOSS HIT')
+                alert.message.includes('SL') ||
+                alert.message.includes('STOP LOSS')
               )
               .map((alert, idx) => (
                 <div
                   key={idx}
-                  className="px-3 py-1.5 rounded-lg bg-red-500/20 border border-red-500/30 inline-block"
+                  className={`px-3 py-1.5 rounded-lg text-xs font-semibold inline-block ${
+                    alert.type === 'critical'
+                      ? 'bg-red-500/20 text-red-400 border border-red-500/30'
+                      : alert.type === 'warning'
+                      ? 'bg-yellow-500/20 text-yellow-400 border border-yellow-500/30'
+                      : 'bg-blue-500/20 text-blue-400 border border-blue-500/30'
+                  }`}
                 >
-                  <p className="text-xs font-bold text-red-400">
-                    {alert.message}
-                  </p>
+                  {alert.message}
                 </div>
               ))}
           </div>
