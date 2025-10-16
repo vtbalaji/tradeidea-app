@@ -26,14 +26,14 @@ export function EmptyPositionState({
         <div className="flex gap-3 justify-center mt-6">
           <button
             onClick={onImport}
-            className="bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2.5 px-5 rounded-lg transition-colors flex items-center gap-2"
+            className="bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-3 rounded-lg transition-colors flex items-center gap-2"
           >
             <span className="text-xl">📥</span>
             <span>Import Portfolio</span>
           </button>
           <button
             onClick={onAddPosition}
-            className="bg-[#ff8c42] hover:bg-[#ff9a58] text-white font-semibold py-2.5 px-5 rounded-lg transition-colors flex items-center gap-2"
+            className="bg-[#ff8c42] hover:bg-[#ff9a58] text-white font-semibold py-2 px-3 rounded-lg transition-colors flex items-center gap-2"
           >
             <span className="text-xl">+</span>
             <span>Add Position</span>

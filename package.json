@@ -16,6 +16,9 @@
     "load-symbols-csv": "tsx scripts/load-symbols-from-csv.ts"
   },
   "dependencies": {
+    "@capacitor/cli": "^7.4.3",
+    "@capacitor/core": "^7.4.3",
+    "@capacitor/ios": "^7.4.3",
     "dotenv": "^17.2.3",
     "duckdb": "^1.4.0",
     "firebase": "^12.3.0",

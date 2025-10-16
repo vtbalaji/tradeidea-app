@@ -25,14 +25,14 @@ export function PortfolioMetrics({
             {totalPnL >= 0 ? '+' : ''}₹{Math.round(totalPnL)}
           </p>
         </div>
-        <div className="bg-white dark:bg-[#0f1419] border-l-4 border-l-orange-500 border border-gray-200 dark:border-[#30363d] rounded-lg p-2.5 min-w-[160px] shadow-sm">
+        {/* <div className="bg-white dark:bg-[#0f1419] border-l-4 border-l-orange-500 border border-gray-200 dark:border-[#30363d] rounded-lg p-2.5 min-w-[160px] shadow-sm">
           <p className="text-xs text-gray-600 dark:text-[#8b949e] mb-0.5">Open Positions</p>
           <p className="text-xl font-bold text-gray-900 dark:text-white">{openPositionsCount}</p>
-        </div>
-        <div className="bg-white dark:bg-[#0f1419] border-l-4 border-l-gray-500 border border-gray-200 dark:border-[#30363d] rounded-lg p-2.5 min-w-[160px] shadow-sm">
+        </div> */}
+        {/* <div className="bg-white dark:bg-[#0f1419] border-l-4 border-l-gray-500 border border-gray-200 dark:border-[#30363d] rounded-lg p-2.5 min-w-[160px] shadow-sm">
           <p className="text-xs text-gray-600 dark:text-[#8b949e] mb-0.5">Closed Trades</p>
           <p className="text-xl font-bold text-gray-900 dark:text-white">{closedPositionsCount}</p>
-        </div>
+        </div> */}
       </div>
     </div>
   );

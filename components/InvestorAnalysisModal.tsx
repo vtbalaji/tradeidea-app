@@ -225,12 +225,9 @@ export default function InvestorAnalysisModal({
               </div>
             </div>
           ) : (
-            <div className="mb-4 p-4 bg-red-500/10 border border-red-500/30 rounded-lg">
-              <p className="text-sm font-semibold text-red-600 dark:text-red-400">
-                ✗ Not currently suitable for any investor type
-              </p>
+            <div className="mb-4 p-4 bg-gray-500/10 border border-red-500/30 rounded-lg">
               <p className="text-xs text-gray-600 dark:text-[#8b949e] mt-1">
-                Review the criteria below to see what conditions are not met
+                System computed. Review the criteria below to see what conditions are not met
               </p>
             </div>
           )}

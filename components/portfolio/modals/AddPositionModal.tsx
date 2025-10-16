@@ -31,10 +31,10 @@ export const AddPositionModal: React.FC<AddPositionModalProps> = ({
   const [symbolSuggestions, setSymbolSuggestions] = useState<any[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
 
-  const handleSymbolSearch = (value: string) => {
+  const handleSymbolSearch = async (value: string) => {
     setNewPosition({ ...newPosition, symbol: value });
     if (value.length > 0) {
-      const results = searchSymbols(value);
+      const results = await searchSymbols(value);
       setSymbolSuggestions(results.slice(0, 10));
       setShowSuggestions(true);
     } else {
