@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import { useRouter } from 'next/navigation';
 import { InvestorType, InvestorRecommendation, EntryAnalysis } from '@/lib/investment-rules';
 import { TrendArrow, ChevronLeftIcon, ChevronRightIcon, CloseIcon } from '@/components/icons';
 import TechnicalLevelsCard from '@/components/TechnicalLevelsCard';
@@ -58,7 +59,27 @@ export default function InvestorAnalysisModal({
 }: InvestorAnalysisModalProps) {
   if (!isOpen || !recommendation) return null;
 
+  const router = useRouter();
   const [showDetails, setShowDetails] = React.useState(false);
+
+  const handleConvertToIdea = () => {
+    // Calculate suggested entry price, stop loss, and target
+    const entryPrice = technicals?.lastPrice || '';
+    const stopLoss = technicals?.sma50 || technicals?.sma20 || '';
+    const target = entryPrice && stopLoss ? (entryPrice + (entryPrice - stopLoss) * 1.5).toFixed(2) : '';
+
+    // Build query parameters
+    const params = new URLSearchParams({
+      symbol: symbol,
+      ...(entryPrice && { entryPrice: entryPrice.toString() }),
+      ...(stopLoss && { stopLoss: stopLoss.toString() }),
+      ...(target && { target: target.toString() })
+    });
+
+    // Navigate to new idea page with pre-filled data
+    router.push(`/ideas/new?${params.toString()}`);
+    onClose();
+  };
 
   // Format camelCase to readable text while preserving acronyms
   const formatConditionName = (str: string): string => {
@@ -266,34 +287,49 @@ export default function InvestorAnalysisModal({
         </div>
 
         {/* Footer */}
-        <div className="sticky bottom-0 bg-white dark:bg-[#1c2128] border-t border-gray-200 dark:border-[#30363d] p-4 space-y-2">
-          {/* Show Details Button - Desktop Only */}
-          {(technicals || fundamentals) && (
+        <div className="sticky bottom-0 bg-white dark:bg-[#1c2128] border-t border-gray-200 dark:border-[#30363d] p-4">
+          <div className="flex gap-2">
+            {/* Convert to Idea Button */}
             <button
-              onClick={() => setShowDetails(!showDetails)}
-              className="hidden md:flex w-full items-center justify-center gap-2 px-4 py-2 bg-gray-100 dark:bg-[#30363d] hover:bg-gray-200 dark:hover:bg-[#3c444d] border border-gray-200 dark:border-[#444c56] text-gray-700 dark:text-gray-300 font-semibold rounded-lg transition-colors"
+              onClick={handleConvertToIdea}
+              className="flex-1 flex items-center justify-center gap-2 px-3 py-1.5 bg-[#ff8c42] hover:bg-[#ff9a58] border border-[#ff8c42] text-gray-900 dark:text-white text-sm font-bold rounded-lg transition-colors"
             >
-              {showDetails ? (
-                <>
-                  <ChevronLeftIcon size={16} className="w-4 h-4" />
-                  <span>Hide Details</span>
-                </>
-              ) : (
-                <>
-                  <span>Show Details</span>
-                  <ChevronRightIcon size={16} className="w-4 h-4" />
-                </>
-              )}
+              <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M8 2L8 14M2 8L14 8" strokeLinecap="round"/>
+              </svg>
+              <span className="hidden sm:inline">Convert to Idea</span>
+              <span className="sm:hidden">Convert</span>
             </button>
-          )}
 
-          <button
-            onClick={onClose}
-            className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-gray-100 dark:bg-[#30363d] hover:bg-gray-200 dark:hover:bg-[#3c444d] border border-gray-200 dark:border-[#444c56] text-gray-700 dark:text-gray-300 font-semibold rounded-lg transition-colors"
-          >
-            <CloseIcon size={16} className="w-4 h-4" />
-            <span>Close</span>
-          </button>
+            {/* Close Button */}
+            <button
+              onClick={onClose}
+              className="flex-1 flex items-center justify-center gap-2 px-3 py-1.5 bg-gray-100 dark:bg-[#30363d] hover:bg-gray-200 dark:hover:bg-[#3c444d] border border-gray-200 dark:border-[#444c56] text-gray-700 dark:text-gray-300 text-sm font-semibold rounded-lg transition-colors"
+            >
+              <CloseIcon size={14} className="w-3.5 h-3.5" />
+              <span>Close</span>
+            </button>
+
+            {/* Show Details Button - Desktop Only */}
+            {(technicals || fundamentals) && (
+              <button
+                onClick={() => setShowDetails(!showDetails)}
+                className="hidden md:flex flex-1 items-center justify-center gap-2 px-3 py-1.5 bg-gray-100 dark:bg-[#30363d] hover:bg-gray-200 dark:hover:bg-[#3c444d] border border-gray-200 dark:border-[#444c56] text-gray-700 dark:text-gray-300 text-sm font-semibold rounded-lg transition-colors"
+              >
+                {showDetails ? (
+                  <>
+                    <ChevronLeftIcon size={14} className="w-3.5 h-3.5" />
+                    <span>Hide Details</span>
+                  </>
+                ) : (
+                  <>
+                    <span>Show Details</span>
+                    <ChevronRightIcon size={14} className="w-3.5 h-3.5" />
+                  </>
+                )}
+              </button>
+            )}
+          </div>
         </div>
         </div>
 
