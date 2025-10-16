@@ -186,7 +186,7 @@ export default function InvestorAnalysisModal({
               <p className="text-sm text-gray-600 dark:text-[#8b949e]">
                 <span className="font-bold text-[#ff8c42]">{symbol}</span>
                 {technicals?.lastPrice && (
-                  <span className="font-bold text-white"> (LTP: ₹{technicals.lastPrice.toFixed(2)})</span>
+                  <span className="font-bold text-gray-900 dark:text-white"> (LTP: ₹{technicals.lastPrice.toFixed(2)})</span>
                 )}
                 {' '}- Which investor types is this suitable for?
               </p>

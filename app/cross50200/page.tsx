@@ -57,6 +57,18 @@ export default function Cross50200Page() {
   const [showAnalysisModal, setShowAnalysisModal] = useState<string | null>(null);
   const [currentRecommendation, setCurrentRecommendation] = useState<any>(null);
   const [symbolData, setSymbolData] = useState<{[key: string]: {technicals: any, fundamentals: any}}>({});
+  const [displayDate, setDisplayDate] = useState<string | null>(null);
+
+  // Convert date to Indian format (DD-MM-YYYY)
+  const formatDateIndian = (dateStr: string | null) => {
+    if (!dateStr) return null;
+    // Handle YYYY-MM-DD format
+    if (dateStr.includes('-') && dateStr.split('-')[0].length === 4) {
+      const [year, month, day] = dateStr.split('-');
+      return `${day}-${month}-${year}`;
+    }
+    return dateStr;
+  };
 
   // Check authentication and email verification
   useEffect(() => {
@@ -86,6 +98,19 @@ export default function Cross50200Page() {
     return today.toISOString().split('T')[0];
   };
 
+  // Get multiple date formats to try
+  const getDateFormats = (dateStr: string) => {
+    const [year, month, day] = dateStr.split('-');
+    return [
+      dateStr,                          // 2025-10-16
+      `${day}-${month}-${year}`,       // 16-10-2025
+      `${month}-${day}-${year}`,       // 10-16-2025
+      `${year}${month}${day}`,         // 20251016
+      `${day}/${month}/${year}`,       // 16/10/2025
+      `${month}/${day}/${year}`,       // 10/16/2025
+    ];
+  };
+
   // Fetch crossover data
   useEffect(() => {
     const fetchCrossovers = async () => {
@@ -94,76 +119,199 @@ export default function Cross50200Page() {
       try {
         setLoading(true);
         const today = getLastTradingDay();
-        console.log('Querying for date:', today);
+        const dateFormats = getDateFormats(today);
+        console.log('🔍 Querying for date:', today);
+        console.log('🔍 Trying date formats:', dateFormats);
 
-        // Fetch 50 MA crossovers
-        const crossover50Ref = collection(db, 'macrossover50');
-        const q50 = query(
-          crossover50Ref,
-          where('date', '==', today)
-        );
-        const snapshot50 = await getDocs(q50);
-        let data50: Crossover[] = snapshot50.docs.map(doc => ({
-          id: doc.id,
-          ...doc.data()
-        } as Crossover));
+        // Try to fetch with multiple date formats
+        let data50: Crossover[] = [];
+        let data200: Crossover[] = [];
+        let dataSupertrend: Crossover[] = [];
+        let dataVolumeSpike: VolumeSpike[] = [];
 
-        // Sort in memory instead of using orderBy
-        data50 = data50.sort((a, b) => Math.abs(b.crossPercent) - Math.abs(a.crossPercent));
+        // First, try to fetch ALL records to check permissions
+        let latestDate: string | null = null;
+        try {
+          console.log('🔍 Testing Firestore access...');
+          const testSnapshot = await getDocs(collection(db, 'macrossover50'));
+          console.log(`✅ Can access macrossover50: ${testSnapshot.docs.length} total documents`);
 
-        // Fetch 200 MA crossovers
-        const crossover200Ref = collection(db, 'macrossover200');
-        const q200 = query(
-          crossover200Ref,
-          where('date', '==', today)
-        );
-        const snapshot200 = await getDocs(q200);
-        let data200: Crossover[] = snapshot200.docs.map(doc => ({
-          id: doc.id,
-          ...doc.data()
-        } as Crossover));
+          if (testSnapshot.docs.length > 0) {
+            // Get all unique dates and find the latest
+            const allDates = testSnapshot.docs.map(doc => doc.data().date as string);
+            const uniqueDates = [...new Set(allDates)].sort().reverse();
+            console.log('📅 Available dates:', uniqueDates.slice(0, 5));
 
-        // Sort in memory instead of using orderBy
-        data200 = data200.sort((a, b) => Math.abs(b.crossPercent) - Math.abs(a.crossPercent));
+            // Try today's date first with all formats
+            let found = false;
+            for (const dateFormat of dateFormats) {
+              const filtered50 = testSnapshot.docs.filter(doc => doc.data().date === dateFormat);
+              if (filtered50.length > 0) {
+                console.log(`✅ Found ${filtered50.length} records in macrossover50 for today: ${dateFormat}`);
+                data50 = filtered50.map(doc => ({
+                  id: doc.id,
+                  ...doc.data()
+                } as Crossover));
+                latestDate = dateFormat;
+                found = true;
+                break;
+              }
+            }
 
-        // Fetch Supertrend crossovers
-        const supertrendRef = collection(db, 'supertrendcrossover');
-        const qSupertrend = query(
-          supertrendRef,
-          where('date', '==', today)
-        );
-        const snapshotSupertrend = await getDocs(qSupertrend);
-        let dataSupertrend: Crossover[] = snapshotSupertrend.docs.map(doc => ({
-          id: doc.id,
-          ...doc.data()
-        } as Crossover));
+            // If not found for today, use the latest available date
+            if (!found && uniqueDates.length > 0) {
+              latestDate = uniqueDates[0];
+              console.log(`⚠️ No records for today, using latest date: ${latestDate}`);
+              const filtered50 = testSnapshot.docs.filter(doc => doc.data().date === latestDate);
+              data50 = filtered50.map(doc => ({
+                id: doc.id,
+                ...doc.data()
+              } as Crossover));
+              console.log(`✅ Found ${data50.length} records for ${latestDate}`);
+            }
+          }
+        } catch (err: any) {
+          console.error('❌ Error accessing macrossover50:', err.message);
+        }
+
+        // Fetch 200 MA - use the same latestDate
+        if (latestDate) {
+          try {
+            const test200 = await getDocs(collection(db, 'macrossover200'));
+            console.log(`✅ Can access macrossover200: ${test200.docs.length} total documents`);
+
+            if (test200.docs.length > 0) {
+              const filtered200 = test200.docs.filter(doc => doc.data().date === latestDate);
+              if (filtered200.length > 0) {
+                console.log(`✅ Found ${filtered200.length} records in macrossover200 for ${latestDate}`);
+                data200 = filtered200.map(doc => ({
+                  id: doc.id,
+                  ...doc.data()
+                } as Crossover));
+              }
+            }
+          } catch (err: any) {
+            console.error('❌ Error accessing macrossover200:', err.message);
+          }
+
+          // Fetch Supertrend - use the same latestDate
+          try {
+            const testSupertrend = await getDocs(collection(db, 'supertrendcrossover'));
+            console.log(`✅ Can access supertrendcrossover: ${testSupertrend.docs.length} total documents`);
+
+            if (testSupertrend.docs.length > 0) {
+              const filteredSupertrend = testSupertrend.docs.filter(doc => doc.data().date === latestDate);
+              if (filteredSupertrend.length > 0) {
+                console.log(`✅ Found ${filteredSupertrend.length} records in supertrendcrossover for ${latestDate}`);
+                dataSupertrend = filteredSupertrend.map(doc => ({
+                  id: doc.id,
+                  ...doc.data()
+                } as Crossover));
+              }
+            }
+          } catch (err: any) {
+            console.error('❌ Error accessing supertrendcrossover:', err.message);
+          }
+
+          // Fetch Volume Spikes - use the same latestDate
+          try {
+            const testVolume = await getDocs(collection(db, 'volumespike'));
+            console.log(`✅ Can access volumespike: ${testVolume.docs.length} total documents`);
+
+            if (testVolume.docs.length > 0) {
+              const filteredVolume = testVolume.docs.filter(doc => doc.data().date === latestDate);
+              if (filteredVolume.length > 0) {
+                console.log(`✅ Found ${filteredVolume.length} records in volumespike for ${latestDate}`);
+                dataVolumeSpike = filteredVolume.map(doc => ({
+                  id: doc.id,
+                  ...doc.data()
+                } as VolumeSpike));
+              }
+            }
+          } catch (err: any) {
+            console.error('❌ Error accessing volumespike:', err.message);
+          }
+        }
+
+        // If still no records found, fetch a sample to show what dates are available
+        if (data50.length === 0 && data200.length === 0 && dataSupertrend.length === 0 && dataVolumeSpike.length === 0) {
+          console.warn('⚠️ No records found for any date format. Fetching sample records...');
+
+          try {
+            // Fetch sample from each collection without orderBy to avoid index issues
+            const sample50 = await getDocs(collection(db, 'macrossover50'));
+            const sample200 = await getDocs(collection(db, 'macrossover200'));
+            const sampleSupertrend = await getDocs(collection(db, 'supertrendcrossover'));
+            const sampleVolume = await getDocs(collection(db, 'volumespike'));
+
+            console.log('📋 Total documents in Firebase:');
+            console.log(`  macrossover50: ${sample50.docs.length} documents`);
+            console.log(`  macrossover200: ${sample200.docs.length} documents`);
+            console.log(`  supertrendcrossover: ${sampleSupertrend.docs.length} documents`);
+            console.log(`  volumespike: ${sampleVolume.docs.length} documents`);
+
+            console.log('\n📋 Sample dates in Firebase:');
+            if (sample50.docs.length > 0) {
+              const allDates50 = sample50.docs.map(d => d.data().date);
+              const uniqueDates50 = [...new Set(allDates50)].sort().reverse().slice(0, 10);
+              console.log('  macrossover50 (latest 10 unique dates):', uniqueDates50);
+              console.log('  First record sample:', sample50.docs[0].data());
+            } else {
+              console.log('  macrossover50: No documents found');
+            }
+
+            if (sample200.docs.length > 0) {
+              const allDates200 = sample200.docs.map(d => d.data().date);
+              const uniqueDates200 = [...new Set(allDates200)].sort().reverse().slice(0, 10);
+              console.log('  macrossover200 (latest 10 unique dates):', uniqueDates200);
+              console.log('  First record sample:', sample200.docs[0].data());
+            } else {
+              console.log('  macrossover200: No documents found');
+            }
+
+            if (sampleSupertrend.docs.length > 0) {
+              const allDatesSupertrend = sampleSupertrend.docs.map(d => d.data().date);
+              const uniqueDatesSupertrend = [...new Set(allDatesSupertrend)].sort().reverse().slice(0, 10);
+              console.log('  supertrendcrossover (latest 10 unique dates):', uniqueDatesSupertrend);
+              console.log('  First record sample:', sampleSupertrend.docs[0].data());
+            } else {
+              console.log('  supertrendcrossover: No documents found');
+            }
+
+            if (sampleVolume.docs.length > 0) {
+              const allDatesVolume = sampleVolume.docs.map(d => d.data().date);
+              const uniqueDatesVolume = [...new Set(allDatesVolume)].sort().reverse().slice(0, 10);
+              console.log('  volumespike (latest 10 unique dates):', uniqueDatesVolume);
+              console.log('  First record sample:', sampleVolume.docs[0].data());
+            } else {
+              console.log('  volumespike: No documents found');
+            }
+          } catch (debugError: any) {
+            console.error('❌ Error fetching debug samples:', debugError);
+          }
+        }
 
         // Sort in memory
+        data50 = data50.sort((a, b) => Math.abs(b.crossPercent) - Math.abs(a.crossPercent));
+        data200 = data200.sort((a, b) => Math.abs(b.crossPercent) - Math.abs(a.crossPercent));
         dataSupertrend = dataSupertrend.sort((a, b) => Math.abs(b.crossPercent) - Math.abs(a.crossPercent));
-
-        // Fetch Volume Spikes
-        const volumeSpikeRef = collection(db, 'volumespike');
-        const qVolumeSpike = query(
-          volumeSpikeRef,
-          where('date', '==', today)
-        );
-        const snapshotVolumeSpike = await getDocs(qVolumeSpike);
-        let dataVolumeSpike: VolumeSpike[] = snapshotVolumeSpike.docs.map(doc => ({
-          id: doc.id,
-          ...doc.data()
-        } as VolumeSpike));
-
-        // Sort by spike percentage
         dataVolumeSpike = dataVolumeSpike.sort((a, b) => b.spikePercent - a.spikePercent);
 
         setCrossovers50(data50);
         setCrossovers200(data200);
         setSupertrendCrossovers(dataSupertrend);
         setVolumeSpikes(dataVolumeSpike);
+        setDisplayDate(latestDate);
 
-        console.log('Fetched crossovers:', { ma50: data50.length, ma200: data200.length, supertrend: dataSupertrend.length, volumeSpikes: dataVolumeSpike.length });
+        console.log('📊 Final counts:', {
+          ma50: data50.length,
+          ma200: data200.length,
+          supertrend: dataSupertrend.length,
+          volumeSpikes: dataVolumeSpike.length,
+          date: latestDate
+        });
       } catch (error: any) {
-        console.error('Error fetching crossovers:', error);
+        console.error('❌ Error fetching crossovers:', error);
         setError(error.message || 'Failed to load crossover data. Please check Firestore permissions.');
       } finally {
         setLoading(false);
@@ -663,7 +811,9 @@ export default function Cross50200Page() {
       {/* Header */}
       <div className="p-5 pt-5 pb-3">
         <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-1">MA Crossovers</h1>
-        <p className="text-sm text-gray-600 dark:text-[#8b949e]">Stocks that crossed moving averages today</p>
+        <p className="text-sm text-gray-600 dark:text-[#8b949e]">
+          {displayDate ? `Showing data for ${formatDateIndian(displayDate)}` : 'Stocks that crossed moving averages'}
+        </p>
       </div>
 
       {/* Tabs */}
@@ -769,11 +919,16 @@ export default function Cross50200Page() {
             ) : (
               <>
                 {/* Summary */}
-                <div className="mb-4 flex items-center gap-2">
-                  <h2 className="text-xl font-bold text-gray-900 dark:text-white">Volume Spikes Today</h2>
+                <div className="mb-4 flex items-center gap-2 flex-wrap">
+                  <h2 className="text-xl font-bold text-gray-900 dark:text-white">Volume Spikes</h2>
                   <span className="px-2 py-0.5 bg-[#ff8c42]/20 text-[#ff8c42] text-xs font-semibold rounded-full">
                     {volumeSpikes.length} {volumeSpikes.length === 1 ? 'stock' : 'stocks'}
                   </span>
+                  {displayDate && (
+                    <span className="px-2 py-0.5 bg-blue-500/20 text-blue-400 text-xs font-semibold rounded-full">
+                      as on {formatDateIndian(displayDate)}
+                    </span>
+                  )}
                 </div>
 
                 {/* Cards Grid */}
@@ -804,13 +959,13 @@ export default function Cross50200Page() {
           ) : (
             <>
               {/* Summary */}
-              <div className="mb-4 flex items-center gap-2">
+              <div className="mb-4 flex items-center gap-2 flex-wrap">
                 <h2 className="text-xl font-bold text-gray-900 dark:text-white">
                   {activeTab === 'both'
-                    ? 'Stocks Crossing Both 50 MA & 200 MA Today'
+                    ? 'Stocks Crossing Both 50 MA & 200 MA'
                     : activeTab === 'supertrend'
-                      ? 'Supertrend Crossovers Today'
-                      : `${activeTab === '50ma' ? '50 MA' : '200 MA'} Crossovers Today`
+                      ? 'Supertrend Crossovers'
+                      : `${activeTab === '50ma' ? '50 MA' : '200 MA'} Crossovers`
                   }
                 </h2>
                 <span className="px-2 py-0.5 bg-[#ff8c42]/20 text-[#ff8c42] text-xs font-semibold rounded-full">
@@ -819,6 +974,11 @@ export default function Cross50200Page() {
                     : `${displayCrossovers.length} ${displayCrossovers.length === 1 ? 'stock' : 'stocks'}`
                   }
                 </span>
+                {displayDate && (
+                  <span className="px-2 py-0.5 bg-blue-500/20 text-blue-400 text-xs font-semibold rounded-full">
+                    as on {formatDateIndian(displayDate)}
+                  </span>
+                )}
               </div>
 
               {/* Cards Grid */}
