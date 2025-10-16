@@ -52,13 +52,13 @@ export function SummaryPositionCard({
         <div className="flex items-center justify-between gap-3 mb-2">
           {/* Symbol */}
           <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2">
+            <div className="flex items-start gap-1">
               <h3 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white truncate">{position.symbol}</h3>
               {position.smartSLTrigger === 'yes' && (
                 <img
-                  src="/logo.svg"
+                  src="/logo.png"
                   alt="Smart SL"
-                  className="h-4 w-4 opacity-80 flex-shrink-0"
+                  className="h-3 w-3 opacity-80 flex-shrink-0 mt-0.5"
                   title="Protected by Smart SL"
                 />
               )}

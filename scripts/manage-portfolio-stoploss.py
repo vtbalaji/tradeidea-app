@@ -310,13 +310,13 @@ def manage_portfolio_stoploss():
                 print(f'  Current Phase: {sl_update["slm"]["phase"].upper()}')
                 print(f'  Effective SL: ₹{sl_update["slm"]["effectiveStopLoss"]:.2f}')
 
+                # Always update smartSL flag for managed positions
+                update_position_sl(pos['id'], sl_update, current_price)
+
                 if sl_update['phaseChanged']:
                     print(f'  🔄 CHANGE: {sl_update["reason"]}')
                     print(f'  New Phase: {sl_update["phase"].upper()}')
                     print(f'  New SL: ₹{sl_update["effectiveStopLoss"]:.2f}')
-
-                    # Update Firebase
-                    update_position_sl(pos['id'], sl_update, current_price)
                     updated_count += 1
 
                     # Notify user if phase changed (not just SL ratchet within same phase)
@@ -328,9 +328,9 @@ def manage_portfolio_stoploss():
                             f"{symbol}: {sl_update['reason']}"
                         )
 
-                    print(f'  ✅ Updated in Firebase')
+                    print(f'  ✅ SL Updated in Firebase')
                 else:
-                    print(f'  ✓ No change needed')
+                    print(f'  ✅ Smart SL active (no change this cycle)')
 
             except Exception as e:
                 print(f'  ❌ Error: {str(e)}')
@@ -344,9 +344,10 @@ def manage_portfolio_stoploss():
         print('📊 Summary')
         print('=' * 70)
         print(f'Total Positions: {len(positions)}')
-        print(f'✅ Updated: {updated_count}')
+        print(f'🛡️  Smart SL Active: {len(positions) - error_count}')
+        print(f'🔄 SL Changes: {updated_count}')
         print(f'🆕 Initialized: {initialized_count}')
-        print(f'🔄 Phase Changes: {phase_changed_count}')
+        print(f'📈 Phase Changes: {phase_changed_count}')
         print(f'❌ Errors: {error_count}')
         print(f'⏱️  Duration: {duration:.1f}s')
         print('=' * 70)
