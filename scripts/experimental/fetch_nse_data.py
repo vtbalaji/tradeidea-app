@@ -123,9 +123,67 @@ class NSEDataFetcher:
 
         return target_date
 
+    def fetch_from_yfinance(self, symbol, from_date, to_date):
+        """
+        Fallback: Fetch data from Yahoo Finance when jugaad-data fails
+
+        Args:
+            symbol: Stock symbol (without .NS suffix)
+            from_date: Start date (datetime.date)
+            to_date: End date (datetime.date)
+
+        Returns:
+            pandas DataFrame or None
+        """
+        try:
+            import yfinance as yf
+
+            # Yahoo Finance requires .NS suffix for NSE stocks
+            yf_symbol = f'{symbol}.NS'
+            ticker = yf.Ticker(yf_symbol)
+
+            # Fetch data
+            df = ticker.history(start=from_date, end=to_date + timedelta(days=1))
+
+            if df.empty:
+                return None
+
+            # Convert to our format
+            df = df.reset_index()
+            df['symbol'] = symbol
+
+            # Rename Yahoo Finance columns to match our schema
+            df = df.rename(columns={
+                'Date': 'date',
+                'Open': 'open',
+                'High': 'high',
+                'Low': 'low',
+                'Close': 'close',
+                'Volume': 'volume'
+            })
+
+            # Add missing columns
+            df['prev_close'] = None
+            df['ltp'] = df['close']  # Use close as ltp
+            df['vwap'] = None
+
+            # Convert date to date type (remove timezone if present)
+            df['date'] = pd.to_datetime(df['date']).dt.date
+
+            # Select columns in correct order
+            df = df[['symbol', 'date', 'open', 'high', 'low', 'close', 'volume', 'prev_close', 'ltp', 'vwap']]
+
+            return df
+
+        except Exception as e:
+            print(f'  ⚠️  Yahoo Finance also failed: {str(e)}')
+            return None
+
     def fetch_and_store(self, symbol, from_date=None, to_date=None, retry_count=3):
         """
         Fetch data from NSE and store in DuckDB
+
+        Tries jugaad-data first, falls back to Yahoo Finance if it fails
 
         Args:
             symbol: Stock symbol (without .NS suffix)
@@ -225,8 +283,45 @@ class NSEDataFetcher:
                     print(f'  ⚠️  Attempt {attempt + 1} failed: {str(e)}. Retrying in {wait_time}s...')
                     time.sleep(wait_time)
                 else:
-                    print(f'  ❌ Error fetching {symbol} after {retry_count} attempts: {str(e)}')
-                    return False
+                    # All jugaad-data attempts failed, try Yahoo Finance
+                    print(f'  ⚠️  NSE fetch failed after {retry_count} attempts, trying Yahoo Finance...')
+
+                    try:
+                        # Get dates for fallback
+                        if to_date is None:
+                            to_date = self.get_last_trading_day()
+                        if from_date is None:
+                            last_date = self.get_last_date(symbol)
+                            if last_date:
+                                from_date = last_date + timedelta(days=1)
+                            else:
+                                from_date = to_date - timedelta(days=730)
+
+                        # Skip if already up to date
+                        if from_date > to_date:
+                            print(f'  ✅ {symbol} - Already up to date')
+                            return True
+
+                        # Try Yahoo Finance
+                        df = self.fetch_from_yfinance(symbol, from_date, to_date)
+
+                        if df is not None and not df.empty:
+                            # Insert data
+                            self.conn.execute("""
+                                INSERT OR REPLACE INTO ohlcv (symbol, date, open, high, low, close, volume, prev_close, ltp, vwap)
+                                SELECT symbol, date, open, high, low, close, volume, prev_close, ltp, vwap FROM df
+                            """)
+
+                            row_count = len(df)
+                            print(f'  ✅ Stored {row_count} rows for {symbol} (via Yahoo Finance)')
+                            return True
+                        else:
+                            print(f'  ❌ Yahoo Finance returned no data for {symbol}')
+                            return False
+
+                    except Exception as yf_error:
+                        print(f'  ❌ Both NSE and Yahoo Finance failed for {symbol}: {str(yf_error)}')
+                        return False
 
         return False
 

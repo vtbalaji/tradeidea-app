@@ -59,7 +59,7 @@ if [ ! -f "serviceAccountKey.json" ]; then
 fi
 
 # 1. Fetch NSE EOD Data
-log "📥 Step 1/6: Fetching NSE EOD Data..."
+log "📥 Step 1/7: Fetching NSE EOD Data..."
 START_TIME=$(date +%s)
 if $PYTHON scripts/fetch-eod-data.py >> "$LOG_FILE" 2>&1; then
     END_TIME=$(date +%s)
@@ -73,7 +73,7 @@ fi
 
 # 1.5 Fetch Nifty 50 Index Data
 log ""
-log "📊 Step 1.5/6: Fetching Nifty 50 Index Data..."
+log "📊 Step 1.5/7: Fetching Nifty 50 Index Data..."
 START_TIME=$(date +%s)
 if $PYTHON scripts/fetch-nifty50-index.py >> "$LOG_FILE" 2>&1; then
     END_TIME=$(date +%s)
@@ -88,7 +88,7 @@ fi
 
 # 2. Run Technical Analysis
 log ""
-log "📊 Step 2/6: Running Technical Analysis..."
+log "📊 Step 2/7: Running Technical Analysis..."
 START_TIME=$(date +%s)
 if $PYTHON scripts/analyze-symbols-duckdb.py >> "$LOG_FILE" 2>&1; then
     END_TIME=$(date +%s)
@@ -102,7 +102,7 @@ fi
 
 # 3. Run Screeners
 log ""
-log "🔍 Step 3/6: Running Screeners..."
+log "🔍 Step 3/7: Running Screeners..."
 START_TIME=$(date +%s)
 if $PYTHON scripts/screeners.py >> "$LOG_FILE" 2>&1; then
     END_TIME=$(date +%s)
@@ -116,7 +116,7 @@ fi
 
 # 4. Generate Chart Data
 log ""
-log "📈 Step 4/6: Generating Chart Data..."
+log "📈 Step 4/7: Generating Chart Data..."
 START_TIME=$(date +%s)
 if $PYTHON scripts/generate-chart-data.py --priority --top 250 >> "$LOG_FILE" 2>&1; then
     END_TIME=$(date +%s)
@@ -130,7 +130,7 @@ fi
 
 # 5. Manage Portfolio Stop-Loss
 log ""
-log "🛡️  Step 5/6: Managing Portfolio Stop-Loss..."
+log "🛡️  Step 5/7: Managing Portfolio Stop-Loss..."
 START_TIME=$(date +%s)
 if $PYTHON scripts/manage-portfolio-stoploss.py >> "$LOG_FILE" 2>&1; then
     END_TIME=$(date +%s)
@@ -139,6 +139,20 @@ if $PYTHON scripts/manage-portfolio-stoploss.py >> "$LOG_FILE" 2>&1; then
 else
     EXIT_CODE=$?
     log_error "Stop-loss management failed with exit code $EXIT_CODE"
+    exit 1
+fi
+
+# 6. Check and Generate Alerts
+log ""
+log "🔔 Step 6/7: Checking and Generating Alerts..."
+START_TIME=$(date +%s)
+if $PYTHON scripts/check-and-generate-alerts.py >> "$LOG_FILE" 2>&1; then
+    END_TIME=$(date +%s)
+    DURATION=$((END_TIME - START_TIME))
+    log "✅ Alert generation completed in ${DURATION}s"
+else
+    EXIT_CODE=$?
+    log_error "Alert generation failed with exit code $EXIT_CODE"
     exit 1
 fi
 
