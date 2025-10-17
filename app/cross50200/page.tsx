@@ -60,13 +60,33 @@ interface DarvasBox {
   priceToBoxHighPercent: number;
 }
 
+interface BBSqueeze {
+  id: string;
+  symbol: string;
+  date: string;
+  signalType: 'BUY' | 'SELL' | 'SQUEEZE' | 'BREAKOUT';
+  currentPrice: number;
+  bbUpper: number;
+  bbLower: number;
+  bbMA: number;
+  bbWidthPercent: number;
+  rsi: number;
+  macd: number;
+  inSqueeze: boolean;
+  daysInSqueeze: number;
+  proportion: number;
+  bbBreakout: boolean;
+  distanceToUpperPercent: number;
+  distanceToLowerPercent: number;
+}
+
 export default function Cross50200Page() {
   const router = useRouter();
   const { user } = useAuth();
-  const [activeTab, setActiveTab] = useState<'both' | '50ma' | '200ma' | 'supertrend' | 'volume' | 'darvas'>('both');
+  const [activeTab, setActiveTab] = useState<'macross' | 'volume' | 'darvas' | 'bbsqueeze'>('macross');
 
   // Track tab change
-  const handleTabChange = (tab: 'both' | '50ma' | '200ma' | 'supertrend' | 'volume' | 'darvas') => {
+  const handleTabChange = (tab: 'macross' | 'volume' | 'darvas' | 'bbsqueeze') => {
     setActiveTab(tab);
     trackScreenerViewed(tab);
   };
@@ -75,12 +95,16 @@ export default function Cross50200Page() {
   const [supertrendCrossovers, setSupertrendCrossovers] = useState<Crossover[]>([]);
   const [volumeSpikes, setVolumeSpikes] = useState<VolumeSpike[]>([]);
   const [darvasBoxes, setDarvasBoxes] = useState<DarvasBox[]>([]);
+  const [bbSqueezeSignals, setBBSqueezeSignals] = useState<BBSqueeze[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showAnalysisModal, setShowAnalysisModal] = useState<string | null>(null);
   const [currentRecommendation, setCurrentRecommendation] = useState<any>(null);
   const [symbolData, setSymbolData] = useState<{[key: string]: {technicals: any, fundamentals: any}}>({});
   const [displayDate, setDisplayDate] = useState<string | null>(null);
+  const [bbSqueezeFilter, setBBSqueezeFilter] = useState<'ALL' | 'BUY' | 'SELL' | 'SQUEEZE' | 'BREAKOUT'>('ALL');
+  const [maCrossFilter, setMACrossFilter] = useState<'both' | '50ma' | '200ma'>('both');
+  const [darvasFilter, setDarvasFilter] = useState<'ALL' | 'broken' | 'active'>('ALL');
 
   // Convert date to Indian format (DD-MM-YYYY)
   const formatDateIndian = (dateStr: string | null) => {
@@ -152,6 +176,7 @@ export default function Cross50200Page() {
         let dataSupertrend: Crossover[] = [];
         let dataVolumeSpike: VolumeSpike[] = [];
         let dataDarvasBoxes: DarvasBox[] = [];
+        let dataBBSqueeze: BBSqueeze[] = [];
 
         // First, try to fetch ALL records to check permissions
         let latestDate: string | null = null;
@@ -274,6 +299,41 @@ export default function Cross50200Page() {
           } catch (err: any) {
             console.error('❌ Error accessing darvasboxes:', err.message);
           }
+
+          // Fetch BB Squeeze - use the same latestDate
+          try {
+            const testBBSqueeze = await getDocs(collection(db, 'bbsqueeze'));
+            console.log(`✅ Can access bbsqueeze: ${testBBSqueeze.docs.length} total documents`);
+
+            if (testBBSqueeze.docs.length > 0) {
+              // Log all unique dates in bbsqueeze collection
+              const allDates = testBBSqueeze.docs.map(doc => doc.data().date as string);
+              const uniqueDates = [...new Set(allDates)].sort().reverse();
+              console.log('📅 Available BB Squeeze dates:', uniqueDates.slice(0, 5));
+              console.log('📅 Looking for latestDate:', latestDate);
+
+              // Log a sample document to see its structure
+              if (testBBSqueeze.docs.length > 0) {
+                console.log('📄 Sample BB Squeeze document:', testBBSqueeze.docs[0].data());
+              }
+
+              const filteredBBSqueeze = testBBSqueeze.docs.filter(doc => doc.data().date === latestDate);
+              console.log(`🔍 Filtered BB Squeeze for date ${latestDate}: ${filteredBBSqueeze.length} records`);
+
+              if (filteredBBSqueeze.length > 0) {
+                console.log(`✅ Found ${filteredBBSqueeze.length} records in bbsqueeze for ${latestDate}`);
+                dataBBSqueeze = filteredBBSqueeze.map(doc => ({
+                  id: doc.id,
+                  ...doc.data()
+                } as BBSqueeze));
+                console.log('📊 First BB Squeeze signal:', dataBBSqueeze[0]);
+              } else {
+                console.warn(`⚠️ No BB Squeeze records found for ${latestDate}. Available dates:`, uniqueDates);
+              }
+            }
+          } catch (err: any) {
+            console.error('❌ Error accessing bbsqueeze:', err.message);
+          }
         }
 
         // If still no records found, fetch a sample to show what dates are available
@@ -340,12 +400,18 @@ export default function Cross50200Page() {
         dataSupertrend = dataSupertrend.sort((a, b) => Math.abs(b.crossPercent) - Math.abs(a.crossPercent));
         dataVolumeSpike = dataVolumeSpike.sort((a, b) => b.spikePercent - a.spikePercent);
         dataDarvasBoxes = dataDarvasBoxes.sort((a, b) => b.consolidationDays - a.consolidationDays);
+        dataBBSqueeze = dataBBSqueeze.sort((a, b) => {
+          // Sort by signal type priority: BUY > BREAKOUT > SQUEEZE > SELL
+          const priority: { [key: string]: number } = { 'BUY': 4, 'BREAKOUT': 3, 'SQUEEZE': 2, 'SELL': 1 };
+          return (priority[b.signalType] || 0) - (priority[a.signalType] || 0);
+        });
 
         setCrossovers50(data50);
         setCrossovers200(data200);
         setSupertrendCrossovers(dataSupertrend);
         setVolumeSpikes(dataVolumeSpike);
         setDarvasBoxes(dataDarvasBoxes);
+        setBBSqueezeSignals(dataBBSqueeze);
         setDisplayDate(latestDate);
 
         console.log('📊 Final counts:', {
@@ -354,6 +420,7 @@ export default function Cross50200Page() {
           supertrend: dataSupertrend.length,
           volumeSpikes: dataVolumeSpike.length,
           darvasBoxes: dataDarvasBoxes.length,
+          bbSqueeze: dataBBSqueeze.length,
           date: latestDate
         });
       } catch (error: any) {
@@ -756,6 +823,175 @@ export default function Cross50200Page() {
     );
   };
 
+  const renderBBSqueezeCard = (signal: BBSqueeze) => {
+    const displaySymbol = signal.symbol.replace(/^NS_/, '');
+
+    // Determine signal color and label
+    const getSignalStyle = (type: string) => {
+      switch (type) {
+        case 'BUY':
+          return { bg: 'bg-green-500/20', text: 'text-green-400', label: '🟢 BUY' };
+        case 'SELL':
+          return { bg: 'bg-red-500/20', text: 'text-red-400', label: '🔴 SELL' };
+        case 'SQUEEZE':
+          return { bg: 'bg-yellow-500/20', text: 'text-yellow-400', label: '🔒 SQUEEZE' };
+        case 'BREAKOUT':
+          return { bg: 'bg-blue-500/20', text: 'text-blue-400', label: '💥 BREAKOUT' };
+        default:
+          return { bg: 'bg-gray-500/20', text: 'text-gray-400', label: '⚪ NONE' };
+      }
+    };
+
+    const signalStyle = getSignalStyle(signal.signalType);
+
+    return (
+      <div className="bg-gray-50 dark:bg-[#1c2128] border border-gray-200 dark:border-[#30363d] rounded-xl p-4 hover:border-[#ff8c42] transition-colors">
+        {/* Header */}
+        <div className="flex justify-between items-center mb-3">
+          <div>
+            <h3 className="text-xl font-bold text-gray-900 dark:text-white">{displaySymbol}</h3>
+            <p className="text-xs text-gray-600 dark:text-[#8b949e] mt-0.5">BB Squeeze Strategy</p>
+          </div>
+          <span className={`px-3 py-1 text-xs font-semibold rounded ${signalStyle.bg} ${signalStyle.text}`}>
+            {signalStyle.label}
+          </span>
+        </div>
+
+        {/* Price & BB Levels */}
+        <div className="grid grid-cols-3 gap-2 mb-3">
+          <div className="bg-white dark:bg-[#0f1419] border border-gray-200 dark:border-[#30363d] rounded-lg p-2">
+            <p className="text-xs text-gray-600 dark:text-[#8b949e] mb-1">BB Upper</p>
+            <p className="text-xs font-semibold text-gray-900 dark:text-white">₹{signal.bbUpper.toFixed(2)}</p>
+          </div>
+          <div className="bg-white dark:bg-[#0f1419] border border-gray-200 dark:border-[#30363d] rounded-lg p-2">
+            <p className="text-xs text-gray-600 dark:text-[#8b949e] mb-1">Price</p>
+            <p className="text-xs font-semibold text-[#ff8c42]">₹{signal.currentPrice.toFixed(2)}</p>
+          </div>
+          <div className="bg-white dark:bg-[#0f1419] border border-gray-200 dark:border-[#30363d] rounded-lg p-2">
+            <p className="text-xs text-gray-600 dark:text-[#8b949e] mb-1">BB Lower</p>
+            <p className="text-xs font-semibold text-gray-900 dark:text-white">₹{signal.bbLower.toFixed(2)}</p>
+          </div>
+        </div>
+
+        {/* Indicators */}
+        <div className="bg-white dark:bg-[#0f1419] border border-gray-200 dark:border-[#30363d] rounded-lg p-3 mb-3">
+          <div className="grid grid-cols-2 gap-2 text-xs">
+            <div>
+              <span className="text-gray-600 dark:text-[#8b949e]">RSI:</span>
+              <span className={`ml-1 font-semibold ${
+                signal.rsi > 70 ? 'text-red-500' : signal.rsi > 60 ? 'text-green-500' : signal.rsi < 30 ? 'text-red-500' : 'text-gray-900 dark:text-white'
+              }`}>
+                {signal.rsi.toFixed(1)}
+              </span>
+            </div>
+            <div>
+              <span className="text-gray-600 dark:text-[#8b949e]">MACD:</span>
+              <span className={`ml-1 font-semibold ${signal.macd > 0 ? 'text-green-500' : 'text-red-500'}`}>
+                {signal.macd.toFixed(2)}
+              </span>
+            </div>
+            <div>
+              <span className="text-gray-600 dark:text-[#8b949e]">BB Width:</span>
+              <span className="ml-1 font-semibold text-gray-900 dark:text-white">{signal.bbWidthPercent.toFixed(2)}%</span>
+            </div>
+            <div>
+              <span className="text-gray-600 dark:text-[#8b949e]">Squeeze Days:</span>
+              <span className="ml-1 font-semibold text-gray-900 dark:text-white">{signal.daysInSqueeze}</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Signal Description */}
+        <div className={`border rounded-lg p-2 mb-3 ${
+          signal.signalType === 'BUY'
+            ? 'bg-green-500/10 border-green-500/30'
+            : signal.signalType === 'SELL'
+              ? 'bg-red-500/10 border-red-500/30'
+              : signal.signalType === 'SQUEEZE'
+                ? 'bg-yellow-500/10 border-yellow-500/30'
+                : 'bg-blue-500/10 border-blue-500/30'
+        }`}>
+          <p className={`text-xs ${
+            signal.signalType === 'BUY'
+              ? 'text-green-600 dark:text-green-400'
+              : signal.signalType === 'SELL'
+                ? 'text-red-600 dark:text-red-400'
+                : signal.signalType === 'SQUEEZE'
+                  ? 'text-yellow-600 dark:text-yellow-400'
+                  : 'text-blue-600 dark:text-blue-400'
+          }`}>
+            {signal.signalType === 'BUY'
+              ? `💡 Strong BUY signal! Price above BB upper (${signal.distanceToUpperPercent.toFixed(2)}%), RSI ${signal.rsi.toFixed(1)}, MACD positive.`
+              : signal.signalType === 'SELL'
+                ? `⚠️ SELL signal detected. Price below BB lower (${signal.distanceToLowerPercent.toFixed(2)}%), RSI ${signal.rsi.toFixed(1)}, MACD negative.`
+                : signal.signalType === 'SQUEEZE'
+                  ? `🔒 In squeeze for ${signal.daysInSqueeze} days. Watch for breakout! BB Width: ${signal.bbWidthPercent.toFixed(2)}%`
+                  : `💥 Breakout detected! Volatility expanding after ${signal.daysInSqueeze} day squeeze. Monitor for direction.`
+            }
+          </p>
+        </div>
+
+        {/* Squeeze Status */}
+        {signal.inSqueeze && (
+          <div className="bg-gray-100 dark:bg-[#30363d] border border-gray-200 dark:border-[#444c56] rounded-lg p-2 mb-3">
+            <div className="flex justify-between text-xs">
+              <span className="text-gray-600 dark:text-[#8b949e]">Proportion:</span>
+              <span className="font-semibold text-gray-900 dark:text-white">{signal.proportion.toFixed(2)}</span>
+            </div>
+            <div className="flex justify-between text-xs mt-1">
+              <span className="text-gray-600 dark:text-[#8b949e]">BB Breakout:</span>
+              <span className={`font-semibold ${signal.bbBreakout ? 'text-green-500' : 'text-gray-900 dark:text-white'}`}>
+                {signal.bbBreakout ? 'Yes ✓' : 'No'}
+              </span>
+            </div>
+          </div>
+        )}
+
+        {/* Action Buttons */}
+        <div className="flex gap-2 pt-3 border-t border-gray-200 dark:border-[#30363d]">
+          <button
+            onClick={(e) => {
+              const isBullish = signal.signalType === 'BUY' || signal.signalType === 'BREAKOUT';
+              const analysisText = `BB Squeeze ${signal.signalType} Signal Detected.\n\nIndicators:\n- Signal Type: ${signal.signalType}\n- Current Price: ₹${signal.currentPrice.toFixed(2)}\n- BB Upper: ₹${signal.bbUpper.toFixed(2)}\n- BB Lower: ₹${signal.bbLower.toFixed(2)}\n- BB MA: ₹${signal.bbMA.toFixed(2)}\n- BB Width: ${signal.bbWidthPercent.toFixed(2)}%\n- RSI: ${signal.rsi.toFixed(1)}\n- MACD: ${signal.macd.toFixed(2)}\n- Days in Squeeze: ${signal.daysInSqueeze}\n- In Squeeze: ${signal.inSqueeze ? 'Yes' : 'No'}\n- BB Breakout: ${signal.bbBreakout ? 'Yes' : 'No'}\n\n${
+                signal.signalType === 'BUY'
+                  ? `Strong bullish momentum detected. Price broke above BB upper band with RSI > 60 and positive MACD. Consider entry on pullbacks with stop below BB MA.`
+                  : signal.signalType === 'SELL'
+                    ? `Bearish pressure detected. Price fell below BB lower band with RSI < 40 and negative MACD. Avoid fresh longs or consider profit booking.`
+                    : signal.signalType === 'SQUEEZE'
+                      ? `Stock in consolidation (squeeze) for ${signal.daysInSqueeze} days. Volatility compression suggests potential explosive move. Watch for breakout direction.`
+                      : `Volatility expansion after ${signal.daysInSqueeze} day squeeze. Monitor price action and volume for directional clarity before entry.`
+              }`;
+
+              handleConvertToIdea(e, signal.symbol, displaySymbol, signal.currentPrice, isBullish, analysisText);
+            }}
+            className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 bg-gray-100 dark:bg-[#30363d] hover:bg-gray-200 dark:hover:bg-[#3c444d] border border-gray-200 dark:border-[#444c56] text-gray-700 dark:text-gray-300 text-xs font-semibold rounded-lg transition-colors"
+          >
+            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+            </svg>
+            <span>Convert to Idea</span>
+          </button>
+          <AnalysisButton onClick={async (e) => {
+            e.stopPropagation();
+
+            // Create a temporary crossover object for the handleAnalyze function
+            const tempCrossover: Crossover = {
+              id: signal.id,
+              symbol: signal.symbol,
+              date: signal.date,
+              crossoverType: 'bullish_cross',
+              yesterdayClose: signal.bbLower,
+              todayClose: signal.currentPrice,
+              crossPercent: 0,
+            };
+
+            await handleAnalyze(e, tempCrossover);
+          }} />
+        </div>
+      </div>
+    );
+  };
+
   const renderCrossoverCard = (crossover: Crossover, showBothLabel: boolean = false, isSupertrend: boolean = false) => {
     const isBullish = crossover.crossoverType === 'bullish_cross';
     const changePercent = ((crossover.todayClose - crossover.yesterdayClose) / crossover.yesterdayClose) * 100;
@@ -999,44 +1235,14 @@ export default function Cross50200Page() {
       <div className="px-5 mb-4">
         <div className="flex gap-2">
           <button
-            onClick={() => handleTabChange('both')}
+            onClick={() => handleTabChange('macross')}
             className={`px-4 py-2 rounded-lg text-sm font-semibold transition-colors ${
-              activeTab === 'both'
+              activeTab === 'macross'
                 ? 'bg-[#ff8c42] text-gray-900 dark:text-white'
                 : 'bg-gray-50 dark:bg-[#1c2128] text-gray-600 dark:text-[#8b949e] hover:bg-gray-100 dark:hover:bg-[#30363d]'
             }`}
           >
-            50 & 200 MA Both
-          </button>
-          <button
-            onClick={() => handleTabChange('50ma')}
-            className={`px-4 py-2 rounded-lg text-sm font-semibold transition-colors ${
-              activeTab === '50ma'
-                ? 'bg-[#ff8c42] text-gray-900 dark:text-white'
-                : 'bg-gray-50 dark:bg-[#1c2128] text-gray-600 dark:text-[#8b949e] hover:bg-gray-100 dark:hover:bg-[#30363d]'
-            }`}
-          >
-            50 MA Only
-          </button>
-          <button
-            onClick={() => handleTabChange('200ma')}
-            className={`px-4 py-2 rounded-lg text-sm font-semibold transition-colors ${
-              activeTab === '200ma'
-                ? 'bg-[#ff8c42] text-gray-900 dark:text-white'
-                : 'bg-gray-50 dark:bg-[#1c2128] text-gray-600 dark:text-[#8b949e] hover:bg-gray-100 dark:hover:bg-[#30363d]'
-            }`}
-          >
-            200 MA Only
-          </button>
-          <button
-            onClick={() => handleTabChange('supertrend')}
-            className={`px-4 py-2 rounded-lg text-sm font-semibold transition-colors ${
-              activeTab === 'supertrend'
-                ? 'bg-[#ff8c42] text-gray-900 dark:text-white'
-                : 'bg-gray-50 dark:bg-[#1c2128] text-gray-600 dark:text-[#8b949e] hover:bg-gray-100 dark:hover:bg-[#30363d]'
-            }`}
-          >
-            Supertrend
+            MA Cross
           </button>
           <button
             onClick={() => handleTabChange('volume')}
@@ -1058,6 +1264,16 @@ export default function Cross50200Page() {
           >
             Darvas Boxes
           </button>
+          <button
+            onClick={() => handleTabChange('bbsqueeze')}
+            className={`px-4 py-2 rounded-lg text-sm font-semibold transition-colors ${
+              activeTab === 'bbsqueeze'
+                ? 'bg-[#ff8c42] text-gray-900 dark:text-white'
+                : 'bg-gray-50 dark:bg-[#1c2128] text-gray-600 dark:text-[#8b949e] hover:bg-gray-100 dark:hover:bg-[#30363d]'
+            }`}
+          >
+            BB Squeeze
+          </button>
         </div>
       </div>
 
@@ -1076,26 +1292,101 @@ export default function Cross50200Page() {
             <p className="text-gray-600 dark:text-[#8b949e] text-lg">Loading crossovers...</p>
           </div>
         ) : (() => {
+          // Handle MA Cross tab with filters
+          if (activeTab === 'macross') {
+            let displayCrossovers: Crossover[] = [];
+
+            if (maCrossFilter === 'both') {
+              // Find stocks that crossed BOTH 50 MA and 200 MA
+              const symbols50 = new Set(crossovers50.map(c => c.symbol));
+              const symbols200 = new Set(crossovers200.map(c => c.symbol));
+              const commonSymbols = [...symbols50].filter(symbol => symbols200.has(symbol));
+
+              // Get crossovers for common symbols (show only 50 MA version to avoid duplicates)
+              displayCrossovers = crossovers50
+                .filter(c => commonSymbols.includes(c.symbol))
+                .sort((a, b) => Math.abs(b.crossPercent) - Math.abs(a.crossPercent));
+            } else if (maCrossFilter === '50ma') {
+              displayCrossovers = crossovers50;
+            } else if (maCrossFilter === '200ma') {
+              displayCrossovers = crossovers200;
+            }
+
+            return displayCrossovers.length === 0 ? (
+              <div className="text-center py-16">
+                <div className="text-6xl mb-4">📊</div>
+                <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">No crossovers found</h3>
+                <p className="text-gray-600 dark:text-[#8b949e]">
+                  {maCrossFilter === 'both'
+                    ? 'No stocks crossed both 50 MA and 200 MA today'
+                    : `No stocks crossed the ${maCrossFilter === '50ma' ? '50' : '200'} MA today`
+                  }
+                </p>
+              </div>
+            ) : (
+              <>
+                {/* Summary with Filter Buttons */}
+                <div className="mb-4">
+                  <div className="flex items-center gap-2 flex-wrap mb-3">
+                    <h2 className="text-xl font-bold text-gray-900 dark:text-white">MA Crossovers</h2>
+                    <span className="px-2 py-0.5 bg-[#ff8c42]/20 text-[#ff8c42] text-xs font-semibold rounded-full">
+                      {displayCrossovers.length} {displayCrossovers.length === 1 ? 'stock' : 'stocks'}
+                    </span>
+                  </div>
+
+                  {/* Filter Buttons */}
+                  <div className="flex gap-2 flex-wrap">
+                    <button
+                      onClick={() => setMACrossFilter('both')}
+                      className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors ${
+                        maCrossFilter === 'both'
+                          ? 'bg-[#ff8c42] text-white'
+                          : 'bg-gray-100 dark:bg-[#1c2128] text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-[#30363d]'
+                      }`}
+                    >
+                      50 & 200 MA Both ({(() => {
+                        const symbols50 = new Set(crossovers50.map(c => c.symbol));
+                        const symbols200 = new Set(crossovers200.map(c => c.symbol));
+                        return [...symbols50].filter(symbol => symbols200.has(symbol)).length;
+                      })()})
+                    </button>
+                    <button
+                      onClick={() => setMACrossFilter('50ma')}
+                      className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors ${
+                        maCrossFilter === '50ma'
+                          ? 'bg-[#ff8c42] text-white'
+                          : 'bg-gray-100 dark:bg-[#1c2128] text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-[#30363d]'
+                      }`}
+                    >
+                      50 MA Only ({crossovers50.length})
+                    </button>
+                    <button
+                      onClick={() => setMACrossFilter('200ma')}
+                      className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors ${
+                        maCrossFilter === '200ma'
+                          ? 'bg-[#ff8c42] text-white'
+                          : 'bg-gray-100 dark:bg-[#1c2128] text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-[#30363d]'
+                      }`}
+                    >
+                      200 MA Only ({crossovers200.length})
+                    </button>
+                  </div>
+                </div>
+
+                {/* Cards Grid */}
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {displayCrossovers.map((crossover) => (
+                    <div key={`${crossover.symbol}-${crossover.ma_period || 'st'}-${crossover.id}`}>
+                      {renderCrossoverCard(crossover, maCrossFilter === 'both', false)}
+                    </div>
+                  ))}
+                </div>
+              </>
+            );
+          }
+
           // Filter stocks based on active tab
           let displayCrossovers: Crossover[] = [];
-
-          if (activeTab === 'both') {
-            // Find stocks that crossed BOTH 50 MA and 200 MA
-            const symbols50 = new Set(crossovers50.map(c => c.symbol));
-            const symbols200 = new Set(crossovers200.map(c => c.symbol));
-            const commonSymbols = [...symbols50].filter(symbol => symbols200.has(symbol));
-
-            // Get crossovers for common symbols (show only 50 MA version to avoid duplicates)
-            displayCrossovers = crossovers50
-              .filter(c => commonSymbols.includes(c.symbol))
-              .sort((a, b) => Math.abs(b.crossPercent) - Math.abs(a.crossPercent));
-          } else if (activeTab === '50ma') {
-            displayCrossovers = crossovers50;
-          } else if (activeTab === '200ma') {
-            displayCrossovers = crossovers200;
-          } else if (activeTab === 'supertrend') {
-            displayCrossovers = supertrendCrossovers;
-          }
 
           // Handle volume spikes separately
           if (activeTab === 'volume') {
@@ -1113,11 +1404,6 @@ export default function Cross50200Page() {
                   <span className="px-2 py-0.5 bg-[#ff8c42]/20 text-[#ff8c42] text-xs font-semibold rounded-full">
                     {volumeSpikes.length} {volumeSpikes.length === 1 ? 'stock' : 'stocks'}
                   </span>
-                  {displayDate && (
-                    <span className="px-2 py-0.5 bg-blue-500/20 text-blue-400 text-xs font-semibold rounded-full">
-                      as on {formatDateIndian(displayDate)}
-                    </span>
-                  )}
                 </div>
 
                 {/* Cards Grid */}
@@ -1176,8 +1462,175 @@ export default function Cross50200Page() {
             );
           }
 
+          // Handle BB Squeeze separately
+          if (activeTab === 'bbsqueeze') {
+            // Filter BB Squeeze signals based on selected filter
+            const filteredBBSqueeze = bbSqueezeFilter === 'ALL'
+              ? bbSqueezeSignals
+              : bbSqueezeSignals.filter(s => s.signalType === bbSqueezeFilter);
+
+            return bbSqueezeSignals.length === 0 ? (
+              <div className="text-center py-16">
+                <div className="text-6xl mb-4">🔒</div>
+                <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">No BB Squeeze signals found</h3>
+                <p className="text-gray-600 dark:text-[#8b949e]">No stocks showing BB Squeeze patterns today</p>
+              </div>
+            ) : (
+              <>
+                {/* Summary with Filter Buttons */}
+                <div className="mb-4">
+                  <div className="flex items-center gap-2 flex-wrap mb-3">
+                    <h2 className="text-xl font-bold text-gray-900 dark:text-white">BB Squeeze Signals</h2>
+                    <span className="px-2 py-0.5 bg-[#ff8c42]/20 text-[#ff8c42] text-xs font-semibold rounded-full">
+                      {bbSqueezeSignals.length} {bbSqueezeSignals.length === 1 ? 'stock' : 'stocks'}
+                    </span>
+                  </div>
+
+                  {/* Filter Buttons */}
+                  <div className="flex gap-2 flex-wrap">
+                    <button
+                      onClick={() => setBBSqueezeFilter('ALL')}
+                      className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors ${
+                        bbSqueezeFilter === 'ALL'
+                          ? 'bg-[#ff8c42] text-white'
+                          : 'bg-gray-100 dark:bg-[#1c2128] text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-[#30363d]'
+                      }`}
+                    >
+                      All ({bbSqueezeSignals.length})
+                    </button>
+                    <button
+                      onClick={() => setBBSqueezeFilter('BUY')}
+                      className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors ${
+                        bbSqueezeFilter === 'BUY'
+                          ? 'bg-green-500 text-white'
+                          : 'bg-gray-100 dark:bg-[#1c2128] text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-[#30363d]'
+                      }`}
+                    >
+                      🟢 BUY ({bbSqueezeSignals.filter(s => s.signalType === 'BUY').length})
+                    </button>
+                    <button
+                      onClick={() => setBBSqueezeFilter('SELL')}
+                      className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors ${
+                        bbSqueezeFilter === 'SELL'
+                          ? 'bg-red-500 text-white'
+                          : 'bg-gray-100 dark:bg-[#1c2128] text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-[#30363d]'
+                      }`}
+                    >
+                      🔴 SELL ({bbSqueezeSignals.filter(s => s.signalType === 'SELL').length})
+                    </button>
+                    <button
+                      onClick={() => setBBSqueezeFilter('SQUEEZE')}
+                      className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors ${
+                        bbSqueezeFilter === 'SQUEEZE'
+                          ? 'bg-yellow-500 text-white'
+                          : 'bg-gray-100 dark:bg-[#1c2128] text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-[#30363d]'
+                      }`}
+                    >
+                      🔒 SQUEEZE ({bbSqueezeSignals.filter(s => s.signalType === 'SQUEEZE').length})
+                    </button>
+                    <button
+                      onClick={() => setBBSqueezeFilter('BREAKOUT')}
+                      className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors ${
+                        bbSqueezeFilter === 'BREAKOUT'
+                          ? 'bg-blue-500 text-white'
+                          : 'bg-gray-100 dark:bg-[#1c2128] text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-[#30363d]'
+                      }`}
+                    >
+                      💥 BREAKOUT ({bbSqueezeSignals.filter(s => s.signalType === 'BREAKOUT').length})
+                    </button>
+                  </div>
+                </div>
+
+                {/* Cards Grid */}
+                {filteredBBSqueeze.length === 0 ? (
+                  <div className="text-center py-12">
+                    <div className="text-4xl mb-3">🔍</div>
+                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-1">No {bbSqueezeFilter} signals</h3>
+                    <p className="text-sm text-gray-600 dark:text-[#8b949e]">Try selecting a different filter</p>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
+                    {filteredBBSqueeze.map((signal) => (
+                      <div key={signal.id}>
+                        {renderBBSqueezeCard(signal)}
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* BB Squeeze Rules Reference */}
+                <div className="mt-8 bg-indigo-50 dark:bg-indigo-900/10 border border-indigo-200 dark:border-indigo-800 rounded-xl p-6">
+                  <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+                    <span className="text-2xl">🔒</span>
+                    BB Squeeze Breakout Strategy
+                  </h3>
+                  <div className="space-y-3 text-sm text-gray-700 dark:text-gray-300">
+                    <div>
+                      <span className="font-semibold text-indigo-600 dark:text-indigo-400">Market Cap Filter:</span> &gt;1000 Cr
+                    </div>
+
+                    <div className="pt-2 border-t border-indigo-200 dark:border-indigo-800">
+                      <span className="font-semibold text-indigo-600 dark:text-indigo-400">Indicators Used:</span>
+                      <ul className="ml-6 mt-1 space-y-1 text-xs">
+                        <li>• <strong>Bollinger Bands:</strong> 20-period MA, 2 standard deviations</li>
+                        <li>• <strong>Keltner Channels:</strong> 14-period EMA, 1.5 ATR</li>
+                        <li>• <strong>RSI:</strong> 14-period Relative Strength Index</li>
+                        <li>• <strong>MACD:</strong> 12/26/9 Moving Average Convergence Divergence</li>
+                      </ul>
+                    </div>
+
+                    <div className="pt-2 border-t border-indigo-200 dark:border-indigo-800">
+                      <span className="font-semibold text-indigo-600 dark:text-indigo-400">Signal Types:</span>
+                      <ul className="ml-6 mt-1 space-y-1 text-xs">
+                        <li>• <strong className="text-green-600 dark:text-green-400">🟢 BUY:</strong> Price &gt; BB Upper + RSI &gt; 60 + MACD &gt; 0</li>
+                        <li>• <strong className="text-red-600 dark:text-red-400">🔴 SELL:</strong> Price &lt; BB Lower + RSI &lt; 40 + MACD &lt; 0</li>
+                        <li>• <strong className="text-yellow-600 dark:text-yellow-400">🔒 SQUEEZE:</strong> BB inside Keltner (proportion &lt; 1.0)</li>
+                        <li>• <strong className="text-blue-600 dark:text-blue-400">💥 BREAKOUT:</strong> BB breaks out of Keltner (proportion crosses 1.0)</li>
+                      </ul>
+                    </div>
+
+                    <div className="pt-2 border-t border-indigo-200 dark:border-indigo-800">
+                      <span className="font-semibold text-indigo-600 dark:text-indigo-400">Trading Logic:</span>
+                      <ul className="ml-6 mt-1 space-y-1 text-xs">
+                        <li>1. <strong>Squeeze Phase:</strong> Low volatility consolidation (BB inside Keltner)</li>
+                        <li>2. <strong>Breakout Phase:</strong> Volatility expansion (BB breaks outside Keltner)</li>
+                        <li>3. <strong>BUY Condition:</strong> Strong bullish breakout with momentum confirmation</li>
+                        <li>4. <strong>SELL Condition:</strong> Strong bearish breakdown with momentum confirmation</li>
+                      </ul>
+                    </div>
+
+                    <div className="pt-2 border-t border-indigo-200 dark:border-indigo-800">
+                      <span className="font-semibold text-indigo-600 dark:text-indigo-400">Risk Management:</span>
+                      <ul className="ml-6 mt-1 space-y-1 text-xs">
+                        <li>• <strong>Entry:</strong> On breakout or pullback to BB band</li>
+                        <li>• <strong>Stop Loss:</strong> Below BB MA (for longs) or above BB MA (for shorts)</li>
+                        <li>• <strong>Target:</strong> Based on BB width and recent volatility</li>
+                        <li>• <strong>Position Sizing:</strong> Risk 1-2% of capital per trade</li>
+                      </ul>
+                    </div>
+
+                    <div className="pt-2 border-t border-indigo-200 dark:border-indigo-800">
+                      <span className="font-semibold text-indigo-600 dark:text-indigo-400">Key Metrics:</span>
+                      <ul className="ml-6 mt-1 space-y-1 text-xs">
+                        <li>• <strong>BB Width %:</strong> Measures volatility (narrow = squeeze, wide = breakout)</li>
+                        <li>• <strong>Proportion:</strong> Keltner width / BB width (&lt;1.0 = squeeze, &gt;1.0 = expansion)</li>
+                        <li>• <strong>Days in Squeeze:</strong> Longer squeeze = stronger potential move</li>
+                        <li>• <strong>Distance to Bands:</strong> Shows price position relative to BB bands</li>
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+              </>
+            );
+          }
+
           // Handle Darvas boxes separately
           if (activeTab === 'darvas') {
+            // Filter Darvas boxes based on selected filter
+            const filteredDarvas = darvasFilter === 'ALL'
+              ? darvasBoxes
+              : darvasBoxes.filter(b => b.status === darvasFilter);
+
             return darvasBoxes.length === 0 ? (
               <div className="text-center py-16">
                 <div className="text-6xl mb-4">📦</div>
@@ -1186,33 +1639,66 @@ export default function Cross50200Page() {
               </div>
             ) : (
               <>
-                {/* Summary */}
-                <div className="mb-4 flex items-center gap-2 flex-wrap">
-                  <h2 className="text-xl font-bold text-gray-900 dark:text-white">Darvas Box Patterns</h2>
-                  <span className="px-2 py-0.5 bg-[#ff8c42]/20 text-[#ff8c42] text-xs font-semibold rounded-full">
-                    {darvasBoxes.length} {darvasBoxes.length === 1 ? 'stock' : 'stocks'}
-                  </span>
-                  <span className="px-2 py-0.5 bg-green-500/20 text-green-400 text-xs font-semibold rounded-full">
-                    {darvasBoxes.filter(b => b.status === 'broken').length} Breakouts
-                  </span>
-                  <span className="px-2 py-0.5 bg-blue-500/20 text-blue-400 text-xs font-semibold rounded-full">
-                    {darvasBoxes.filter(b => b.status === 'active').length} Active
-                  </span>
-                  {displayDate && (
-                    <span className="px-2 py-0.5 bg-purple-500/20 text-purple-400 text-xs font-semibold rounded-full">
-                      as on {formatDateIndian(displayDate)}
+                {/* Summary with Filter Buttons */}
+                <div className="mb-4">
+                  <div className="flex items-center gap-2 flex-wrap mb-3">
+                    <h2 className="text-xl font-bold text-gray-900 dark:text-white">Darvas Box Patterns</h2>
+                    <span className="px-2 py-0.5 bg-[#ff8c42]/20 text-[#ff8c42] text-xs font-semibold rounded-full">
+                      {darvasBoxes.length} {darvasBoxes.length === 1 ? 'stock' : 'stocks'}
                     </span>
-                  )}
+                  </div>
+
+                  {/* Filter Buttons */}
+                  <div className="flex gap-2 flex-wrap">
+                    <button
+                      onClick={() => setDarvasFilter('ALL')}
+                      className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors ${
+                        darvasFilter === 'ALL'
+                          ? 'bg-[#ff8c42] text-white'
+                          : 'bg-gray-100 dark:bg-[#1c2128] text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-[#30363d]'
+                      }`}
+                    >
+                      All ({darvasBoxes.length})
+                    </button>
+                    <button
+                      onClick={() => setDarvasFilter('broken')}
+                      className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors ${
+                        darvasFilter === 'broken'
+                          ? 'bg-green-500 text-white'
+                          : 'bg-gray-100 dark:bg-[#1c2128] text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-[#30363d]'
+                      }`}
+                    >
+                      🟢 Breakouts ({darvasBoxes.filter(b => b.status === 'broken').length})
+                    </button>
+                    <button
+                      onClick={() => setDarvasFilter('active')}
+                      className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors ${
+                        darvasFilter === 'active'
+                          ? 'bg-blue-500 text-white'
+                          : 'bg-gray-100 dark:bg-[#1c2128] text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-[#30363d]'
+                      }`}
+                    >
+                      🟦 Active ({darvasBoxes.filter(b => b.status === 'active').length})
+                    </button>
+                  </div>
                 </div>
 
                 {/* Cards Grid */}
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
-                  {darvasBoxes.map((box) => (
-                    <div key={box.id}>
-                      {renderDarvasBoxCard(box)}
-                    </div>
-                  ))}
-                </div>
+                {filteredDarvas.length === 0 ? (
+                  <div className="text-center py-12">
+                    <div className="text-4xl mb-3">🔍</div>
+                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-1">No {darvasFilter === 'broken' ? 'breakout' : 'active'} boxes</h3>
+                    <p className="text-sm text-gray-600 dark:text-[#8b949e]">Try selecting a different filter</p>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
+                    {filteredDarvas.map((box) => (
+                      <div key={box.id}>
+                        {renderDarvasBoxCard(box)}
+                      </div>
+                    ))}
+                  </div>
+                )}
 
                 {/* Darvas Box Rules Reference */}
                 <div className="mt-8 bg-purple-50 dark:bg-purple-900/10 border border-purple-200 dark:border-purple-800 rounded-xl p-6">
@@ -1276,54 +1762,7 @@ export default function Cross50200Page() {
             );
           }
 
-          return displayCrossovers.length === 0 ? (
-            <div className="text-center py-16">
-              <div className="text-6xl mb-4">📊</div>
-              <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">No crossovers found</h3>
-              <p className="text-gray-600 dark:text-[#8b949e]">
-                {activeTab === 'both'
-                  ? 'No stocks crossed both 50 MA and 200 MA today'
-                  : activeTab === 'supertrend'
-                    ? 'No supertrend crossovers found today'
-                    : `No stocks crossed the ${activeTab === '50ma' ? '50' : '200'} MA today`
-                }
-              </p>
-            </div>
-          ) : (
-            <>
-              {/* Summary */}
-              <div className="mb-4 flex items-center gap-2 flex-wrap">
-                <h2 className="text-xl font-bold text-gray-900 dark:text-white">
-                  {activeTab === 'both'
-                    ? 'Stocks Crossing Both 50 MA & 200 MA'
-                    : activeTab === 'supertrend'
-                      ? 'Supertrend Crossovers'
-                      : `${activeTab === '50ma' ? '50 MA' : '200 MA'} Crossovers`
-                  }
-                </h2>
-                <span className="px-2 py-0.5 bg-[#ff8c42]/20 text-[#ff8c42] text-xs font-semibold rounded-full">
-                  {activeTab === 'both'
-                    ? `${new Set(displayCrossovers.map(c => c.symbol)).size} ${new Set(displayCrossovers.map(c => c.symbol)).size === 1 ? 'stock' : 'stocks'}`
-                    : `${displayCrossovers.length} ${displayCrossovers.length === 1 ? 'stock' : 'stocks'}`
-                  }
-                </span>
-                {displayDate && (
-                  <span className="px-2 py-0.5 bg-blue-500/20 text-blue-400 text-xs font-semibold rounded-full">
-                    as on {formatDateIndian(displayDate)}
-                  </span>
-                )}
-              </div>
-
-              {/* Cards Grid */}
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {displayCrossovers.map((crossover) => (
-                  <div key={`${crossover.symbol}-${crossover.ma_period || 'st'}-${crossover.id}`}>
-                    {renderCrossoverCard(crossover, activeTab === 'both', activeTab === 'supertrend')}
-                  </div>
-                ))}
-              </div>
-            </>
-          );
+          return null;
         })()}
       </div>
 

@@ -485,6 +485,192 @@ def detect_volume_spike(symbol, ma_period=20, spike_threshold=1.5):
         print(f"  ❌ Error for {symbol}: {str(e)}")
         return None
 
+def calculate_atr(df, period=14):
+    """Calculate Average True Range (ATR)"""
+    high = df['High']
+    low = df['Low']
+    close = df['Close']
+
+    tr1 = high - low
+    tr2 = abs(high - close.shift())
+    tr3 = abs(low - close.shift())
+
+    tr = pd.DataFrame({'tr1': tr1, 'tr2': tr2, 'tr3': tr3}).max(axis=1)
+    atr = tr.rolling(window=period).mean()
+
+    return atr
+
+def calculate_rsi(df, period=14):
+    """Calculate Relative Strength Index (RSI)"""
+    close = df['Close']
+    delta = close.diff()
+
+    gain = (delta.where(delta > 0, 0)).rolling(window=period).mean()
+    loss = (-delta.where(delta < 0, 0)).rolling(window=period).mean()
+
+    rs = gain / loss
+    rsi = 100 - (100 / (1 + rs))
+
+    return rsi
+
+def calculate_macd(df, fast=12, slow=26, signal=9):
+    """Calculate MACD (Moving Average Convergence Divergence)"""
+    close = df['Close']
+
+    ema_fast = close.ewm(span=fast, adjust=False).mean()
+    ema_slow = close.ewm(span=slow, adjust=False).mean()
+
+    macd_line = ema_fast - ema_slow
+    signal_line = macd_line.ewm(span=signal, adjust=False).mean()
+    histogram = macd_line - signal_line
+
+    return macd_line, signal_line, histogram
+
+def detect_bb_squeeze_breakout(symbol, bb_period=20, bb_std=2, keltner_period=14, keltner_mult=1.5):
+    """
+    Detect BB Squeeze and Breakout signals based on AmiBroker AFL strategy
+
+    Returns:
+        dict with signal details or None (error) or 'no_signal'
+    """
+    try:
+        # Check market cap filter first (>1000 Cr)
+        meets_filter, market_cap_cr = check_market_cap_filter(symbol)
+        if not meets_filter:
+            return None  # Skip stocks with market cap < 1000 Cr
+
+        # Get 100 days of data (enough for all calculations)
+        df = nse_fetcher.get_data(symbol, days=100)
+
+        if df.empty or len(df) < 50:
+            return None
+
+        # Rename columns to uppercase
+        df = df.rename(columns={
+            'date': 'Date',
+            'open': 'Open',
+            'high': 'High',
+            'low': 'Low',
+            'close': 'Close',
+            'volume': 'Volume'
+        })
+
+        # Calculate Bollinger Bands (20-period, 2 std)
+        close = df['Close']
+        bb_ma = close.rolling(window=bb_period).mean()
+        bb_std_dev = close.rolling(window=bb_period).std()
+        bb_upper = bb_ma + (bb_std * bb_std_dev)
+        bb_lower = bb_ma - (bb_std * bb_std_dev)
+
+        # Calculate Keltner Channels (14-period, 1.5 ATR)
+        keltner_ma = close.rolling(window=keltner_period).mean()
+        atr = calculate_atr(df, period=keltner_period)
+        keltner_upper = keltner_ma + (keltner_mult * atr)
+        keltner_lower = keltner_ma - (keltner_mult * atr)
+
+        # Detect BB Squeeze (BB inside Keltner)
+        bb_squeeze = (bb_upper <= keltner_upper) & (bb_lower >= keltner_lower)
+
+        # Calculate squeeze proportion (Keltner width / BB width)
+        keltner_width = keltner_upper - keltner_lower
+        bb_width = bb_upper - bb_lower
+        proportion = keltner_width / bb_width
+
+        # Calculate RSI
+        rsi = calculate_rsi(df, period=14)
+
+        # Calculate MACD
+        macd_line, signal_line, histogram = calculate_macd(df)
+
+        # Get current values (last row)
+        current_close = float(close.iloc[-1])
+        current_bb_upper = float(bb_upper.iloc[-1]) if not pd.isna(bb_upper.iloc[-1]) else 0
+        current_bb_lower = float(bb_lower.iloc[-1]) if not pd.isna(bb_lower.iloc[-1]) else 0
+        current_bb_ma = float(bb_ma.iloc[-1]) if not pd.isna(bb_ma.iloc[-1]) else 0
+        current_rsi = float(rsi.iloc[-1]) if not pd.isna(rsi.iloc[-1]) else 0
+        current_macd = float(macd_line.iloc[-1]) if not pd.isna(macd_line.iloc[-1]) else 0
+        current_squeeze = bool(bb_squeeze.iloc[-1]) if not pd.isna(bb_squeeze.iloc[-1]) else False
+        current_proportion = float(proportion.iloc[-1]) if not pd.isna(proportion.iloc[-1]) else 0
+
+        # Get previous values
+        prev_close = float(close.iloc[-2])
+        prev_bb_upper = float(bb_upper.iloc[-2]) if not pd.isna(bb_upper.iloc[-2]) else 0
+        prev_bb_lower = float(bb_lower.iloc[-2]) if not pd.isna(bb_lower.iloc[-2]) else 0
+        prev_squeeze = bool(bb_squeeze.iloc[-2]) if not pd.isna(bb_squeeze.iloc[-2]) else False
+        prev_proportion = float(proportion.iloc[-2]) if not pd.isna(proportion.iloc[-2]) else 0
+
+        # Calculate days in squeeze (consecutive squeeze days)
+        days_in_squeeze = 0
+        for i in range(len(bb_squeeze) - 1, -1, -1):
+            if bb_squeeze.iloc[i]:
+                days_in_squeeze += 1
+            else:
+                break
+
+        # Detect BB Breakout (proportion crosses above 1.0)
+        bb_breakout = (prev_proportion < 1.0) and (current_proportion >= 1.0)
+
+        # Check BUY signal conditions
+        buy_condition_1 = current_close > current_bb_upper  # Close > BB Top
+        buy_condition_2 = prev_close > prev_bb_upper  # Previous close > BB Top (confirmation)
+        buy_condition_3 = current_rsi > 60  # RSI > 60 (strong momentum)
+        buy_condition_4 = current_macd > 0  # MACD > 0 (uptrend)
+
+        buy_signal = buy_condition_1 and buy_condition_2 and buy_condition_3 and buy_condition_4
+
+        # Check SELL signal conditions
+        sell_condition_1 = current_close < current_bb_lower  # Close < BB Bottom
+        sell_condition_2 = prev_close < current_bb_lower  # Previous close < BB Bottom (confirmation)
+        sell_condition_3 = current_rsi < 40  # RSI < 40 (weak momentum)
+        sell_condition_4 = current_macd < 0  # MACD < 0 (downtrend)
+
+        sell_signal = sell_condition_1 and sell_condition_2 and sell_condition_3 and sell_condition_4
+
+        # Calculate distance from BB bands
+        distance_to_upper = ((current_bb_upper - current_close) / current_close) * 100
+        distance_to_lower = ((current_close - current_bb_lower) / current_close) * 100
+
+        # Calculate volatility (BB width as % of price)
+        bb_width_percent = ((current_bb_upper - current_bb_lower) / current_bb_ma) * 100
+
+        # Determine signal type
+        signal_type = None
+        if buy_signal:
+            signal_type = 'BUY'
+        elif sell_signal:
+            signal_type = 'SELL'
+        elif current_squeeze:
+            signal_type = 'SQUEEZE'  # In squeeze, watching for breakout
+        elif bb_breakout:
+            signal_type = 'BREAKOUT'  # Just broke out of squeeze
+        else:
+            signal_type = 'NONE'
+
+        # Only return signals we care about
+        if signal_type in ['BUY', 'SELL', 'SQUEEZE', 'BREAKOUT']:
+            return {
+                'type': signal_type,
+                'current_price': current_close,
+                'bb_upper': current_bb_upper,
+                'bb_lower': current_bb_lower,
+                'bb_ma': current_bb_ma,
+                'bb_width_percent': bb_width_percent,
+                'rsi': current_rsi,
+                'macd': current_macd,
+                'in_squeeze': current_squeeze,
+                'days_in_squeeze': days_in_squeeze,
+                'proportion': current_proportion,
+                'bb_breakout': bb_breakout,
+                'distance_to_upper_percent': distance_to_upper,
+                'distance_to_lower_percent': distance_to_lower
+            }
+        else:
+            return {'type': 'no_signal'}
+
+    except Exception as e:
+        print(f"  ❌ Error for {symbol}: {str(e)}")
+        return None
+
 def detect_darvas_box(symbol, lookback_weeks=52, consolidation_weeks=3, breakout_threshold=0.01):
     """
     Detect Darvas Box patterns (Optimized per Nicolas Darvas methodology):
@@ -743,8 +929,8 @@ def get_last_trading_day():
 
     return target_date.strftime('%Y-%m-%d')
 
-def save_to_firebase(crossovers_50, crossovers_200, supertrend_crosses, volume_spikes, darvas_boxes):
-    """Save crossover, volume spike, and Darvas box data to Firebase collections"""
+def save_to_firebase(crossovers_50, crossovers_200, supertrend_crosses, volume_spikes, darvas_boxes, bb_squeeze_signals):
+    """Save crossover, volume spike, Darvas box, and BB Squeeze data to Firebase collections"""
     try:
         today = get_last_trading_day()
 
@@ -774,6 +960,11 @@ def save_to_firebase(crossovers_50, crossovers_200, supertrend_crosses, volume_s
         # Delete old Darvas boxes
         darvas_ref = db.collection('darvasboxes')
         for doc in darvas_ref.where('date', '==', today).stream():
+            doc.reference.delete()
+
+        # Delete old BB Squeeze signals
+        bb_squeeze_ref = db.collection('bbsqueeze')
+        for doc in bb_squeeze_ref.where('date', '==', today).stream():
             doc.reference.delete()
 
         # Save 50 MA crossovers
@@ -934,6 +1125,41 @@ def save_to_firebase(crossovers_50, crossovers_200, supertrend_crosses, volume_s
 
             doc_ref.set(doc_data)
 
+        # Save BB Squeeze signals
+        print(f'💾 Saving {len(bb_squeeze_signals)} signals to bbsqueeze collection...')
+        for signal in bb_squeeze_signals:
+            symbol_with_prefix = f"NS_{signal['symbol']}" if not signal['symbol'].startswith('NS_') else signal['symbol']
+
+            # Get lastPrice from DuckDB
+            last_price = get_last_price(signal['symbol'])
+
+            doc_ref = bb_squeeze_ref.document(f"{symbol_with_prefix}_{today}")
+            doc_data = {
+                'symbol': symbol_with_prefix,
+                'date': today,
+                'signalType': signal['type'],  # 'BUY', 'SELL', 'SQUEEZE', 'BREAKOUT'
+                'currentPrice': signal['current_price'],
+                'bbUpper': signal['bb_upper'],
+                'bbLower': signal['bb_lower'],
+                'bbMA': signal['bb_ma'],
+                'bbWidthPercent': signal['bb_width_percent'],
+                'rsi': signal['rsi'],
+                'macd': signal['macd'],
+                'inSqueeze': signal['in_squeeze'],
+                'daysInSqueeze': signal['days_in_squeeze'],
+                'proportion': signal['proportion'],
+                'bbBreakout': signal['bb_breakout'],
+                'distanceToUpperPercent': signal['distance_to_upper_percent'],
+                'distanceToLowerPercent': signal['distance_to_lower_percent'],
+                'createdAt': firestore.SERVER_TIMESTAMP
+            }
+
+            # Add lastPrice if available (from DuckDB)
+            if last_price is not None:
+                doc_data['lastPrice'] = last_price
+
+            doc_ref.set(doc_data)
+
         print('✅ Data saved to Firebase successfully')
 
     except Exception as e:
@@ -942,8 +1168,8 @@ def save_to_firebase(crossovers_50, crossovers_200, supertrend_crosses, volume_s
         traceback.print_exc()
 
 def main():
-    """Main function to detect MA, Supertrend crossovers, Volume Spikes, and Darvas Boxes"""
-    print('🔍 Stock Screeners: MA & Supertrend Crossovers, Volume Spikes & Darvas Boxes')
+    """Main function to detect MA, Supertrend crossovers, Volume Spikes, Darvas Boxes & BB Squeeze"""
+    print('🔍 Stock Screeners: MA & Supertrend Crossovers, Volume Spikes, Darvas Boxes & BB Squeeze')
     print('=' * 80)
 
     # Get all symbols
@@ -966,13 +1192,18 @@ def main():
     darvas_boxes_active = []
     darvas_boxes_broken = []
     darvas_boxes_false = []
+    bb_squeeze_buy = []
+    bb_squeeze_sell = []
+    bb_squeeze_squeeze = []
+    bb_squeeze_breakout = []
     all_50ma_crosses = []  # Combined for Firebase
     all_200ma_crosses = []  # Combined for Firebase
     all_supertrend_crosses = []  # Combined for Firebase
     all_volume_spikes = []  # For Firebase
     all_darvas_boxes = []  # For Firebase
+    all_bb_squeeze = []  # For Firebase
 
-    print('🔄 Scanning for crossovers, volume spikes, and Darvas boxes...\n')
+    print('🔄 Scanning for crossovers, volume spikes, Darvas boxes, and BB Squeeze...\n')
 
     for i, symbol in enumerate(symbols):
         if (i + 1) % 50 == 0:
@@ -1027,8 +1258,22 @@ def main():
             elif result_darvas['status'] == 'false_breakout':
                 darvas_boxes_false.append(data_darvas)
 
+        # Check BB Squeeze
+        result_bb = detect_bb_squeeze_breakout(symbol)
+        if result_bb and result_bb['type'] != 'no_signal':
+            data_bb = {'symbol': symbol, **result_bb}
+            all_bb_squeeze.append(data_bb)
+            if result_bb['type'] == 'BUY':
+                bb_squeeze_buy.append(data_bb)
+            elif result_bb['type'] == 'SELL':
+                bb_squeeze_sell.append(data_bb)
+            elif result_bb['type'] == 'SQUEEZE':
+                bb_squeeze_squeeze.append(data_bb)
+            elif result_bb['type'] == 'BREAKOUT':
+                bb_squeeze_breakout.append(data_bb)
+
     # Save to Firebase
-    save_to_firebase(all_50ma_crosses, all_200ma_crosses, all_supertrend_crosses, all_volume_spikes, all_darvas_boxes)
+    save_to_firebase(all_50ma_crosses, all_200ma_crosses, all_supertrend_crosses, all_volume_spikes, all_darvas_boxes, all_bb_squeeze)
 
     # Print results
     print('\n' + '=' * 80)
@@ -1207,6 +1452,70 @@ def main():
     else:
         print('  No false breakouts today')
 
+    # BB Squeeze Results
+    print(f'\n💰 BB SQUEEZE BREAKOUT ({len(all_bb_squeeze)} total):')
+    print('-' * 80)
+
+    # BUY Signals
+    if bb_squeeze_buy:
+        print(f'\n🟢 BUY SIGNALS ({len(bb_squeeze_buy)} stocks):')
+        bb_squeeze_buy.sort(key=lambda x: x['rsi'], reverse=True)
+        print(f"{'Symbol':<12} {'Price':<12} {'RSI':<8} {'MACD':<10} {'BB Width%':<12}")
+        print('-' * 80)
+        for signal in bb_squeeze_buy[:10]:  # Show top 10
+            print(f"{signal['symbol']:<12} "
+                  f"₹{signal['current_price']:<11.2f} "
+                  f"{signal['rsi']:>6.2f} "
+                  f"{signal['macd']:>8.2f} "
+                  f"{signal['bb_width_percent']:>10.2f}%")
+    else:
+        print('  No BUY signals today')
+
+    # SELL Signals
+    if bb_squeeze_sell:
+        print(f'\n🔴 SELL SIGNALS ({len(bb_squeeze_sell)} stocks):')
+        bb_squeeze_sell.sort(key=lambda x: x['rsi'])
+        print(f"{'Symbol':<12} {'Price':<12} {'RSI':<8} {'MACD':<10} {'BB Width%':<12}")
+        print('-' * 80)
+        for signal in bb_squeeze_sell[:10]:  # Show top 10
+            print(f"{signal['symbol']:<12} "
+                  f"₹{signal['current_price']:<11.2f} "
+                  f"{signal['rsi']:>6.2f} "
+                  f"{signal['macd']:>8.2f} "
+                  f"{signal['bb_width_percent']:>10.2f}%")
+    else:
+        print('  No SELL signals today')
+
+    # SQUEEZE Signals (watching for breakout)
+    if bb_squeeze_squeeze:
+        print(f'\n🔒 SQUEEZE SIGNALS ({len(bb_squeeze_squeeze)} stocks - top 10):')
+        bb_squeeze_squeeze.sort(key=lambda x: x['days_in_squeeze'], reverse=True)
+        print(f"{'Symbol':<12} {'Price':<12} {'Days':<8} {'Proportion':<12} {'BB Width%':<12}")
+        print('-' * 80)
+        for signal in bb_squeeze_squeeze[:10]:  # Show top 10
+            print(f"{signal['symbol']:<12} "
+                  f"₹{signal['current_price']:<11.2f} "
+                  f"{signal['days_in_squeeze']:>6} "
+                  f"{signal['proportion']:>10.2f} "
+                  f"{signal['bb_width_percent']:>10.2f}%")
+    else:
+        print('  No stocks in squeeze today')
+
+    # BREAKOUT Signals (just broke out of squeeze)
+    if bb_squeeze_breakout:
+        print(f'\n💥 BREAKOUT SIGNALS ({len(bb_squeeze_breakout)} stocks):')
+        bb_squeeze_breakout.sort(key=lambda x: x['rsi'], reverse=True)
+        print(f"{'Symbol':<12} {'Price':<12} {'RSI':<8} {'MACD':<10} {'Proportion':<12}")
+        print('-' * 80)
+        for signal in bb_squeeze_breakout[:10]:  # Show top 10
+            print(f"{signal['symbol']:<12} "
+                  f"₹{signal['current_price']:<11.2f} "
+                  f"{signal['rsi']:>6.2f} "
+                  f"{signal['macd']:>8.2f} "
+                  f"{signal['proportion']:>10.2f}")
+    else:
+        print('  No breakout signals today')
+
     # Summary
     print('\n' + '=' * 80)
     print('📈 SUMMARY')
@@ -1222,6 +1531,10 @@ def main():
     print(f'  Darvas Boxes (Active): {len(darvas_boxes_active)}')
     print(f'  Darvas Boxes (Broken): {len(darvas_boxes_broken)}')
     print(f'  Darvas Boxes (False): {len(darvas_boxes_false)}')
+    print(f'  BB Squeeze (BUY): {len(bb_squeeze_buy)}')
+    print(f'  BB Squeeze (SELL): {len(bb_squeeze_sell)}')
+    print(f'  BB Squeeze (SQUEEZE): {len(bb_squeeze_squeeze)}')
+    print(f'  BB Squeeze (BREAKOUT): {len(bb_squeeze_breakout)}')
     print('=' * 80)
 
 if __name__ == '__main__':
