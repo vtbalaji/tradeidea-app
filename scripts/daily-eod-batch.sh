@@ -59,7 +59,7 @@ if [ ! -f "serviceAccountKey.json" ]; then
 fi
 
 # 1. Fetch NSE EOD Data
-log "📥 Step 1/5: Fetching NSE EOD Data..."
+log "📥 Step 1/6: Fetching NSE EOD Data..."
 START_TIME=$(date +%s)
 if $PYTHON scripts/fetch-eod-data.py >> "$LOG_FILE" 2>&1; then
     END_TIME=$(date +%s)
@@ -71,9 +71,24 @@ else
     exit 1
 fi
 
+# 1.5 Fetch Nifty 50 Index Data
+log ""
+log "📊 Step 1.5/6: Fetching Nifty 50 Index Data..."
+START_TIME=$(date +%s)
+if $PYTHON scripts/fetch-nifty50-index.py >> "$LOG_FILE" 2>&1; then
+    END_TIME=$(date +%s)
+    DURATION=$((END_TIME - START_TIME))
+    log "✅ Nifty 50 fetch completed in ${DURATION}s"
+else
+    EXIT_CODE=$?
+    log_error "Nifty 50 fetch failed with exit code $EXIT_CODE"
+    # Don't exit - this is not critical, continue with other steps
+    log "⚠️  Continuing despite Nifty 50 fetch failure..."
+fi
+
 # 2. Run Technical Analysis
 log ""
-log "📊 Step 2/5: Running Technical Analysis..."
+log "📊 Step 2/6: Running Technical Analysis..."
 START_TIME=$(date +%s)
 if $PYTHON scripts/analyze-symbols-duckdb.py >> "$LOG_FILE" 2>&1; then
     END_TIME=$(date +%s)
@@ -87,7 +102,7 @@ fi
 
 # 3. Run Screeners
 log ""
-log "🔍 Step 3/5: Running Screeners..."
+log "🔍 Step 3/6: Running Screeners..."
 START_TIME=$(date +%s)
 if $PYTHON scripts/screeners.py >> "$LOG_FILE" 2>&1; then
     END_TIME=$(date +%s)
@@ -101,7 +116,7 @@ fi
 
 # 4. Generate Chart Data
 log ""
-log "📈 Step 4/5: Generating Chart Data..."
+log "📈 Step 4/6: Generating Chart Data..."
 START_TIME=$(date +%s)
 if $PYTHON scripts/generate-chart-data.py --priority --top 250 >> "$LOG_FILE" 2>&1; then
     END_TIME=$(date +%s)
@@ -115,7 +130,7 @@ fi
 
 # 5. Manage Portfolio Stop-Loss
 log ""
-log "🛡️  Step 5/5: Managing Portfolio Stop-Loss..."
+log "🛡️  Step 5/6: Managing Portfolio Stop-Loss..."
 START_TIME=$(date +%s)
 if $PYTHON scripts/manage-portfolio-stoploss.py >> "$LOG_FILE" 2>&1; then
     END_TIME=$(date +%s)

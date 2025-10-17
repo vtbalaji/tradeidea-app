@@ -58,6 +58,29 @@ export default function Navigation() {
             <span>My Portfolio</span>
           </Link>
 
+          <Link
+            href="/risk-analysis"
+            className={`flex items-center gap-1.5 px-4 py-2 rounded-md ${
+              pathname === '/risk-analysis' ? 'bg-gray-100 dark:bg-[#30363d] text-gray-900 dark:text-white' : 'text-gray-600 dark:text-[#8b949e]'
+            } font-semibold text-sm hover:bg-gray-100 dark:hover:bg-[#30363d] hover:text-gray-900 dark:hover:text-white transition-colors`}
+          >
+            <svg className="w-[18px] h-[18px]" fill="none" stroke="#ff8c42" viewBox="0 0 24 24">
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M11 3.055A9.001 9.001 0 1020.945 13H11V3.055z"
+              />
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M20.488 9H15V3.512A9.025 9.025 0 0120.488 9z"
+              />
+            </svg>
+            <span>Risk Analysis</span>
+          </Link>
+
           {/* <Link
             href="/accounts"
             className={`flex items-center gap-1.5 px-4 py-2 rounded-md ${
@@ -290,6 +313,30 @@ export default function Navigation() {
               >
                 <TrendingIcon size={20} />
                 <span>My Portfolio</span>
+              </Link>
+
+              <Link
+                href="/risk-analysis"
+                onClick={() => setShowMobileMenu(false)}
+                className={`flex items-center gap-3 px-4 py-3 rounded-md ${
+                  pathname === '/risk-analysis' ? 'bg-gray-100 dark:bg-[#30363d] text-gray-900 dark:text-white' : 'text-gray-600 dark:text-[#8b949e]'
+                } font-semibold text-sm hover:bg-gray-100 dark:hover:bg-[#30363d] hover:text-gray-900 dark:hover:text-white transition-colors`}
+              >
+                <svg className="w-[20px] h-[20px]" fill="none" stroke="#ff8c42" viewBox="0 0 24 24">
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M11 3.055A9.001 9.001 0 1020.945 13H11V3.055z"
+                  />
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M20.488 9H15V3.512A9.025 9.025 0 0120.488 9z"
+                  />
+                </svg>
+                <span>Risk Analysis</span>
               </Link>
 
               {/* <Link
