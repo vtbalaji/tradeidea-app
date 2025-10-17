@@ -253,6 +253,53 @@ export default function InvestorAnalysisResults({
             </div>
           </div>
 
+          {/* Price Changes - Day, Week, Month, Quarter */}
+          {technicals && (
+            <div className="mb-4">
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                {/* Day Change */}
+                {technicals.changePercent !== undefined && (
+                  <div className="bg-white dark:bg-[#1c2128] border border-gray-200 dark:border-[#30363d] rounded-lg p-3">
+                    <p className="text-xs text-gray-600 dark:text-[#8b949e] mb-1">Day Change</p>
+                    <p className={`text-base font-bold ${technicals.changePercent >= 0 ? 'text-green-500' : 'text-red-500'}`}>
+                      {technicals.changePercent >= 0 ? '+' : ''}{technicals.changePercent.toFixed(2)}%
+                    </p>
+                  </div>
+                )}
+
+                {/* Week Change */}
+                {technicals.weeklyChangePercent !== undefined && (
+                  <div className="bg-white dark:bg-[#1c2128] border border-gray-200 dark:border-[#30363d] rounded-lg p-3">
+                    <p className="text-xs text-gray-600 dark:text-[#8b949e] mb-1">Week Change</p>
+                    <p className={`text-base font-bold ${technicals.weeklyChangePercent >= 0 ? 'text-green-500' : 'text-red-500'}`}>
+                      {technicals.weeklyChangePercent >= 0 ? '+' : ''}{technicals.weeklyChangePercent.toFixed(2)}%
+                    </p>
+                  </div>
+                )}
+
+                {/* Month Change */}
+                {technicals.monthlyChangePercent !== undefined && (
+                  <div className="bg-white dark:bg-[#1c2128] border border-gray-200 dark:border-[#30363d] rounded-lg p-3">
+                    <p className="text-xs text-gray-600 dark:text-[#8b949e] mb-1">Month Change</p>
+                    <p className={`text-base font-bold ${technicals.monthlyChangePercent >= 0 ? 'text-green-500' : 'text-red-500'}`}>
+                      {technicals.monthlyChangePercent >= 0 ? '+' : ''}{technicals.monthlyChangePercent.toFixed(2)}%
+                    </p>
+                  </div>
+                )}
+
+                {/* Quarter Change */}
+                {technicals.quarterlyChangePercent !== undefined && (
+                  <div className="bg-white dark:bg-[#1c2128] border border-gray-200 dark:border-[#30363d] rounded-lg p-3">
+                    <p className="text-xs text-gray-600 dark:text-[#8b949e] mb-1">Quarter Change</p>
+                    <p className={`text-base font-bold ${technicals.quarterlyChangePercent >= 0 ? 'text-green-500' : 'text-red-500'}`}>
+                      {technicals.quarterlyChangePercent >= 0 ? '+' : ''}{technicals.quarterlyChangePercent.toFixed(2)}%
+                    </p>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
           {/* Technical & Fundamentals Cards - Below Chart (Side by Side) */}
           <div className="mb-4 grid grid-cols-1 md:grid-cols-2 gap-4">
             {/* Technical Levels Card */}
