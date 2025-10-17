@@ -91,7 +91,7 @@ export default function RiskAnalysisPage() {
       <div className="min-h-screen bg-white dark:bg-[#0f1419]">
         <Navigation />
         <div className="p-5 pt-5">
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-6">Risk Analysis</h1>
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-6">Reports</h1>
           <div className="text-center py-16">
             <div className="inline-block w-12 h-12 border-4 border-[#ff8c42] border-t-transparent rounded-full animate-spin mb-4"></div>
             <p className="text-gray-600 dark:text-[#8b949e] text-lg">Analyzing your portfolio...</p>
@@ -106,7 +106,7 @@ export default function RiskAnalysisPage() {
       <div className="min-h-screen bg-white dark:bg-[#0f1419]">
         <Navigation />
         <div className="p-5 pt-5">
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-6">Risk Analysis</h1>
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-6">Reports</h1>
           <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl p-6">
             <h3 className="text-lg font-semibold text-red-700 dark:text-red-400 mb-2">Error</h3>
             <p className="text-red-600 dark:text-red-300">{error}</p>
@@ -133,7 +133,7 @@ export default function RiskAnalysisPage() {
       <div className="p-5 pt-5">
         {/* Header */}
         <div className="mb-6">
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-1">Risk Analysis</h1>
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-1">Reports</h1>
           <p className="text-sm text-gray-600 dark:text-[#8b949e]">
             Portfolio: {activeAccount?.name || 'Default'} • {analysis.positionCount} positions • ₹{analysis.totalValue.toLocaleString('en-IN')}
           </p>
