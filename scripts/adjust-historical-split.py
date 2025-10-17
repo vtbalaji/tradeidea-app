@@ -220,6 +220,9 @@ def adjust_historical_data(symbol, ex_date_str, ratio_str, action_type):
             ex_date_str
         ])
 
+        # Commit the changes to DuckDB
+        conn.commit()
+
         print('✅ Adjustment complete!')
 
         # Verify adjustment

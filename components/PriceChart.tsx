@@ -65,7 +65,10 @@ export default function PriceChart({ symbol, days = 365, height = '400px' }: Pri
         const response = await fetch(`/chart-data/${cleanSymbol}.json`);
 
         if (!response.ok) {
-          throw new Error('Chart data not available');
+          // Silently handle missing chart data
+          setError('Chart data not available');
+          setLoading(false);
+          return;
         }
 
         const chartData: ChartDataResponse = await response.json();

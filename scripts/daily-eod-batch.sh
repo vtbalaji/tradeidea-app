@@ -136,4 +136,8 @@ log "🧹 Cleaning up old log files..."
 find "$LOG_DIR" -name "eod-batch-*.log" -type f -mtime +30 -delete 2>/dev/null || true
 log "Done cleaning up logs"
 
+#   If you ever find another stock with a split issue in the future, you can just run:
+#   python3 scripts/batch-detect-and-fix-splits.py
+#   npm run generate-charts-top250
+
 exit 0
