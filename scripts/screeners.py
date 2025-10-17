@@ -526,6 +526,21 @@ def calculate_macd(df, fast=12, slow=26, signal=9):
 
     return macd_line, signal_line, histogram
 
+def calculate_quarterly_change(df):
+    """
+    Calculate quarterly change (last 63 trading days ~ 3 months)
+    Returns quarterly change percentage
+    """
+    if len(df) < 63:
+        return None
+
+    current_close = float(df['Close'].iloc[-1])
+    quarterly_close = float(df['Close'].iloc[-63])  # 63 trading days ago
+
+    quarterly_change_percent = ((current_close - quarterly_close) / quarterly_close) * 100
+
+    return quarterly_change_percent
+
 def detect_bb_squeeze_breakout(symbol, bb_period=20, bb_std=2, keltner_period=14, keltner_mult=1.5):
     """
     Detect BB Squeeze and Breakout signals based on AmiBroker AFL strategy
@@ -582,6 +597,9 @@ def detect_bb_squeeze_breakout(symbol, bb_period=20, bb_std=2, keltner_period=14
         # Calculate MACD
         macd_line, signal_line, histogram = calculate_macd(df)
 
+        # Calculate quarterly change
+        quarterly_change_percent = calculate_quarterly_change(df)
+
         # Get current values (last row)
         current_close = float(close.iloc[-1])
         current_bb_upper = float(bb_upper.iloc[-1]) if not pd.isna(bb_upper.iloc[-1]) else 0
@@ -615,8 +633,9 @@ def detect_bb_squeeze_breakout(symbol, bb_period=20, bb_std=2, keltner_period=14
         buy_condition_2 = prev_close > prev_bb_upper  # Previous close > BB Top (confirmation)
         buy_condition_3 = current_rsi > 60  # RSI > 60 (strong momentum)
         buy_condition_4 = current_macd > 0  # MACD > 0 (uptrend)
+        buy_condition_5 = (quarterly_change_percent is not None and quarterly_change_percent < 6.0)  # Quarterly change < 6%
 
-        buy_signal = buy_condition_1 and buy_condition_2 and buy_condition_3 and buy_condition_4
+        buy_signal = buy_condition_1 and buy_condition_2 and buy_condition_3 and buy_condition_4 and buy_condition_5
 
         # Check SELL signal conditions
         sell_condition_1 = current_close < current_bb_lower  # Close < BB Bottom
@@ -662,7 +681,8 @@ def detect_bb_squeeze_breakout(symbol, bb_period=20, bb_std=2, keltner_period=14
                 'proportion': current_proportion,
                 'bb_breakout': bb_breakout,
                 'distance_to_upper_percent': distance_to_upper,
-                'distance_to_lower_percent': distance_to_lower
+                'distance_to_lower_percent': distance_to_lower,
+                'quarterly_change_percent': quarterly_change_percent if quarterly_change_percent is not None else 0
             }
         else:
             return {'type': 'no_signal'}
@@ -671,7 +691,7 @@ def detect_bb_squeeze_breakout(symbol, bb_period=20, bb_std=2, keltner_period=14
         print(f"  ❌ Error for {symbol}: {str(e)}")
         return None
 
-def detect_darvas_box(symbol, lookback_weeks=52, consolidation_weeks=3, breakout_threshold=0.01):
+def detect_darvas_box(symbol, lookback_weeks=52, consolidation_weeks=3, breakout_threshold=0.005):
     """
     Detect Darvas Box patterns (Optimized per Nicolas Darvas methodology):
 
@@ -735,13 +755,13 @@ def detect_darvas_box(symbol, lookback_weeks=52, consolidation_weeks=3, breakout
         if len(recent_df) < consolidation_weeks * 5:
             return {'type': 'no_box'}
 
-        # RULE 1: Stock must be at or near NEW HIGH (within 5% of 52-week high)
-        # This is tighter than before - Darvas only traded stocks making new highs
+        # RULE 1: Stock must be at or near NEW HIGH (within 10% of 52-week high)
+        # Relaxed from 5% to 10% to catch more opportunities
         current_price = float(recent_df['Close'].iloc[-1])
         current_52w_high = float(week_high_52.iloc[-1])
 
-        if pd.isna(current_52w_high) or current_price < current_52w_high * 0.95:
-            return {'type': 'no_box'}  # Must be within 5% of 52-week high
+        if pd.isna(current_52w_high) or current_price < current_52w_high * 0.90:
+            return {'type': 'no_box'}  # Must be within 10% of 52-week high
 
         # RULE 2: Detect consolidation box - try multiple periods (3-8 weeks)
         # Darvas boxes typically form over 3-8 weeks, not longer
@@ -808,8 +828,8 @@ def detect_darvas_box(symbol, lookback_weeks=52, consolidation_weeks=3, breakout
         breakout_price = box_high * (1 + breakout_threshold)
         is_breakout = current_price >= breakout_price
 
-        # RULE 7: Volume confirmation - must be 1.5x+ average (stricter than before)
-        volume_confirmed = current_volume > avg_volume * 1.5 if avg_volume > 0 else False
+        # RULE 7: Volume confirmation - must be 1.3x+ average (relaxed from 1.5x)
+        volume_confirmed = current_volume > avg_volume * 1.3 if avg_volume > 0 else False
 
         # Additional check: Volume expansion during breakout
         # Breakout volume should be significantly higher than consolidation volume
@@ -825,11 +845,11 @@ def detect_darvas_box(symbol, lookback_weeks=52, consolidation_weeks=3, breakout
         # Calculate box age (days in consolidation)
         box_age_days = len(consolidation_df)
 
-        # RULE 9: Determine box status with stricter criteria
+        # RULE 9: Determine box status with balanced criteria (relaxed from strict)
         if is_breakout and volume_confirmed and volume_expansion:
             # True breakout: price above box + strong volume + volume expansion
-            if days_above_box >= 2:
-                status = 'broken'  # Confirmed breakout (2+ days above)
+            if days_above_box >= 1:
+                status = 'broken'  # Confirmed breakout (1+ days above, relaxed from 2)
             else:
                 status = 'active'  # Potential breakout but needs confirmation
         elif is_breakout and (not volume_confirmed or not volume_expansion):

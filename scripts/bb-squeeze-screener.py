@@ -137,6 +137,21 @@ def calculate_macd(df, fast=12, slow=26, signal=9):
 
     return macd_line, signal_line, histogram
 
+def calculate_quarterly_change(df):
+    """
+    Calculate quarterly change (last 63 trading days ~ 3 months)
+    Returns quarterly change percentage
+    """
+    if len(df) < 63:
+        return None
+
+    current_close = float(df['Close'].iloc[-1])
+    quarterly_close = float(df['Close'].iloc[-63])  # 63 trading days ago
+
+    quarterly_change_percent = ((current_close - quarterly_close) / quarterly_close) * 100
+
+    return quarterly_change_percent
+
 def detect_bb_squeeze_breakout(symbol, bb_period=20, bb_std=2, keltner_period=14, keltner_mult=1.5):
     """
     Detect BB Squeeze and Breakout signals
@@ -193,6 +208,9 @@ def detect_bb_squeeze_breakout(symbol, bb_period=20, bb_std=2, keltner_period=14
         # Calculate MACD
         macd_line, signal_line, histogram = calculate_macd(df)
 
+        # Calculate quarterly change
+        quarterly_change_percent = calculate_quarterly_change(df)
+
         # Get current values (last row)
         current_close = float(close.iloc[-1])
         current_bb_upper = float(bb_upper.iloc[-1]) if not pd.isna(bb_upper.iloc[-1]) else 0
@@ -226,8 +244,9 @@ def detect_bb_squeeze_breakout(symbol, bb_period=20, bb_std=2, keltner_period=14
         buy_condition_2 = prev_close > prev_bb_upper  # Previous close > BB Top (confirmation)
         buy_condition_3 = current_rsi > 60  # RSI > 60 (strong momentum)
         buy_condition_4 = current_macd > 0  # MACD > 0 (uptrend)
+        buy_condition_5 = (quarterly_change_percent is not None and quarterly_change_percent < 6.0)  # Quarterly change < 6%
 
-        buy_signal = buy_condition_1 and buy_condition_2 and buy_condition_3 and buy_condition_4
+        buy_signal = buy_condition_1 and buy_condition_2 and buy_condition_3 and buy_condition_4 and buy_condition_5
 
         # Check SELL signal conditions
         sell_condition_1 = current_close < current_bb_lower  # Close < BB Bottom
@@ -274,12 +293,14 @@ def detect_bb_squeeze_breakout(symbol, bb_period=20, bb_std=2, keltner_period=14
                 'bb_breakout': bb_breakout,
                 'distance_to_upper_percent': distance_to_upper,
                 'distance_to_lower_percent': distance_to_lower,
+                'quarterly_change_percent': quarterly_change_percent if quarterly_change_percent is not None else 0,
                 # Individual condition results (for debugging)
                 'buy_conditions': {
                     'close_above_bb_upper': buy_condition_1,
                     'prev_close_above_bb_upper': buy_condition_2,
                     'rsi_above_60': buy_condition_3,
-                    'macd_positive': buy_condition_4
+                    'macd_positive': buy_condition_4,
+                    'quarterly_change_below_6pct': buy_condition_5
                 },
                 'sell_conditions': {
                     'close_below_bb_lower': sell_condition_1,

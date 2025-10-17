@@ -18,10 +18,9 @@ This screener implements Nicolas Darvas's box theory methodology with strict qua
 ## Darvas Box Detection Rules
 
 ### Rule 1: New High Requirement
-- **Criteria**: Stock price within **5%** of 52-week high
-- **Why**: Darvas only traded stocks making new highs
-- **Before**: Within 10% (too loose)
-- **After**: Within 5% (stricter)
+- **Criteria**: Stock price within **10%** of 52-week high
+- **Why**: Darvas traded stocks making new highs or near highs
+- **Note**: Relaxed from 5% to 10% to capture more opportunities
 
 ### Rule 2: Adaptive Consolidation Period
 - **Criteria**: Consolidation for **3-8 weeks**
@@ -44,11 +43,10 @@ This screener implements Nicolas Darvas's box theory methodology with strict qua
 - **Before**: Not checked
 - **After**: Required minimum 2 tests
 
-### Rule 5: Strong Volume Confirmation
-- **Criteria**: Breakout volume must be **1.5x** the 20-day average
+### Rule 5: Volume Confirmation
+- **Criteria**: Breakout volume must be **1.3x** the 20-day average
 - **Why**: Strong volume confirms genuine buying interest
-- **Before**: 1.2x average (weak)
-- **After**: 1.5x average (strong)
+- **Note**: Relaxed from 1.5x to 1.3x for better signal capture
 
 ### Rule 6: Volume Expansion
 - **Criteria**: Breakout volume **1.3x** higher than consolidation average
@@ -56,17 +54,15 @@ This screener implements Nicolas Darvas's box theory methodology with strict qua
 - **Before**: Not checked
 - **After**: Required
 
-### Rule 7: Tight Breakout Threshold
-- **Criteria**: Price must close **>1%** above box high
-- **Why**: Reduces whipsaws and false breakouts
-- **Before**: 2% above (loose)
-- **After**: 1% above (tighter)
+### Rule 7: Breakout Threshold
+- **Criteria**: Price must close **>0.5%** above box high
+- **Why**: Reduces whipsaws while catching earlier breakouts
+- **Note**: Relaxed from 1% to 0.5% for faster signal generation
 
 ### Rule 8: Price Confirmation
-- **Criteria**: Price holds above box high for **2+ days**
+- **Criteria**: Price holds above box high for **1+ day**
 - **Why**: Confirms breakout is sustained, not just a spike
-- **Before**: Not checked
-- **After**: Required for "broken" status
+- **Note**: Relaxed from 2+ days to 1+ day for faster confirmation
 
 ### Rule 9: Risk-Reward Calculation
 **Entry**: Box high (on breakout)
@@ -92,14 +88,14 @@ This screener implements Nicolas Darvas's box theory methodology with strict qua
 - Awaiting volume-confirmed breakout
 
 #### Broken Box (Confirmed Breakout)
-- Price >1% above box high
-- Volume 1.5x+ average
+- Price >0.5% above box high
+- Volume 1.3x+ average
 - Volume expansion 1.3x+ consolidation
-- Price held 2+ days above box
+- Price held 1+ day above box
 - **Action**: Consider entry on pullback to box top
 
 #### False Breakout
-- Price attempted breakout (>1% above)
+- Price attempted breakout (>0.5% above)
 - BUT volume requirements not met
 - OR price failed to hold above box
 - **Action**: Avoid - wait for re-consolidation
@@ -118,9 +114,9 @@ This screener implements Nicolas Darvas's box theory methodology with strict qua
 | `formationDate` | When consolidation started |
 | `currentPrice` | Latest close price |
 | `week52High` | 52-week high for context |
-| `breakoutPrice` | Box High * 1.01 (1% above) |
+| `breakoutPrice` | Box High * 1.005 (0.5% above) |
 | `isBreakout` | Boolean: price above breakout level |
-| `volumeConfirmed` | Boolean: volume 1.5x+ average |
+| `volumeConfirmed` | Boolean: volume 1.3x+ average |
 | `currentVolume` | Today's volume |
 | `avgVolume` | 20-day average volume |
 | `riskRewardRatio` | Reward / Risk ratio |
@@ -151,19 +147,19 @@ This screener implements Nicolas Darvas's box theory methodology with strict qua
 
 ## Comparison: Before vs. After Optimization
 
-| Criteria | Before | After | Impact |
-|----------|--------|-------|--------|
-| Market Cap | >1000 Cr | >1200 Cr | Higher quality |
-| Debt-to-Equity | None | <1.0 | Financial strength |
-| 52W High | Within 10% | Within 5% | Only new highs |
-| Box Range | 3-15% | 4-12% | Tighter boxes |
-| Consolidation | 3 weeks fixed | 3-8 weeks adaptive | Better detection |
-| Resistance Tests | Not checked | Min 2 tests | Confirms level |
-| Breakout Threshold | 2% | 1% | Tighter entry |
-| Volume Required | 1.2x avg | 1.5x avg | Stronger signal |
-| Volume Expansion | Not checked | 1.3x consolidation | Additional filter |
-| Price Confirmation | Not checked | 2+ days | Reduces fakes |
-| Risk-Reward | 1:1 | 2:1 to 3:1 | Better returns |
+| Criteria | Original | Strict (v1) | Balanced (v2) | Impact |
+|----------|----------|-------------|---------------|---------|
+| Market Cap | >1000 Cr | >1200 Cr | >1200 Cr | Higher quality |
+| Debt-to-Equity | None | <1.0 | <1.0 | Financial strength |
+| 52W High | Within 10% | Within 5% | **Within 10%** | More opportunities |
+| Box Range | 3-15% | 4-12% | 4-12% | Tighter boxes |
+| Consolidation | 3 weeks fixed | 3-8 weeks | 3-8 weeks | Better detection |
+| Resistance Tests | Not checked | Min 2 tests | Min 2 tests | Confirms level |
+| Breakout Threshold | 2% | 1% | **0.5%** | Earlier entry |
+| Volume Required | 1.2x avg | 1.5x avg | **1.3x avg** | Balanced signal |
+| Volume Expansion | Not checked | 1.3x consol | 1.3x consol | Additional filter |
+| Price Confirmation | Not checked | 2+ days | **1+ day** | Faster confirm |
+| Risk-Reward | 1:1 | 2:1 to 3:1 | 2:1 to 3:1 | Better returns |
 
 ---
 
@@ -175,8 +171,9 @@ This screener implements Nicolas Darvas's box theory methodology with strict qua
 - **False Positives**: Significantly reduced
 
 ### Win Rate Expectations
-- **Before**: ~45-50% (loose criteria)
-- **After**: ~60-65% (strict Darvas rules)
+- **Original**: ~45-50% (loose criteria)
+- **Strict (v1)**: ~60-65% (very strict, fewer signals)
+- **Balanced (v2)**: ~55-60% (balanced approach, more signals)
 
 ### Risk-Reward
 - **Before**: 1:1 (breakeven at 50% win rate)
@@ -247,4 +244,23 @@ This screener implements Nicolas Darvas's box theory methodology with strict qua
 ---
 
 **Last Updated**: 2025-10-17
-**Version**: 2.0 (Optimized)
+**Version**: 2.1 (Balanced - Relaxed Criteria)
+
+## Version History
+
+### v2.1 (2025-10-17) - Balanced Approach
+- Relaxed 52W high from 5% to 10% (more opportunities)
+- Reduced breakout threshold from 1% to 0.5% (earlier entry)
+- Lowered volume requirement from 1.5x to 1.3x (more signals)
+- Changed price confirmation from 2+ days to 1+ day (faster)
+- **Result**: 54 active boxes (up from 17 in v2.0)
+
+### v2.0 (2025-10-17) - Strict Optimization
+- Tightened all criteria to pure Darvas methodology
+- Added debt-to-equity filter
+- Increased market cap requirement
+- **Result**: Very high quality but too few signals
+
+### v1.0 - Original Implementation
+- Basic Darvas box detection
+- Loose criteria, many false positives

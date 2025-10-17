@@ -1719,13 +1719,13 @@ export default function Cross50200Page() {
                     <div className="pt-2 border-t border-purple-200 dark:border-purple-800">
                       <span className="font-semibold text-purple-600 dark:text-purple-400">Detection Rules:</span>
                       <ul className="ml-6 mt-1 space-y-1 text-xs">
-                        <li>• Rule 1: Stock within 5% of 52-week high</li>
+                        <li>• Rule 1: Stock within 10% of 52-week high</li>
                         <li>• Rule 2: Consolidation period: 3-8 weeks</li>
                         <li>• Rule 3: Box range: 4-12% (tight consolidation)</li>
                         <li>• Rule 4: Minimum 2 touches of box top (resistance tests)</li>
-                        <li>• Rule 5: Breakout volume: 1.5x average required</li>
+                        <li>• Rule 5: Breakout volume: 1.3x average required</li>
                         <li>• Rule 6: Volume expansion: 1.3x consolidation average</li>
-                        <li>• Rule 7: Price confirmation: 2+ days above box = &quot;broken&quot; status</li>
+                        <li>• Rule 7: Price confirmation: 1+ day above box = &quot;broken&quot; status</li>
                       </ul>
                     </div>
 
@@ -1734,7 +1734,7 @@ export default function Cross50200Page() {
                       <ul className="ml-6 mt-1 space-y-1 text-xs">
                         <li>• <strong>Box Top:</strong> Highest high during consolidation (resistance)</li>
                         <li>• <strong>Box Bottom:</strong> Lowest low during consolidation (support)</li>
-                        <li>• <strong>Breakout Price:</strong> Box Top + 1%</li>
+                        <li>• <strong>Breakout Price:</strong> Box Top + 0.5%</li>
                       </ul>
                     </div>
 
