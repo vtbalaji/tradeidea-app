@@ -9,6 +9,7 @@ import { getSymbolData } from '@/lib/symbolDataService';
 import InvestorAnalysisResults from '@/components/InvestorAnalysisResults';
 import { createInvestmentEngine } from '@/lib/investment-rules';
 import { trackAnalysisViewed } from '@/lib/analytics';
+import InvestorTypeGuide from '@/components/InvestorTypeGuide';
 
 export default function AnalysisPage() {
   const router = useRouter();
@@ -302,6 +303,11 @@ export default function AnalysisPage() {
             />
           </div>
         )}
+      </div>
+
+      {/* Investor Type Guide - Bottom of page */}
+      <div className="px-5 pb-8">
+        <InvestorTypeGuide />
       </div>
     </div>
   );

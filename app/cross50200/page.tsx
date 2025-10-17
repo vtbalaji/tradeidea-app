@@ -1121,12 +1121,56 @@ export default function Cross50200Page() {
                 </div>
 
                 {/* Cards Grid */}
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
                   {volumeSpikes.map((spike) => (
                     <div key={spike.id}>
                       {renderVolumeSpikeCard(spike)}
                     </div>
                   ))}
+                </div>
+
+                {/* Volume Spike Rules Reference */}
+                <div className="mt-8 bg-blue-50 dark:bg-blue-900/10 border border-blue-200 dark:border-blue-800 rounded-xl p-6">
+                  <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+                    <span className="text-2xl">📊</span>
+                    Volume Spike Detection Rules
+                  </h3>
+                  <div className="space-y-3 text-sm text-gray-700 dark:text-gray-300">
+                    <div>
+                      <span className="font-semibold text-blue-600 dark:text-blue-400">Market Cap Filter:</span> &gt;1000 Cr
+                    </div>
+                    <div>
+                      <span className="font-semibold text-blue-600 dark:text-blue-400">Filter 1:</span> Volume ≥ 1.5x of 20-day MA (default threshold)
+                    </div>
+                    <div>
+                      <span className="font-semibold text-blue-600 dark:text-blue-400">Filter 2:</span> Volume &gt; 1.2x of 50-day MA (confirms longer-term trend strength)
+                    </div>
+                    <div>
+                      <span className="font-semibold text-blue-600 dark:text-blue-400">Filter 3:</span> Volume consistency check:
+                      <ul className="ml-6 mt-1 space-y-1 text-xs">
+                        <li>• Volume building over 2-3 days OR</li>
+                        <li>• Exceptional volume (&gt;2 standard deviations above average)</li>
+                      </ul>
+                    </div>
+                    <div>
+                      <span className="font-semibold text-blue-600 dark:text-blue-400">Filter 4:</span> Price movement alignment (&gt;0.5% price change required)
+                    </div>
+                    <div className="pt-2 border-t border-blue-200 dark:border-blue-800">
+                      <span className="font-semibold text-blue-600 dark:text-blue-400">Quality Score (0-100):</span>
+                      <ul className="ml-6 mt-1 space-y-1 text-xs">
+                        <li>• Trend Consistency: 30 points</li>
+                        <li>• Relative Strength (RVR): 40 points</li>
+                        <li>• Price Alignment: 30 points</li>
+                      </ul>
+                    </div>
+                    <div className="pt-2 border-t border-blue-200 dark:border-blue-800">
+                      <span className="font-semibold text-blue-600 dark:text-blue-400">Status Indicators:</span>
+                      <ul className="ml-6 mt-1 space-y-1 text-xs">
+                        <li>⚡ = Exceptional volume (&gt;2σ above average)</li>
+                        <li>📈 = Consistent volume trend (building over multiple days)</li>
+                      </ul>
+                    </div>
+                  </div>
                 </div>
               </>
             );
@@ -1162,12 +1206,71 @@ export default function Cross50200Page() {
                 </div>
 
                 {/* Cards Grid */}
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
                   {darvasBoxes.map((box) => (
                     <div key={box.id}>
                       {renderDarvasBoxCard(box)}
                     </div>
                   ))}
+                </div>
+
+                {/* Darvas Box Rules Reference */}
+                <div className="mt-8 bg-purple-50 dark:bg-purple-900/10 border border-purple-200 dark:border-purple-800 rounded-xl p-6">
+                  <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+                    <span className="text-2xl">📦</span>
+                    Darvas Box Detection Rules (Nicolas Darvas Methodology)
+                  </h3>
+                  <div className="space-y-3 text-sm text-gray-700 dark:text-gray-300">
+                    <div className="grid md:grid-cols-2 gap-4">
+                      <div>
+                        <span className="font-semibold text-purple-600 dark:text-purple-400">Market Cap Filter:</span> &gt;1200 Cr
+                      </div>
+                      <div>
+                        <span className="font-semibold text-purple-600 dark:text-purple-400">Debt-to-Equity:</span> &lt;1.0
+                      </div>
+                    </div>
+
+                    <div className="pt-2 border-t border-purple-200 dark:border-purple-800">
+                      <span className="font-semibold text-purple-600 dark:text-purple-400">Detection Rules:</span>
+                      <ul className="ml-6 mt-1 space-y-1 text-xs">
+                        <li>• Rule 1: Stock within 5% of 52-week high</li>
+                        <li>• Rule 2: Consolidation period: 3-8 weeks</li>
+                        <li>• Rule 3: Box range: 4-12% (tight consolidation)</li>
+                        <li>• Rule 4: Minimum 2 touches of box top (resistance tests)</li>
+                        <li>• Rule 5: Breakout volume: 1.5x average required</li>
+                        <li>• Rule 6: Volume expansion: 1.3x consolidation average</li>
+                        <li>• Rule 7: Price confirmation: 2+ days above box = &quot;broken&quot; status</li>
+                      </ul>
+                    </div>
+
+                    <div className="pt-2 border-t border-purple-200 dark:border-purple-800">
+                      <span className="font-semibold text-purple-600 dark:text-purple-400">Box Components:</span>
+                      <ul className="ml-6 mt-1 space-y-1 text-xs">
+                        <li>• <strong>Box Top:</strong> Highest high during consolidation (resistance)</li>
+                        <li>• <strong>Box Bottom:</strong> Lowest low during consolidation (support)</li>
+                        <li>• <strong>Breakout Price:</strong> Box Top + 1%</li>
+                      </ul>
+                    </div>
+
+                    <div className="pt-2 border-t border-purple-200 dark:border-purple-800">
+                      <span className="font-semibold text-purple-600 dark:text-purple-400">Trading Guidelines:</span>
+                      <ul className="ml-6 mt-1 space-y-1 text-xs">
+                        <li>• <strong>Entry:</strong> On breakout or pullback to box top</li>
+                        <li>• <strong>Stop Loss:</strong> 2% below box bottom</li>
+                        <li>• <strong>Target:</strong> Box high + 2x box height (Darvas projection)</li>
+                        <li>• <strong>Risk-Reward:</strong> Aim for 2:1 to 3:1 ratio</li>
+                      </ul>
+                    </div>
+
+                    <div className="pt-2 border-t border-purple-200 dark:border-purple-800">
+                      <span className="font-semibold text-purple-600 dark:text-purple-400">Box Status:</span>
+                      <ul className="ml-6 mt-1 space-y-1 text-xs">
+                        <li>• <strong className="text-green-600 dark:text-green-400">🟢 Broken:</strong> Confirmed breakout (price + volume + 2+ days above box)</li>
+                        <li>• <strong className="text-blue-600 dark:text-blue-400">🟦 Active:</strong> Consolidating OR potential breakout (needs confirmation)</li>
+                        <li>• <strong className="text-orange-600 dark:text-orange-400">⚠️ False:</strong> Breakout without proper volume confirmation</li>
+                      </ul>
+                    </div>
+                  </div>
                 </div>
               </>
             );

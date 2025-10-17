@@ -358,9 +358,22 @@ def detect_supertrend_crossover(symbol, period=10, multiplier=3):
         print(f"  ❌ Error for {symbol}: {str(e)}")
         return None
 
-def detect_volume_spike(symbol, ma_period=20):
+def detect_volume_spike(symbol, ma_period=20, spike_threshold=1.5):
     """
-    Detect if a stock has volume spike (volume > 20 MA of volume) today
+    Detect if a stock has significant volume spike with quality filters
+
+    Quality Filters Applied:
+    1. Volume must be >= spike_threshold (1.5x default) of 20 MA
+    2. Volume must also exceed 50 MA (confirms trend strength)
+    3. Checks volume consistency (not just one-day anomaly)
+    4. Validates price movement alignment with volume
+    5. Relative volume ratio (RVR) calculation
+
+    Parameters:
+        symbol: Stock symbol
+        ma_period: Period for volume MA calculation (default 20)
+        spike_threshold: Minimum multiplier for volume spike (default 1.5x)
+
     Returns: dict with spike details or None (error) or 'no_spike'
     """
     try:
@@ -369,10 +382,10 @@ def detect_volume_spike(symbol, ma_period=20):
         if not meets_filter:
             return None  # Skip stocks with market cap < 1000 Cr
 
-        # Get 100 days of data (enough for 20 MA volume calculation)
+        # Get 100 days of data (enough for 50 MA volume calculation)
         df = nse_fetcher.get_data(symbol, days=100)
 
-        if df.empty or len(df) < ma_period + 1:
+        if df.empty or len(df) < 50 + 1:
             return None
 
         # Rename columns to uppercase
@@ -382,34 +395,91 @@ def detect_volume_spike(symbol, ma_period=20):
             'volume': 'Volume'
         })
 
-        # Calculate 20 MA on volume
+        # Calculate volume MAs
         volume_ma20 = df['Volume'].rolling(window=ma_period).mean()
+        volume_ma50 = df['Volume'].rolling(window=50).mean()
 
-        # Get last 2 days data
+        # Calculate volume standard deviation for anomaly detection
+        volume_std20 = df['Volume'].rolling(window=ma_period).std()
+
+        # Get last 3 days data for consistency check
         today_volume = int(df['Volume'].iloc[-1])
+        yesterday_volume = int(df['Volume'].iloc[-2])
+        day_before_volume = int(df['Volume'].iloc[-3]) if len(df) >= 3 else 0
+
         today_close = float(df['Close'].iloc[-1])
         yesterday_close = float(df['Close'].iloc[-2])
-        today_volume_ma = float(volume_ma20.iloc[-1]) if not pd.isna(volume_ma20.iloc[-1]) else 0
 
-        if today_volume_ma == 0:
+        today_volume_ma20 = float(volume_ma20.iloc[-1]) if not pd.isna(volume_ma20.iloc[-1]) else 0
+        today_volume_ma50 = float(volume_ma50.iloc[-1]) if not pd.isna(volume_ma50.iloc[-1]) else 0
+        today_volume_std = float(volume_std20.iloc[-1]) if not pd.isna(volume_std20.iloc[-1]) else 0
+
+        if today_volume_ma20 == 0 or today_volume_ma50 == 0:
             return None
 
-        # Check for volume spike (volume > 20 MA)
-        if today_volume > today_volume_ma:
-            spike_percent = ((today_volume - today_volume_ma) / today_volume_ma) * 100
-            price_change_percent = ((today_close - yesterday_close) / yesterday_close) * 100
+        # FILTER 1: Volume must exceed threshold (1.5x MA20 by default)
+        volume_ratio = today_volume / today_volume_ma20
+        if volume_ratio < spike_threshold:
+            return {'type': 'no_spike'}  # Not significant enough
 
-            return {
-                'type': 'volume_spike',
-                'today_volume': today_volume,
-                'volume_ma20': int(today_volume_ma),
-                'spike_percent': spike_percent,
-                'today_close': today_close,
-                'yesterday_close': yesterday_close,
-                'price_change_percent': price_change_percent
-            }
-        else:
-            return {'type': 'no_spike'}
+        # FILTER 2: Volume should also exceed 50 MA (confirms longer-term trend)
+        if today_volume < today_volume_ma50 * 1.2:
+            return {'type': 'no_spike'}  # Not strong enough trend
+
+        # FILTER 3: Check volume consistency (not just noise)
+        # Volume should be increasing over last 2-3 days OR today is exceptional
+        volume_trend_score = 0
+        if yesterday_volume > day_before_volume:
+            volume_trend_score += 1
+        if today_volume > yesterday_volume * 1.1:  # At least 10% increase
+            volume_trend_score += 1
+
+        # Alternative: Check if today's volume is exceptional (>2 std deviations)
+        is_exceptional = False
+        if today_volume_std > 0:
+            z_score = (today_volume - today_volume_ma20) / today_volume_std
+            if z_score > 2.0:  # More than 2 standard deviations
+                is_exceptional = True
+
+        # Must meet either consistency OR exceptional criteria
+        if volume_trend_score < 1 and not is_exceptional:
+            return {'type': 'no_spike'}  # Likely noise or single-day anomaly
+
+        # FILTER 4: Price movement should align with volume
+        price_change_percent = ((today_close - yesterday_close) / yesterday_close) * 100
+
+        # Strong volume should accompany meaningful price movement (>0.5%)
+        if abs(price_change_percent) < 0.5:
+            return {'type': 'no_spike'}  # Volume without price action is suspicious
+
+        # Calculate comprehensive metrics
+        spike_percent = ((today_volume - today_volume_ma20) / today_volume_ma20) * 100
+
+        # Relative Volume Ratio (RVR) - industry standard metric
+        rvr = today_volume / today_volume_ma20
+
+        # Volume quality score (0-100)
+        quality_score = min(100, (
+            (volume_trend_score / 2 * 30) +  # Trend consistency (0-30 points)
+            (min(rvr / 3, 1) * 40) +  # Relative strength (0-40 points)
+            (min(abs(price_change_percent) / 5, 1) * 30)  # Price alignment (0-30 points)
+        ))
+
+        return {
+            'type': 'volume_spike',
+            'today_volume': today_volume,
+            'yesterday_volume': yesterday_volume,
+            'volume_ma20': int(today_volume_ma20),
+            'volume_ma50': int(today_volume_ma50),
+            'spike_percent': spike_percent,
+            'rvr': rvr,  # Relative Volume Ratio
+            'quality_score': quality_score,
+            'today_close': today_close,
+            'yesterday_close': yesterday_close,
+            'price_change_percent': price_change_percent,
+            'is_exceptional': is_exceptional,
+            'volume_trend_consistent': volume_trend_score >= 1
+        }
 
     except Exception as e:
         print(f"  ❌ Error for {symbol}: {str(e)}")
@@ -806,11 +876,17 @@ def save_to_firebase(crossovers_50, crossovers_200, supertrend_crosses, volume_s
                 'symbol': symbol_with_prefix,
                 'date': today,
                 'todayVolume': spike['today_volume'],
+                'yesterdayVolume': spike.get('yesterday_volume', 0),
                 'volumeMA20': spike['volume_ma20'],
+                'volumeMA50': spike.get('volume_ma50', 0),
                 'spikePercent': spike['spike_percent'],
+                'rvr': spike.get('rvr', 0),  # Relative Volume Ratio
+                'qualityScore': spike.get('quality_score', 0),
                 'todayClose': spike['today_close'],
                 'yesterdayClose': spike['yesterday_close'],
                 'priceChangePercent': spike['price_change_percent'],
+                'isExceptional': spike.get('is_exceptional', False),
+                'volumeTrendConsistent': spike.get('volume_trend_consistent', False),
                 'createdAt': firestore.SERVER_TIMESTAMP
             }
 
@@ -1060,16 +1136,26 @@ def main():
     print(f'\n📊 VOLUME SPIKES ({len(volume_spikes)} stocks):')
     print('-' * 80)
     if volume_spikes:
-        # Sort by spike percentage (highest spikes first)
-        volume_spikes.sort(key=lambda x: x['spike_percent'], reverse=True)
-        print(f"{'Symbol':<12} {'Volume':<15} {'20MA Vol':<15} {'Spike %':<12} {'Price Δ%':<12}")
+        # Sort by quality score (highest quality first)
+        volume_spikes.sort(key=lambda x: x.get('quality_score', 0), reverse=True)
+        print(f"{'Symbol':<12} {'Volume':<15} {'RVR':<8} {'Quality':<10} {'Spike %':<10} {'Price Δ%':<10} {'Status':<15}")
         print('-' * 80)
         for spike in volume_spikes:
+            # Status indicators
+            status = []
+            if spike.get('is_exceptional', False):
+                status.append('⚡')  # Exceptional volume
+            if spike.get('volume_trend_consistent', False):
+                status.append('📈')  # Consistent trend
+            status_str = ''.join(status) if status else '-'
+
             print(f"{spike['symbol']:<12} "
                   f"{spike['today_volume']:<15,} "
-                  f"{spike['volume_ma20']:<15,} "
-                  f"{spike['spike_percent']:>10.2f}% "
-                  f"{spike['price_change_percent']:>10.2f}%")
+                  f"{spike.get('rvr', 0):>6.2f}x "
+                  f"{spike.get('quality_score', 0):>8.0f}/100 "
+                  f"{spike['spike_percent']:>8.1f}% "
+                  f"{spike['price_change_percent']:>8.2f}% "
+                  f"{status_str:<15}")
     else:
         print('  No volume spikes today')
 

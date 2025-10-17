@@ -14,6 +14,7 @@ import TechnicalLevelsCard from '@/components/TechnicalLevelsCard';
 import FundamentalsCard from '@/components/FundamentalsCard';
 import AnalysisButton from '@/components/AnalysisButton';
 import AddPositionModal from '@/components/portfolio/modals/AddPositionModal';
+import RatingGuide from '@/components/RatingGuide';
 
 // Calculate badge status for an idea
 const calculateBadgeStatus = (idea: any) => {
@@ -534,6 +535,11 @@ export default function IdeasHubPage() {
           tradeType: selectedIdeaForPosition.tradeType || 'Long'
         } : undefined}
       />
+
+      {/* Rating Guide Section - Bottom of page */}
+      <div className="px-5 pb-8">
+        <RatingGuide />
+      </div>
     </div>
   );
 }
