@@ -10,19 +10,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { analyzePortfolio, type Position } from '@/lib/portfolioAnalysis';
-import path from 'path';
-import { getFirestore } from 'firebase-admin/firestore';
-import { initializeApp, getApps, cert } from 'firebase-admin/app';
-
-// Initialize Firebase Admin if not already initialized
-if (getApps().length === 0) {
-  const serviceAccountPath = path.join(process.cwd(), 'serviceAccountKey.json');
-  initializeApp({
-    credential: cert(serviceAccountPath),
-  });
-}
-
-const db = getFirestore();
+import { getAdminDb } from '@/lib/firebaseAdmin';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -107,6 +95,7 @@ async function fetchHistoricalPrices(symbol: string, days: number = 365): Promis
  * Fetch symbol metadata from Firestore
  */
 async function fetchSymbolMetadata(symbols: string[]) {
+  const db = getAdminDb();
   const metadataMap = new Map();
 
   try {
