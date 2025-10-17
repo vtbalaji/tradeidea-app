@@ -137,6 +137,40 @@ def check_market_cap_filter(symbol, min_market_cap_cr=1000):
 
     return True, market_cap / 10_000_000
 
+def check_debt_to_equity(symbol, max_debt_to_equity=1.0):
+    """
+    Check if symbol meets debt-to-equity requirement
+    Returns True if meets requirement (debt/equity < max), False otherwise
+    """
+    try:
+        # Add NS_ prefix to match Firebase document IDs
+        symbol_with_prefix = f"NS_{symbol}" if not symbol.startswith('NS_') else symbol
+
+        doc_ref = db.collection('symbols').document(symbol_with_prefix)
+        doc = doc_ref.get()
+
+        if doc.exists:
+            data = doc.to_dict()
+            # Debt to equity is stored in the fundamental data section
+            if 'fundamental' in data and data['fundamental']:
+                debt_to_equity = data['fundamental'].get('debtToEquity', None)
+
+                if debt_to_equity is None:
+                    return False  # No data available, skip
+
+                # Check if debt to equity is within acceptable range
+                if debt_to_equity <= max_debt_to_equity:
+                    return True
+                else:
+                    return False
+            else:
+                return False  # No fundamental data
+        else:
+            return False  # Document doesn't exist
+
+    except Exception as e:
+        return False  # Error occurred, skip symbol
+
 def detect_ma_crossover(symbol, ma_period=50):
     """
     Detect if a stock crossed a moving average today
@@ -381,6 +415,214 @@ def detect_volume_spike(symbol, ma_period=20):
         print(f"  ❌ Error for {symbol}: {str(e)}")
         return None
 
+def detect_darvas_box(symbol, lookback_weeks=52, consolidation_weeks=3, breakout_threshold=0.01):
+    """
+    Detect Darvas Box patterns (Optimized per Nicolas Darvas methodology):
+
+    1. Stock makes NEW HIGH (at or near 52-week high)
+    2. Consolidates for 3-8 weeks in TIGHT range (4-12%)
+    3. Multiple tests of box top (at least 2 touches)
+    4. Breaks out with STRONG volume (1.5x+ average)
+    5. Price confirms by staying above box for 2+ days
+
+    Darvas Box Rules:
+    - Box Top: Highest high during consolidation (resistance)
+    - Box Bottom: Lowest low during consolidation (support)
+    - Breakout: Price closes > box top with 1.5x+ volume
+    - Entry: On breakout or pullback to box top
+    - Stop: 2-3% below box bottom
+
+    Parameters:
+        symbol: Stock symbol
+        lookback_weeks: Period to check for highs (default 52 weeks = 1 year)
+        consolidation_weeks: Minimum weeks of consolidation (default 3, max recommended 8)
+        breakout_threshold: % above box to confirm breakout (default 1% - tighter)
+
+    Returns:
+        dict with box details or None (error) or 'no_box'
+    """
+    try:
+        # FILTER 1: Check market cap (>1200 Cr for higher quality stocks)
+        meets_filter, market_cap_cr = check_market_cap_filter(symbol, min_market_cap_cr=1200)
+        if not meets_filter:
+            return None  # Skip stocks with market cap < 1200 Cr
+
+        # FILTER 2: Check debt-to-equity ratio (<1.0 for financial strength)
+        # Darvas preferred financially strong companies
+        if not check_debt_to_equity(symbol, max_debt_to_equity=1.0):
+            return None  # Skip stocks with high debt
+
+        # Get enough data for 52-week analysis (52 weeks * 5 trading days = 260 days + buffer)
+        df = nse_fetcher.get_data(symbol, days=300)
+
+        if df.empty or len(df) < lookback_weeks * 5:
+            return None
+
+        # Rename columns to uppercase
+        df = df.rename(columns={
+            'date': 'Date',
+            'open': 'Open',
+            'high': 'High',
+            'low': 'Low',
+            'close': 'Close',
+            'volume': 'Volume'
+        })
+
+        # Calculate 52-week high/low
+        week_high_52 = df['High'].rolling(window=lookback_weeks * 5).max()
+        week_low_52 = df['Low'].rolling(window=lookback_weeks * 5).min()
+
+        # Get recent data (last 60 days to capture up to 12 weeks consolidation)
+        recent_days = 60
+        recent_df = df.tail(recent_days).copy()
+
+        if len(recent_df) < consolidation_weeks * 5:
+            return {'type': 'no_box'}
+
+        # RULE 1: Stock must be at or near NEW HIGH (within 5% of 52-week high)
+        # This is tighter than before - Darvas only traded stocks making new highs
+        current_price = float(recent_df['Close'].iloc[-1])
+        current_52w_high = float(week_high_52.iloc[-1])
+
+        if pd.isna(current_52w_high) or current_price < current_52w_high * 0.95:
+            return {'type': 'no_box'}  # Must be within 5% of 52-week high
+
+        # RULE 2: Detect consolidation box - try multiple periods (3-8 weeks)
+        # Darvas boxes typically form over 3-8 weeks, not longer
+        best_box = None
+        for weeks in range(3, 9):  # Try 3, 4, 5, 6, 7, 8 weeks
+            consolidation_period = weeks * 5  # Convert weeks to days
+            if len(recent_df) < consolidation_period:
+                continue
+
+            consolidation_df = recent_df.tail(consolidation_period)
+
+            box_high = float(consolidation_df['High'].max())
+            box_low = float(consolidation_df['Low'].min())
+            box_height = box_high - box_low
+            box_range_percent = (box_height / box_low) * 100
+
+            # RULE 3: Box should be TIGHT (4-12% range) - Darvas avoided wide boxes
+            # Tighter range = stronger consolidation
+            if box_range_percent < 4 or box_range_percent > 12:
+                continue  # Skip if too tight or too wide
+
+            # RULE 4: Check for multiple tests of resistance (box top)
+            # Count how many times price touched within 1% of box high
+            touches = (consolidation_df['High'] >= box_high * 0.99).sum()
+            if touches < 2:
+                continue  # Need at least 2 tests of resistance
+
+            # Found a valid box - check if it's better than previous
+            if best_box is None or consolidation_period > best_box['period']:
+                best_box = {
+                    'period': consolidation_period,
+                    'df': consolidation_df,
+                    'high': box_high,
+                    'low': box_low,
+                    'height': box_height,
+                    'range_percent': box_range_percent,
+                    'touches': touches,
+                    'weeks': weeks
+                }
+
+        # No valid box found
+        if best_box is None:
+            return {'type': 'no_box'}
+
+        # Use the best box found
+        consolidation_df = best_box['df']
+        box_high = best_box['high']
+        box_low = best_box['low']
+        box_height = best_box['height']
+        box_range_percent = best_box['range_percent']
+
+        # RULE 5: Calculate volume metrics for breakout confirmation
+        # Darvas required STRONG volume on breakouts (minimum 1.5x average)
+        volume_ma20 = df['Volume'].rolling(window=20).mean()
+        current_volume = int(recent_df['Volume'].iloc[-1])
+        avg_volume = float(volume_ma20.iloc[-1]) if not pd.isna(volume_ma20.iloc[-1]) else 0
+
+        # Also check volume during consolidation (should be lower than breakout)
+        consolidation_avg_volume = consolidation_df['Volume'].mean()
+
+        # RULE 6: Check for breakout
+        # Breakout = current price > box_high + 1% (tighter threshold)
+        # Darvas used tight thresholds to avoid false signals
+        breakout_price = box_high * (1 + breakout_threshold)
+        is_breakout = current_price >= breakout_price
+
+        # RULE 7: Volume confirmation - must be 1.5x+ average (stricter than before)
+        volume_confirmed = current_volume > avg_volume * 1.5 if avg_volume > 0 else False
+
+        # Additional check: Volume expansion during breakout
+        # Breakout volume should be significantly higher than consolidation volume
+        volume_expansion = (current_volume > consolidation_avg_volume * 1.3) if consolidation_avg_volume > 0 else False
+
+        # RULE 8: Check if price stayed above box for confirmation (if breakout occurred)
+        # Look at last 2-3 days to see if price is holding above box
+        days_above_box = 0
+        if is_breakout and len(recent_df) >= 3:
+            last_3_days = recent_df.tail(3)
+            days_above_box = (last_3_days['Close'] > box_high).sum()
+
+        # Calculate box age (days in consolidation)
+        box_age_days = len(consolidation_df)
+
+        # RULE 9: Determine box status with stricter criteria
+        if is_breakout and volume_confirmed and volume_expansion:
+            # True breakout: price above box + strong volume + volume expansion
+            if days_above_box >= 2:
+                status = 'broken'  # Confirmed breakout (2+ days above)
+            else:
+                status = 'active'  # Potential breakout but needs confirmation
+        elif is_breakout and (not volume_confirmed or not volume_expansion):
+            status = 'false_breakout'  # Breakout without proper volume confirmation
+        else:
+            status = 'active'  # Currently consolidating in the box
+
+        # Calculate formation date (when box started)
+        formation_date = consolidation_df['Date'].iloc[0] if 'Date' in consolidation_df.columns else None
+        if isinstance(formation_date, pd.Timestamp):
+            formation_date = formation_date.strftime('%Y-%m-%d')
+
+        # RULE 10: Calculate risk-reward ratio (Darvas style)
+        # Risk = Entry (box_high) to Stop (box_low - 2-3%)
+        # Reward = Entry to Target (box_high + 2-3x box height)
+        # Darvas aimed for 2:1 to 3:1 reward-to-risk ratios
+        stop_loss_price = box_low * 0.98  # 2% below box low
+        risk = box_high - stop_loss_price
+
+        # Target: Darvas projected 2x box height above breakout
+        target_price = box_high + (box_height * 2)
+        reward = target_price - box_high
+
+        risk_reward_ratio = reward / risk if risk > 0 else 0
+
+        return {
+            'type': 'darvas_box',
+            'status': status,
+            'box_high': box_high,
+            'box_low': box_low,
+            'box_height': box_height,
+            'box_range_percent': box_range_percent,
+            'current_price': current_price,
+            'formation_date': formation_date,
+            'consolidation_days': box_age_days,
+            'breakout_price': breakout_price,
+            'is_breakout': is_breakout,
+            'volume_confirmed': volume_confirmed,
+            'current_volume': current_volume,
+            'avg_volume': int(avg_volume) if avg_volume > 0 else 0,
+            'week_52_high': current_52w_high,
+            'risk_reward_ratio': risk_reward_ratio,
+            'price_to_box_high_percent': ((current_price - box_high) / box_high) * 100
+        }
+
+    except Exception as e:
+        print(f"  ❌ Error detecting Darvas box for {symbol}: {str(e)}")
+        return None
+
 def get_symbols_from_duckdb():
     """Get all symbols that have data in DuckDB"""
     try:
@@ -431,8 +673,8 @@ def get_last_trading_day():
 
     return target_date.strftime('%Y-%m-%d')
 
-def save_to_firebase(crossovers_50, crossovers_200, supertrend_crosses, volume_spikes):
-    """Save crossover and volume spike data to Firebase collections"""
+def save_to_firebase(crossovers_50, crossovers_200, supertrend_crosses, volume_spikes, darvas_boxes):
+    """Save crossover, volume spike, and Darvas box data to Firebase collections"""
     try:
         today = get_last_trading_day()
 
@@ -457,6 +699,11 @@ def save_to_firebase(crossovers_50, crossovers_200, supertrend_crosses, volume_s
         # Delete old volume spikes
         volume_spike_ref = db.collection('volumespike')
         for doc in volume_spike_ref.where('date', '==', today).stream():
+            doc.reference.delete()
+
+        # Delete old Darvas boxes
+        darvas_ref = db.collection('darvasboxes')
+        for doc in darvas_ref.where('date', '==', today).stream():
             doc.reference.delete()
 
         # Save 50 MA crossovers
@@ -573,6 +820,44 @@ def save_to_firebase(crossovers_50, crossovers_200, supertrend_crosses, volume_s
 
             doc_ref.set(doc_data)
 
+        # Save Darvas boxes
+        print(f'💾 Saving {len(darvas_boxes)} stocks to darvasboxes collection...')
+        for box in darvas_boxes:
+            # Add NS_ prefix to match symbols collection format
+            symbol_with_prefix = f"NS_{box['symbol']}" if not box['symbol'].startswith('NS_') else box['symbol']
+
+            # Get lastPrice from DuckDB
+            last_price = get_last_price(box['symbol'])
+
+            doc_ref = darvas_ref.document(f"{symbol_with_prefix}_{today}")
+            doc_data = {
+                'symbol': symbol_with_prefix,
+                'date': today,
+                'status': box['status'],  # 'active', 'broken', 'false_breakout'
+                'boxHigh': box['box_high'],
+                'boxLow': box['box_low'],
+                'boxHeight': box['box_height'],
+                'boxRangePercent': box['box_range_percent'],
+                'currentPrice': box['current_price'],
+                'formationDate': box['formation_date'],
+                'consolidationDays': box['consolidation_days'],
+                'breakoutPrice': box['breakout_price'],
+                'isBreakout': box['is_breakout'],
+                'volumeConfirmed': box['volume_confirmed'],
+                'currentVolume': box['current_volume'],
+                'avgVolume': box['avg_volume'],
+                'week52High': box['week_52_high'],
+                'riskRewardRatio': box['risk_reward_ratio'],
+                'priceToBoxHighPercent': box['price_to_box_high_percent'],
+                'createdAt': firestore.SERVER_TIMESTAMP
+            }
+
+            # Add lastPrice if available (from DuckDB)
+            if last_price is not None:
+                doc_data['lastPrice'] = last_price
+
+            doc_ref.set(doc_data)
+
         print('✅ Data saved to Firebase successfully')
 
     except Exception as e:
@@ -581,8 +866,8 @@ def save_to_firebase(crossovers_50, crossovers_200, supertrend_crosses, volume_s
         traceback.print_exc()
 
 def main():
-    """Main function to detect MA, Supertrend crossovers, and Volume Spikes"""
-    print('🔍 Stock Screeners: MA & Supertrend Crossovers & Volume Spikes')
+    """Main function to detect MA, Supertrend crossovers, Volume Spikes, and Darvas Boxes"""
+    print('🔍 Stock Screeners: MA & Supertrend Crossovers, Volume Spikes & Darvas Boxes')
     print('=' * 80)
 
     # Get all symbols
@@ -602,12 +887,16 @@ def main():
     bullish_supertrend_crosses = []
     bearish_supertrend_crosses = []
     volume_spikes = []
+    darvas_boxes_active = []
+    darvas_boxes_broken = []
+    darvas_boxes_false = []
     all_50ma_crosses = []  # Combined for Firebase
     all_200ma_crosses = []  # Combined for Firebase
     all_supertrend_crosses = []  # Combined for Firebase
     all_volume_spikes = []  # For Firebase
+    all_darvas_boxes = []  # For Firebase
 
-    print('🔄 Scanning for crossovers and volume spikes...\n')
+    print('🔄 Scanning for crossovers, volume spikes, and Darvas boxes...\n')
 
     for i, symbol in enumerate(symbols):
         if (i + 1) % 50 == 0:
@@ -650,8 +939,20 @@ def main():
             all_volume_spikes.append(data_volume)
             volume_spikes.append(data_volume)
 
+        # Check Darvas Box
+        result_darvas = detect_darvas_box(symbol)
+        if result_darvas and result_darvas['type'] == 'darvas_box':
+            data_darvas = {'symbol': symbol, **result_darvas}
+            all_darvas_boxes.append(data_darvas)
+            if result_darvas['status'] == 'active':
+                darvas_boxes_active.append(data_darvas)
+            elif result_darvas['status'] == 'broken':
+                darvas_boxes_broken.append(data_darvas)
+            elif result_darvas['status'] == 'false_breakout':
+                darvas_boxes_false.append(data_darvas)
+
     # Save to Firebase
-    save_to_firebase(all_50ma_crosses, all_200ma_crosses, all_supertrend_crosses, all_volume_spikes)
+    save_to_firebase(all_50ma_crosses, all_200ma_crosses, all_supertrend_crosses, all_volume_spikes, all_darvas_boxes)
 
     # Print results
     print('\n' + '=' * 80)
@@ -772,6 +1073,54 @@ def main():
     else:
         print('  No volume spikes today')
 
+    # Darvas Boxes
+    print(f'\n📦 DARVAS BOXES ({len(all_darvas_boxes)} total):')
+    print('-' * 80)
+
+    # Active boxes
+    if darvas_boxes_active:
+        print(f'\n🟦 ACTIVE BOXES ({len(darvas_boxes_active)} stocks):')
+        darvas_boxes_active.sort(key=lambda x: x['consolidation_days'], reverse=True)
+        print(f"{'Symbol':<12} {'Box High':<12} {'Box Low':<12} {'Current':<12} {'Days':<8} {'Range %':<10}")
+        print('-' * 80)
+        for box in darvas_boxes_active:
+            print(f"{box['symbol']:<12} "
+                  f"₹{box['box_high']:<11.2f} "
+                  f"₹{box['box_low']:<11.2f} "
+                  f"₹{box['current_price']:<11.2f} "
+                  f"{box['consolidation_days']:<8} "
+                  f"{box['box_range_percent']:>8.2f}%")
+    else:
+        print('  No active Darvas boxes found')
+
+    # Broken boxes (successful breakouts)
+    if darvas_boxes_broken:
+        print(f'\n🟢 SUCCESSFUL BREAKOUTS ({len(darvas_boxes_broken)} stocks):')
+        darvas_boxes_broken.sort(key=lambda x: x['price_to_box_high_percent'], reverse=True)
+        print(f"{'Symbol':<12} {'Box High':<12} {'Current':<12} {'Breakout %':<12} {'Volume OK':<12}")
+        print('-' * 80)
+        for box in darvas_boxes_broken:
+            print(f"{box['symbol']:<12} "
+                  f"₹{box['box_high']:<11.2f} "
+                  f"₹{box['current_price']:<11.2f} "
+                  f"{box['price_to_box_high_percent']:>10.2f}% "
+                  f"{'✓' if box['volume_confirmed'] else '✗':<12}")
+    else:
+        print('  No successful breakouts today')
+
+    # False breakouts
+    if darvas_boxes_false:
+        print(f'\n🔴 FALSE BREAKOUTS ({len(darvas_boxes_false)} stocks):')
+        print(f"{'Symbol':<12} {'Box High':<12} {'Current':<12} {'Breakout %':<12}")
+        print('-' * 80)
+        for box in darvas_boxes_false:
+            print(f"{box['symbol']:<12} "
+                  f"₹{box['box_high']:<11.2f} "
+                  f"₹{box['current_price']:<11.2f} "
+                  f"{box['price_to_box_high_percent']:>10.2f}%")
+    else:
+        print('  No false breakouts today')
+
     # Summary
     print('\n' + '=' * 80)
     print('📈 SUMMARY')
@@ -784,6 +1133,9 @@ def main():
     print(f'  Bullish Supertrend Crosses: {len(bullish_supertrend_crosses)}')
     print(f'  Bearish Supertrend Crosses: {len(bearish_supertrend_crosses)}')
     print(f'  Volume Spikes: {len(volume_spikes)}')
+    print(f'  Darvas Boxes (Active): {len(darvas_boxes_active)}')
+    print(f'  Darvas Boxes (Broken): {len(darvas_boxes_broken)}')
+    print(f'  Darvas Boxes (False): {len(darvas_boxes_false)}')
     print('=' * 80)
 
 if __name__ == '__main__':
