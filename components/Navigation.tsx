@@ -78,7 +78,7 @@ export default function Navigation() {
                 d="M20.488 9H15V3.512A9.025 9.025 0 0120.488 9z"
               />
             </svg>
-            <span>Risk Analysis</span>
+            <span>Reports</span>
           </Link>
 
           {/* <Link
@@ -336,7 +336,7 @@ export default function Navigation() {
                     d="M20.488 9H15V3.512A9.025 9.025 0 0120.488 9z"
                   />
                 </svg>
-                <span>Risk Analysis</span>
+                <span>Reports</span>
               </Link>
 
               {/* <Link
