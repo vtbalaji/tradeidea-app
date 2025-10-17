@@ -227,10 +227,23 @@ function extractSymbolFromName(stockName: string): string {
 /**
  * Validate symbol against NSE symbols
  * Returns normalized symbol if valid, null if invalid
+ * STRICT MODE: Only accepts symbols found in DB or known symbols list
  */
 export async function validateSymbol(symbol: string, firestoreDb: any): Promise<string | null> {
   try {
     let upperSymbol = symbol.toUpperCase().trim();
+
+    // Basic format validation first - reject obviously invalid symbols
+    if (!upperSymbol || upperSymbol.length === 0 || upperSymbol.length > 20) {
+      console.warn(`❌ Invalid symbol format: ${symbol} (empty or too long)`);
+      return null;
+    }
+
+    // Reject symbols with invalid characters (only allow A-Z, 0-9, &, -)
+    if (!/^[A-Z0-9&-]+$/.test(upperSymbol)) {
+      console.warn(`❌ Invalid symbol format: ${symbol} (contains invalid characters)`);
+      return null;
+    }
 
     // If it looks like a full company name (has spaces), try to extract symbol
     if (upperSymbol.includes(' ')) {
@@ -276,21 +289,14 @@ export async function validateSymbol(symbol: string, firestoreDb: any): Promise<
       }
     }
 
-    // If Firestore check fails, still accept the symbol if it looks valid
-    // (alphanumeric + &, 1-20 chars) - batch job will validate later
-    if (/^[A-Z0-9&]{1,20}$/.test(upperSymbol)) {
-      console.warn(`Symbol ${upperSymbol} not found in DB but accepting (will validate during batch)`);
-      return upperSymbol;
-    }
-
+    // STRICT VALIDATION: Reject symbols not found in database
+    // This prevents invalid symbols from entering the system
+    console.warn(`❌ Symbol ${upperSymbol} not found in NSE database - rejecting`);
     return null;
   } catch (error) {
     console.error('Error validating symbol:', error);
-    // On error, accept if format looks valid
-    const upperSymbol = symbol.toUpperCase().trim();
-    if (/^[A-Z0-9&]{1,20}$/.test(upperSymbol)) {
-      return upperSymbol;
-    }
+    // On error, reject the symbol (strict mode)
+    console.warn(`❌ Error validating symbol ${symbol} - rejecting for safety`);
     return null;
   }
 }
@@ -427,7 +433,7 @@ export async function parseAndValidateCSV(
     const row = mappedRow; // Use mapped row for validation
 
     // Validate symbol
-    if (!row.symbol) {
+    if (!row.symbol || row.symbol.trim() === '') {
       rowErrors.push({ row: rowNumber, field: 'symbol', message: 'Symbol is required' });
     } else {
       const validatedSymbol = await validateSymbol(row.symbol, db);
@@ -435,7 +441,7 @@ export async function parseAndValidateCSV(
         rowErrors.push({
           row: rowNumber,
           field: 'symbol',
-          message: `Invalid symbol '${row.symbol}' - not found in NSE symbols`
+          message: `Invalid or unknown NSE symbol: '${row.symbol}'. Please verify the symbol exists on NSE or check for typos.`
         });
       } else {
         // Update row with normalized symbol
