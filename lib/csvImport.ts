@@ -10,6 +10,7 @@ export interface CSVRow {
   target1: string;
   stopLoss: string;
   tradeType?: string;
+  isin?: string; // ISIN number for fallback lookup
 }
 
 /**
@@ -47,7 +48,15 @@ const FIELD_MAPPINGS: { [key: string]: { [key: string]: string } } = {
   'average buy price': 'entryPrice',
   'Closing price': 'currentPrice',
   'closing price': 'currentPrice',
+
+  // ISIN variations
   'ISIN': 'isin',
+  'isin': 'isin',
+  'Isin': 'isin',
+  'ISIN Code': 'isin',
+  'isin code': 'isin',
+  'ISIN Number': 'isin',
+  'isin number': 'isin',
 
   // Standard format
   'symbol': 'symbol',
@@ -225,6 +234,72 @@ function extractSymbolFromName(stockName: string): string {
 }
 
 /**
+ * Lookup symbol by ISIN number
+ * Returns the NSE symbol if found, null otherwise
+ */
+export async function lookupSymbolByISIN(isin: string, firestoreDb: any): Promise<string | null> {
+  try {
+    if (!isin || isin.trim().length === 0) {
+      return null;
+    }
+
+    const cleanISIN = isin.toUpperCase().trim();
+
+    // Validate ISIN format (should be 12 characters: 2 country code + 10 alphanumeric)
+    if (!/^[A-Z]{2}[A-Z0-9]{10}$/.test(cleanISIN)) {
+      console.warn(`❌ Invalid ISIN format: ${isin}`);
+      return null;
+    }
+
+    // First check in hardcoded symbols data
+    const { INDIAN_STOCKS } = await import('./symbolsData');
+    const foundStock = INDIAN_STOCKS.find(s => s.isin === cleanISIN);
+    if (foundStock) {
+      console.log(`✅ Found symbol ${foundStock.symbol} for ISIN ${cleanISIN}`);
+      return foundStock.symbol;
+    }
+
+    // Then check Firestore
+    if (firestoreDb) {
+      try {
+        // Try v9 modular syntax first
+        const { collection, query, where, getDocs } = await import('firebase/firestore');
+        const symbolsRef = collection(firestoreDb, 'symbols');
+        const q = query(symbolsRef, where('isin', '==', cleanISIN));
+        const querySnapshot = await getDocs(q);
+
+        if (!querySnapshot.empty) {
+          const doc = querySnapshot.docs[0];
+          const symbol = doc.id; // Document ID is the symbol
+          console.log(`✅ Found symbol ${symbol} for ISIN ${cleanISIN} in Firestore`);
+          return symbol;
+        }
+      } catch (v9Error) {
+        // Fallback to v8 syntax if available
+        if (typeof firestoreDb.collection === 'function') {
+          const querySnapshot = await firestoreDb.collection('symbols')
+            .where('isin', '==', cleanISIN)
+            .get();
+
+          if (!querySnapshot.empty) {
+            const doc = querySnapshot.docs[0];
+            const symbol = doc.id;
+            console.log(`✅ Found symbol ${symbol} for ISIN ${cleanISIN} in Firestore`);
+            return symbol;
+          }
+        }
+      }
+    }
+
+    console.warn(`❌ No symbol found for ISIN ${cleanISIN}`);
+    return null;
+  } catch (error) {
+    console.error('Error looking up symbol by ISIN:', error);
+    return null;
+  }
+}
+
+/**
  * Validate symbol against NSE symbols
  * Returns normalized symbol if valid, null if invalid
  * STRICT MODE: Only accepts symbols found in DB or known symbols list
@@ -387,6 +462,10 @@ export async function parseAndValidateCSV(
   const header = lines[0].split(',').map(h => h.trim().replace(/"/g, ''));
   const headerMapping = mapHeaders(header);
 
+  // Debug: Log header mapping
+  console.log('📋 CSV Headers found:', header);
+  console.log('🔄 Field mapping:', headerMapping);
+
   // Check for minimum required fields (only symbol, entryPrice, quantity are truly required)
   const hasSymbol = Object.values(headerMapping).includes('symbol');
   const hasEntryPrice = Object.values(headerMapping).includes('entryPrice');
@@ -432,17 +511,58 @@ export async function parseAndValidateCSV(
     const rowNumber = i + 1;
     const row = mappedRow; // Use mapped row for validation
 
-    // Validate symbol
+    // Debug: Log row data
+    console.log(`\n📝 Row ${rowNumber}:`, {
+      symbol: row.symbol || '(empty)',
+      isin: row.isin || '(empty)',
+      quantity: row.quantity,
+      entryPrice: row.entryPrice
+    });
+
+    // Validate symbol (with ISIN fallback)
     if (!row.symbol || row.symbol.trim() === '') {
-      rowErrors.push({ row: rowNumber, field: 'symbol', message: 'Symbol is required' });
+      // If symbol is missing but ISIN is present, try to lookup symbol by ISIN
+      if (row.isin) {
+        console.log(`⚙️  Symbol missing for row ${rowNumber}, attempting ISIN lookup: ${row.isin}`);
+        const symbolFromISIN = await lookupSymbolByISIN(row.isin, db);
+        if (symbolFromISIN) {
+          row.symbol = symbolFromISIN;
+          console.log(`✅ Resolved symbol ${symbolFromISIN} from ISIN ${row.isin}`);
+        } else {
+          rowErrors.push({
+            row: rowNumber,
+            field: 'symbol',
+            message: `Symbol is required. Could not find symbol for ISIN: ${row.isin}`
+          });
+        }
+      } else {
+        rowErrors.push({ row: rowNumber, field: 'symbol', message: 'Symbol is required' });
+      }
     } else {
+      // Try to validate the provided symbol
       const validatedSymbol = await validateSymbol(row.symbol, db);
       if (!validatedSymbol) {
-        rowErrors.push({
-          row: rowNumber,
-          field: 'symbol',
-          message: `Invalid or unknown NSE symbol: '${row.symbol}'. Please verify the symbol exists on NSE or check for typos.`
-        });
+        // Symbol validation failed - try ISIN fallback if available
+        if (row.isin) {
+          console.log(`⚙️  Symbol '${row.symbol}' invalid, attempting ISIN fallback: ${row.isin}`);
+          const symbolFromISIN = await lookupSymbolByISIN(row.isin, db);
+          if (symbolFromISIN) {
+            row.symbol = symbolFromISIN;
+            console.log(`✅ Corrected symbol from '${row.symbol}' to '${symbolFromISIN}' using ISIN ${row.isin}`);
+          } else {
+            rowErrors.push({
+              row: rowNumber,
+              field: 'symbol',
+              message: `Invalid or unknown NSE symbol: '${row.symbol}'. ISIN lookup also failed for: ${row.isin}. Please verify the symbol exists on NSE.`
+            });
+          }
+        } else {
+          rowErrors.push({
+            row: rowNumber,
+            field: 'symbol',
+            message: `Invalid or unknown NSE symbol: '${row.symbol}'. Please verify the symbol exists on NSE or provide an ISIN number.`
+          });
+        }
       } else {
         // Update row with normalized symbol
         row.symbol = validatedSymbol;

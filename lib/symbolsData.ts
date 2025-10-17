@@ -193,6 +193,78 @@ export const INDIAN_STOCKS: Symbol[] = [
     currency: 'INR',
     isin: 'INE423A01024',
     isActive: true
+  },
+  {
+    id: 'AXISBANK',
+    symbol: 'AXISBANK',
+    name: 'Axis Bank Limited',
+    exchange: 'NSE',
+    sector: 'Financial Services',
+    industry: 'Private Sector Bank',
+    marketCap: 400000000000,
+    currency: 'INR',
+    isin: 'INE238A01034',
+    isActive: true
+  },
+  {
+    id: 'BALKRISIND',
+    symbol: 'BALKRISIND',
+    name: 'Balkrishna Industries Limited',
+    exchange: 'NSE',
+    sector: 'Automobile',
+    industry: 'Tyres',
+    marketCap: 50000000000,
+    currency: 'INR',
+    isin: 'INE787D01026',
+    isActive: true
+  },
+  {
+    id: 'BEL',
+    symbol: 'BEL',
+    name: 'Bharat Electronics Limited',
+    exchange: 'NSE',
+    sector: 'Defence',
+    industry: 'Electronics',
+    marketCap: 180000000000,
+    currency: 'INR',
+    isin: 'INE838A01024',
+    isActive: true
+  },
+  {
+    id: 'CEATLTD',
+    symbol: 'CEATLTD',
+    name: 'CEAT Limited',
+    exchange: 'NSE',
+    sector: 'Automobile',
+    industry: 'Tyres',
+    marketCap: 30000000000,
+    currency: 'INR',
+    isin: 'INE482A01020',
+    isActive: true
+  },
+  {
+    id: 'CENTRALBK',
+    symbol: 'CENTRALBK',
+    name: 'Central Bank of India',
+    exchange: 'NSE',
+    sector: 'Financial Services',
+    industry: 'Public Sector Bank',
+    marketCap: 25000000000,
+    currency: 'INR',
+    isin: 'INE483A01010',
+    isActive: true
+  },
+  {
+    id: 'CDSL',
+    symbol: 'CDSL',
+    name: 'Central Depository Services Limited',
+    exchange: 'NSE',
+    sector: 'Financial Services',
+    industry: 'Depository',
+    marketCap: 40000000000,
+    currency: 'INR',
+    isin: 'INE736A01011',
+    isActive: true
   }
 ];
 

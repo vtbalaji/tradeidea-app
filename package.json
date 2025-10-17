@@ -16,7 +16,17 @@
     "generate-charts": "source venv/bin/activate && python3 scripts/generate-chart-data.py",
     "generate-charts-top250": "source venv/bin/activate && python3 scripts/generate-chart-data.py --priority --top 250",
     "load-symbols": "tsx scripts/load-symbols.ts",
-    "load-symbols-csv": "tsx scripts/load-symbols-from-csv.ts"
+    "load-symbols-csv": "tsx scripts/load-symbols-from-csv.ts",
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage",
+    "test:unit": "jest __tests__/lib",
+    "test:api": "jest __tests__/api",
+    "test:component": "jest __tests__/components",
+    "test:e2e": "playwright test",
+    "test:e2e:ui": "playwright test --ui",
+    "test:e2e:debug": "playwright test --debug",
+    "test:all": "npm run test && npm run test:e2e"
   },
   "dependencies": {
     "chart.js": "^4.5.1",
@@ -33,13 +43,22 @@
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",
+    "@playwright/test": "^1.56.1",
     "@tailwindcss/postcss": "^4",
+    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/react": "^16.3.0",
+    "@testing-library/user-event": "^14.6.1",
+    "@types/jest": "^30.0.0",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "15.5.4",
+    "jest": "^30.2.0",
+    "jest-environment-jsdom": "^30.2.0",
+    "msw": "^2.11.5",
     "tailwindcss": "^4",
+    "ts-jest": "^29.4.5",
     "tsx": "^4.20.6",
     "typescript": "^5"
   }
