@@ -6,7 +6,7 @@ import Navigation from '../../components/Navigation';
 import { useAuth } from '../../contexts/AuthContext';
 import { useSymbols } from '../../contexts/SymbolsContext';
 import { getSymbolData } from '@/lib/symbolDataService';
-import InvestorAnalysisModal from '@/components/InvestorAnalysisModal';
+import InvestorAnalysisResults from '@/components/InvestorAnalysisResults';
 import { createInvestmentEngine } from '@/lib/investment-rules';
 import { trackAnalysisViewed } from '@/lib/analytics';
 
@@ -17,11 +17,12 @@ export default function AnalysisPage() {
   const [symbol, setSymbol] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [showAnalysisModal, setShowAnalysisModal] = useState(false);
+  const [showAnalysisResults, setShowAnalysisResults] = useState(false);
   const [currentRecommendation, setCurrentRecommendation] = useState<any>(null);
   const [analysisData, setAnalysisData] = useState<any>(null);
   const [symbolSuggestions, setSymbolSuggestions] = useState<any[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
+  const resultsRef = React.useRef<HTMLDivElement>(null);
 
   // Check authentication and email verification
   React.useEffect(() => {
@@ -106,8 +107,13 @@ export default function AnalysisPage() {
         technicals: symbolData.technical,
         fundamentals: symbolData.fundamental
       });
-      setShowAnalysisModal(true);
+      setShowAnalysisResults(true);
       setLoading(false);
+
+      // Scroll to results after a short delay to ensure rendering
+      setTimeout(() => {
+        resultsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }, 100);
     } catch (err: any) {
       console.error('Error analyzing symbol:', err);
       setError(err.message || 'Failed to analyze symbol. Please check if the symbol exists and try again.');
@@ -126,21 +132,21 @@ export default function AnalysisPage() {
       <Navigation />
 
       {/* Header */}
-      <div className="p-5 pt-8">
-        <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">Investor Analysis</h1>
-        <p className="text-sm text-gray-600 dark:text-[#8b949e]">
+      <div className="p-5 pt-5">
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-1">Investor Analysis</h1>
+        <p className="text-xs text-gray-600 dark:text-[#8b949e]">
           Analyze any stock to see which investor types it suits and get detailed recommendations
         </p>
       </div>
 
       {/* Search Section */}
-      <div className="px-5 pb-8">
-        <div className="max-w-2xl mx-auto">
-          <div className="bg-gray-50 dark:bg-[#1c2128] border border-gray-200 dark:border-[#30363d] rounded-xl p-6">
-            <label className="block text-sm font-semibold text-gray-900 dark:text-white mb-3">
-              Search Stock Symbol
-            </label>
-            <div className="flex gap-3 relative symbol-search-container">
+      <div className="px-5 pb-3">
+        <div className="max-w-4xl mx-auto">
+          <div className="bg-gray-50 dark:bg-[#1c2128] border border-gray-200 dark:border-[#30363d] rounded-xl p-4">
+            <div className="flex flex-col md:flex-row gap-3 md:items-center relative symbol-search-container">
+              <label className="text-sm font-semibold text-gray-900 dark:text-white md:whitespace-nowrap">
+                Search Stock Symbol
+              </label>
               <div className="flex-1 relative">
                 <input
                   type="text"
@@ -148,8 +154,8 @@ export default function AnalysisPage() {
                   onChange={(e) => handleSymbolSearch(e.target.value)}
                   onKeyPress={handleKeyPress}
                   onFocus={() => symbol && symbolSuggestions.length > 0 && setShowSuggestions(true)}
-                  placeholder="Start typing symbol name (e.g., RELIANCE, TCS, INFY)"
-                  className="w-full bg-white dark:bg-[#0f1419] border border-gray-200 dark:border-[#30363d] rounded-lg px-4 py-3 text-base text-gray-900 dark:text-white placeholder-[#8b949e] outline-none focus:border-[#ff8c42] transition-colors"
+                  placeholder="Enter symbol (e.g., RELIANCE, TCS, INFY)"
+                  className="w-full bg-white dark:bg-[#0f1419] border border-gray-200 dark:border-[#30363d] rounded-lg px-4 py-2.5 text-sm text-gray-900 dark:text-white placeholder-[#8b949e] outline-none focus:border-[#ff8c42] transition-colors"
                   disabled={loading}
                 />
 
@@ -184,16 +190,16 @@ export default function AnalysisPage() {
               <button
                 onClick={handleAnalyze}
                 disabled={loading || !symbol.trim()}
-                className="px-6 py-3 bg-[#ff8c42] hover:bg-[#ff9a58] disabled:bg-gray-300 dark:disabled:bg-[#30363d] text-white font-semibold rounded-lg transition-colors disabled:cursor-not-allowed flex items-center gap-2 whitespace-nowrap"
+                className="px-5 py-2.5 bg-[#ff8c42] hover:bg-[#ff9a58] disabled:bg-gray-300 dark:disabled:bg-[#30363d] text-white text-sm font-semibold rounded-lg transition-colors disabled:cursor-not-allowed flex items-center gap-2 whitespace-nowrap"
               >
                 {loading ? (
                   <>
-                    <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
                     <span>Analyzing...</span>
                   </>
                 ) : (
                   <>
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path
                         strokeLinecap="round"
                         strokeLinejoin="round"
@@ -201,7 +207,7 @@ export default function AnalysisPage() {
                         d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
                       />
                     </svg>
-                    <span>Go</span>
+                    <span>Analyze</span>
                   </>
                 )}
               </button>
@@ -219,21 +225,19 @@ export default function AnalysisPage() {
               </div>
             )}
 
-            {/* Help Text */}
-            <div className="mt-4 p-3 bg-blue-500/10 border border-blue-500/30 rounded-lg">
+            {/* Help Text - Only show when no results */}
+            {!showAnalysisResults && (
+            <div className="mt-3 p-2.5 bg-blue-500/10 border border-blue-500/30 rounded-lg">
               <p className="text-xs text-blue-600 dark:text-blue-400">
-                💡 <strong>Tip:</strong> Enter the stock symbol (e.g., RELIANCE for Reliance Industries, TCS for Tata Consultancy Services) and click "Go" to see:
+                💡 <strong>Tip:</strong> Enter the stock symbol and click "Analyze" to see investor type analysis, technical levels, and fundamentals
               </p>
-              <ul className="mt-2 ml-6 text-xs text-blue-600 dark:text-blue-400 space-y-1 list-disc">
-                <li>Which investor types this stock suits (Value, Growth, Momentum, Quality, Dividend)</li>
-                <li>Detailed analysis with scores and criteria</li>
-                <li>Technical levels and fundamental metrics</li>
-              </ul>
             </div>
+            )}
           </div>
 
-          {/* Features Section */}
-          <div className="mt-8 grid grid-cols-1 md:grid-cols-2 gap-4">
+          {/* Features Section - Only show when no results */}
+          {!showAnalysisResults && (
+          <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-3">
             <div className="bg-gray-50 dark:bg-[#1c2128] border border-gray-200 dark:border-[#30363d] rounded-xl p-5">
               <div className="flex items-center gap-3 mb-3">
                 <div className="w-10 h-10 rounded-lg bg-[#ff8c42]/20 flex items-center justify-center">
@@ -282,24 +286,23 @@ export default function AnalysisPage() {
               </p>
             </div>
           </div>
+          )}
         </div>
       </div>
 
-      {/* Investor Analysis Modal */}
-      {showAnalysisModal && currentRecommendation && analysisData && (
-        <InvestorAnalysisModal
-          isOpen={true}
-          onClose={() => {
-            setShowAnalysisModal(false);
-            setCurrentRecommendation(null);
-            setAnalysisData(null);
-          }}
-          symbol={analysisData.symbol}
-          recommendation={currentRecommendation}
-          technicals={analysisData.technicals}
-          fundamentals={analysisData.fundamentals}
-        />
-      )}
+      {/* Investor Analysis Results - Inline */}
+      <div ref={resultsRef}>
+        {showAnalysisResults && currentRecommendation && analysisData && (
+          <div className="px-5 pb-6">
+            <InvestorAnalysisResults
+              symbol={analysisData.symbol}
+              recommendation={currentRecommendation}
+              technicals={analysisData.technicals}
+              fundamentals={analysisData.fundamentals}
+            />
+          </div>
+        )}
+      </div>
     </div>
   );
 }
