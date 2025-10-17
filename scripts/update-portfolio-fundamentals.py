@@ -30,14 +30,12 @@ def get_portfolio_symbols():
     print('📊 Fetching portfolio symbols from Firestore...')
     symbols = set()
 
-    # Get from users/{userId}/positions
-    users_ref = db.collection('users')
-    for user_doc in users_ref.stream():
-        positions_ref = db.collection(f'users/{user_doc.id}/positions')
-        for pos_doc in positions_ref.stream():
-            data = pos_doc.to_dict()
-            if data.get('status') == 'open' and 'symbol' in data:
-                symbols.add(data['symbol'])
+    # Get from portfolios collection
+    portfolios_ref = db.collection('portfolios')
+    for pos_doc in portfolios_ref.stream():
+        data = pos_doc.to_dict()
+        if data.get('status') == 'open' and 'symbol' in data:
+            symbols.add(data['symbol'])
 
     print(f'✅ Found {len(symbols)} unique symbols in portfolios\n')
     return sorted(list(symbols))

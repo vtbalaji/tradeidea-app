@@ -256,25 +256,16 @@ export default function PortfolioPage() {
           </div>
         </div>
 
-        {/* Account Selector */}
-        {accounts.length > 1 && activeAccount && (
-          <div className="flex items-center gap-3 mt-4">
-            <label className="text-sm font-semibold text-gray-600 dark:text-[#8b949e]">Account:</label>
-            <select
-              value={activeAccount.id}
-              onChange={(e) => {
-                const account = accounts.find(a => a.id === e.target.value);
-                if (account) setActiveAccount(account);
-              }}
-              className="bg-white dark:bg-[#1c2128] border border-gray-200 dark:border-[#30363d] rounded-lg px-3 py-2 text-gray-900 dark:text-white font-semibold"
-              style={{ borderLeftColor: activeAccount.color, borderLeftWidth: '4px' }}
-            >
-              {accounts.map(account => (
-                <option key={account.id} value={account.id}>
-                  {account.name} {account.isDefault ? '(Default)' : ''}
-                </option>
-              ))}
-            </select>
+        {/* Account Badge - Show which account is active */}
+        {activeAccount && (
+          <div className="mt-3 inline-flex items-center gap-2 px-3 py-1.5 bg-gray-50 dark:bg-[#1c2128] border border-gray-200 dark:border-[#30363d] rounded-lg">
+            <div
+              className="w-3 h-3 rounded-full"
+              style={{ backgroundColor: activeAccount.color || '#ff8c42' }}
+            />
+            <span className="text-sm font-semibold text-gray-900 dark:text-white">
+              {activeAccount.name}
+            </span>
           </div>
         )}
       </div>
