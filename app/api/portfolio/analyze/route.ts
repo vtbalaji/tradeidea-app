@@ -10,6 +10,10 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { analyzePortfolio, type Position } from '@/lib/portfolioAnalysis';
+import {
+  calculatePerformanceAttribution,
+  calculatePositionQuality,
+} from '@/lib/portfolioReports';
 import { getAdminDb } from '@/lib/firebaseAdmin';
 
 export const runtime = 'nodejs';
@@ -177,11 +181,20 @@ export async function POST(request: NextRequest) {
       7.0 // Risk-free rate: 7% (Indian 10Y G-Sec)
     );
 
+    // Step 4: Calculate additional reports (REUSING existing logic)
+    console.log('📈 Generating additional reports...');
+    const performanceAttribution = calculatePerformanceAttribution(positions, symbolMetadata);
+    const qualityScorecard = calculatePositionQuality(positions);
+
     console.log('✅ Portfolio analysis completed');
 
     return NextResponse.json({
       success: true,
-      analysis,
+      analysis: {
+        ...analysis,
+        performanceAttribution,
+        qualityScorecard,
+      },
     });
   } catch (error) {
     console.error('Error analyzing portfolio:', error);

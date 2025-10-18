@@ -28,15 +28,42 @@ except ValueError:
         cred = credentials.Certificate(cred_path)
         firebase_admin.initialize_app(cred)
 
+def get_etf_and_bees_symbols():
+    """
+    Get all ETF and BEES symbols from Firebase
+
+    Returns:
+        List of ETF/BEES symbol names
+    """
+    try:
+        db = firestore.client()
+        symbols_ref = db.collection('symbols')
+        docs = symbols_ref.stream()
+
+        etf_symbols = []
+        for doc in docs:
+            symbol = doc.id.replace('NS_', '')
+            # Check if symbol contains ETF or BEES (case insensitive)
+            if 'ETF' in symbol.upper() or 'BEES' in symbol.upper():
+                etf_symbols.append(symbol)
+
+        print(f'🏦 Found {len(etf_symbols)} ETF/BEES symbols')
+        return etf_symbols
+
+    except Exception as e:
+        print(f'⚠️  Error fetching ETF/BEES symbols: {str(e)}')
+        return []
+
 def get_top_symbols_by_market_cap(limit=500):
     """
     Get top N symbols by market cap from Firebase
+    ALWAYS includes all ETF and BEES symbols regardless of market cap
 
     Args:
         limit: Number of top symbols to return (default 500)
 
     Returns:
-        List of symbol names sorted by market cap (highest first)
+        List of symbol names sorted by market cap (highest first) + all ETFs/BEES
     """
     try:
         db = firestore.client()
@@ -46,13 +73,21 @@ def get_top_symbols_by_market_cap(limit=500):
         docs = symbols_ref.stream()
 
         symbols_with_mcap = []
+        etf_bees_symbols = []
+
         for doc in docs:
+            symbol = doc.id.replace('NS_', '')
             data = doc.to_dict()
-            if 'fundamental' in data and data['fundamental']:
+
+            # Check if it's an ETF or BEES
+            is_etf_bees = 'ETF' in symbol.upper() or 'BEES' in symbol.upper()
+
+            if is_etf_bees:
+                # Always include ETFs and BEES
+                etf_bees_symbols.append(symbol)
+            elif 'fundamental' in data and data['fundamental']:
                 market_cap = data['fundamental'].get('marketCap', 0)
                 if market_cap and market_cap > 0:
-                    # Remove NS_ prefix for DuckDB compatibility
-                    symbol = doc.id.replace('NS_', '')
                     symbols_with_mcap.append({
                         'symbol': symbol,
                         'marketCap': market_cap
@@ -62,10 +97,15 @@ def get_top_symbols_by_market_cap(limit=500):
         symbols_with_mcap.sort(key=lambda x: x['marketCap'], reverse=True)
         top_symbols = [s['symbol'] for s in symbols_with_mcap[:limit]]
 
+        # Combine top stocks + all ETFs/BEES
+        all_symbols = top_symbols + etf_bees_symbols
+
         print(f'📊 Found {len(symbols_with_mcap)} symbols with market cap data')
         print(f'🎯 Selecting top {limit} by market cap')
+        print(f'🏦 Adding {len(etf_bees_symbols)} ETF/BEES symbols')
+        print(f'📈 Total symbols: {len(all_symbols)}')
 
-        return top_symbols
+        return all_symbols
 
     except Exception as e:
         print(f'⚠️  Error fetching market cap data: {str(e)}')

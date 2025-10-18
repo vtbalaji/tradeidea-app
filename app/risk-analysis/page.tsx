@@ -46,13 +46,18 @@ export default function RiskAnalysisPage() {
       setError(null);
 
       try {
-        // Get open positions from active account
-        const positions: Position[] = accountPositions.map((p: any) => ({
+        // Get open positions from active account with full data
+        const positions = accountPositions.map((p: any) => ({
           symbol: p.symbol,
           quantity: p.quantity,
           entryPrice: p.entryPrice,
           currentPrice: p.currentPrice,
           totalValue: p.currentPrice * p.quantity,
+          stopLoss: p.stopLoss,
+          target1: p.target1,
+          technicals: p.technicals,
+          fundamentals: p.fundamentals,
+          exitCriteria: p.exitCriteria,
         }));
 
         if (positions.length === 0) {
@@ -206,11 +211,6 @@ export default function RiskAnalysisPage() {
               </div>
             ))}
           </div>
-          {analysis.sectorDistribution.every(s => s.percentage < 40) && (
-            <p className="mt-4 text-sm text-green-600 dark:text-green-400">
-              ✅ Your portfolio is well diversified across sectors.
-            </p>
-          )}
         </div>
 
         {/* Market Cap Distribution */}
@@ -377,6 +377,200 @@ export default function RiskAnalysisPage() {
             )}
           </div>
         </div>
+
+        {/* NEW REPORT 1: Performance Attribution */}
+        {analysis.performanceAttribution && (
+          <div className="mb-6 bg-gray-50 dark:bg-[#1c2128] border border-gray-200 dark:border-[#30363d] rounded-xl p-6">
+            <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4">Performance Attribution</h2>
+
+            {/* Overall Summary */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+              <div className="bg-white dark:bg-[#0f1419] p-4 rounded-lg border border-gray-200 dark:border-[#30363d]">
+                <p className="text-xs text-gray-600 dark:text-[#8b949e] mb-1">Total P&L</p>
+                <p className={`text-2xl font-bold ${analysis.performanceAttribution.overall.totalPnL >= 0 ? 'text-green-500' : 'text-red-500'}`}>
+                  {analysis.performanceAttribution.overall.totalPnL >= 0 ? '+' : ''}₹{Math.round(analysis.performanceAttribution.overall.totalPnL).toLocaleString('en-IN')}
+                </p>
+                <p className={`text-sm ${analysis.performanceAttribution.overall.totalPnLPercent >= 0 ? 'text-green-500' : 'text-red-500'}`}>
+                  ({analysis.performanceAttribution.overall.totalPnLPercent >= 0 ? '+' : ''}{analysis.performanceAttribution.overall.totalPnLPercent.toFixed(2)}%)
+                </p>
+              </div>
+              <div className="bg-white dark:bg-[#0f1419] p-4 rounded-lg border border-gray-200 dark:border-[#30363d]">
+                <p className="text-xs text-gray-600 dark:text-[#8b949e] mb-1">Win Rate</p>
+                <p className="text-2xl font-bold text-gray-900 dark:text-white">{analysis.performanceAttribution.overall.winRate.toFixed(1)}%</p>
+                <p className="text-sm text-gray-600 dark:text-[#8b949e]">
+                  {analysis.performanceAttribution.overall.winningPositions}W / {analysis.performanceAttribution.overall.losingPositions}L
+                </p>
+              </div>
+              <div className="bg-white dark:bg-[#0f1419] p-4 rounded-lg border border-gray-200 dark:border-[#30363d]">
+                <p className="text-xs text-gray-600 dark:text-[#8b949e] mb-1">Invested</p>
+                <p className="text-2xl font-bold text-gray-900 dark:text-white">₹{Math.round(analysis.performanceAttribution.overall.totalInvested).toLocaleString('en-IN')}</p>
+              </div>
+              <div className="bg-white dark:bg-[#0f1419] p-4 rounded-lg border border-gray-200 dark:border-[#30363d]">
+                <p className="text-xs text-gray-600 dark:text-[#8b949e] mb-1">Current Value</p>
+                <p className="text-2xl font-bold text-gray-900 dark:text-white">₹{Math.round(analysis.performanceAttribution.overall.totalCurrent).toLocaleString('en-IN')}</p>
+              </div>
+            </div>
+
+            {/* Top Winners & Losers */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+              {/* Top Winners */}
+              <div>
+                <h3 className="text-sm font-bold text-gray-900 dark:text-white mb-3">🏆 Top Winners</h3>
+                <div className="space-y-2">
+                  {analysis.performanceAttribution.topWinners.map((pos, idx) => (
+                    <div key={idx} className="flex justify-between items-center p-2 bg-white dark:bg-[#0f1419] rounded border border-gray-200 dark:border-[#30363d]">
+                      <span className="font-semibold text-gray-900 dark:text-white">{pos.symbol}</span>
+                      <span className="text-green-500 font-bold">+₹{Math.round(pos.pnl).toLocaleString('en-IN')} ({pos.pnlPercent.toFixed(1)}%)</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Top Losers */}
+              <div>
+                <h3 className="text-sm font-bold text-gray-900 dark:text-white mb-3">📉 Top Losers</h3>
+                <div className="space-y-2">
+                  {analysis.performanceAttribution.topLosers.map((pos, idx) => (
+                    <div key={idx} className="flex justify-between items-center p-2 bg-white dark:bg-[#0f1419] rounded border border-gray-200 dark:border-[#30363d]">
+                      <span className="font-semibold text-gray-900 dark:text-white">{pos.symbol}</span>
+                      <span className="text-red-500 font-bold">₹{Math.round(pos.pnl).toLocaleString('en-IN')} ({pos.pnlPercent.toFixed(1)}%)</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* By Sector Performance */}
+            <div className="mb-6">
+              <h3 className="text-sm font-bold text-gray-900 dark:text-white mb-3">Performance by Sector</h3>
+              <div className="space-y-3">
+                {analysis.performanceAttribution.bySector.map((sector, idx) => (
+                  <div key={idx}>
+                    <div className="flex justify-between items-center mb-1">
+                      <span className="text-sm font-semibold text-gray-900 dark:text-white">{sector.sector}</span>
+                      <span className={`text-sm font-bold ${sector.pnl >= 0 ? 'text-green-500' : 'text-red-500'}`}>
+                        {sector.pnl >= 0 ? '+' : ''}₹{Math.round(sector.pnl).toLocaleString('en-IN')} ({sector.pnlPercent.toFixed(1)}%)
+                      </span>
+                    </div>
+                    <div className="w-full bg-gray-200 dark:bg-[#30363d] rounded-full h-2">
+                      <div
+                        className={`h-2 rounded-full ${sector.pnl >= 0 ? 'bg-green-500' : 'bg-red-500'}`}
+                        style={{ width: `${Math.min(100, Math.abs(sector.pnlPercent) * 2)}%` }}
+                      ></div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* By Market Cap Performance */}
+            <div>
+              <h3 className="text-sm font-bold text-gray-900 dark:text-white mb-3">Performance by Market Cap</h3>
+              <div className="space-y-3">
+                {analysis.performanceAttribution.byMarketCap.map((cap, idx) => (
+                  <div key={idx}>
+                    <div className="flex justify-between items-center mb-1">
+                      <span className="text-sm font-semibold text-gray-900 dark:text-white">{cap.category}</span>
+                      <span className={`text-sm font-bold ${cap.pnl >= 0 ? 'text-green-500' : 'text-red-500'}`}>
+                        {cap.pnl >= 0 ? '+' : ''}₹{Math.round(cap.pnl).toLocaleString('en-IN')} ({cap.pnlPercent.toFixed(1)}%)
+                      </span>
+                    </div>
+                    <div className="w-full bg-gray-200 dark:bg-[#30363d] rounded-full h-2">
+                      <div
+                        className={`h-2 rounded-full ${cap.pnl >= 0 ? 'bg-green-500' : 'bg-red-500'}`}
+                        style={{ width: `${Math.min(100, Math.abs(cap.pnlPercent) * 2)}%` }}
+                      ></div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* NEW REPORT 2: Position Quality Scorecard */}
+        {analysis.qualityScorecard && (
+          <div className="mb-6 bg-gray-50 dark:bg-[#1c2128] border border-gray-200 dark:border-[#30363d] rounded-xl p-6">
+            <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4">Position Quality Scorecard</h2>
+
+            {/* Summary Stats */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+              <div className="bg-green-50 dark:bg-green-900/20 p-4 rounded-lg border border-green-200 dark:border-green-800">
+                <p className="text-xs text-green-600 dark:text-green-400 mb-1">Excellent/Good</p>
+                <p className="text-3xl font-bold text-green-600 dark:text-green-400">{analysis.qualityScorecard.summary.excellentCount + analysis.qualityScorecard.summary.goodCount}</p>
+              </div>
+              <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg border border-blue-200 dark:border-blue-800">
+                <p className="text-xs text-blue-600 dark:text-blue-400 mb-1">Average</p>
+                <p className="text-3xl font-bold text-blue-600 dark:text-blue-400">{analysis.qualityScorecard.summary.averageCount}</p>
+              </div>
+              <div className="bg-orange-50 dark:bg-orange-900/20 p-4 rounded-lg border border-orange-200 dark:border-orange-800">
+                <p className="text-xs text-orange-600 dark:text-orange-400 mb-1">Weak/Poor</p>
+                <p className="text-3xl font-bold text-orange-600 dark:text-orange-400">{analysis.qualityScorecard.summary.weakCount}</p>
+              </div>
+              <div className="bg-red-50 dark:bg-red-900/20 p-4 rounded-lg border border-red-200 dark:border-red-800">
+                <p className="text-xs text-red-600 dark:text-red-400 mb-1">Risk Flags</p>
+                <p className="text-3xl font-bold text-red-600 dark:text-red-400">{analysis.qualityScorecard.summary.totalRiskFlags}</p>
+              </div>
+            </div>
+
+            {/* Recommendation Distribution */}
+            <div className="grid grid-cols-4 gap-3 mb-6">
+              <div className="text-center p-3 bg-white dark:bg-[#0f1419] rounded-lg border border-gray-200 dark:border-[#30363d]">
+                <p className="text-2xl font-bold text-green-600 dark:text-green-400">{analysis.qualityScorecard.summary.strongBuyCount + analysis.qualityScorecard.summary.buyCount}</p>
+                <p className="text-xs text-gray-600 dark:text-[#8b949e]">Buy Signals</p>
+              </div>
+              <div className="text-center p-3 bg-white dark:bg-[#0f1419] rounded-lg border border-gray-200 dark:border-[#30363d]">
+                <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">{analysis.qualityScorecard.summary.holdCount}</p>
+                <p className="text-xs text-gray-600 dark:text-[#8b949e]">Hold</p>
+              </div>
+              <div className="text-center p-3 bg-white dark:bg-[#0f1419] rounded-lg border border-gray-200 dark:border-[#30363d]">
+                <p className="text-2xl font-bold text-red-600 dark:text-red-400">{analysis.qualityScorecard.summary.sellCount}</p>
+                <p className="text-xs text-gray-600 dark:text-[#8b949e]">Sell Signals</p>
+              </div>
+            </div>
+
+            {/* Position Quality List */}
+            <div className="space-y-3">
+              {analysis.qualityScorecard.positions.map((pos, idx) => (
+                <div key={idx} className="bg-white dark:bg-[#0f1419] border border-gray-200 dark:border-[#30363d] rounded-lg p-4">
+                  <div className="flex justify-between items-start mb-2">
+                    <div>
+                      <h4 className="text-lg font-bold text-gray-900 dark:text-white">{pos.symbol}</h4>
+                      <div className="flex gap-2 mt-1">
+                        <span className={`text-xs px-2 py-1 rounded ${pos.recommendation.bgColor} ${pos.recommendation.borderColor} border ${pos.recommendation.textColor} font-semibold`}>
+                          {pos.recommendation.icon} {pos.recommendation.recommendation}
+                        </span>
+                        {pos.fundamentalRating && (
+                          <span className={`text-xs px-2 py-1 rounded font-semibold ${
+                            pos.fundamentalRating === 'EXCELLENT' ? 'bg-green-500/20 text-green-600 dark:text-green-400 border border-green-500/30' :
+                            pos.fundamentalRating === 'GOOD' ? 'bg-blue-500/20 text-blue-600 dark:text-blue-400 border border-blue-500/30' :
+                            pos.fundamentalRating === 'AVERAGE' ? 'bg-yellow-500/20 text-yellow-600 dark:text-yellow-400 border border-yellow-500/30' :
+                            'bg-red-500/20 text-red-600 dark:text-red-400 border border-red-500/30'
+                          }`}>
+                            F: {pos.fundamentalRating} ({pos.fundamentalScore})
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-sm text-gray-600 dark:text-[#8b949e]">Value</p>
+                      <p className="text-lg font-bold text-gray-900 dark:text-white">₹{Math.round(pos.value).toLocaleString('en-IN')}</p>
+                    </div>
+                  </div>
+                  {pos.riskFlags.length > 0 && (
+                    <div className="flex flex-wrap gap-2 mt-2">
+                      {pos.riskFlags.map((flag, flagIdx) => (
+                        <span key={flagIdx} className="text-xs px-2 py-1 bg-red-500/10 text-red-600 dark:text-red-400 rounded border border-red-500/20">
+                          ⚠️ {flag}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Data Source Info */}
         <div className="text-center text-xs text-gray-500 dark:text-[#8b949e] mt-8">

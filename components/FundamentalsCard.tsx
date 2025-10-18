@@ -7,6 +7,7 @@ interface FundamentalsData {
   earningsGrowth?: number;
   operatingMargins?: number;
   fundamentalRating?: 'EXCELLENT' | 'GOOD' | 'AVERAGE' | 'POOR' | 'WEAK';
+  fundamentalScore?: number;
 }
 
 interface FundamentalsCardProps {
@@ -41,14 +42,22 @@ export const FundamentalsCard: React.FC<FundamentalsCardProps> = ({
     }
   };
 
+  // Only show rating if there's meaningful fundamental data (score > 0)
+  const shouldShowRating = fundamentals.fundamentalRating &&
+    (fundamentals.fundamentalScore ?? 0) > 0;
+
   return (
     <div className={className}>
       {/* Header with Rating */}
       <div className={`flex items-center justify-between mb-2 ${showBorder ? 'pt-2 border-t border-gray-200 dark:border-[#30363d]' : ''}`}>
         <p className="text-xs font-bold text-[#ff8c42]">Fundamentals</p>
-        {fundamentals.fundamentalRating && (
-          <span className={`px-2 py-1 text-xs font-bold rounded ${getRatingColor(fundamentals.fundamentalRating)}`}>
+        {shouldShowRating ? (
+          <span className={`px-2 py-1 text-xs font-bold rounded ${getRatingColor(fundamentals.fundamentalRating!)}`}>
             {fundamentals.fundamentalRating}
+          </span>
+        ) : (
+          <span className="px-2 py-1 text-xs font-semibold rounded bg-gray-500/20 text-gray-600 dark:text-gray-400">
+            N/A
           </span>
         )}
       </div>

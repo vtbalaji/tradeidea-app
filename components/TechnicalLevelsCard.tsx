@@ -80,7 +80,7 @@ export const TechnicalLevelsCard: React.FC<TechnicalLevelsCardProps> = ({
             <span className="text-gray-600 dark:text-[#8b949e]">50 EMA:</span>
             <div className="flex items-center gap-1">
               <span className="font-semibold text-gray-900 dark:text-white">
-                ₹{Math.round(technicals.ema50)}
+                ₹{Math.round(technicals.ema50).toLocaleString('en-IN')}
               </span>
               <TrendArrow isUp={priceToCompare > technicals.ema50} size={12} />
             </div>
@@ -93,7 +93,7 @@ export const TechnicalLevelsCard: React.FC<TechnicalLevelsCardProps> = ({
             <span className="text-gray-600 dark:text-[#8b949e]">100 MA:</span>
             <div className="flex items-center gap-1">
               <span className="font-semibold text-gray-900 dark:text-white">
-                ₹{Math.round(technicals.sma100)}
+                ₹{Math.round(technicals.sma100).toLocaleString('en-IN')}
               </span>
               <TrendArrow isUp={priceToCompare > technicals.sma100} size={12} />
             </div>
@@ -106,7 +106,7 @@ export const TechnicalLevelsCard: React.FC<TechnicalLevelsCardProps> = ({
             <span className="text-gray-600 dark:text-[#8b949e]">200 MA:</span>
             <div className="flex items-center gap-1">
               <span className="font-semibold text-gray-900 dark:text-white">
-                ₹{Math.round(technicals.sma200)}
+                ₹{Math.round(technicals.sma200).toLocaleString('en-IN')}
               </span>
               <TrendArrow isUp={priceToCompare > technicals.sma200} size={12} />
             </div>
@@ -119,7 +119,7 @@ export const TechnicalLevelsCard: React.FC<TechnicalLevelsCardProps> = ({
             <span className="text-gray-600 dark:text-[#8b949e]">Supertrend:</span>
             <div className="flex items-center gap-1">
               <span className="font-semibold text-gray-900 dark:text-white">
-                ₹{Math.round(technicals.supertrend)}
+                ₹{Math.round(technicals.supertrend).toLocaleString('en-IN')}
               </span>
               <TrendArrow isUp={technicals.supertrendDirection === 1} size={12} />
             </div>
@@ -134,7 +134,7 @@ export const TechnicalLevelsCard: React.FC<TechnicalLevelsCardProps> = ({
               <span className="text-gray-600 dark:text-[#8b949e]">BB Middle:</span>
               <div className="flex items-center gap-1">
                 <span className="font-semibold text-gray-900 dark:text-white">
-                  ₹{Math.round(bbMiddle)}
+                  ₹{Math.round(bbMiddle).toLocaleString('en-IN')}
                 </span>
                 <div className="w-3" />
               </div>

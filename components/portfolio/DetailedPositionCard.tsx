@@ -58,7 +58,7 @@ export function DetailedPositionCard({
           )}
         </div>
         <div className={`text-right ${isProfit ? 'text-green-500' : 'text-red-500'}`}>
-          <p className="text-xl font-bold">{isProfit ? '+' : ''}₹{Math.round(pnl)}</p>
+          <p className="text-xl font-bold">{isProfit ? '+' : ''}₹{Math.round(pnl).toLocaleString('en-IN')}</p>
           <p className="text-sm">({isProfit ? '+' : ''}{pnlPercent.toFixed(2)}%)</p>
         </div>
       </div>
@@ -105,12 +105,12 @@ export function DetailedPositionCard({
         </div>
         <div>
           <p className="text-xs text-gray-600 dark:text-[#8b949e] mb-1">Avg Buy Price</p>
-          <p className="text-sm font-semibold text-gray-900 dark:text-white">₹{Math.round(position.entryPrice)}</p>
+          <p className="text-sm font-semibold text-gray-900 dark:text-white">₹{Math.round(position.entryPrice).toLocaleString('en-IN')}</p>
         </div>
         <div>
           <p className="text-xs text-gray-600 dark:text-[#8b949e] mb-1">LTP</p>
           <div className="flex items-baseline gap-1.5">
-            <p className="text-sm font-semibold text-gray-900 dark:text-white">₹{Math.round(position.currentPrice)}</p>
+            <p className="text-sm font-semibold text-gray-900 dark:text-white">₹{Math.round(position.currentPrice).toLocaleString('en-IN')}</p>
             {position.technicals && (
               <p className={`text-xs font-semibold ${isPriceUp ? 'text-green-500' : 'text-red-500'}`}>
                 ({isPriceUp ? '+' : ''}{priceChangePercent.toFixed(2)}%)
@@ -120,7 +120,7 @@ export function DetailedPositionCard({
         </div>
         <div>
           <p className="text-xs text-gray-600 dark:text-[#8b949e] mb-1">Current Value</p>
-          <p className="text-sm font-semibold text-gray-900 dark:text-white">₹{Math.round(currentValue)}</p>
+          <p className="text-sm font-semibold text-gray-900 dark:text-white">₹{Math.round(currentValue).toLocaleString('en-IN')}</p>
         </div>
       </div>
 

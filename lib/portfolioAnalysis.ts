@@ -38,6 +38,93 @@ export interface RiskMetrics {
   benchmarkStdDev: number; // Nifty 50 standard deviation
 }
 
+// New Report Interfaces
+export interface PerformanceAttribution {
+  bySector: SectorPerformance[];
+  byMarketCap: MarketCapPerformance[];
+  topWinners: PositionPerformance[];
+  topLosers: PositionPerformance[];
+  overall: {
+    totalPnL: number;
+    totalPnLPercent: number;
+    totalInvested: number;
+    totalCurrent: number;
+    winningPositions: number;
+    losingPositions: number;
+    winRate: number;
+  };
+}
+
+export interface SectorPerformance {
+  sector: string;
+  value: number;
+  pnl: number;
+  pnlPercent: number;
+  positionCount: number;
+}
+
+export interface MarketCapPerformance {
+  category: 'Large Cap' | 'Mid Cap' | 'Small Cap';
+  value: number;
+  pnl: number;
+  pnlPercent: number;
+  positionCount: number;
+}
+
+export interface PositionPerformance {
+  symbol: string;
+  pnl: number;
+  pnlPercent: number;
+  value: number;
+  invested: number;
+}
+
+export interface ExitAlert {
+  symbol: string;
+  alertType: 'stop_loss' | 'target' | 'ma_breach' | 'supertrend';
+  severity: 'critical' | 'warning' | 'info';
+  message: string;
+  currentPrice: number;
+  alertPrice?: number;
+}
+
+export interface ExitAlertDashboard {
+  criticalAlerts: ExitAlert[];
+  warningAlerts: ExitAlert[];
+  infoAlerts: ExitAlert[];
+  summary: {
+    totalAlerts: number;
+    criticalCount: number;
+    warningCount: number;
+    nearStopLoss: number;
+    nearTarget: number;
+    maBreach: number;
+    supertrendBearish: number;
+  };
+}
+
+export interface PositionQuality {
+  symbol: string;
+  fundamentalScore: number;
+  technicalScore: number;
+  combinedScore: number;
+  grade: 'A' | 'B' | 'C' | 'D' | 'F';
+  riskFlags: string[];
+  value: number;
+}
+
+export interface PositionQualityScorecard {
+  positions: PositionQuality[];
+  summary: {
+    averageQuality: number;
+    averageGrade: string;
+    highQualityCount: number; // Grade A or B
+    mediumQualityCount: number; // Grade C
+    lowQualityCount: number; // Grade D or F
+    totalRiskFlags: number;
+  };
+}
+
 export interface PortfolioAnalysis {
   totalValue: number;
   positionCount: number;
@@ -54,6 +141,11 @@ export interface PortfolioAnalysis {
 
   // Warnings/Recommendations
   warnings: string[];
+
+  // NEW: Additional Reports
+  performanceAttribution?: PerformanceAttribution;
+  exitAlertDashboard?: ExitAlertDashboard;
+  qualityScorecard?: PositionQualityScorecard;
 
   // Calculation metadata
   calculatedAt: Date;
