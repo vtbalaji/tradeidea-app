@@ -94,13 +94,13 @@ export default function Navigation() {
           </Link> */}
 
           <Link
-            href="/cross50200"
+            href="/screeners"
             className={`flex items-center gap-1.5 px-4 py-2 rounded-md ${
-              pathname === '/cross50200' ? 'bg-gray-100 dark:bg-[#30363d] text-gray-900 dark:text-white' : 'text-gray-600 dark:text-[#8b949e]'
+              pathname === '/screeners' ? 'bg-gray-100 dark:bg-[#30363d] text-gray-900 dark:text-white' : 'text-gray-600 dark:text-[#8b949e]'
             } font-semibold text-sm hover:bg-gray-100 dark:hover:bg-[#30363d] hover:text-gray-900 dark:hover:text-white transition-colors`}
           >
             <FilterIcon size={18} />
-            <span>Screener</span>
+            <span>Screeners</span>
           </Link>
 
           <Link
@@ -353,14 +353,14 @@ export default function Navigation() {
               </Link> */}
 
               <Link
-                href="/cross50200"
+                href="/screeners"
                 onClick={() => setShowMobileMenu(false)}
                 className={`flex items-center gap-3 px-4 py-3 rounded-md ${
-                  pathname === '/cross50200' ? 'bg-gray-100 dark:bg-[#30363d] text-gray-900 dark:text-white' : 'text-gray-600 dark:text-[#8b949e]'
+                  pathname === '/screeners' ? 'bg-gray-100 dark:bg-[#30363d] text-gray-900 dark:text-white' : 'text-gray-600 dark:text-[#8b949e]'
                 } font-semibold text-sm hover:bg-gray-100 dark:hover:bg-[#30363d] hover:text-gray-900 dark:hover:text-white transition-colors`}
               >
                 <FilterIcon size={20} />
-                <span>Screener</span>
+                <span>Screeners</span>
               </Link>
 
               <Link

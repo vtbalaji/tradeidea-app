@@ -96,6 +96,13 @@ export interface FundamentalData {
   fundamentalScore: number | null;  // 0-100
   fundamentalRating: string | null;  // EXCELLENT, GOOD, AVERAGE, POOR, WEAK
 
+  // Graham Number (Value Investing)
+  grahamNumber: number | null;  // Fair value estimate
+  priceToGraham: number | null;  // Price/Graham ratio
+
+  // Piotroski F-Score (Financial Strength)
+  piotroskiScore: number | null;  // 0-9
+
   // Metadata
   lastUpdated: Date;
   dataSource: string;

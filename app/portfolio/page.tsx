@@ -137,7 +137,17 @@ export default function PortfolioPage() {
       return sum + pnl;
     }, 0);
 
-    return { portfolioValue, totalPnL };
+    // Calculate Today's P&L using previousClose from technical data
+    const todayPnL = openPositions.reduce((sum, p) => {
+      // Check if we have technical data with previousClose
+      if (p.technicals?.previousClose && p.currentPrice) {
+        const dailyPnl = (p.currentPrice - p.technicals.previousClose) * p.quantity;
+        return sum + dailyPnl;
+      }
+      return sum;
+    }, 0);
+
+    return { portfolioValue, totalPnL, todayPnL };
   }, [openPositions]);
 
   // Handler functions with useCallback for optimization
@@ -274,6 +284,7 @@ export default function PortfolioPage() {
       <PortfolioMetrics
         portfolioValue={portfolioMetrics.portfolioValue}
         totalPnL={portfolioMetrics.totalPnL}
+        todayPnL={portfolioMetrics.todayPnL}
         openPositionsCount={openPositions.length}
         closedPositionsCount={closedPositions.length}
       />

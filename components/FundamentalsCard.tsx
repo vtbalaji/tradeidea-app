@@ -8,6 +8,8 @@ interface FundamentalsData {
   operatingMargins?: number;
   fundamentalRating?: 'EXCELLENT' | 'GOOD' | 'AVERAGE' | 'POOR' | 'WEAK';
   fundamentalScore?: number;
+  priceToGraham?: number;
+  piotroskiScore?: number;
 }
 
 interface FundamentalsCardProps {
@@ -42,6 +44,38 @@ export const FundamentalsCard: React.FC<FundamentalsCardProps> = ({
     }
   };
 
+  // Graham Valuation logic
+  const getGrahamValuation = (priceToGraham?: number) => {
+    if (!priceToGraham) return null;
+
+    if (priceToGraham < 1) {
+      return {
+        label: 'Undervalued',
+        color: 'text-green-600 dark:text-green-400'
+      };
+    } else if (priceToGraham === 1) {
+      return {
+        label: 'Fair Value',
+        color: 'text-yellow-600 dark:text-yellow-500'
+      };
+    } else {
+      return {
+        label: 'Overvalued',
+        color: 'text-red-600 dark:text-red-500'
+      };
+    }
+  };
+
+  const grahamValuation = getGrahamValuation(fundamentals.priceToGraham);
+
+  // Piotroski Score color coding
+  const getPiotroskiColor = (score?: number) => {
+    if (!score) return 'text-gray-600 dark:text-gray-400';
+    if (score >= 7) return 'text-green-600 dark:text-green-400';
+    if (score >= 4) return 'text-yellow-600 dark:text-yellow-500';
+    return 'text-red-600 dark:text-red-500';
+  };
+
   // Only show rating if there's meaningful fundamental data (score > 0)
   const shouldShowRating = fundamentals.fundamentalRating &&
     (fundamentals.fundamentalScore ?? 0) > 0;
@@ -62,10 +96,35 @@ export const FundamentalsCard: React.FC<FundamentalsCardProps> = ({
         )}
       </div>
 
+      {/* Graham Valuation and Piotroski Score */}
+      {(grahamValuation || fundamentals.piotroskiScore !== undefined) && (
+        <div className="grid grid-cols-2 gap-2 mb-3 text-xs">
+          {/* Graham Valuation */}
+          {grahamValuation && (
+            <div>
+              <span className="text-gray-600 dark:text-[#8b949e]">Graham Score:</span>
+              <span className={`ml-1 font-bold ${grahamValuation.color}`}>
+                {grahamValuation.label}
+              </span>
+            </div>
+          )}
+
+          {/* Piotroski Score */}
+          {fundamentals.piotroskiScore !== undefined && (
+            <div>
+              <span className="text-gray-600 dark:text-[#8b949e]">Piotroski:</span>
+              <span className={`ml-1 font-bold ${getPiotroskiColor(fundamentals.piotroskiScore)}`}>
+                {fundamentals.piotroskiScore}/9
+              </span>
+            </div>
+          )}
+        </div>
+      )}
+
       {/* Fundamentals Grid */}
       <div className="grid grid-cols-2 gap-2 text-xs">
         {/* PE Ratio */}
-        {fundamentals.trailingPE && (
+        {fundamentals.trailingPE !== undefined && fundamentals.trailingPE !== null && (
           <div>
             <span className="text-gray-600 dark:text-[#8b949e]">PE:</span>
             <span className="ml-1 font-semibold text-gray-900 dark:text-white">
@@ -75,7 +134,7 @@ export const FundamentalsCard: React.FC<FundamentalsCardProps> = ({
         )}
 
         {/* Return on Equity */}
-        {fundamentals.returnOnEquity && (
+        {fundamentals.returnOnEquity !== undefined && fundamentals.returnOnEquity !== null && (
           <div>
             <span className="text-gray-600 dark:text-[#8b949e]">ROE:</span>
             <span className="ml-1 font-semibold text-gray-900 dark:text-white">
@@ -85,7 +144,7 @@ export const FundamentalsCard: React.FC<FundamentalsCardProps> = ({
         )}
 
         {/* Debt to Equity */}
-        {fundamentals.debtToEquity && (
+        {fundamentals.debtToEquity !== undefined && fundamentals.debtToEquity !== null && (
           <div>
             <span className="text-gray-600 dark:text-[#8b949e]">Debt-to-Equity:</span>
             <span className="ml-1 font-semibold text-gray-900 dark:text-white">
@@ -95,7 +154,7 @@ export const FundamentalsCard: React.FC<FundamentalsCardProps> = ({
         )}
 
         {/* Earnings Growth */}
-        {fundamentals.earningsGrowth && (
+        {fundamentals.earningsGrowth !== undefined && fundamentals.earningsGrowth !== null && (
           <div>
             <span className="text-gray-600 dark:text-[#8b949e]">Earnings Growth:</span>
             <span className="ml-1 font-semibold text-gray-900 dark:text-white">
@@ -105,7 +164,7 @@ export const FundamentalsCard: React.FC<FundamentalsCardProps> = ({
         )}
 
         {/* Operating Margin */}
-        {fundamentals.operatingMargins && (
+        {fundamentals.operatingMargins !== undefined && fundamentals.operatingMargins !== null && (
           <div>
             <span className="text-gray-600 dark:text-[#8b949e]">Operating Margin:</span>
             <span className="ml-1 font-semibold text-gray-900 dark:text-white">

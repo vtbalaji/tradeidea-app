@@ -2,6 +2,7 @@
 interface PortfolioMetricsProps {
   portfolioValue: number;
   totalPnL: number;
+  todayPnL: number;
   openPositionsCount: number;
   closedPositionsCount: number;
 }
@@ -9,6 +10,7 @@ interface PortfolioMetricsProps {
 export function PortfolioMetrics({
   portfolioValue,
   totalPnL,
+  todayPnL,
   openPositionsCount,
   closedPositionsCount,
 }: PortfolioMetricsProps) {
@@ -18,6 +20,12 @@ export function PortfolioMetrics({
         <div className="bg-white dark:bg-[#0f1419] border-l-4 border-l-blue-500 border border-gray-200 dark:border-[#30363d] rounded-lg p-2.5 min-w-[160px] shadow-sm">
           <p className="text-xs text-gray-600 dark:text-[#8b949e] mb-0.5">Portfolio Value</p>
           <p className="text-xl font-bold text-gray-900 dark:text-white">₹{Math.round(portfolioValue).toLocaleString('en-IN')}</p>
+        </div>
+        <div className={`bg-white dark:bg-[#0f1419] border-l-4 ${todayPnL >= 0 ? 'border-l-purple-500' : 'border-l-orange-500'} border border-gray-200 dark:border-[#30363d] rounded-lg p-2.5 min-w-[160px] shadow-sm`}>
+          <p className="text-xs text-gray-600 dark:text-[#8b949e] mb-0.5">Today's P&L</p>
+          <p className={`text-xl font-bold ${todayPnL >= 0 ? 'text-purple-500' : 'text-orange-500'}`}>
+            {todayPnL >= 0 ? '+' : ''}₹{Math.round(todayPnL).toLocaleString('en-IN')}
+          </p>
         </div>
         <div className={`bg-white dark:bg-[#0f1419] border-l-4 ${totalPnL >= 0 ? 'border-l-green-500' : 'border-l-red-500'} border border-gray-200 dark:border-[#30363d] rounded-lg p-2.5 min-w-[160px] shadow-sm`}>
           <p className="text-xs text-gray-600 dark:text-[#8b949e] mb-0.5">Total P&L</p>

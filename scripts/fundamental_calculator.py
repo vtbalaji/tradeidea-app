@@ -103,6 +103,13 @@ class FundamentalCalculator:
         if shares_outstanding > 0:
             market_cap = current_price * shares_outstanding
 
+        # Calculate Graham Number
+        # Graham Number = √(22.5 × EPS × Book Value per Share)
+        # Represents fair value according to Benjamin Graham's value investing principles
+        graham_number = 0
+        if eps > 0 and book_value_per_share > 0:
+            graham_number = (22.5 * eps * book_value_per_share) ** 0.5
+
         # Calculate all ratios with safe division
         fundamentals = {
             'symbol': symbol,
@@ -116,6 +123,8 @@ class FundamentalCalculator:
             'PB': round(current_price / book_value_per_share, 2) if book_value_per_share > 0 else None,
             'PS': round(market_cap / revenue, 2) if revenue > 0 else None,
             'EVEBITDA': round((market_cap + total_debt - cash) / ebitda, 2) if ebitda > 0 else None,
+            'grahamNumber': round(graham_number, 2) if graham_number > 0 else None,
+            'priceToGraham': round(current_price / graham_number, 2) if graham_number > 0 else None,
 
             # Profitability Ratios (%)
             'ROE': round((net_profit / total_equity) * 100, 2) if total_equity > 0 else None,
@@ -186,6 +195,19 @@ class FundamentalCalculator:
             print(f'  P/S Ratio:        {fundamentals["PS"]:>15,.2f}')
         if fundamentals["EVEBITDA"]:
             print(f'  EV/EBITDA:        {fundamentals["EVEBITDA"]:>15,.2f}')
+        if fundamentals["grahamNumber"]:
+            print(f'\n💎 Graham Number (Fair Value):')
+            print(f'  Graham Number:    ₹{fundamentals["grahamNumber"]:>12,.2f}')
+            print(f'  Current Price:    ₹{fundamentals["currentPrice"]:>12,.2f}')
+            print(f'  Price/Graham:     {fundamentals["priceToGraham"]:>15,.2f}x')
+            if fundamentals["priceToGraham"] < 1:
+                discount = (1 - fundamentals["priceToGraham"]) * 100
+                print(f'  Status:           🟢 Undervalued by {discount:.1f}%')
+            elif fundamentals["priceToGraham"] > 1:
+                premium = (fundamentals["priceToGraham"] - 1) * 100
+                print(f'  Status:           🔴 Overvalued by {premium:.1f}%')
+            else:
+                print(f'  Status:           🟡 Fairly valued')
 
         print(f'\n💹 Profitability Metrics:')
         if fundamentals["ROE"]:

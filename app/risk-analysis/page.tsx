@@ -384,7 +384,16 @@ export default function RiskAnalysisPage() {
             <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4">Performance Attribution</h2>
 
             {/* Overall Summary */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+            <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">
+              <div className="bg-white dark:bg-[#0f1419] p-4 rounded-lg border border-gray-200 dark:border-[#30363d]">
+                <p className="text-xs text-gray-600 dark:text-[#8b949e] mb-1">Today's P&L</p>
+                <p className={`text-2xl font-bold ${analysis.performanceAttribution.overall.todayPnL >= 0 ? 'text-purple-500' : 'text-orange-500'}`}>
+                  {analysis.performanceAttribution.overall.todayPnL >= 0 ? '+' : ''}₹{Math.round(analysis.performanceAttribution.overall.todayPnL).toLocaleString('en-IN')}
+                </p>
+                <p className={`text-sm ${analysis.performanceAttribution.overall.todayPnLPercent >= 0 ? 'text-purple-500' : 'text-orange-500'}`}>
+                  ({analysis.performanceAttribution.overall.todayPnLPercent >= 0 ? '+' : ''}{analysis.performanceAttribution.overall.todayPnLPercent.toFixed(2)}%)
+                </p>
+              </div>
               <div className="bg-white dark:bg-[#0f1419] p-4 rounded-lg border border-gray-200 dark:border-[#30363d]">
                 <p className="text-xs text-gray-600 dark:text-[#8b949e] mb-1">Total P&L</p>
                 <p className={`text-2xl font-bold ${analysis.performanceAttribution.overall.totalPnL >= 0 ? 'text-green-500' : 'text-red-500'}`}>

@@ -48,6 +48,19 @@ def fetch_fundamentals(symbol):
             print(f'  ⏭️  Skipped - Market cap too low ({market_cap_cr:.0f} Cr < 1000 Cr)')
             return None
 
+        # Calculate Graham Number
+        # Graham Number = √(22.5 × EPS × Book Value per Share)
+        graham_number = None
+        price_to_graham = None
+        trailing_eps = info.get('trailingEps', None)
+        book_value = info.get('bookValue', None)
+        current_price = info.get('currentPrice', None) or info.get('regularMarketPrice', None)
+
+        if trailing_eps and book_value and trailing_eps > 0 and book_value > 0:
+            graham_number = round((22.5 * trailing_eps * book_value) ** 0.5, 2)
+            if current_price and graham_number > 0:
+                price_to_graham = round(current_price / graham_number, 2)
+
         # Extract fundamental metrics
         fundamentals = {
             # Valuation Ratios
@@ -56,6 +69,8 @@ def fetch_fundamentals(symbol):
             'pegRatio': info.get('pegRatio', None),  # Will calculate manually if None
             'priceToBook': info.get('priceToBook', None),
             'priceToSales': info.get('priceToSalesTrailing12Months', None),
+            'grahamNumber': graham_number,
+            'priceToGraham': price_to_graham,
 
             # Financial Health
             'debtToEquity': info.get('debtToEquity', None),
@@ -106,11 +121,229 @@ def fetch_fundamentals(symbol):
         if fundamentals['debtToEquity'] is not None:
             fundamentals['debtToEquity'] = round(fundamentals['debtToEquity'] / 100, 2)
 
+        # Calculate Piotroski F-Score
+        print(f'  📊 Calculating Piotroski F-Score...')
+        piotroski = calculate_piotroski_score(ticker)
+        if piotroski:
+            fundamentals['piotroskiScore'] = piotroski['score']
+            fundamentals['piotroskiBreakdown'] = piotroski['breakdown']
+            fundamentals['piotroskiDetails'] = piotroski['details']
+            print(f'  ✅ Piotroski F-Score: {piotroski["score"]}/9')
+        else:
+            fundamentals['piotroskiScore'] = None
+            fundamentals['piotroskiBreakdown'] = None
+            fundamentals['piotroskiDetails'] = None
+            print(f'  ⚠️  Piotroski F-Score unavailable (insufficient data)')
+
         print(f'  ✅ Fetched fundamentals')
         return fundamentals
 
     except Exception as e:
         print(f'  ❌ Error: {str(e)}')
+        return None
+
+def calculate_piotroski_score(ticker):
+    """
+    Calculate Piotroski F-Score (0-9 points)
+
+    A value investing metric that evaluates 9 criteria:
+    - Profitability (4 points)
+    - Leverage/Liquidity (3 points)
+    - Operating Efficiency (2 points)
+
+    Returns:
+        dict: {'score': int (0-9), 'breakdown': dict, 'details': str}
+    """
+    try:
+        # Get financial statements
+        financials = ticker.financials
+        balance_sheet = ticker.balance_sheet
+        cashflow = ticker.cashflow
+
+        if financials is None or balance_sheet is None or cashflow is None:
+            return None
+
+        if financials.empty or balance_sheet.empty or cashflow.empty:
+            return None
+
+        # Ensure we have at least 2 years of data (current + previous)
+        if len(financials.columns) < 2:
+            return None
+
+        score = 0
+        breakdown = {}
+        details = []
+
+        # Get current year (most recent) and previous year data
+        current = 0  # Most recent column
+        previous = 1  # Second most recent column
+
+        # ===== PROFITABILITY (4 points) =====
+
+        # 1. Positive Net Income
+        try:
+            net_income = financials.loc['Net Income', financials.columns[current]]
+            if net_income > 0:
+                score += 1
+                breakdown['netIncome'] = 1
+                details.append('✓ Net Income > 0')
+            else:
+                breakdown['netIncome'] = 0
+                details.append('✗ Net Income ≤ 0')
+        except:
+            breakdown['netIncome'] = 0
+            details.append('✗ Net Income data unavailable')
+
+        # 2. Positive Operating Cash Flow
+        try:
+            ocf = cashflow.loc['Operating Cash Flow', cashflow.columns[current]]
+            if ocf > 0:
+                score += 1
+                breakdown['operatingCashFlow'] = 1
+                details.append('✓ Operating Cash Flow > 0')
+            else:
+                breakdown['operatingCashFlow'] = 0
+                details.append('✗ Operating Cash Flow ≤ 0')
+        except:
+            breakdown['operatingCashFlow'] = 0
+            details.append('✗ Operating Cash Flow data unavailable')
+
+        # 3. ROA increased (Return on Assets)
+        try:
+            net_income_curr = financials.loc['Net Income', financials.columns[current]]
+            net_income_prev = financials.loc['Net Income', financials.columns[previous]]
+            total_assets_curr = balance_sheet.loc['Total Assets', balance_sheet.columns[current]]
+            total_assets_prev = balance_sheet.loc['Total Assets', balance_sheet.columns[previous]]
+
+            roa_curr = net_income_curr / total_assets_curr
+            roa_prev = net_income_prev / total_assets_prev
+
+            if roa_curr > roa_prev:
+                score += 1
+                breakdown['roaIncrease'] = 1
+                details.append(f'✓ ROA increased ({roa_prev:.2%} → {roa_curr:.2%})')
+            else:
+                breakdown['roaIncrease'] = 0
+                details.append(f'✗ ROA decreased ({roa_prev:.2%} → {roa_curr:.2%})')
+        except:
+            breakdown['roaIncrease'] = 0
+            details.append('✗ ROA data unavailable')
+
+        # 4. Quality of Earnings (Operating Cash Flow > Net Income)
+        try:
+            if ocf > net_income:
+                score += 1
+                breakdown['qualityOfEarnings'] = 1
+                details.append('✓ Operating Cash Flow > Net Income')
+            else:
+                breakdown['qualityOfEarnings'] = 0
+                details.append('✗ Operating Cash Flow ≤ Net Income')
+        except:
+            breakdown['qualityOfEarnings'] = 0
+            details.append('✗ Quality of earnings data unavailable')
+
+        # ===== LEVERAGE/LIQUIDITY (3 points) =====
+
+        # 5. Long-term debt decreased
+        try:
+            lt_debt_curr = balance_sheet.loc['Long Term Debt', balance_sheet.columns[current]]
+            lt_debt_prev = balance_sheet.loc['Long Term Debt', balance_sheet.columns[previous]]
+
+            if lt_debt_curr < lt_debt_prev:
+                score += 1
+                breakdown['debtDecrease'] = 1
+                details.append('✓ Long-term debt decreased')
+            else:
+                breakdown['debtDecrease'] = 0
+                details.append('✗ Long-term debt increased')
+        except:
+            breakdown['debtDecrease'] = 0
+            details.append('✗ Long-term debt data unavailable')
+
+        # 6. Current Ratio increased
+        try:
+            curr_assets_curr = balance_sheet.loc['Current Assets', balance_sheet.columns[current]]
+            curr_liab_curr = balance_sheet.loc['Current Liabilities', balance_sheet.columns[current]]
+            curr_assets_prev = balance_sheet.loc['Current Assets', balance_sheet.columns[previous]]
+            curr_liab_prev = balance_sheet.loc['Current Liabilities', balance_sheet.columns[previous]]
+
+            current_ratio_curr = curr_assets_curr / curr_liab_curr
+            current_ratio_prev = curr_assets_prev / curr_liab_prev
+
+            if current_ratio_curr > current_ratio_prev:
+                score += 1
+                breakdown['currentRatioIncrease'] = 1
+                details.append(f'✓ Current ratio increased ({current_ratio_prev:.2f} → {current_ratio_curr:.2f})')
+            else:
+                breakdown['currentRatioIncrease'] = 0
+                details.append(f'✗ Current ratio decreased ({current_ratio_prev:.2f} → {current_ratio_curr:.2f})')
+        except:
+            breakdown['currentRatioIncrease'] = 0
+            details.append('✗ Current ratio data unavailable')
+
+        # 7. No new shares issued
+        try:
+            shares_curr = balance_sheet.loc['Ordinary Shares Number', balance_sheet.columns[current]]
+            shares_prev = balance_sheet.loc['Ordinary Shares Number', balance_sheet.columns[previous]]
+
+            if shares_curr <= shares_prev:
+                score += 1
+                breakdown['noSharesIssued'] = 1
+                details.append('✓ No new shares issued')
+            else:
+                breakdown['noSharesIssued'] = 0
+                details.append('✗ New shares issued')
+        except:
+            breakdown['noSharesIssued'] = 0
+            details.append('✗ Shares outstanding data unavailable')
+
+        # ===== OPERATING EFFICIENCY (2 points) =====
+
+        # 8. Gross Margin increased
+        try:
+            revenue_curr = financials.loc['Total Revenue', financials.columns[current]]
+            revenue_prev = financials.loc['Total Revenue', financials.columns[previous]]
+            gross_profit_curr = financials.loc['Gross Profit', financials.columns[current]]
+            gross_profit_prev = financials.loc['Gross Profit', financials.columns[previous]]
+
+            gross_margin_curr = gross_profit_curr / revenue_curr
+            gross_margin_prev = gross_profit_prev / revenue_prev
+
+            if gross_margin_curr > gross_margin_prev:
+                score += 1
+                breakdown['grossMarginIncrease'] = 1
+                details.append(f'✓ Gross margin increased ({gross_margin_prev:.2%} → {gross_margin_curr:.2%})')
+            else:
+                breakdown['grossMarginIncrease'] = 0
+                details.append(f'✗ Gross margin decreased ({gross_margin_prev:.2%} → {gross_margin_curr:.2%})')
+        except:
+            breakdown['grossMarginIncrease'] = 0
+            details.append('✗ Gross margin data unavailable')
+
+        # 9. Asset Turnover increased
+        try:
+            asset_turnover_curr = revenue_curr / total_assets_curr
+            asset_turnover_prev = revenue_prev / total_assets_prev
+
+            if asset_turnover_curr > asset_turnover_prev:
+                score += 1
+                breakdown['assetTurnoverIncrease'] = 1
+                details.append(f'✓ Asset turnover increased ({asset_turnover_prev:.2f} → {asset_turnover_curr:.2f})')
+            else:
+                breakdown['assetTurnoverIncrease'] = 0
+                details.append(f'✗ Asset turnover decreased ({asset_turnover_prev:.2f} → {asset_turnover_curr:.2f})')
+        except:
+            breakdown['assetTurnoverIncrease'] = 0
+            details.append('✗ Asset turnover data unavailable')
+
+        return {
+            'score': score,
+            'breakdown': breakdown,
+            'details': details
+        }
+
+    except Exception as e:
+        print(f'    ⚠️  Piotroski calculation error: {str(e)}')
         return None
 
 def calculate_fundamental_score(fundamentals):
@@ -388,10 +621,12 @@ def analyze_fundamentals():
 
                 # Display summary
                 print(f'  ✅ {symbol} - {fundamental_analysis["rating"]} (Score: {fundamental_analysis["score"]})')
+                if fundamentals.get('piotroskiScore') is not None:
+                    print(f'     Piotroski: {fundamentals["piotroskiScore"]}/9', end='')
+                else:
+                    print(f'     Piotroski: N/A', end='')
                 if fundamentals.get('trailingPE'):
-                    print(f'     PE: {fundamentals["trailingPE"]:.2f}', end='')
-                if fundamentals.get('pegRatio'):
-                    print(f' | PEG: {fundamentals["pegRatio"]:.2f}', end='')
+                    print(f' | PE: {fundamentals["trailingPE"]:.2f}', end='')
                 if fundamentals.get('returnOnEquity'):
                     print(f' | ROE: {fundamentals["returnOnEquity"]:.1f}%', end='')
                 if fundamentals.get('debtToEquity'):

@@ -15,6 +15,7 @@ import FundamentalsCard from '@/components/FundamentalsCard';
 import AnalysisButton from '@/components/AnalysisButton';
 import AddPositionModal from '@/components/portfolio/modals/AddPositionModal';
 import RatingGuide from '@/components/RatingGuide';
+import PiotroskiGuide from '@/components/PiotroskiGuide';
 
 // Calculate badge status for an idea
 const calculateBadgeStatus = (idea: any) => {
@@ -336,8 +337,19 @@ export default function IdeasHubPage() {
         <p className="text-sm text-gray-600 dark:text-[#8b949e]">Discover and share Investment opportunities</p>
       </div>
 
-      {/* Search Bar */}
+      {/* Search Bar with Create Button */}
       <div className="px-5 mb-3">
+        <div className="flex gap-2 mb-3">
+          <button
+            onClick={() => router.push('/ideas/new')}
+            className="w-full px-4 py-3 bg-gradient-to-r from-[#ff8c42] to-[#ff6b35] hover:from-[#ff7a2e] hover:to-[#ff5a24] text-white font-semibold rounded-lg transition-all shadow-lg shadow-orange-500/30 hover:shadow-orange-500/40 flex items-center justify-center gap-2"
+          >
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M12 5v14M5 12h14" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
+            <span>Share Your Next Big Win</span>
+          </button>
+        </div>
         <div className="flex gap-2">
           <input
             type="text"
@@ -537,9 +549,28 @@ export default function IdeasHubPage() {
       />
 
       {/* Rating Guide Section - Bottom of page */}
-      <div className="px-5 pb-8">
+      <div className="px-5 pb-4">
         <RatingGuide />
       </div>
+
+      {/* Piotroski Guide Section */}
+      <div className="px-5 pb-8">
+        <PiotroskiGuide />
+      </div>
+
+      {/* Floating Action Button */}
+      <button
+        onClick={() => router.push('/ideas/new')}
+        className="fixed bottom-6 right-6 w-16 h-16 bg-gradient-to-r from-[#ff8c42] to-[#ff6b35] hover:from-[#ff7a2e] hover:to-[#ff5a24] text-white font-bold rounded-full shadow-2xl shadow-orange-500/50 hover:shadow-orange-500/60 transition-all hover:scale-110 flex items-center justify-center z-50 group"
+        title="Share Your Next Big Win"
+      >
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+          <path d="M12 5v14M5 12h14" strokeLinecap="round" strokeLinejoin="round"/>
+        </svg>
+        <span className="absolute -top-12 right-0 bg-gray-900 dark:bg-gray-800 text-white text-xs px-3 py-1.5 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">
+          Share Your Idea
+        </span>
+      </button>
     </div>
   );
 }

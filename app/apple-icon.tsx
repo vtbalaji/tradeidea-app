@@ -7,6 +7,9 @@ export const size = {
 };
 export const contentType = 'image/png';
 
+// Force cache refresh
+export const revalidate = 0;
+
 // Image generation
 export default async function Icon() {
   return new ImageResponse(

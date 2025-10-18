@@ -20,6 +20,8 @@ export interface PerformanceAttribution {
   overall: {
     totalPnL: number;
     totalPnLPercent: number;
+    todayPnL: number;
+    todayPnLPercent: number;
     totalInvested: number;
     totalCurrent: number;
     winningPositions: number;
@@ -114,6 +116,16 @@ export function calculatePerformanceAttribution(
   const losingPositions = positionsWithPnL.filter(p => p.pnl < 0).length;
   const winRate = positions.length > 0 ? (winningPositions / positions.length) * 100 : 0;
 
+  // Calculate Today's P&L using previousClose from technical data
+  const todayPnL = positions.reduce((sum, p) => {
+    if (p.technicals?.previousClose && p.currentPrice) {
+      const dailyPnl = (p.currentPrice - p.technicals.previousClose) * p.quantity;
+      return sum + dailyPnl;
+    }
+    return sum;
+  }, 0);
+  const todayPnLPercent = totalCurrent > 0 ? (todayPnL / totalCurrent) * 100 : 0;
+
   // By Sector
   const sectorMap = new Map<string, { value: number; pnl: number; invested: number; count: number }>();
   for (const p of positionsWithPnL) {
@@ -195,6 +207,8 @@ export function calculatePerformanceAttribution(
     overall: {
       totalPnL,
       totalPnLPercent,
+      todayPnL,
+      todayPnLPercent,
       totalInvested,
       totalCurrent,
       winningPositions,

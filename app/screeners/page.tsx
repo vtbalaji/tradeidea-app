@@ -694,7 +694,7 @@ export default function Cross50200Page() {
     const displaySymbol = box.symbol.replace(/^NS_/, '');
     const statusColor = box.status === 'broken' ? 'text-green-400' : box.status === 'active' ? 'text-blue-400' : 'text-orange-400';
     const statusBg = box.status === 'broken' ? 'bg-green-500/20' : box.status === 'active' ? 'bg-blue-500/20' : 'bg-orange-500/20';
-    const statusLabel = box.status === 'broken' ? '🟢 Breakout' : box.status === 'active' ? '🟦 Active' : '⚠️ False';
+    const statusLabel = box.status === 'broken' ? '🟢 Buy' : box.status === 'active' ? '🟦 Consolidating' : '⚠️ False';
 
     return (
       <div className="bg-gray-50 dark:bg-[#1c2128] border border-gray-200 dark:border-[#30363d] rounded-xl p-4 hover:border-[#ff8c42] transition-colors">
@@ -1225,7 +1225,7 @@ export default function Cross50200Page() {
 
       {/* Header */}
       <div className="p-5 pt-5 pb-3">
-        <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-1">MA Crossovers</h1>
+        <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-1">Screeners</h1>
         <p className="text-sm text-gray-600 dark:text-[#8b949e]">
           {displayDate ? `Showing data for ${formatDateIndian(displayDate)}` : 'Stocks that crossed moving averages'}
         </p>
@@ -1242,7 +1242,7 @@ export default function Cross50200Page() {
                 : 'bg-gray-50 dark:bg-[#1c2128] text-gray-600 dark:text-[#8b949e] hover:bg-gray-100 dark:hover:bg-[#30363d]'
             }`}
           >
-            MA Cross
+            Average Cross
           </button>
           <button
             onClick={() => handleTabChange('volume')}
@@ -1328,7 +1328,7 @@ export default function Cross50200Page() {
                 {/* Summary with Filter Buttons */}
                 <div className="mb-4">
                   <div className="flex items-center gap-2 flex-wrap mb-3">
-                    <h2 className="text-xl font-bold text-gray-900 dark:text-white">MA Crossovers</h2>
+                    <h2 className="text-xl font-bold text-gray-900 dark:text-white">Moving Average Crossovers</h2>
                     <span className="px-2 py-0.5 bg-[#ff8c42]/20 text-[#ff8c42] text-xs font-semibold rounded-full">
                       {displayCrossovers.length} {displayCrossovers.length === 1 ? 'stock' : 'stocks'}
                     </span>
@@ -1668,7 +1668,7 @@ export default function Cross50200Page() {
                           : 'bg-gray-100 dark:bg-[#1c2128] text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-[#30363d]'
                       }`}
                     >
-                      🟢 Breakouts ({darvasBoxes.filter(b => b.status === 'broken').length})
+                      🟢 Buy ({darvasBoxes.filter(b => b.status === 'broken').length})
                     </button>
                     <button
                       onClick={() => setDarvasFilter('active')}
@@ -1678,7 +1678,7 @@ export default function Cross50200Page() {
                           : 'bg-gray-100 dark:bg-[#1c2128] text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-[#30363d]'
                       }`}
                     >
-                      🟦 Active ({darvasBoxes.filter(b => b.status === 'active').length})
+                      🟦 Consolidating ({darvasBoxes.filter(b => b.status === 'active').length})
                     </button>
                   </div>
                 </div>
@@ -1687,7 +1687,7 @@ export default function Cross50200Page() {
                 {filteredDarvas.length === 0 ? (
                   <div className="text-center py-12">
                     <div className="text-4xl mb-3">🔍</div>
-                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-1">No {darvasFilter === 'broken' ? 'breakout' : 'active'} boxes</h3>
+                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-1">No {darvasFilter === 'broken' ? 'buy' : 'consolidating'} boxes</h3>
                     <p className="text-sm text-gray-600 dark:text-[#8b949e]">Try selecting a different filter</p>
                   </div>
                 ) : (
@@ -1751,8 +1751,8 @@ export default function Cross50200Page() {
                     <div className="pt-2 border-t border-purple-200 dark:border-purple-800">
                       <span className="font-semibold text-purple-600 dark:text-purple-400">Box Status:</span>
                       <ul className="ml-6 mt-1 space-y-1 text-xs">
-                        <li>• <strong className="text-green-600 dark:text-green-400">🟢 Broken:</strong> Confirmed breakout (price + volume + 2+ days above box)</li>
-                        <li>• <strong className="text-blue-600 dark:text-blue-400">🟦 Active:</strong> Consolidating OR potential breakout (needs confirmation)</li>
+                        <li>• <strong className="text-green-600 dark:text-green-400">🟢 Buy:</strong> Confirmed breakout (price + volume + 2+ days above box)</li>
+                        <li>• <strong className="text-blue-600 dark:text-blue-400">🟦 Consolidating:</strong> Consolidating OR potential breakout (needs confirmation)</li>
                         <li>• <strong className="text-orange-600 dark:text-orange-400">⚠️ False:</strong> Breakout without proper volume confirmation</li>
                       </ul>
                     </div>

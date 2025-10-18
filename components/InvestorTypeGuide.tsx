@@ -32,7 +32,7 @@ export default function InvestorTypeGuide() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             <div>
               <h5 className="text-xs font-semibold text-gray-900 dark:text-white mb-2">Valuation Metrics</h5>
-              <div className="space-y-1.5 text-xs">
+              <div className="space-y-1.5 text-xs text-gray-900 dark:text-white">
                 <div className="bg-gray-50 dark:bg-[#0f1419] rounded p-2 border-l-2 border-blue-500">
                   <strong>Price/Book:</strong> &lt; 5.0
                 </div>
@@ -49,7 +49,7 @@ export default function InvestorTypeGuide() {
             </div>
             <div>
               <h5 className="text-xs font-semibold text-gray-900 dark:text-white mb-2">Quality & Technical</h5>
-              <div className="space-y-1.5 text-xs">
+              <div className="space-y-1.5 text-xs text-gray-900 dark:text-white">
                 <div className="bg-gray-50 dark:bg-[#0f1419] rounded p-2 border-l-2 border-green-500">
                   <strong>Fundamental Score:</strong> ≥ 60
                 </div>
@@ -89,7 +89,7 @@ export default function InvestorTypeGuide() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             <div>
               <h5 className="text-xs font-semibold text-gray-900 dark:text-white mb-2">Growth Score (3 of 4 required)</h5>
-              <div className="space-y-1.5 text-xs">
+              <div className="space-y-1.5 text-xs text-gray-900 dark:text-white">
                 <div className="bg-gray-50 dark:bg-[#0f1419] rounded p-2 border-l-2 border-green-500">
                   <strong>Earnings Growth:</strong> ≥ 15%
                 </div>
@@ -106,7 +106,7 @@ export default function InvestorTypeGuide() {
             </div>
             <div>
               <h5 className="text-xs font-semibold text-gray-900 dark:text-white mb-2">Momentum Score (4 of 6 required)</h5>
-              <div className="space-y-1.5 text-xs">
+              <div className="space-y-1.5 text-xs text-gray-900 dark:text-white">
                 <div className="bg-gray-50 dark:bg-[#0f1419] rounded p-2 border-l-2 border-purple-500">
                   <strong>Golden Cross:</strong> Present
                 </div>
@@ -128,7 +128,7 @@ export default function InvestorTypeGuide() {
               </div>
             </div>
           </div>
-          <div className="mt-3 pt-3 border-t border-gray-200 dark:border-[#30363d] space-y-1.5 text-xs">
+          <div className="mt-3 pt-3 border-t border-gray-200 dark:border-[#30363d] space-y-1.5 text-xs text-gray-900 dark:text-white">
             <div className="bg-gray-50 dark:bg-[#0f1419] rounded p-2">
               <strong>Additional:</strong> PEG Ratio &lt; 2.0 (or null), Price Above SMA200, Volume ≥ 50% of avg, Overall Signal: BUY/STRONG_BUY
             </div>
@@ -151,7 +151,7 @@ export default function InvestorTypeGuide() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             <div>
               <h5 className="text-xs font-semibold text-gray-900 dark:text-white mb-2">Momentum Signals (5 of 7 required)</h5>
-              <div className="space-y-1.5 text-xs">
+              <div className="space-y-1.5 text-xs text-gray-900 dark:text-white">
                 <div className="bg-gray-50 dark:bg-[#0f1419] rounded p-2 border-l-2 border-purple-500">
                   <strong>Golden Cross:</strong> Present
                 </div>
@@ -177,7 +177,7 @@ export default function InvestorTypeGuide() {
             </div>
             <div>
               <h5 className="text-xs font-semibold text-gray-900 dark:text-white mb-2">Additional Conditions</h5>
-              <div className="space-y-1.5 text-xs">
+              <div className="space-y-1.5 text-xs text-gray-900 dark:text-white">
                 <div className="bg-gray-50 dark:bg-[#0f1419] rounded p-2 border-l-2 border-blue-500">
                   <strong>Price Above SMA20:</strong> Yes
                 </div>
@@ -217,7 +217,7 @@ export default function InvestorTypeGuide() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             <div>
               <h5 className="text-xs font-semibold text-gray-900 dark:text-white mb-2">Quality Score (5 of 7 required)</h5>
-              <div className="space-y-1.5 text-xs">
+              <div className="space-y-1.5 text-xs text-gray-900 dark:text-white">
                 <div className="bg-gray-50 dark:bg-[#0f1419] rounded p-2 border-l-2 border-yellow-500">
                   <strong>Operating Margins:</strong> ≥ 25%
                 </div>
@@ -243,7 +243,7 @@ export default function InvestorTypeGuide() {
             </div>
             <div>
               <h5 className="text-xs font-semibold text-gray-900 dark:text-white mb-2">Additional & Technical (3 of 5)</h5>
-              <div className="space-y-1.5 text-xs">
+              <div className="space-y-1.5 text-xs text-gray-900 dark:text-white">
                 <div className="bg-gray-50 dark:bg-[#0f1419] rounded p-2 border-l-2 border-blue-500">
                   <strong>Beta:</strong> &lt; 1.0 (lower volatility)
                 </div>
@@ -260,7 +260,7 @@ export default function InvestorTypeGuide() {
                   <strong>Price/Book:</strong> &lt; 10
                 </div>
               </div>
-              <div className="mt-2 space-y-1.5 text-xs">
+              <div className="mt-2 space-y-1.5 text-xs text-gray-900 dark:text-white">
                 <div className="bg-gray-50 dark:bg-[#0f1419] rounded p-2 border-l-2 border-purple-500">
                   <strong>Technical Confirmation (3 of 5):</strong> Above SMA200, MACD Bullish, RSI 45-65, Supertrend Bullish, Overall Signal BUY/STRONG_BUY
                 </div>
@@ -285,7 +285,7 @@ export default function InvestorTypeGuide() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             <div>
               <h5 className="text-xs font-semibold text-gray-900 dark:text-white mb-2">Dividend & Stability</h5>
-              <div className="space-y-1.5 text-xs">
+              <div className="space-y-1.5 text-xs text-gray-900 dark:text-white">
                 <div className="bg-gray-50 dark:bg-[#0f1419] rounded p-2 border-l-2 border-orange-500">
                   <strong>Dividend Yield:</strong> ≥ 2.5%
                 </div>
@@ -305,7 +305,7 @@ export default function InvestorTypeGuide() {
             </div>
             <div>
               <h5 className="text-xs font-semibold text-gray-900 dark:text-white mb-2">Stability Score (4 of 5 required)</h5>
-              <div className="space-y-1.5 text-xs">
+              <div className="space-y-1.5 text-xs text-gray-900 dark:text-white">
                 <div className="bg-gray-50 dark:bg-[#0f1419] rounded p-2 border-l-2 border-green-500">
                   <strong>Debt/Equity:</strong> &lt; 1.2
                 </div>
@@ -322,7 +322,7 @@ export default function InvestorTypeGuide() {
                   <strong>Current Ratio:</strong> ≥ 1.5
                 </div>
               </div>
-              <div className="mt-2 space-y-1.5 text-xs">
+              <div className="mt-2 space-y-1.5 text-xs text-gray-900 dark:text-white">
                 <div className="bg-gray-50 dark:bg-[#0f1419] rounded p-2 border-l-2 border-purple-500">
                   <strong>Technical Confirmation (2 of 3):</strong> Above SMA200, RSI 35-65, MACD Bullish
                 </div>
