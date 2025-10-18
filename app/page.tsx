@@ -558,7 +558,7 @@ export default function Home() {
           </p>
           <Link
             href="/login"
-            className="px-8 py-3 bg-[#ff8c42] hover:bg-[#ff9a58] text-white text-lg font-bold rounded-lg transition-all shadow-lg hover:shadow-xl hover:scale-105"
+            className="inline-block px-8 py-3 bg-[#ff8c42] hover:bg-[#ff9a58] text-white text-lg font-bold rounded-lg transition-all shadow-lg hover:shadow-xl hover:scale-105"
           >
             Start Free Now →
           </Link>
