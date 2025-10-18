@@ -1597,29 +1597,249 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Stats Section */}
-      {/* <section className="max-w-7xl mx-auto px-6 py-16">
-        <div className="bg-gray-50 dark:bg-[#1c2128] border border-gray-200 dark:border-[#30363d] rounded-xl p-12">
-          <div className="grid md:grid-cols-4 gap-8 text-center">
-            <div>
-              <div className="text-4xl font-bold text-[#ff8c42] mb-2">1000+</div>
-              <div className="text-gray-600 dark:text-[#8b949e]">Trading Ideas</div>
+      {/* Early Adopter / Social Proof Section */}
+      <section className="max-w-7xl mx-auto px-6 py-16 bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-900/10 dark:to-indigo-900/10">
+        <div className="text-center mb-12">
+          <div className="inline-block bg-blue-600 text-white px-4 py-2 rounded-full text-sm font-bold mb-4">
+            🚀 New Platform Advantage
+          </div>
+          <h2 className="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mb-4">
+            Be an Early Adopter
+          </h2>
+          <p className="text-lg text-gray-600 dark:text-[#8b949e] max-w-3xl mx-auto">
+            We're building TradeIdea in the open with real traders. Join now and help shape the future of portfolio tracking in India.
+          </p>
+        </div>
+
+        <div className="grid md:grid-cols-3 gap-6 max-w-5xl mx-auto">
+          {/* Benefit 1 */}
+          <div className="bg-white dark:bg-[#1c2128] rounded-xl p-6 border-2 border-blue-200 dark:border-blue-800">
+            <div className="text-4xl mb-4">🎁</div>
+            <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-3">
+              Free Forever Guarantee
+            </h3>
+            <p className="text-sm text-gray-600 dark:text-[#8b949e] mb-4">
+              As an early user, you're guaranteed free access to all features forever - even if we introduce paid plans later.
+            </p>
+            <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-3">
+              <p className="text-xs font-semibold text-blue-800 dark:text-blue-300">
+                ✓ Lifetime premium access
+              </p>
             </div>
-            <div>
-              <div className="text-4xl font-bold text-[#ff8c42] mb-2">500+</div>
-              <div className="text-gray-600 dark:text-[#8b949e]">Active Traders</div>
+          </div>
+
+          {/* Benefit 2 */}
+          <div className="bg-white dark:bg-[#1c2128] rounded-xl p-6 border-2 border-purple-200 dark:border-purple-800">
+            <div className="text-4xl mb-4">🎯</div>
+            <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-3">
+              Shape the Product
+            </h3>
+            <p className="text-sm text-gray-600 dark:text-[#8b949e] mb-4">
+              Your feedback directly influences new features. Early adopters get priority support and feature requests.
+            </p>
+            <div className="bg-purple-50 dark:bg-purple-900/20 rounded-lg p-3">
+              <p className="text-xs font-semibold text-purple-800 dark:text-purple-300">
+                ✓ Priority feature requests
+              </p>
             </div>
-            <div>
-              <div className="text-4xl font-bold text-[#ff8c42] mb-2">75%</div>
-              <div className="text-gray-600 dark:text-[#8b949e]">Success Rate</div>
-            </div>
-            <div>
-              <div className="text-4xl font-bold text-[#ff8c42] mb-2">24/7</div>
-              <div className="text-gray-600 dark:text-[#8b949e]">Community Support</div>
+          </div>
+
+          {/* Benefit 3 */}
+          <div className="bg-white dark:bg-[#1c2128] rounded-xl p-6 border-2 border-green-200 dark:border-green-800">
+            <div className="text-4xl mb-4">🏆</div>
+            <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-3">
+              Founder Access
+            </h3>
+            <p className="text-sm text-gray-600 dark:text-[#8b949e] mb-4">
+              Direct line to the founding team. Report bugs, suggest features, and see them implemented within days.
+            </p>
+            <div className="bg-green-50 dark:bg-green-900/20 rounded-lg p-3">
+              <p className="text-xs font-semibold text-green-800 dark:text-green-300">
+                ✓ Direct founder support
+              </p>
             </div>
           </div>
         </div>
-      </section> */}
+
+        {/* What Traders Are Saying - Honest Early Feedback */}
+        <div className="mt-16 max-w-5xl mx-auto">
+          <h3 className="text-2xl font-bold text-gray-900 dark:text-white text-center mb-8">
+            What Problem Are You Solving?
+          </h3>
+
+          <div className="grid md:grid-cols-2 gap-6">
+            {/* Pain Point 1 */}
+            <div className="bg-white dark:bg-[#1c2128] rounded-xl p-6 border-l-4 border-orange-500">
+              <p className="text-gray-700 dark:text-[#8b949e] italic mb-4">
+                "I spend 3 hours every Sunday updating my Excel sheet with stock prices and calculating P&L.
+                I need something that just works automatically."
+              </p>
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-orange-400 to-red-500 flex items-center justify-center text-white font-bold">
+                  R
+                </div>
+                <div>
+                  <p className="text-sm font-bold text-gray-900 dark:text-white">Retail Trader</p>
+                  <p className="text-xs text-gray-600 dark:text-[#8b949e]">25+ stocks portfolio</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Pain Point 2 */}
+            <div className="bg-white dark:bg-[#1c2128] rounded-xl p-6 border-l-4 border-blue-500">
+              <p className="text-gray-700 dark:text-[#8b949e] italic mb-4">
+                "I missed selling TCS at my target price because I was in a meeting.
+                By the time I checked, it had dropped 4%. Never again."
+              </p>
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-400 to-indigo-500 flex items-center justify-center text-white font-bold">
+                  S
+                </div>
+                <div>
+                  <p className="text-sm font-bold text-gray-900 dark:text-white">Working Professional</p>
+                  <p className="text-xs text-gray-600 dark:text-[#8b949e]">Part-time trader</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Pain Point 3 */}
+            <div className="bg-white dark:bg-[#1c2128] rounded-xl p-6 border-l-4 border-green-500">
+              <p className="text-gray-700 dark:text-[#8b949e] italic mb-4">
+                "I use 4 different apps - one for charts, one for fundamentals, one for portfolio, one for alerts.
+                Just give me everything in one place."
+              </p>
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-green-400 to-emerald-500 flex items-center justify-center text-white font-bold">
+                  A
+                </div>
+                <div>
+                  <p className="text-sm font-bold text-gray-900 dark:text-white">Active Trader</p>
+                  <p className="text-xs text-gray-600 dark:text-[#8b949e]">50+ positions</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Pain Point 4 */}
+            <div className="bg-white dark:bg-[#1c2128] rounded-xl p-6 border-l-4 border-purple-500">
+              <p className="text-gray-700 dark:text-[#8b949e] italic mb-4">
+                "Every portfolio app wants ₹500/month. I'm a student learning to invest.
+                I need free tools that actually work."
+              </p>
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-purple-400 to-pink-500 flex items-center justify-center text-white font-bold">
+                  M
+                </div>
+                <div>
+                  <p className="text-sm font-bold text-gray-900 dark:text-white">Beginner Investor</p>
+                  <p className="text-xs text-gray-600 dark:text-[#8b949e]">Learning to trade</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* CTA */}
+        <div className="mt-12 text-center">
+          <div className="inline-block bg-gradient-to-r from-[#ff8c42] to-orange-500 text-white rounded-xl p-6 max-w-2xl">
+            <p className="text-lg font-semibold mb-3">
+              Sound Familiar? We're Building This For You.
+            </p>
+            <button
+              onClick={() => router.push('/login')}
+              className="px-8 py-3 bg-white text-[#ff8c42] font-bold rounded-lg hover:bg-gray-100 transition-colors inline-flex items-center gap-2"
+            >
+              <span>Join Free & Give Feedback</span>
+              <span className="text-xl">→</span>
+            </button>
+            <p className="text-sm mt-3 opacity-90">
+              Help us build the portfolio tracker you actually want to use
+            </p>
+          </div>
+        </div>
+      </section>
+
+      {/* Platform Stats Section */}
+      <section className="max-w-7xl mx-auto px-6 py-16">
+        <div className="text-center mb-12">
+          <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-3">
+            Built for Serious Indian Traders
+          </h2>
+          <p className="text-lg text-gray-600 dark:text-[#8b949e]">
+            Real capabilities, not marketing hype
+          </p>
+        </div>
+
+        <div className="bg-gradient-to-br from-gray-50 to-white dark:from-[#1c2128] dark:to-[#0d1117] border-2 border-gray-200 dark:border-[#30363d] rounded-2xl p-8 md:p-12">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
+            {/* Stat 1 - Technical Indicators */}
+            <div className="text-center">
+              <div className="text-5xl font-bold text-[#ff8c42] mb-3">10+</div>
+              <div className="text-sm font-semibold text-gray-900 dark:text-white mb-1">Technical Indicators</div>
+              <div className="text-xs text-gray-600 dark:text-[#8b949e]">Auto-updated daily</div>
+            </div>
+
+            {/* Stat 2 - Broker Support */}
+            <div className="text-center">
+              <div className="text-5xl font-bold text-[#ff8c42] mb-3">Any</div>
+              <div className="text-sm font-semibold text-gray-900 dark:text-white mb-1">Broker Import</div>
+              <div className="text-xs text-gray-600 dark:text-[#8b949e]">Zerodha, ICICI, CSV</div>
+            </div>
+
+            {/* Stat 3 - Alert Speed */}
+            <div className="text-center">
+              <div className="text-5xl font-bold text-[#ff8c42] mb-3">&lt;1min</div>
+              <div className="text-sm font-semibold text-gray-900 dark:text-white mb-1">Alert Delivery</div>
+              <div className="text-xs text-gray-600 dark:text-[#8b949e]">Instant email alerts</div>
+            </div>
+
+            {/* Stat 4 - Free Forever */}
+            <div className="text-center">
+              <div className="text-5xl font-bold text-[#ff8c42] mb-3">₹0</div>
+              <div className="text-sm font-semibold text-gray-900 dark:text-white mb-1">Forever Free</div>
+              <div className="text-xs text-gray-600 dark:text-[#8b949e]">All features, no limits</div>
+            </div>
+          </div>
+
+          {/* Additional Stats Row */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-8 mt-8 pt-8 border-t border-gray-200 dark:border-[#30363d]">
+            {/* Stat 5 - Portfolio Tracking */}
+            <div className="text-center">
+              <div className="text-4xl font-bold text-blue-600 dark:text-blue-400 mb-3">24/7</div>
+              <div className="text-sm font-semibold text-gray-900 dark:text-white mb-1">Market Monitoring</div>
+              <div className="text-xs text-gray-600 dark:text-[#8b949e]">Never sleep mode</div>
+            </div>
+
+            {/* Stat 6 - Unlimited Portfolios */}
+            <div className="text-center">
+              <div className="text-4xl font-bold text-green-600 dark:text-green-400 mb-3">∞</div>
+              <div className="text-sm font-semibold text-gray-900 dark:text-white mb-1">Portfolios</div>
+              <div className="text-xs text-gray-600 dark:text-[#8b949e]">Track unlimited holdings</div>
+            </div>
+
+            {/* Stat 7 - Data Update Frequency */}
+            <div className="text-center">
+              <div className="text-4xl font-bold text-purple-600 dark:text-purple-400 mb-3">Daily</div>
+              <div className="text-sm font-semibold text-gray-900 dark:text-white mb-1">Data Updates</div>
+              <div className="text-xs text-gray-600 dark:text-[#8b949e]">Fresh technical analysis</div>
+            </div>
+
+            {/* Stat 8 - Setup Time */}
+            <div className="text-center">
+              <div className="text-4xl font-bold text-orange-600 dark:text-orange-400 mb-3">2min</div>
+              <div className="text-sm font-semibold text-gray-900 dark:text-white mb-1">Setup Time</div>
+              <div className="text-xs text-gray-600 dark:text-[#8b949e]">Import & start tracking</div>
+            </div>
+          </div>
+        </div>
+
+        {/* Trust Statement */}
+        <div className="mt-8 text-center">
+          <p className="text-sm text-gray-600 dark:text-[#8b949e] max-w-3xl mx-auto">
+            These are platform capabilities, not user metrics. We believe in transparency -
+            we're a new platform focused on building the best portfolio tracking tool for Indian traders.
+          </p>
+        </div>
+      </section>
 
       {/* CTA Section */}
       <section className="max-w-7xl mx-auto px-6 py-20">
