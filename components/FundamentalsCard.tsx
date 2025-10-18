@@ -109,10 +109,10 @@ export const FundamentalsCard: React.FC<FundamentalsCardProps> = ({
             </div>
           )}
 
-          {/* Piotroski Score */}
+          {/* Financial Strength (Piotroski Score) */}
           {fundamentals.piotroskiScore !== undefined && (
             <div>
-              <span className="text-gray-600 dark:text-[#8b949e]">Piotroski:</span>
+              <span className="text-gray-600 dark:text-[#8b949e]">Financial Strength:</span>
               <span className={`ml-1 font-bold ${getPiotroskiColor(fundamentals.piotroskiScore)}`}>
                 {fundamentals.piotroskiScore}/9
               </span>

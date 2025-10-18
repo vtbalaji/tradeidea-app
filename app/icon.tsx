@@ -22,7 +22,7 @@ export default async function Icon() {
           alignItems: 'center',
           justifyContent: 'center',
           background: '#ff8c42',
-          borderRadius: '6px',
+          borderRadius: '8px',
         }}
       >
         {/* Shield */}
