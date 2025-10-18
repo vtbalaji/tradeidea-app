@@ -158,12 +158,10 @@ export default function Home() {
           <div className="relative">
             <Link
               href="/login"
-              className="px-8 py-4 bg-[#ff8c42] hover:bg-[#ff9a58] text-white text-lg font-bold rounded-lg transition-all shadow-lg hover:shadow-xl hover:scale-105 relative group"
+              className="inline-flex items-center gap-2 px-8 py-4 bg-[#ff8c42] hover:bg-[#ff9a58] text-white text-lg font-bold rounded-lg transition-all shadow-lg hover:shadow-xl hover:scale-105 relative group"
             >
-              <span className="flex items-center gap-2">
-                Start Free - No Credit Card
-                <span className="text-xl group-hover:translate-x-1 transition-transform">→</span>
-              </span>
+              Start Free - No Credit Card
+              <span className="text-xl group-hover:translate-x-1 transition-transform">→</span>
             </Link>
             <div className="absolute -top-3 -right-3 bg-green-500 text-white text-xs font-bold px-3 py-1 rounded-full shadow-lg animate-pulse">
               FREE
@@ -171,7 +169,7 @@ export default function Home() {
           </div>
           <Link
             href="/ideas"
-            className="px-8 py-4 bg-gray-100 dark:bg-[#1c2128] hover:bg-gray-200 dark:hover:bg-[#30363d] border-2 border-gray-300 dark:border-[#30363d] text-gray-900 dark:text-white text-lg font-semibold rounded-lg transition-all hover:border-[#ff8c42] dark:hover:border-[#ff8c42]"
+            className="inline-block px-8 py-4 bg-gray-100 dark:bg-[#1c2128] hover:bg-gray-200 dark:hover:bg-[#30363d] border-2 border-gray-300 dark:border-[#30363d] text-gray-900 dark:text-white text-lg font-semibold rounded-lg transition-all hover:border-[#ff8c42] dark:hover:border-[#ff8c42]"
           >
             View Live Ideas
           </Link>
@@ -1976,12 +1974,10 @@ export default function Home() {
               <div className="relative">
                 <Link
                   href="/login"
-                  className="px-10 py-4 bg-[#ff8c42] hover:bg-[#ff9a58] text-white text-lg font-bold rounded-lg transition-all shadow-lg hover:shadow-xl hover:scale-105 group"
+                  className="inline-flex items-center gap-2 px-10 py-4 bg-[#ff8c42] hover:bg-[#ff9a58] text-white text-lg font-bold rounded-lg transition-all shadow-lg hover:shadow-xl hover:scale-105 group"
                 >
-                  <span className="flex items-center gap-2">
-                    Get Started Free
-                    <span className="text-xl group-hover:translate-x-1 transition-transform">→</span>
-                  </span>
+                  Get Started Free
+                  <span className="text-xl group-hover:translate-x-1 transition-transform">→</span>
                 </Link>
                 <div className="absolute -top-3 -right-3 bg-green-500 text-white text-xs font-bold px-3 py-1 rounded-full shadow-lg animate-pulse">
                   100% FREE
