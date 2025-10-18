@@ -19,9 +19,30 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "TradeIdea - Never Miss Another Entry or Exit | Automated Alerts for Indian Stock Traders",
-  description: "Automated portfolio tracking with real-time alerts for Indian stock traders. Get instant notifications when stocks hit entry, target, or stop-loss levels. Import from Zerodha/ICICI in one click. Free forever.",
-  keywords: ["automated stock alerts", "portfolio tracking", "Indian stock market", "technical analysis", "Zerodha import", "ICICI Direct", "entry exit alerts", "stop loss alerts", "trading alerts India", "stock portfolio management", "real-time stock alerts"],
+  title: "TradeIdea - Portfolio Tracker for Indian Stock Market | Free Automated Alerts",
+  description: "Made in India for Indian investors. Track NSE/BSE stocks automatically with real-time alerts. Import from Zerodha, ICICI Direct. Get instant email notifications for entry, target & stop-loss. 100% FREE - NOT a forex trading platform.",
+  keywords: [
+    "Indian stock portfolio tracker",
+    "NSE BSE portfolio management",
+    "Zerodha portfolio import",
+    "ICICI Direct import",
+    "Indian stock alerts",
+    "equity portfolio tracker India",
+    "stock market alerts India",
+    "portfolio tracking NSE",
+    "Indian stock analysis",
+    "made in India portfolio app",
+    "Indian stock screener",
+    "technical analysis India",
+    "fundamental analysis NSE BSE"
+  ],
+  authors: [{ name: "TradeIdea" }],
+  creator: "TradeIdea",
+  publisher: "TradeIdea",
+  robots: "index, follow",
+  alternates: {
+    canonical: "https://tradeidea.co.in"
+  },
   icons: {
     icon: [
       { url: '/icon', sizes: '32x32', type: 'image/png' },
@@ -33,8 +54,8 @@ export const metadata: Metadata = {
     shortcut: '/icon',
   },
   openGraph: {
-    title: "TradeIdea - Never Miss Another Entry or Exit | Automated Alerts",
-    description: "Automated portfolio tracking with real-time alerts for Indian stock traders. Get instant notifications when stocks hit entry, target, or stop-loss levels. Import from Zerodha/ICICI in one click.",
+    title: "TradeIdea - Portfolio Tracker for Indian Stock Market | Free Automated Alerts",
+    description: "Made in India for Indian investors. Track NSE/BSE stocks with automated alerts. Import from Zerodha, ICICI Direct. 100% FREE - NOT a forex trading platform.",
     url: "https://tradeidea.co.in",
     siteName: "TradeIdea",
     images: [
@@ -42,17 +63,33 @@ export const metadata: Metadata = {
         url: "/opengraph-image",
         width: 1200,
         height: 630,
-        alt: "TradeIdea - Automated Stock Alerts for Indian Traders",
+        alt: "TradeIdea - Indian Stock Portfolio Tracker with Automated Alerts",
       },
     ],
     locale: "en_IN",
     type: "website",
+    countryName: "India",
   },
   twitter: {
     card: "summary_large_image",
-    title: "TradeIdea - Automated Stock Alerts for Indian Traders",
-    description: "Never miss entry/exit opportunities. Get instant alerts when stocks hit your target, stop-loss levels. Import from Zerodha/ICICI. Free forever.",
+    title: "TradeIdea - Free Portfolio Tracker for Indian Stocks (NSE/BSE)",
+    description: "Made in India 🇮🇳 Track equity portfolios automatically. Import from Zerodha/ICICI. Get alerts for entry, target, stop-loss. NOT a forex platform. 100% FREE.",
     images: ["/twitter-image"],
+    creator: "@tradeidea_in",
+  },
+  verification: {
+    google: "your-google-verification-code",
+  },
+  category: "Finance",
+  classification: "Stock Market Portfolio Management",
+  other: {
+    "application-name": "TradeIdea",
+    "mobile-web-app-capable": "yes",
+    "apple-mobile-web-app-capable": "yes",
+    "apple-mobile-web-app-status-bar-style": "default",
+    "apple-mobile-web-app-title": "TradeIdea",
+    "format-detection": "telephone=no",
+    "theme-color": "#ff8c42",
   },
   metadataBase: new URL("https://tradeidea.co.in"),
 };

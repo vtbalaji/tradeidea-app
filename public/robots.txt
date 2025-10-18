@@ -1,15 +1,28 @@
-# Allow all crawlers
+# robots.txt for TradeIdea - Indian Stock Portfolio Tracker
+# Made in India for Indian Investors - NOT a Forex Trading Platform
+
 User-agent: *
 Allow: /
 
-# Disallow authentication pages
-Disallow: /login
-Disallow: /verify
-Disallow: /api/
-
-# Allow public pages
+# Allow critical public pages for SEO
 Allow: /ideas
+Allow: /guide
+Allow: /faq
 Allow: /share/*
 
-# Sitemap location
+# Disallow user-specific pages
+Disallow: /portfolio
+Disallow: /accounts
+Disallow: /activity
+Disallow: /analysis
+Disallow: /login
+Disallow: /verify
+
+# Disallow API routes
+Disallow: /api/
+
+# Sitemap
 Sitemap: https://tradeidea.co.in/sitemap.xml
+
+# Crawl-delay (be nice to servers)
+Crawl-delay: 1
