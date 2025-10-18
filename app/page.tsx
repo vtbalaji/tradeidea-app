@@ -1,7 +1,7 @@
 import { MyPortfolioIcon } from '@/components/icons';
 import Logo from '../components/Logo';
 import AuthRedirect from '../components/AuthRedirect';
-import NavigateButton from '../components/NavigateButton';
+import Link from 'next/link';
 
 export default function Home() {
   return (
@@ -55,18 +55,18 @@ export default function Home() {
             <span className="text-2xl font-bold text-gray-900 dark:text-white">TradeIdea</span>
           </div>
           <div className="flex gap-3">
-            <NavigateButton
-              to="/login"
+            <Link
+              href="/login"
               className="px-4 py-2 text-gray-700 dark:text-white hover:text-[#ff8c42] transition-colors font-semibold"
             >
               Login
-            </NavigateButton>
-            <NavigateButton
-              to="/login"
+            </Link>
+            <Link
+              href="/login"
               className="px-6 py-2 bg-[#ff8c42] hover:bg-[#ff9a58] text-white font-semibold rounded-lg transition-colors"
             >
               Sign Up
-            </NavigateButton>
+            </Link>
           </div>
         </div>
       </nav>
@@ -156,25 +156,25 @@ export default function Home() {
 
         <div className="flex gap-4 justify-center flex-wrap">
           <div className="relative">
-            <NavigateButton
-              to="/login"
+            <Link
+              href="/login"
               className="px-8 py-4 bg-[#ff8c42] hover:bg-[#ff9a58] text-white text-lg font-bold rounded-lg transition-all shadow-lg hover:shadow-xl hover:scale-105 relative group"
             >
               <span className="flex items-center gap-2">
                 Start Free - No Credit Card
                 <span className="text-xl group-hover:translate-x-1 transition-transform">→</span>
               </span>
-            </NavigateButton>
+            </Link>
             <div className="absolute -top-3 -right-3 bg-green-500 text-white text-xs font-bold px-3 py-1 rounded-full shadow-lg animate-pulse">
               FREE
             </div>
           </div>
-          <NavigateButton
-            to="/ideas"
+          <Link
+            href="/ideas"
             className="px-8 py-4 bg-gray-100 dark:bg-[#1c2128] hover:bg-gray-200 dark:hover:bg-[#30363d] border-2 border-gray-300 dark:border-[#30363d] text-gray-900 dark:text-white text-lg font-semibold rounded-lg transition-all hover:border-[#ff8c42] dark:hover:border-[#ff8c42]"
           >
             View Live Ideas
-          </NavigateButton>
+          </Link>
         </div>
 
         {/* Micro Social Proof */}
@@ -558,12 +558,12 @@ export default function Home() {
           <p className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
             Save 5+ hours every week. Start tracking smarter, not harder.
           </p>
-          <NavigateButton
-            to="/login"
+          <Link
+            href="/login"
             className="px-8 py-3 bg-[#ff8c42] hover:bg-[#ff9a58] text-white text-lg font-bold rounded-lg transition-all shadow-lg hover:shadow-xl hover:scale-105"
           >
             Start Free Now →
-          </NavigateButton>
+          </Link>
         </div>
       </section>
 
@@ -791,13 +791,13 @@ export default function Home() {
 
             {/* Call to Action Overlay */}
             <div className="mt-6 text-center">
-              <NavigateButton
-                to="/login"
+              <Link
+                href="/login"
                 className="px-8 py-3 bg-[#ff8c42] hover:bg-[#ff9a58] text-white font-bold rounded-lg transition-all shadow-lg hover:shadow-xl hover:scale-105 inline-flex items-center gap-2"
               >
                 <span>See Your Portfolio Like This</span>
                 <span className="text-xl">→</span>
-              </NavigateButton>
+              </Link>
               <p className="text-xs text-gray-500 dark:text-[#8b949e] mt-3">
                 Import your holdings in 2 minutes • Free forever • No credit card
               </p>
@@ -1857,13 +1857,13 @@ export default function Home() {
             <p className="text-lg font-semibold mb-3">
               Sound Familiar? We're Building This For You.
             </p>
-            <NavigateButton
-              to="/login"
+            <Link
+              href="/login"
               className="px-8 py-3 bg-white text-[#ff8c42] font-bold rounded-lg hover:bg-gray-100 transition-colors inline-flex items-center gap-2"
             >
               <span>Join Free & Give Feedback</span>
               <span className="text-xl">→</span>
-            </NavigateButton>
+            </Link>
             <p className="text-sm mt-3 opacity-90">
               Help us build the portfolio tracker you actually want to use
             </p>
@@ -1974,15 +1974,15 @@ export default function Home() {
 
             <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-8">
               <div className="relative">
-                <NavigateButton
-                  to="/login"
+                <Link
+                  href="/login"
                   className="px-10 py-4 bg-[#ff8c42] hover:bg-[#ff9a58] text-white text-lg font-bold rounded-lg transition-all shadow-lg hover:shadow-xl hover:scale-105 group"
                 >
                   <span className="flex items-center gap-2">
                     Get Started Free
                     <span className="text-xl group-hover:translate-x-1 transition-transform">→</span>
                   </span>
-                </NavigateButton>
+                </Link>
                 <div className="absolute -top-3 -right-3 bg-green-500 text-white text-xs font-bold px-3 py-1 rounded-full shadow-lg animate-pulse">
                   100% FREE
                 </div>
@@ -2034,8 +2034,8 @@ export default function Home() {
               © 2025 TradeIdea. All rights reserved.
             </div>
             <div className="flex gap-6 text-sm text-gray-600 dark:text-[#8b949e]">
-              <NavigateButton to="/guide" className="hover:text-gray-900 dark:hover:text-white transition-colors">User Guide</NavigateButton>
-              <NavigateButton to="/faq" className="hover:text-gray-900 dark:hover:text-white transition-colors">FAQ</NavigateButton>
+              <Link href="/guide" className="hover:text-gray-900 dark:hover:text-white transition-colors">User Guide</Link>
+              <Link href="/faq" className="hover:text-gray-900 dark:hover:text-white transition-colors">FAQ</Link>
               <button className="hover:text-gray-900 dark:hover:text-white transition-colors">About</button>
               <button className="hover:text-gray-900 dark:hover:text-white transition-colors">Privacy</button>
               <button className="hover:text-gray-900 dark:hover:text-white transition-colors">Terms</button>
