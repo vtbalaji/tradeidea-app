@@ -52,12 +52,7 @@ export default function Home() {
               price: '0',
               priceCurrency: 'INR',
             },
-            description: 'Track multiple portfolios, analyze stocks with technical & fundamental data, import holdings from any broker, and share ideas with a community of traders.',
-            aggregateRating: {
-              '@type': 'AggregateRating',
-              ratingValue: '4.8',
-              ratingCount: '500',
-            },
+            description: 'Automated portfolio tracking with real-time alerts for Indian stock traders. Get instant notifications when stocks hit entry, target, or stop-loss levels. Import from Zerodha/ICICI in one click.',
             featureList: [
               'Multi-account portfolio management',
               'Real-time technical analysis with EMA/MA crossovers, RSI, MACD, Bollinger Bands',
@@ -100,117 +95,749 @@ export default function Home() {
       {/* Hero Section */}
       <section className="max-w-7xl mx-auto px-6 py-20 text-center">
         <h1 className="text-5xl md:text-6xl font-bold text-gray-900 dark:text-white mb-6">
-          Smart Portfolio Management<br />
-          <span className="text-[#ff8c42]">Made Simple</span>
+          Never Miss Another Entry or Exit<br />
+          <span className="text-[#ff8c42]">Automated Alerts for Indian Stock Traders</span>
         </h1>
         <p className="text-xl text-gray-600 dark:text-[#8b949e] mb-10 max-w-3xl mx-auto">
-          Track multiple portfolios, analyze stocks with technical & fundamental data,
-          import holdings from any broker, and share ideas with a community of traders.
+          Automated portfolio tracking with real-time technical & fundamental analysis.
+          Get instant alerts when stocks hit your entry, target, or stop-loss levels.
+          Import from Zerodha/ICICI in one click.
         </p>
 
-        {/* Top 3 Points */}
-        <div className="max-w-3xl mx-auto mb-10 grid md:grid-cols-3 gap-4">
-          <div className="bg-white dark:bg-[#1c2128] rounded-lg p-4 border-2 border-gray-200 dark:border-[#30363d] hover:border-[#ff8c42] dark:hover:border-[#ff8c42] transition-colors">
-            <div className="text-3xl mb-2">🔔</div>
-            <h3 className="font-bold text-gray-900 dark:text-white text-sm mb-1">Never Miss Intestment/Profil booking Opportunity</h3>
-            <p className="text-xs text-gray-600 dark:text-[#8b949e]">
-              Automated notifications when entry, target, or stop-loss prices are hit
+        {/* Top 3 Pain Points with Numbers */}
+        <div className="max-w-4xl mx-auto mb-10 grid md:grid-cols-3 gap-6">
+          <div className="bg-white dark:bg-[#1c2128] rounded-xl p-6 border-2 border-gray-200 dark:border-[#30363d] hover:border-[#ff8c42] dark:hover:border-[#ff8c42] transition-all hover:shadow-lg">
+            <div className="text-4xl mb-3">🔔</div>
+            <div className="text-2xl font-bold text-[#ff8c42] mb-2">Zero Missed Exits</div>
+            <h3 className="font-bold text-gray-900 dark:text-white text-base mb-2">
+              Never Miss Profit Booking Opportunities
+            </h3>
+            <p className="text-sm text-gray-600 dark:text-[#8b949e] mb-3">
+              Instant email alerts when stocks hit your entry, target, or stop-loss levels
             </p>
+            <div className="bg-green-50 dark:bg-green-900/20 rounded-lg p-3 border border-green-200 dark:border-green-800">
+              <p className="text-xs font-semibold text-green-800 dark:text-green-300">
+                💡 No more watching prices all day
+              </p>
+            </div>
           </div>
-          <div className="bg-white dark:bg-[#1c2128] rounded-lg p-4 border-2 border-gray-200 dark:border-[#30363d] hover:border-[#ff8c42] dark:hover:border-[#ff8c42] transition-colors">
-            <div className="text-3xl mb-2">📊</div>
-            <h3 className="font-bold text-gray-900 dark:text-white text-sm mb-1">Always on top of Portfolio </h3>
-            <p className="text-xs text-gray-600 dark:text-[#8b949e]">
-              Automatic signals based on Technical/Fundamentals - no manual work
+
+          <div className="bg-white dark:bg-[#1c2128] rounded-xl p-6 border-2 border-gray-200 dark:border-[#30363d] hover:border-[#ff8c42] dark:hover:border-[#ff8c42] transition-all hover:shadow-lg">
+            <div className="text-4xl mb-3">⏰</div>
+            <div className="text-2xl font-bold text-[#ff8c42] mb-2">Save 5+ Hours/Week</div>
+            <h3 className="font-bold text-gray-900 dark:text-white text-base mb-2">
+              Stop Manual Portfolio Tracking
+            </h3>
+            <p className="text-sm text-gray-600 dark:text-[#8b949e] mb-3">
+              Auto-updated technical indicators for all your holdings - daily, automatically
             </p>
+            <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-3 border border-blue-200 dark:border-blue-800">
+              <p className="text-xs font-semibold text-blue-800 dark:text-blue-300">
+                💡 Spend &lt;30 min/week vs 5-10 hours
+              </p>
+            </div>
           </div>
-          <div className="bg-white dark:bg-[#1c2128] rounded-lg p-4 border-2 border-gray-200 dark:border-[#30363d] hover:border-[#ff8c42] dark:hover:border-[#ff8c42] transition-colors">
-            <div className="text-3xl mb-2">🛡️</div>
-            <h3 className="font-bold text-gray-900 dark:text-white text-sm mb-1">Smart Risk Protection</h3>
-            <p className="text-xs text-gray-600 dark:text-[#8b949e]">
-              100MA fallback, exit criteria tracking, and instant risk warnings
+
+          <div className="bg-white dark:bg-[#1c2128] rounded-xl p-6 border-2 border-gray-200 dark:border-[#30363d] hover:border-[#ff8c42] dark:hover:border-[#ff8c42] transition-all hover:shadow-lg">
+            <div className="text-4xl mb-3">🛡️</div>
+            <div className="text-2xl font-bold text-[#ff8c42] mb-2">Protect Capital</div>
+            <h3 className="font-bold text-gray-900 dark:text-white text-base mb-2">
+              Automated Risk Management
+            </h3>
+            <p className="text-sm text-gray-600 dark:text-[#8b949e] mb-3">
+              Trailing stop-loss, technical exit signals, and instant risk warnings
             </p>
+            <div className="bg-red-50 dark:bg-red-900/20 rounded-lg p-3 border border-red-200 dark:border-red-800">
+              <p className="text-xs font-semibold text-red-800 dark:text-red-300">
+                💡 Never forget a stop-loss again
+              </p>
+            </div>
           </div>
         </div>
 
         <div className="flex gap-4 justify-center flex-wrap">
-          <button
-            onClick={() => router.push('/login')}
-            className="px-8 py-4 bg-[#ff8c42] hover:bg-[#ff9a58] text-white text-lg font-bold rounded-lg transition-colors shadow-lg hover:shadow-xl"
-          >
-            Get Started Free
-          </button>
+          <div className="relative">
+            <button
+              onClick={() => router.push('/login')}
+              className="px-8 py-4 bg-[#ff8c42] hover:bg-[#ff9a58] text-white text-lg font-bold rounded-lg transition-all shadow-lg hover:shadow-xl hover:scale-105 relative group"
+            >
+              <span className="flex items-center gap-2">
+                Start Free - No Credit Card
+                <span className="text-xl group-hover:translate-x-1 transition-transform">→</span>
+              </span>
+            </button>
+            <div className="absolute -top-3 -right-3 bg-green-500 text-white text-xs font-bold px-3 py-1 rounded-full shadow-lg animate-pulse">
+              FREE
+            </div>
+          </div>
           <button
             onClick={() => router.push('/ideas')}
-            className="px-8 py-4 bg-gray-100 dark:bg-[#1c2128] hover:bg-gray-200 dark:hover:bg-[#30363d] border border-gray-200 dark:border-[#30363d] text-gray-900 dark:text-white text-lg font-semibold rounded-lg transition-colors"
+            className="px-8 py-4 bg-gray-100 dark:bg-[#1c2128] hover:bg-gray-200 dark:hover:bg-[#30363d] border-2 border-gray-300 dark:border-[#30363d] text-gray-900 dark:text-white text-lg font-semibold rounded-lg transition-all hover:border-[#ff8c42] dark:hover:border-[#ff8c42]"
           >
-            Explore Ideas
+            View Live Ideas
           </button>
         </div>
 
-        {/* Key highlights */}
-        <div className="mt-12 flex flex-wrap justify-center gap-6 text-sm text-gray-600 dark:text-[#8b949e]">
+        {/* Micro Social Proof */}
+        <div className="mt-6 flex items-center justify-center gap-2 text-sm text-gray-600 dark:text-[#8b949e]">
+          <div className="flex -space-x-2">
+            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 border-2 border-white dark:border-[#0f1419] flex items-center justify-center text-white text-xs font-bold">
+              A
+            </div>
+            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-purple-400 to-purple-600 border-2 border-white dark:border-[#0f1419] flex items-center justify-center text-white text-xs font-bold">
+              B
+            </div>
+            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-green-400 to-green-600 border-2 border-white dark:border-[#0f1419] flex items-center justify-center text-white text-xs font-bold">
+              C
+            </div>
+            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-orange-400 to-orange-600 border-2 border-white dark:border-[#0f1419] flex items-center justify-center text-white text-xs font-bold">
+              +
+            </div>
+          </div>
+          <span className="font-medium">Join traders already tracking portfolios</span>
+        </div>
+
+        {/* Trust Signals - Quick Benefits */}
+        <div className="mt-12 flex flex-wrap justify-center gap-6 text-sm font-semibold text-gray-700 dark:text-[#8b949e]">
           <div className="flex items-center gap-2">
-            <span className="text-green-500">✓</span>
-            <span>Multi-Account Support</span>
+            <span className="text-green-500 text-lg">✓</span>
+            <span>Free Forever Plan</span>
           </div>
           <div className="flex items-center gap-2">
-            <span className="text-green-500">✓</span>
-            <span>Technical / Fundamentals Score</span>
+            <span className="text-green-500 text-lg">✓</span>
+            <span>No Credit Card Required</span>
           </div>
           <div className="flex items-center gap-2">
-            <span className="text-green-500">✓</span>
-            <span>Screeners to Identify Scripts</span>
+            <span className="text-green-500 text-lg">✓</span>
+            <span>Bank-Grade Security</span>
           </div>
           <div className="flex items-center gap-2">
-            <span className="text-green-500">✓</span>
-            <span>Exit Alerts / Trailing Stoploss</span>
+            <span className="text-green-500 text-lg">✓</span>
+            <span>Import from Any Broker</span>
           </div>
         </div>
       </section>
 
-      {/* Hero Feature - Portfolio Health */}
-      <section className="max-w-7xl mx-auto px-6 py-16">
-        <div className="bg-gradient-to-br from-[#ff8c42]/10 to-orange-500/5 border-2 border-[#ff8c42] rounded-2xl p-8 md:p-12">
+      {/* Trust Signals Section - Integrations & Security */}
+      <section className="bg-gray-50 dark:bg-[#0d1117] border-y border-gray-200 dark:border-[#30363d] py-12">
+        <div className="max-w-7xl mx-auto px-6">
           <div className="text-center mb-8">
-            <div className="text-6xl mb-4">📊</div>
-            <h2 className="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mb-4">
-              Portfolio Health at a Glance
-            </h2>
-            <p className="text-lg text-gray-600 dark:text-[#8b949e] max-w-3xl mx-auto">
-              Understand your portfolio's health instantly with our comprehensive single-page dashboard.
-              See total value, P&L, risk exposure, technical signals, and exit alerts all in one view.
+            <p className="text-sm font-semibold text-gray-500 dark:text-[#8b949e] uppercase tracking-wide">
+              Trusted Platform
             </p>
           </div>
 
-          <div className="grid md:grid-cols-4 gap-6 mt-8">
-            <div className="bg-white dark:bg-[#1c2128] border border-gray-200 dark:border-[#30363d] rounded-lg p-4 text-center">
-              <div className="text-2xl mb-2">💰</div>
-              <h4 className="font-bold text-gray-900 dark:text-white mb-1">Total Value & P&L</h4>
-              <p className="text-sm text-gray-600 dark:text-[#8b949e]">
-                Current portfolio worth, unrealized gains/losses, and daily changes
+          <div className="grid md:grid-cols-3 gap-8 max-w-4xl mx-auto">
+            {/* Broker Integrations */}
+            <div className="text-center">
+              <div className="bg-white dark:bg-[#1c2128] rounded-lg p-6 border border-gray-200 dark:border-[#30363d]">
+                <div className="text-3xl mb-3">🔗</div>
+                <h3 className="font-bold text-gray-900 dark:text-white mb-2">Broker Integrations</h3>
+                <p className="text-sm text-gray-600 dark:text-[#8b949e] mb-3">
+                  Import holdings with one click
+                </p>
+                <div className="flex flex-wrap justify-center gap-2">
+                  <span className="px-3 py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300 text-xs font-semibold rounded-full">
+                    Zerodha
+                  </span>
+                  <span className="px-3 py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300 text-xs font-semibold rounded-full">
+                    ICICI Direct
+                  </span>
+                  <span className="px-3 py-1 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 text-xs font-semibold rounded-full">
+                    Any CSV
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* Security */}
+            <div className="text-center">
+              <div className="bg-white dark:bg-[#1c2128] rounded-lg p-6 border border-gray-200 dark:border-[#30363d]">
+                <div className="text-3xl mb-3">🔒</div>
+                <h3 className="font-bold text-gray-900 dark:text-white mb-2">Bank-Grade Security</h3>
+                <p className="text-sm text-gray-600 dark:text-[#8b949e] mb-3">
+                  Your data is encrypted and secure
+                </p>
+                <div className="flex flex-wrap justify-center gap-2">
+                  <span className="px-3 py-1 bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300 text-xs font-semibold rounded-full">
+                    Firebase Auth
+                  </span>
+                  <span className="px-3 py-1 bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300 text-xs font-semibold rounded-full">
+                    Encrypted Data
+                  </span>
+                  <span className="px-3 py-1 bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300 text-xs font-semibold rounded-full">
+                    Read-Only Import
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* Free Plan */}
+            <div className="text-center">
+              <div className="bg-white dark:bg-[#1c2128] rounded-lg p-6 border-2 border-[#ff8c42] dark:border-[#ff8c42]">
+                <div className="text-3xl mb-3">💎</div>
+                <h3 className="font-bold text-gray-900 dark:text-white mb-2">100% Free Forever</h3>
+                <p className="text-sm text-gray-600 dark:text-[#8b949e] mb-3">
+                  All features, no hidden costs
+                </p>
+                <div className="flex flex-wrap justify-center gap-2">
+                  <span className="px-3 py-1 bg-orange-100 dark:bg-orange-900/30 text-orange-800 dark:text-orange-300 text-xs font-semibold rounded-full">
+                    No Credit Card
+                  </span>
+                  <span className="px-3 py-1 bg-orange-100 dark:bg-orange-900/30 text-orange-800 dark:text-orange-300 text-xs font-semibold rounded-full">
+                    Unlimited Portfolios
+                  </span>
+                  <span className="px-3 py-1 bg-orange-100 dark:bg-orange-900/30 text-orange-800 dark:text-orange-300 text-xs font-semibold rounded-full">
+                    Full Features
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Privacy Statement */}
+          <div className="mt-8 text-center">
+            <p className="text-xs text-gray-500 dark:text-[#6e7681] max-w-2xl mx-auto">
+              🛡️ We never ask for your trading credentials. Portfolio import is read-only via CSV files.
+              Your data stays private and is never shared with third parties.
+            </p>
+          </div>
+
+          {/* Security & Privacy Badges */}
+          <div className="mt-10 border-t border-gray-200 dark:border-[#30363d] pt-8">
+            <p className="text-center text-xs font-semibold text-gray-500 dark:text-[#8b949e] uppercase tracking-wide mb-6">
+              Security & Privacy Certifications
+            </p>
+            <div className="flex flex-wrap justify-center items-center gap-6 md:gap-10">
+              {/* Firebase Secure */}
+              <div className="flex flex-col items-center">
+                <div className="bg-white dark:bg-[#1c2128] border-2 border-gray-200 dark:border-[#30363d] rounded-lg px-6 py-3 hover:border-orange-400 dark:hover:border-orange-400 transition-colors">
+                  <div className="flex items-center gap-2">
+                    <div className="text-2xl">🔥</div>
+                    <div className="text-left">
+                      <div className="text-xs font-bold text-gray-900 dark:text-white">Google Firebase</div>
+                      <div className="text-xs text-gray-600 dark:text-[#8b949e]">Secure Authentication</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* HTTPS/SSL */}
+              <div className="flex flex-col items-center">
+                <div className="bg-white dark:bg-[#1c2128] border-2 border-gray-200 dark:border-[#30363d] rounded-lg px-6 py-3 hover:border-green-400 dark:hover:border-green-400 transition-colors">
+                  <div className="flex items-center gap-2">
+                    <div className="text-2xl">🔒</div>
+                    <div className="text-left">
+                      <div className="text-xs font-bold text-gray-900 dark:text-white">256-bit SSL</div>
+                      <div className="text-xs text-gray-600 dark:text-[#8b949e]">Encrypted Connection</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Data Privacy */}
+              <div className="flex flex-col items-center">
+                <div className="bg-white dark:bg-[#1c2128] border-2 border-gray-200 dark:border-[#30363d] rounded-lg px-6 py-3 hover:border-blue-400 dark:hover:border-blue-400 transition-colors">
+                  <div className="flex items-center gap-2">
+                    <div className="text-2xl">🛡️</div>
+                    <div className="text-left">
+                      <div className="text-xs font-bold text-gray-900 dark:text-white">Data Privacy</div>
+                      <div className="text-xs text-gray-600 dark:text-[#8b949e]">Your Data, Your Control</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* No Credentials Required */}
+              <div className="flex flex-col items-center">
+                <div className="bg-white dark:bg-[#1c2128] border-2 border-gray-200 dark:border-[#30363d] rounded-lg px-6 py-3 hover:border-purple-400 dark:hover:border-purple-400 transition-colors">
+                  <div className="flex items-center gap-2">
+                    <div className="text-2xl">✋</div>
+                    <div className="text-left">
+                      <div className="text-xs font-bold text-gray-900 dark:text-white">Read-Only Access</div>
+                      <div className="text-xs text-gray-600 dark:text-[#8b949e]">No Trading Credentials</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Email Verified */}
+              <div className="flex flex-col items-center">
+                <div className="bg-white dark:bg-[#1c2128] border-2 border-gray-200 dark:border-[#30363d] rounded-lg px-6 py-3 hover:border-indigo-400 dark:hover:border-indigo-400 transition-colors">
+                  <div className="flex items-center gap-2">
+                    <div className="text-2xl">✉️</div>
+                    <div className="text-left">
+                      <div className="text-xs font-bold text-gray-900 dark:text-white">Email Verification</div>
+                      <div className="text-xs text-gray-600 dark:text-[#8b949e]">Protected Accounts</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Compliance Statement */}
+            <div className="mt-6 max-w-3xl mx-auto">
+              <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
+                <div className="flex items-start gap-3">
+                  <div className="text-2xl">ℹ️</div>
+                  <div className="flex-1 text-xs text-blue-900 dark:text-blue-300">
+                    <p className="font-semibold mb-1">Privacy-First Design</p>
+                    <p>
+                      TradeIdea operates with complete transparency. We only collect the minimum data required
+                      for functionality (email for login, portfolio data you upload). We never sell your data,
+                      never require trading credentials, and never execute trades on your behalf. All portfolio
+                      imports are CSV-based and read-only. Your trading decisions remain 100% in your control.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Why Choose TradeIdea - Comparison Section */}
+      <section className="max-w-7xl mx-auto px-6 py-16">
+        <div className="text-center mb-12">
+          <h2 className="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mb-4">
+            Why Choose TradeIdea Over Manual Tracking?
+          </h2>
+          <p className="text-lg text-gray-600 dark:text-[#8b949e] max-w-3xl mx-auto">
+            Stop wasting hours on spreadsheets and missing crucial signals. See how TradeIdea automates what takes hours manually.
+          </p>
+        </div>
+
+        {/* Comparison Table */}
+        <div className="overflow-x-auto">
+          <div className="inline-block min-w-full align-middle">
+            <div className="overflow-hidden border border-gray-200 dark:border-[#30363d] rounded-xl">
+              <table className="min-w-full divide-y divide-gray-200 dark:divide-[#30363d]">
+                <thead className="bg-gray-50 dark:bg-[#0d1117]">
+                  <tr>
+                    <th scope="col" className="px-6 py-4 text-left text-xs font-semibold text-gray-500 dark:text-[#8b949e] uppercase tracking-wider w-1/3">
+                      Feature
+                    </th>
+                    <th scope="col" className="px-6 py-4 text-center text-xs font-semibold text-gray-500 dark:text-[#8b949e] uppercase tracking-wider w-1/3">
+                      Manual Tracking
+                    </th>
+                    <th scope="col" className="px-6 py-4 text-center text-xs font-semibold text-[#ff8c42] uppercase tracking-wider w-1/3 bg-orange-50 dark:bg-orange-900/10">
+                      <div className="flex items-center justify-center gap-2">
+                        <span>TradeIdea</span>
+                        <span className="px-2 py-0.5 bg-[#ff8c42] text-white text-xs rounded-full">FREE</span>
+                      </div>
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white dark:bg-[#0d1117] divide-y divide-gray-200 dark:divide-[#30363d]">
+                  {/* Row 1 */}
+                  <tr>
+                    <td className="px-6 py-4 text-sm font-medium text-gray-900 dark:text-white">
+                      Portfolio Import
+                    </td>
+                    <td className="px-6 py-4 text-center">
+                      <div className="text-red-500 text-2xl">✗</div>
+                      <div className="text-xs text-gray-600 dark:text-[#8b949e] mt-1">Manual entry, hours of work</div>
+                    </td>
+                    <td className="px-6 py-4 text-center bg-green-50 dark:bg-green-900/10">
+                      <div className="text-green-500 text-2xl">✓</div>
+                      <div className="text-xs text-gray-900 dark:text-white font-semibold mt-1">One-click CSV import</div>
+                    </td>
+                  </tr>
+
+                  {/* Row 2 */}
+                  <tr>
+                    <td className="px-6 py-4 text-sm font-medium text-gray-900 dark:text-white">
+                      Technical Analysis
+                    </td>
+                    <td className="px-6 py-4 text-center">
+                      <div className="text-red-500 text-2xl">✗</div>
+                      <div className="text-xs text-gray-600 dark:text-[#8b949e] mt-1">Check each stock manually</div>
+                    </td>
+                    <td className="px-6 py-4 text-center bg-green-50 dark:bg-green-900/10">
+                      <div className="text-green-500 text-2xl">✓</div>
+                      <div className="text-xs text-gray-900 dark:text-white font-semibold mt-1">10+ indicators auto-updated daily</div>
+                    </td>
+                  </tr>
+
+                  {/* Row 3 */}
+                  <tr>
+                    <td className="px-6 py-4 text-sm font-medium text-gray-900 dark:text-white">
+                      Entry/Exit Alerts
+                    </td>
+                    <td className="px-6 py-4 text-center">
+                      <div className="text-red-500 text-2xl">✗</div>
+                      <div className="text-xs text-gray-600 dark:text-[#8b949e] mt-1">Watch prices constantly</div>
+                    </td>
+                    <td className="px-6 py-4 text-center bg-green-50 dark:bg-green-900/10">
+                      <div className="text-green-500 text-2xl">✓</div>
+                      <div className="text-xs text-gray-900 dark:text-white font-semibold mt-1">Instant email notifications</div>
+                    </td>
+                  </tr>
+
+                  {/* Row 4 */}
+                  <tr>
+                    <td className="px-6 py-4 text-sm font-medium text-gray-900 dark:text-white">
+                      Market Screeners
+                    </td>
+                    <td className="px-6 py-4 text-center">
+                      <div className="text-red-500 text-2xl">✗</div>
+                      <div className="text-xs text-gray-600 dark:text-[#8b949e] mt-1">Research each stock individually</div>
+                    </td>
+                    <td className="px-6 py-4 text-center bg-green-50 dark:bg-green-900/10">
+                      <div className="text-green-500 text-2xl">✓</div>
+                      <div className="text-xs text-gray-900 dark:text-white font-semibold mt-1">Daily crossover opportunities</div>
+                    </td>
+                  </tr>
+
+                  {/* Row 5 */}
+                  <tr>
+                    <td className="px-6 py-4 text-sm font-medium text-gray-900 dark:text-white">
+                      Multi-Portfolio Support
+                    </td>
+                    <td className="px-6 py-4 text-center">
+                      <div className="text-red-500 text-2xl">✗</div>
+                      <div className="text-xs text-gray-600 dark:text-[#8b949e] mt-1">Separate spreadsheets</div>
+                    </td>
+                    <td className="px-6 py-4 text-center bg-green-50 dark:bg-green-900/10">
+                      <div className="text-green-500 text-2xl">✓</div>
+                      <div className="text-xs text-gray-900 dark:text-white font-semibold mt-1">Unlimited portfolios in one place</div>
+                    </td>
+                  </tr>
+
+                  {/* Row 6 */}
+                  <tr>
+                    <td className="px-6 py-4 text-sm font-medium text-gray-900 dark:text-white">
+                      Exit Criteria Tracking
+                    </td>
+                    <td className="px-6 py-4 text-center">
+                      <div className="text-red-500 text-2xl">✗</div>
+                      <div className="text-xs text-gray-600 dark:text-[#8b949e] mt-1">Forget stop-loss levels</div>
+                    </td>
+                    <td className="px-6 py-4 text-center bg-green-50 dark:bg-green-900/10">
+                      <div className="text-green-500 text-2xl">✓</div>
+                      <div className="text-xs text-gray-900 dark:text-white font-semibold mt-1">Trailing SL, targets, technical exits</div>
+                    </td>
+                  </tr>
+
+                  {/* Row 7 */}
+                  <tr>
+                    <td className="px-6 py-4 text-sm font-medium text-gray-900 dark:text-white">
+                      Time Spent Weekly
+                    </td>
+                    <td className="px-6 py-4 text-center">
+                      <div className="text-red-600 dark:text-red-400 text-2xl font-bold">5-10 hrs</div>
+                      <div className="text-xs text-gray-600 dark:text-[#8b949e] mt-1">Updating, checking, analyzing</div>
+                    </td>
+                    <td className="px-6 py-4 text-center bg-green-50 dark:bg-green-900/10">
+                      <div className="text-green-600 dark:text-green-400 text-2xl font-bold">&lt;30 min</div>
+                      <div className="text-xs text-gray-900 dark:text-white font-semibold mt-1">Just review alerts</div>
+                    </td>
+                  </tr>
+
+                  {/* Row 8 - Cost */}
+                  <tr className="bg-gray-50 dark:bg-[#0d1117]">
+                    <td className="px-6 py-4 text-sm font-bold text-gray-900 dark:text-white">
+                      Cost
+                    </td>
+                    <td className="px-6 py-4 text-center">
+                      <div className="text-gray-900 dark:text-white text-2xl font-bold">Your Time</div>
+                      <div className="text-xs text-gray-600 dark:text-[#8b949e] mt-1">Priceless hours wasted</div>
+                    </td>
+                    <td className="px-6 py-4 text-center bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-900/10 dark:to-emerald-900/10">
+                      <div className="text-green-600 dark:text-green-400 text-3xl font-bold">₹0</div>
+                      <div className="text-xs text-gray-900 dark:text-white font-semibold mt-1">Free Forever</div>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        {/* Bottom CTA */}
+        <div className="mt-10 text-center">
+          <p className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+            Save 5+ hours every week. Start tracking smarter, not harder.
+          </p>
+          <button
+            onClick={() => router.push('/login')}
+            className="px-8 py-3 bg-[#ff8c42] hover:bg-[#ff9a58] text-white text-lg font-bold rounded-lg transition-all shadow-lg hover:shadow-xl hover:scale-105"
+          >
+            Start Free Now →
+          </button>
+        </div>
+      </section>
+
+      {/* Live Dashboard Preview Section */}
+      <section className="max-w-7xl mx-auto px-6 py-16">
+        <div className="text-center mb-12">
+          <div className="inline-block bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300 px-4 py-2 rounded-full text-sm font-bold mb-4">
+            ✨ See It In Action
+          </div>
+          <h2 className="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mb-4">
+            Portfolio Health at a Glance
+          </h2>
+          <p className="text-lg text-gray-600 dark:text-[#8b949e] max-w-3xl mx-auto">
+            Everything you need in one dashboard. No more switching between apps or spreadsheets.
+          </p>
+        </div>
+
+        {/* Mock Dashboard Preview */}
+        <div className="bg-gradient-to-br from-gray-50 to-gray-100 dark:from-[#0d1117] dark:to-[#1c2128] rounded-2xl border-2 border-gray-300 dark:border-[#30363d] overflow-hidden shadow-2xl">
+          {/* Mock Browser Header */}
+          <div className="bg-gray-200 dark:bg-[#0d1117] border-b border-gray-300 dark:border-[#30363d] px-4 py-3 flex items-center gap-2">
+            <div className="flex gap-2">
+              <div className="w-3 h-3 rounded-full bg-red-500"></div>
+              <div className="w-3 h-3 rounded-full bg-yellow-500"></div>
+              <div className="w-3 h-3 rounded-full bg-green-500"></div>
+            </div>
+            <div className="flex-1 mx-4 bg-white dark:bg-[#1c2128] rounded px-3 py-1 text-xs text-gray-500 dark:text-[#8b949e]">
+              tradeidea.co.in/portfolio
+            </div>
+          </div>
+
+          {/* Mock Dashboard Content */}
+          <div className="p-6 md:p-8 bg-white dark:bg-[#0d1117]">
+            {/* Portfolio Summary Cards */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+              {/* Total Value */}
+              <div className="bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 rounded-lg p-4 border border-green-200 dark:border-green-800">
+                <div className="text-xs text-green-700 dark:text-green-400 font-semibold mb-1">Total Value</div>
+                <div className="text-2xl font-bold text-green-600 dark:text-green-400">₹8,45,230</div>
+                <div className="text-xs text-green-600 dark:text-green-400 mt-1">+₹45,230 (5.6%)</div>
+              </div>
+
+              {/* Today's Change */}
+              <div className="bg-gradient-to-br from-blue-50 to-cyan-50 dark:from-blue-900/20 dark:to-cyan-900/20 rounded-lg p-4 border border-blue-200 dark:border-blue-800">
+                <div className="text-xs text-blue-700 dark:text-blue-400 font-semibold mb-1">Today's P&L</div>
+                <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">+₹12,450</div>
+                <div className="text-xs text-blue-600 dark:text-blue-400 mt-1">+1.5%</div>
+              </div>
+
+              {/* Risk Alerts */}
+              <div className="bg-gradient-to-br from-red-50 to-orange-50 dark:from-red-900/20 dark:to-orange-900/20 rounded-lg p-4 border border-red-200 dark:border-red-800">
+                <div className="text-xs text-red-700 dark:text-red-400 font-semibold mb-1">Risk Alerts</div>
+                <div className="text-2xl font-bold text-red-600 dark:text-red-400">2</div>
+                <div className="text-xs text-red-600 dark:text-red-400 mt-1">Below SL</div>
+              </div>
+
+              {/* Action Items */}
+              <div className="bg-gradient-to-br from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 rounded-lg p-4 border border-purple-200 dark:border-purple-800">
+                <div className="text-xs text-purple-700 dark:text-purple-400 font-semibold mb-1">Action Items</div>
+                <div className="text-2xl font-bold text-purple-600 dark:text-purple-400">5</div>
+                <div className="text-xs text-purple-600 dark:text-purple-400 mt-1">Near Target</div>
+              </div>
+            </div>
+
+            {/* Mock Holdings Table */}
+            <div className="bg-gray-50 dark:bg-[#1c2128] rounded-xl border border-gray-200 dark:border-[#30363d] overflow-hidden">
+              <div className="px-4 py-3 border-b border-gray-200 dark:border-[#30363d] bg-gray-100 dark:bg-[#0d1117]">
+                <h3 className="text-sm font-bold text-gray-900 dark:text-white">Your Holdings (12)</h3>
+              </div>
+
+              {/* Table Header */}
+              <div className="grid grid-cols-6 gap-2 px-4 py-2 text-xs font-semibold text-gray-600 dark:text-[#8b949e] border-b border-gray-200 dark:border-[#30363d]">
+                <div className="col-span-2">Stock</div>
+                <div className="text-right">Qty</div>
+                <div className="text-right">LTP</div>
+                <div className="text-right">P&L</div>
+                <div className="text-center">Signal</div>
+              </div>
+
+              {/* Sample Rows */}
+              <div className="grid grid-cols-6 gap-2 px-4 py-3 text-sm border-b border-gray-200 dark:border-[#30363d] hover:bg-gray-100 dark:hover:bg-[#161b22] transition-colors">
+                <div className="col-span-2 font-semibold text-gray-900 dark:text-white">RELIANCE</div>
+                <div className="text-right text-gray-600 dark:text-[#8b949e]">50</div>
+                <div className="text-right text-gray-900 dark:text-white">₹2,450</div>
+                <div className="text-right text-green-600 dark:text-green-400 font-semibold">+8.5%</div>
+                <div className="text-center">
+                  <span className="inline-block px-2 py-0.5 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 text-xs font-bold rounded">BUY</span>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-6 gap-2 px-4 py-3 text-sm border-b border-gray-200 dark:border-[#30363d] hover:bg-gray-100 dark:hover:bg-[#161b22] transition-colors">
+                <div className="col-span-2 font-semibold text-gray-900 dark:text-white">TCS</div>
+                <div className="text-right text-gray-600 dark:text-[#8b949e]">25</div>
+                <div className="text-right text-gray-900 dark:text-white">₹3,680</div>
+                <div className="text-right text-green-600 dark:text-green-400 font-semibold">+12.3%</div>
+                <div className="text-center">
+                  <span className="inline-block px-2 py-0.5 bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400 text-xs font-bold rounded">TARGET</span>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-6 gap-2 px-4 py-3 text-sm hover:bg-gray-100 dark:hover:bg-[#161b22] transition-colors">
+                <div className="col-span-2 font-semibold text-gray-900 dark:text-white">INFY</div>
+                <div className="text-right text-gray-600 dark:text-[#8b949e]">100</div>
+                <div className="text-right text-gray-900 dark:text-white">₹1,520</div>
+                <div className="text-right text-red-600 dark:text-red-400 font-semibold">-3.2%</div>
+                <div className="text-center">
+                  <span className="inline-block px-2 py-0.5 bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 text-xs font-bold rounded">RISK</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Call to Action Overlay */}
+            <div className="mt-6 text-center">
+              <button
+                onClick={() => router.push('/login')}
+                className="px-8 py-3 bg-[#ff8c42] hover:bg-[#ff9a58] text-white font-bold rounded-lg transition-all shadow-lg hover:shadow-xl hover:scale-105 inline-flex items-center gap-2"
+              >
+                <span>See Your Portfolio Like This</span>
+                <span className="text-xl">→</span>
+              </button>
+              <p className="text-xs text-gray-500 dark:text-[#8b949e] mt-3">
+                Import your holdings in 2 minutes • Free forever • No credit card
               </p>
             </div>
-            <div className="bg-white dark:bg-[#1c2128] border border-gray-200 dark:border-[#30363d] rounded-lg p-4 text-center">
-              <div className="text-2xl mb-2">⚠️</div>
-              <h4 className="font-bold text-gray-900 dark:text-white mb-1">Risk Signals</h4>
-              <p className="text-sm text-gray-600 dark:text-[#8b949e]">
-                Positions below EMA/MA, stop-loss breaches, and exit alerts
-              </p>
+          </div>
+        </div>
+
+        {/* Feature Highlights Below Dashboard */}
+        <div className="grid md:grid-cols-4 gap-6 mt-12">
+          <div className="bg-white dark:bg-[#1c2128] border border-gray-200 dark:border-[#30363d] rounded-lg p-4 text-center hover:border-[#ff8c42] transition-colors">
+            <div className="text-2xl mb-2">💰</div>
+            <h4 className="font-bold text-gray-900 dark:text-white mb-1">Total Value & P&L</h4>
+            <p className="text-sm text-gray-600 dark:text-[#8b949e]">
+              Current portfolio worth, unrealized gains/losses, and daily changes
+            </p>
+          </div>
+          <div className="bg-white dark:bg-[#1c2128] border border-gray-200 dark:border-[#30363d] rounded-lg p-4 text-center hover:border-[#ff8c42] transition-colors">
+            <div className="text-2xl mb-2">⚠️</div>
+            <h4 className="font-bold text-gray-900 dark:text-white mb-1">Risk Signals</h4>
+            <p className="text-sm text-gray-600 dark:text-[#8b949e]">
+              Positions below EMA/MA, stop-loss breaches, and exit alerts
+            </p>
+          </div>
+          <div className="bg-white dark:bg-[#1c2128] border border-gray-200 dark:border-[#30363d] rounded-lg p-4 text-center hover:border-[#ff8c42] transition-colors">
+            <div className="text-2xl mb-2">📈</div>
+            <h4 className="font-bold text-gray-900 dark:text-white mb-1">Technical Health</h4>
+            <p className="text-sm text-gray-600 dark:text-[#8b949e]">
+              EMA crossovers, Supertrend signals, and momentum indicators
+            </p>
+          </div>
+          <div className="bg-white dark:bg-[#1c2128] border border-gray-200 dark:border-[#30363d] rounded-lg p-4 text-center hover:border-[#ff8c42] transition-colors">
+            <div className="text-2xl mb-2">🎯</div>
+            <h4 className="font-bold text-gray-900 dark:text-white mb-1">Action Items</h4>
+            <p className="text-sm text-gray-600 dark:text-[#8b949e]">
+              Positions near targets, pending exits, and opportunities
+            </p>
+          </div>
+        </div>
+      </section>
+
+      {/* Pain Points Section */}
+      <section className="max-w-7xl mx-auto px-6 py-16 bg-gray-50 dark:bg-[#0d1117]">
+        <div className="text-center mb-12">
+          <h2 className="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mb-4">
+            Tired of Missing Opportunities?
+          </h2>
+          <p className="text-lg text-gray-600 dark:text-[#8b949e] max-w-3xl mx-auto">
+            You're not alone. Here's what manual portfolio tracking costs you every single day.
+          </p>
+        </div>
+
+        <div className="grid md:grid-cols-2 gap-6 max-w-5xl mx-auto">
+          {/* Pain Point 1 */}
+          <div className="bg-white dark:bg-[#1c2128] rounded-xl p-6 border-l-4 border-red-500">
+            <div className="flex items-start gap-4">
+              <div className="text-3xl">😰</div>
+              <div className="flex-1">
+                <h3 className="font-bold text-gray-900 dark:text-white text-lg mb-2">
+                  "I missed my profit target by just ₹2"
+                </h3>
+                <p className="text-sm text-gray-600 dark:text-[#8b949e] mb-3">
+                  Stock hit your target at 11:37 AM while you were in a meeting. By the time you checked, it had dropped 5%.
+                </p>
+                <div className="bg-red-50 dark:bg-red-900/20 rounded-lg p-3">
+                  <p className="text-xs font-semibold text-red-800 dark:text-red-300">
+                    ❌ Result: Lost ₹5,000 potential profit
+                  </p>
+                </div>
+              </div>
             </div>
-            <div className="bg-white dark:bg-[#1c2128] border border-gray-200 dark:border-[#30363d] rounded-lg p-4 text-center">
-              <div className="text-2xl mb-2">📈</div>
-              <h4 className="font-bold text-gray-900 dark:text-white mb-1">Technical Health</h4>
-              <p className="text-sm text-gray-600 dark:text-[#8b949e]">
-                EMA crossovers, Supertrend signals, and momentum indicators
-              </p>
+          </div>
+
+          {/* Pain Point 2 */}
+          <div className="bg-white dark:bg-[#1c2128] rounded-xl p-6 border-l-4 border-orange-500">
+            <div className="flex items-start gap-4">
+              <div className="text-3xl">⏰</div>
+              <div className="flex-1">
+                <h3 className="font-bold text-gray-900 dark:text-white text-lg mb-2">
+                  "Spent Sunday updating my spreadsheet"
+                </h3>
+                <p className="text-sm text-gray-600 dark:text-[#8b949e] mb-3">
+                  3 hours manually entering prices, calculating P&L, checking moving averages for 25 stocks.
+                </p>
+                <div className="bg-orange-50 dark:bg-orange-900/20 rounded-lg p-3">
+                  <p className="text-xs font-semibold text-orange-800 dark:text-orange-300">
+                    ❌ Result: 12+ hours wasted monthly
+                  </p>
+                </div>
+              </div>
             </div>
-            <div className="bg-white dark:bg-[#1c2128] border border-gray-200 dark:border-[#30363d] rounded-lg p-4 text-center">
-              <div className="text-2xl mb-2">🎯</div>
-              <h4 className="font-bold text-gray-900 dark:text-white mb-1">Action Items</h4>
-              <p className="text-sm text-gray-600 dark:text-[#8b949e]">
-                Positions near targets, pending exits, and opportunities
-              </p>
+          </div>
+
+          {/* Pain Point 3 */}
+          <div className="bg-white dark:bg-[#1c2128] rounded-xl p-6 border-l-4 border-purple-500">
+            <div className="flex items-start gap-4">
+              <div className="text-3xl">📉</div>
+              <div className="flex-1">
+                <h3 className="font-bold text-gray-900 dark:text-white text-lg mb-2">
+                  "I forgot my stop-loss level"
+                </h3>
+                <p className="text-sm text-gray-600 dark:text-[#8b949e] mb-3">
+                  Bought at ₹450, meant to exit at ₹430. Stock crashed to ₹410 while you weren't watching. Small loss became big loss.
+                </p>
+                <div className="bg-purple-50 dark:bg-purple-900/20 rounded-lg p-3">
+                  <p className="text-xs font-semibold text-purple-800 dark:text-purple-300">
+                    ❌ Result: -8% loss instead of -4%
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Pain Point 4 */}
+          <div className="bg-white dark:bg-[#1c2128] rounded-xl p-6 border-l-4 border-blue-500">
+            <div className="flex items-start gap-4">
+              <div className="text-3xl">🔍</div>
+              <div className="flex-1">
+                <h3 className="font-bold text-gray-900 dark:text-white text-lg mb-2">
+                  "Opportunity passed while researching"
+                </h3>
+                <p className="text-sm text-gray-600 dark:text-[#8b949e] mb-3">
+                  By the time you manually screened 500 stocks for Golden Cross signals, the best entries were already gone.
+                </p>
+                <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-3">
+                  <p className="text-xs font-semibold text-blue-800 dark:text-blue-300">
+                    ❌ Result: Missed 3 strong setups
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Solution CTA */}
+        <div className="mt-12 text-center">
+          <div className="inline-block bg-gradient-to-r from-[#ff8c42] to-orange-500 text-white rounded-xl p-8 max-w-3xl">
+            <h3 className="text-2xl font-bold mb-3">TradeIdea Solves All of This</h3>
+            <p className="text-lg mb-4 opacity-95">
+              Automated alerts, daily analysis, instant notifications, and 24/7 monitoring - all in one place, completely free.
+            </p>
+            <div className="flex items-center justify-center gap-6 text-sm font-semibold">
+              <div className="flex items-center gap-2">
+                <span className="text-xl">✓</span>
+                <span>Zero missed exits</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-xl">✓</span>
+                <span>Save 5+ hours/week</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-xl">✓</span>
+                <span>Never forget stop-loss</span>
+              </div>
             </div>
           </div>
         </div>
@@ -865,28 +1492,57 @@ export default function Home() {
           </div>
         </div>
 
-        {/* Key Benefits */}
+        {/* Key Benefits with Numbers */}
         <div className="mt-12 grid md:grid-cols-3 gap-6">
-          <div className="bg-white dark:bg-[#1c2128] rounded-lg p-6 border border-gray-200 dark:border-[#30363d] text-center">
-            <div className="text-3xl mb-3">⏰</div>
-            <h4 className="font-bold text-gray-900 dark:text-white mb-2">Save Time</h4>
-            <p className="text-sm text-gray-600 dark:text-[#8b949e]">
-              No manual tracking - automated alerts notify you at every step
+          <div className="bg-gradient-to-br from-blue-50 to-cyan-50 dark:from-blue-900/20 dark:to-cyan-900/20 rounded-xl p-6 border-2 border-blue-200 dark:border-blue-700">
+            <div className="text-4xl mb-3">⏰</div>
+            <div className="text-3xl font-bold text-blue-600 dark:text-blue-400 mb-2">5+ Hours</div>
+            <h4 className="font-bold text-gray-900 dark:text-white mb-2 text-lg">Saved Every Week</h4>
+            <p className="text-sm text-gray-700 dark:text-[#8b949e] mb-4">
+              No more spreadsheets, manual updates, or price watching. Spend time making decisions, not gathering data.
             </p>
+            <div className="flex items-center gap-2 text-xs font-semibold text-blue-700 dark:text-blue-300">
+              <span className="text-lg">✓</span>
+              <span>Automated daily analysis</span>
+            </div>
+            <div className="flex items-center gap-2 text-xs font-semibold text-blue-700 dark:text-blue-300 mt-1">
+              <span className="text-lg">✓</span>
+              <span>One-click portfolio import</span>
+            </div>
           </div>
-          <div className="bg-white dark:bg-[#1c2128] rounded-lg p-6 border border-gray-200 dark:border-[#30363d] text-center">
-            <div className="text-3xl mb-3">💰</div>
-            <h4 className="font-bold text-gray-900 dark:text-white mb-2">Maximize Profits</h4>
-            <p className="text-sm text-gray-600 dark:text-[#8b949e]">
-              Enter at perfect prices, exit at targets - never miss opportunities
+
+          <div className="bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 rounded-xl p-6 border-2 border-green-200 dark:border-green-700">
+            <div className="text-4xl mb-3">💰</div>
+            <div className="text-3xl font-bold text-green-600 dark:text-green-400 mb-2">100%</div>
+            <h4 className="font-bold text-gray-900 dark:text-white mb-2 text-lg">Never Miss Targets</h4>
+            <p className="text-sm text-gray-700 dark:text-[#8b949e] mb-4">
+              Get instant alerts at entry prices, profit targets, and stop-loss levels. Perfect timing, every time.
             </p>
+            <div className="flex items-center gap-2 text-xs font-semibold text-green-700 dark:text-green-300">
+              <span className="text-lg">✓</span>
+              <span>Real-time price alerts</span>
+            </div>
+            <div className="flex items-center gap-2 text-xs font-semibold text-green-700 dark:text-green-300 mt-1">
+              <span className="text-lg">✓</span>
+              <span>Trailing stop-loss tracking</span>
+            </div>
           </div>
-          <div className="bg-white dark:bg-[#1c2128] rounded-lg p-6 border border-gray-200 dark:border-[#30363d] text-center">
-            <div className="text-3xl mb-3">🛡️</div>
-            <h4 className="font-bold text-gray-900 dark:text-white mb-2">Protect Capital</h4>
-            <p className="text-sm text-gray-600 dark:text-[#8b949e]">
-              Stop-loss and technical exit alerts prevent large losses
+
+          <div className="bg-gradient-to-br from-red-50 to-orange-50 dark:from-red-900/20 dark:to-orange-900/20 rounded-xl p-6 border-2 border-red-200 dark:border-red-700">
+            <div className="text-4xl mb-3">🛡️</div>
+            <div className="text-3xl font-bold text-red-600 dark:text-red-400 mb-2">24/7</div>
+            <h4 className="font-bold text-gray-900 dark:text-white mb-2 text-lg">Risk Monitoring</h4>
+            <p className="text-sm text-gray-700 dark:text-[#8b949e] mb-4">
+              Continuous monitoring of stop-loss levels, MA breakdowns, and technical exit signals while you sleep.
             </p>
+            <div className="flex items-center gap-2 text-xs font-semibold text-red-700 dark:text-red-300">
+              <span className="text-lg">✓</span>
+              <span>Automatic risk warnings</span>
+            </div>
+            <div className="flex items-center gap-2 text-xs font-semibold text-red-700 dark:text-red-300 mt-1">
+              <span className="text-lg">✓</span>
+              <span>Technical exit criteria</span>
+            </div>
           </div>
         </div>
       </section>
@@ -966,17 +1622,71 @@ export default function Home() {
       </section> */}
 
       {/* CTA Section */}
-      <section className="max-w-7xl mx-auto px-6 py-20 text-center">
-        <h2 className="text-4xl font-bold text-gray-900 dark:text-white mb-4">Ready to Start Smarter Portfolio Mangagement?</h2>
-        <p className="text-xl text-gray-600 dark:text-[#8b949e] mb-8">
-          Join TradeIdea today and connect with traders.
-        </p>
-        <button
-          onClick={() => router.push('/login')}
-          className="px-10 py-4 bg-[#ff8c42] hover:bg-[#ff9a58] text-white text-lg font-bold rounded-lg transition-colors"
-        >
-          Sign Up Now
-        </button>
+      <section className="max-w-7xl mx-auto px-6 py-20">
+        <div className="bg-gradient-to-br from-[#ff8c42]/10 via-orange-500/5 to-purple-500/5 border-2 border-[#ff8c42] dark:border-[#ff8c42] rounded-2xl p-12 text-center relative overflow-hidden">
+          {/* Background Pattern */}
+          <div className="absolute inset-0 opacity-5">
+            <div className="absolute top-0 left-0 w-40 h-40 bg-[#ff8c42] rounded-full blur-3xl"></div>
+            <div className="absolute bottom-0 right-0 w-40 h-40 bg-purple-500 rounded-full blur-3xl"></div>
+          </div>
+
+          <div className="relative z-10">
+            <h2 className="text-4xl md:text-5xl font-bold text-gray-900 dark:text-white mb-4">
+              Stop Missing Opportunities
+            </h2>
+            <p className="text-xl text-gray-600 dark:text-[#8b949e] mb-8 max-w-2xl mx-auto">
+              Join traders who never miss entry and exit signals. Start tracking your portfolio
+              with automated alerts today - completely free, no credit card required.
+            </p>
+
+            <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-8">
+              <div className="relative">
+                <button
+                  onClick={() => router.push('/login')}
+                  className="px-10 py-4 bg-[#ff8c42] hover:bg-[#ff9a58] text-white text-lg font-bold rounded-lg transition-all shadow-lg hover:shadow-xl hover:scale-105 group"
+                >
+                  <span className="flex items-center gap-2">
+                    Get Started Free
+                    <span className="text-xl group-hover:translate-x-1 transition-transform">→</span>
+                  </span>
+                </button>
+                <div className="absolute -top-3 -right-3 bg-green-500 text-white text-xs font-bold px-3 py-1 rounded-full shadow-lg animate-pulse">
+                  100% FREE
+                </div>
+              </div>
+              <div className="text-sm text-gray-600 dark:text-[#8b949e]">
+                <div className="flex items-center gap-2">
+                  <span className="text-green-500 text-lg">✓</span>
+                  <span>Setup in 2 minutes</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-green-500 text-lg">✓</span>
+                  <span>No credit card needed</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Social Proof Stats */}
+            <div className="flex flex-wrap justify-center gap-8 pt-8 border-t border-gray-200 dark:border-[#30363d]">
+              <div className="text-center">
+                <div className="text-3xl font-bold text-[#ff8c42] mb-1">24/7</div>
+                <div className="text-sm text-gray-600 dark:text-[#8b949e]">Market Monitoring</div>
+              </div>
+              <div className="text-center">
+                <div className="text-3xl font-bold text-[#ff8c42] mb-1">10+</div>
+                <div className="text-sm text-gray-600 dark:text-[#8b949e]">Technical Indicators</div>
+              </div>
+              <div className="text-center">
+                <div className="text-3xl font-bold text-[#ff8c42] mb-1">100%</div>
+                <div className="text-sm text-gray-600 dark:text-[#8b949e]">Free Forever</div>
+              </div>
+              <div className="text-center">
+                <div className="text-3xl font-bold text-[#ff8c42] mb-1">∞</div>
+                <div className="text-sm text-gray-600 dark:text-[#8b949e]">Unlimited Portfolios</div>
+              </div>
+            </div>
+          </div>
+        </div>
       </section>
 
       {/* Footer */}

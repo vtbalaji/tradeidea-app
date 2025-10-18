@@ -19,9 +19,9 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "TradeIdea - Smart Portfolio Management Made Simple",
-  description: "Track multiple portfolios, analyze stocks with real-time technical & fundamental data, import holdings from any broker (Zerodha, ICICI), and get instant portfolio health insights. Set smart exit criteria and share trading ideas with the community.",
-  keywords: ["portfolio management", "stock analysis", "technical analysis", "fundamental analysis", "trading ideas", "CSV import", "Zerodha", "ICICI Direct", "portfolio tracking", "exit alerts", "multi-account portfolio"],
+  title: "TradeIdea - Never Miss Another Entry or Exit | Automated Alerts for Indian Stock Traders",
+  description: "Automated portfolio tracking with real-time alerts for Indian stock traders. Get instant notifications when stocks hit entry, target, or stop-loss levels. Import from Zerodha/ICICI in one click. Free forever.",
+  keywords: ["automated stock alerts", "portfolio tracking", "Indian stock market", "technical analysis", "Zerodha import", "ICICI Direct", "entry exit alerts", "stop loss alerts", "trading alerts India", "stock portfolio management", "real-time stock alerts"],
   icons: {
     icon: [
       { url: '/icon', sizes: '32x32', type: 'image/png' },
@@ -33,8 +33,8 @@ export const metadata: Metadata = {
     shortcut: '/icon',
   },
   openGraph: {
-    title: "TradeIdea - Smart Portfolio Management Made Simple",
-    description: "Track multiple portfolios with instant health insights. Real-time technical & fundamental analysis, CSV import from any broker, smart exit alerts, and community-driven trading ideas.",
+    title: "TradeIdea - Never Miss Another Entry or Exit | Automated Alerts",
+    description: "Automated portfolio tracking with real-time alerts for Indian stock traders. Get instant notifications when stocks hit entry, target, or stop-loss levels. Import from Zerodha/ICICI in one click.",
     url: "https://tradeidea.co.in",
     siteName: "TradeIdea",
     images: [
@@ -42,7 +42,7 @@ export const metadata: Metadata = {
         url: "/opengraph-image",
         width: 1200,
         height: 630,
-        alt: "TradeIdea - Smart Portfolio Management",
+        alt: "TradeIdea - Automated Stock Alerts for Indian Traders",
       },
     ],
     locale: "en_IN",
@@ -50,8 +50,8 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "TradeIdea - Smart Portfolio Management",
-    description: "Track portfolios, analyze stocks with real-time data, import from Zerodha/ICICI, get instant health insights & exit alerts",
+    title: "TradeIdea - Automated Stock Alerts for Indian Traders",
+    description: "Never miss entry/exit opportunities. Get instant alerts when stocks hit your target, stop-loss levels. Import from Zerodha/ICICI. Free forever.",
     images: ["/twitter-image"],
   },
   metadataBase: new URL("https://tradeidea.co.in"),
