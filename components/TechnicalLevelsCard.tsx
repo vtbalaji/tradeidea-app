@@ -1,4 +1,5 @@
-import React from 'react';
+import React, { useState } from 'react';
+import { ChevronDown, ChevronUp } from 'lucide-react';
 import { TrendArrow } from './icons/TrendArrow';
 import { getOverallRecommendation } from '@/lib/exitCriteriaAnalysis';
 
@@ -32,17 +33,21 @@ interface TechnicalLevelsCardProps {
   technicals: TechnicalData;
   className?: string;
   currentPrice?: number; // Optional override for portfolio positions
+  defaultExpanded?: boolean;
 }
 
 /**
  * TechnicalLevelsCard - Displays technical indicators with trend arrows
  * Reusable component for showing EMA, SMA, Supertrend and overall signal
+ * Now with expand/collapse functionality
  */
 export const TechnicalLevelsCard: React.FC<TechnicalLevelsCardProps> = ({
   technicals,
   className = '',
-  currentPrice
+  currentPrice,
+  defaultExpanded = false
 }) => {
+  const [isExpanded, setIsExpanded] = useState(defaultExpanded);
   // Debug: Log technicals to see what data is available
   React.useEffect(() => {
     console.log('TechnicalLevelsCard - technicals:', {
@@ -64,16 +69,30 @@ export const TechnicalLevelsCard: React.FC<TechnicalLevelsCardProps> = ({
 
   return (
     <div className={className}>
-      {/* Header with Enhanced Recommendation */}
-      <div className="flex items-center justify-between mb-2">
-        <p className="text-xs font-bold text-[#ff8c42]">Technical Levels</p>
+      {/* Header with Enhanced Recommendation and Expand/Collapse */}
+      <div
+        className="flex items-center justify-between mb-2 cursor-pointer"
+        onClick={(e) => {
+          e.stopPropagation();
+          setIsExpanded(!isExpanded);
+        }}
+      >
+        <div className="flex items-center gap-2">
+          <p className="text-xs font-bold text-[#ff8c42]">Technical Levels</p>
+          {isExpanded ? (
+            <ChevronUp className="w-4 h-4 text-gray-500 dark:text-gray-400" />
+          ) : (
+            <ChevronDown className="w-4 h-4 text-gray-500 dark:text-gray-400" />
+          )}
+        </div>
         <span className={`px-2 py-1 text-xs font-bold rounded ${bgColor} ${textColor}`}>
           {icon} {recommendation}
         </span>
       </div>
 
-      {/* Technical Indicators Grid */}
-      <div className="grid grid-cols-2 gap-2 text-xs">
+      {/* Expandable Technical Indicators Grid */}
+      {isExpanded && (
+        <div className="grid grid-cols-2 gap-2 text-xs">
         {/* 50 EMA */}
         {technicals.ema50 && priceToCompare && (
           <div className="flex items-center justify-between">
@@ -157,7 +176,8 @@ export const TechnicalLevelsCard: React.FC<TechnicalLevelsCardProps> = ({
             </div>
           ) : null;
         })()}
-      </div>
+        </div>
+      )}
     </div>
   );
 };

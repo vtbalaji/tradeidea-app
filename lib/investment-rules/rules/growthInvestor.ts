@@ -35,8 +35,8 @@ export function checkGrowthInvestorEntry(
     growthScore: growthScore >= 3,
     pegRatio: fundamental.pegRatio === null || fundamental.pegRatio < 2.0,
     momentumScore: momentumScore >= 3,
-    priceAboveEMA50: signals.priceCrossEMA50 === 'above',
-    priceAboveSMA200: signals.priceCrossSMA200 === 'above',
+    priceBelowEMA50: signals.priceCrossEMA50 === 'above',
+    priceBelowSMA200: signals.priceCrossSMA200 === 'above',
     volumeConfirmation: technical.lastPrice > 0 &&
                         (signals.volume / technical.avgVolume20) >= 0.5,
     overallSignal: technical.overallSignal ?

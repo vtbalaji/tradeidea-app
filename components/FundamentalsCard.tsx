@@ -1,4 +1,5 @@
-import React from 'react';
+import React, { useState } from 'react';
+import { ChevronDown, ChevronUp } from 'lucide-react';
 
 interface FundamentalsData {
   trailingPE?: number;
@@ -16,17 +17,21 @@ interface FundamentalsCardProps {
   fundamentals: FundamentalsData;
   className?: string;
   showBorder?: boolean;
+  defaultExpanded?: boolean;
 }
 
 /**
  * FundamentalsCard - Displays fundamental metrics and rating
  * Reusable component for showing PE, ROE, Debt-to-Equity, and Earnings Growth
+ * Now with expand/collapse functionality
  */
 export const FundamentalsCard: React.FC<FundamentalsCardProps> = ({
   fundamentals,
   className = '',
-  showBorder = true
+  showBorder = true,
+  defaultExpanded = false
 }) => {
+  const [isExpanded, setIsExpanded] = useState(defaultExpanded);
   const getRatingColor = (rating: string) => {
     switch (rating) {
       case 'EXCELLENT':
@@ -82,9 +87,22 @@ export const FundamentalsCard: React.FC<FundamentalsCardProps> = ({
 
   return (
     <div className={className}>
-      {/* Header with Rating */}
-      <div className={`flex items-center justify-between mb-2 ${showBorder ? 'pt-2 border-t border-gray-200 dark:border-[#30363d]' : ''}`}>
-        <p className="text-xs font-bold text-[#ff8c42]">Fundamentals</p>
+      {/* Header with Rating and Expand/Collapse */}
+      <div
+        className={`flex items-center justify-between mb-2 cursor-pointer ${showBorder ? 'pt-2 border-t border-gray-200 dark:border-[#30363d]' : ''}`}
+        onClick={(e) => {
+          e.stopPropagation();
+          setIsExpanded(!isExpanded);
+        }}
+      >
+        <div className="flex items-center gap-2">
+          <p className="text-xs font-bold text-[#ff8c42]">Fundamentals</p>
+          {isExpanded ? (
+            <ChevronUp className="w-4 h-4 text-gray-500 dark:text-gray-400" />
+          ) : (
+            <ChevronDown className="w-4 h-4 text-gray-500 dark:text-gray-400" />
+          )}
+        </div>
         {shouldShowRating ? (
           <span className={`px-2 py-1 text-xs font-bold rounded ${getRatingColor(fundamentals.fundamentalRating!)}`}>
             {fundamentals.fundamentalRating}
@@ -96,33 +114,36 @@ export const FundamentalsCard: React.FC<FundamentalsCardProps> = ({
         )}
       </div>
 
-      {/* Graham Valuation and Piotroski Score */}
-      {(grahamValuation || fundamentals.piotroskiScore !== undefined) && (
-        <div className="grid grid-cols-2 gap-2 mb-3 text-xs">
-          {/* Graham Valuation */}
-          {grahamValuation && (
-            <div>
-              <span className="text-gray-600 dark:text-[#8b949e]">Graham Score:</span>
-              <span className={`ml-1 font-bold ${grahamValuation.color}`}>
-                {grahamValuation.label}
-              </span>
+      {/* Expandable Content */}
+      {isExpanded && (
+        <>
+          {/* Graham Valuation and Piotroski Score */}
+          {(grahamValuation || fundamentals.piotroskiScore !== undefined) && (
+            <div className="grid grid-cols-2 gap-2 mb-3 text-xs">
+              {/* Graham Valuation */}
+              {grahamValuation && (
+                <div>
+                  <span className="text-gray-600 dark:text-[#8b949e]">Graham Score:</span>
+                  <span className={`ml-1 font-bold ${grahamValuation.color}`}>
+                    {grahamValuation.label}
+                  </span>
+                </div>
+              )}
+
+              {/* Financial Strength (Piotroski Score) */}
+              {fundamentals.piotroskiScore !== undefined && (
+                <div>
+                  <span className="text-gray-600 dark:text-[#8b949e]">Financial Strength:</span>
+                  <span className={`ml-1 font-bold ${getPiotroskiColor(fundamentals.piotroskiScore)}`}>
+                    {fundamentals.piotroskiScore}/9
+                  </span>
+                </div>
+              )}
             </div>
           )}
 
-          {/* Financial Strength (Piotroski Score) */}
-          {fundamentals.piotroskiScore !== undefined && (
-            <div>
-              <span className="text-gray-600 dark:text-[#8b949e]">Financial Strength:</span>
-              <span className={`ml-1 font-bold ${getPiotroskiColor(fundamentals.piotroskiScore)}`}>
-                {fundamentals.piotroskiScore}/9
-              </span>
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* Fundamentals Grid */}
-      <div className="grid grid-cols-2 gap-2 text-xs">
+          {/* Fundamentals Grid */}
+          <div className="grid grid-cols-2 gap-2 text-xs">
         {/* PE Ratio */}
         {fundamentals.trailingPE !== undefined && fundamentals.trailingPE !== null && (
           <div>
@@ -163,16 +184,18 @@ export const FundamentalsCard: React.FC<FundamentalsCardProps> = ({
           </div>
         )}
 
-        {/* Operating Margin */}
-        {fundamentals.operatingMargins !== undefined && fundamentals.operatingMargins !== null && (
-          <div>
-            <span className="text-gray-600 dark:text-[#8b949e]">Operating Margin:</span>
-            <span className="ml-1 font-semibold text-gray-900 dark:text-white">
-              {fundamentals.operatingMargins.toFixed(1)}%
-            </span>
+            {/* Operating Margin */}
+            {fundamentals.operatingMargins !== undefined && fundamentals.operatingMargins !== null && (
+              <div>
+                <span className="text-gray-600 dark:text-[#8b949e]">Operating Margin:</span>
+                <span className="ml-1 font-semibold text-gray-900 dark:text-white">
+                  {fundamentals.operatingMargins.toFixed(1)}%
+                </span>
+              </div>
+            )}
           </div>
-        )}
-      </div>
+        </>
+      )}
     </div>
   );
 };
