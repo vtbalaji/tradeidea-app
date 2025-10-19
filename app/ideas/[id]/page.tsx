@@ -13,7 +13,7 @@ export default function IdeaDetailPage() {
   const params = useParams();
   const router = useRouter();
   const ideaId = params.id as string;
-  const { ideas, toggleLike, toggleFollow, addComment, getComments, addToPortfolio, updateIdea, deleteIdea } = useTrading();
+  const { ideas, toggleLike, toggleFollow, addComment, fetchComments, addToPortfolio, updateIdea, deleteIdea } = useTrading();
   const { user } = useAuth();
   const [idea, setIdea] = useState<any>(null);
   const [comments, setComments] = useState<any[]>([]);
@@ -60,7 +60,7 @@ export default function IdeaDetailPage() {
 
   const loadComments = async () => {
     try {
-      const commentsData = await getComments(ideaId);
+      const commentsData = await fetchComments(ideaId);
       setComments(commentsData);
     } catch (error) {
       console.error('Error loading comments:', error);

@@ -39,6 +39,39 @@ export async function GET(request: NextRequest) {
   }
 }
 
+// POST /api/notifications - Create a test notification (for testing purposes)
+export async function POST(request: NextRequest) {
+  try {
+    const userId = await verifyAuthToken(request);
+    const db = getAdminDb();
+    const body = await request.json();
+
+    const { type, message } = body;
+
+    const notificationData = {
+      userId,
+      type: type || 'test',
+      message: message || 'This is a test notification! 🎉',
+      read: false,
+      createdAt: FieldValue.serverTimestamp(),
+    };
+
+    const docRef = await db.collection('notifications').add(notificationData);
+
+    return createSuccessResponse({
+      id: docRef.id,
+      ...notificationData,
+      createdAt: new Date().toISOString(),
+    }, 201);
+  } catch (error: any) {
+    console.error('Error creating notification:', error);
+    if (error.message.includes('Unauthorized')) {
+      return createErrorResponse(error.message, 401);
+    }
+    return createErrorResponse('Failed to create notification', 500);
+  }
+}
+
 // PATCH /api/notifications/[id] - Mark notification as read
 export async function PATCH(request: NextRequest) {
   try {

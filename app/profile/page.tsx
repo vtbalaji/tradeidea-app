@@ -8,6 +8,7 @@ import { useTrading } from '../../contexts/TradingContext';
 import Navigation from '../../components/Navigation';
 import { db as firestore } from '@/lib/firebase';
 import { collection, doc, updateDoc, serverTimestamp } from 'firebase/firestore';
+import { apiClient } from '@/lib/apiClient';
 
 export default function ProfilePage() {
   const router = useRouter();
@@ -33,6 +34,7 @@ export default function ProfilePage() {
   });
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
+  const [testNotifLoading, setTestNotifLoading] = useState(false);
 
   const handleSave = async () => {
     setLoading(true);
@@ -50,6 +52,29 @@ export default function ProfilePage() {
       setMessage('Error updating profile: ' + error.message);
     }
     setLoading(false);
+  };
+
+  const handleTestNotification = async () => {
+    setTestNotifLoading(true);
+    try {
+      await fetch('/api/notifications', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${await user?.getIdToken()}`,
+        },
+        body: JSON.stringify({
+          type: 'test',
+          message: 'Test notification created successfully! 🎉 The notification system is working.',
+        }),
+      });
+      setMessage('✅ Test notification created! Check the notification bell in the navigation bar.');
+    } catch (error) {
+      console.error('Error creating test notification:', error);
+      setMessage('❌ Error creating test notification');
+    } finally {
+      setTestNotifLoading(false);
+    }
   };
 
   const handleClearPortfolio = async () => {
@@ -301,6 +326,32 @@ export default function ProfilePage() {
             >
               👥 Manage Accounts
             </Link>
+          </div>
+        </div>
+
+        {/* Test Notification Section */}
+        <div className="mt-8 bg-blue-50 dark:bg-blue-900/10 rounded-xl border border-blue-200 dark:border-blue-900/30 overflow-hidden">
+          <div className="p-6">
+            <h3 className="text-xl font-bold text-blue-600 dark:text-blue-400 mb-2">🔔 Test Notifications</h3>
+            <p className="text-blue-600 dark:text-blue-400/80 text-sm mb-4">
+              Test the notification system to ensure it's working properly after the API migration.
+            </p>
+
+            <div className="flex items-center justify-between p-4 bg-white dark:bg-[#1c2128] border border-blue-200 dark:border-blue-900/30 rounded-lg">
+              <div className="flex-1">
+                <h4 className="font-semibold text-gray-900 dark:text-white mb-1">Create Test Notification</h4>
+                <p className="text-sm text-gray-600 dark:text-[#8b949e]">
+                  Click to create a dummy notification and verify the notification bell is working
+                </p>
+              </div>
+              <button
+                onClick={handleTestNotification}
+                disabled={testNotifLoading}
+                className="ml-4 px-6 py-2 bg-blue-500 hover:bg-blue-600 text-white font-semibold rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {testNotifLoading ? 'Creating...' : '🧪 Test Notification'}
+              </button>
+            </div>
           </div>
         </div>
 
