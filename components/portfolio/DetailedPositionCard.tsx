@@ -2,6 +2,7 @@ import React from 'react';
 import { EditIcon } from '@/components/icons';
 import TechnicalLevelsCard from '@/components/TechnicalLevelsCard';
 import FundamentalsCard from '@/components/FundamentalsCard';
+import FinancialCard from '@/components/FinancialCard';
 import AnalysisButton from '@/components/AnalysisButton';
 import { analyzeExitCriteria, getOverallRecommendation } from '@/lib/exitCriteriaAnalysis';
 
@@ -124,7 +125,7 @@ export function DetailedPositionCard({
         </div>
       </div>
 
-      {/* Technical Indicators & Fundamentals Display */}
+      {/* Technical Indicators, Fundamentals & Financial Display */}
       {(position.technicals || position.fundamentals) && position.status === 'open' && (
         <div className="mb-4 p-3 bg-white dark:bg-[#0f1419] border border-gray-200 dark:border-[#30363d] rounded-lg">
           {position.technicals && (
@@ -138,6 +139,16 @@ export function DetailedPositionCard({
             <FundamentalsCard
               fundamentals={position.fundamentals}
               showBorder={!!position.technicals}
+              className="mb-3"
+            />
+          )}
+          {position.fundamentals && (position.fundamentals.debtToEquity !== undefined || position.fundamentals.piotroskiScore !== undefined) && (
+            <FinancialCard
+              financial={{
+                debtToEquity: position.fundamentals.debtToEquity,
+                piotroskiScore: position.fundamentals.piotroskiScore
+              }}
+              showBorder={!!(position.technicals || position.fundamentals)}
             />
           )}
         </div>

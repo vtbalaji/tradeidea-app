@@ -6,6 +6,7 @@ import { InvestorType, InvestorRecommendation, EntryAnalysis } from '@/lib/inves
 import { TrendArrow, ChevronLeftIcon, ChevronRightIcon, CloseIcon } from '@/components/icons';
 import TechnicalLevelsCard from '@/components/TechnicalLevelsCard';
 import FundamentalsCard from '@/components/FundamentalsCard';
+import FinancialCard from '@/components/FinancialCard';
 import PriceChart from '@/components/PriceChart';
 
 interface InvestorAnalysisResultsProps {
@@ -316,8 +317,8 @@ export default function InvestorAnalysisResults({
             </div>
           )}
 
-          {/* Technical & Fundamentals Cards - Below Chart (Side by Side) */}
-          <div className="mb-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+          {/* Technical, Fundamentals & Financial Cards - Below Chart (Side by Side) */}
+          <div className="mb-4 grid grid-cols-1 md:grid-cols-3 gap-4">
             {/* Technical Levels Card */}
             {technicals && (
               <div className="bg-white dark:bg-[#1c2128] border border-gray-200 dark:border-[#30363d] rounded-lg p-4">
@@ -329,6 +330,19 @@ export default function InvestorAnalysisResults({
             {fundamentals && (
               <div className="bg-white dark:bg-[#1c2128] border border-gray-200 dark:border-[#30363d] rounded-lg p-4">
                 <FundamentalsCard fundamentals={fundamentals} showBorder={false} />
+              </div>
+            )}
+
+            {/* Financial Card */}
+            {fundamentals && (
+              <div className="bg-white dark:bg-[#1c2128] border border-gray-200 dark:border-[#30363d] rounded-lg p-4">
+                <FinancialCard
+                  financial={{
+                    debtToEquity: fundamentals.debtToEquity,
+                    piotroskiScore: fundamentals.piotroskiScore
+                  }}
+                  showBorder={false}
+                />
               </div>
             )}
           </div>

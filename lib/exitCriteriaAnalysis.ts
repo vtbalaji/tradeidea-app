@@ -122,7 +122,7 @@ export function analyzeExitCriteria(position: any): ExitAlert[] | null {
  * Formats the signal from Python script to match UI format
  */
 function formatScriptSignal(overallSignal: string): {
-  recommendation: 'STRONG SELL' | 'SELL' | 'HOLD' | 'BUY' | 'STRONG BUY';
+  recommendation: 'STRONG BEAR' | 'BEAR' | 'HOLD' | 'BULL' | 'STRONG BULL';
   bgColor: string;
   borderColor: string;
   textColor: string;
@@ -131,7 +131,7 @@ function formatScriptSignal(overallSignal: string): {
   switch (overallSignal) {
     case 'STRONG_BUY':
       return {
-        recommendation: 'STRONG BUY',
+        recommendation: 'STRONG BULL',
         bgColor: 'bg-green-600/20',
         borderColor: 'border-green-600/30',
         textColor: 'text-green-700 dark:text-green-500',
@@ -139,7 +139,7 @@ function formatScriptSignal(overallSignal: string): {
       };
     case 'BUY':
       return {
-        recommendation: 'BUY',
+        recommendation: 'BULL',
         bgColor: 'bg-green-500/20',
         borderColor: 'border-green-500/30',
         textColor: 'text-green-600 dark:text-green-400',
@@ -155,7 +155,7 @@ function formatScriptSignal(overallSignal: string): {
       };
     case 'SELL':
       return {
-        recommendation: 'SELL',
+        recommendation: 'BEAR',
         bgColor: 'bg-orange-500/20',
         borderColor: 'border-orange-500/30',
         textColor: 'text-orange-600 dark:text-orange-400',
@@ -163,7 +163,7 @@ function formatScriptSignal(overallSignal: string): {
       };
     case 'STRONG_SELL':
       return {
-        recommendation: 'STRONG SELL',
+        recommendation: 'STRONG BEAR',
         bgColor: 'bg-red-500/20',
         borderColor: 'border-red-500/30',
         textColor: 'text-red-600 dark:text-red-400',
@@ -186,7 +186,7 @@ function formatScriptSignal(overallSignal: string): {
  * FALLBACK: Uses rule-based logic if overallSignal not available
  */
 export function getOverallRecommendation(position: any): {
-  recommendation: 'STRONG SELL' | 'SELL' | 'HOLD' | 'BUY' | 'STRONG BUY';
+  recommendation: 'STRONG BEAR' | 'BEAR' | 'HOLD' | 'BULL' | 'STRONG BULL';
   bgColor: string;
   borderColor: string;
   textColor: string;
@@ -227,38 +227,38 @@ export function getOverallRecommendation(position: any): {
   const aboveBBMiddle3Days = bbHistory.length >= 3 && bbHistory.slice(-3).every((pos: string) => pos === 'ABOVE');
   const belowBBMiddle3Days = bbHistory.length >= 3 && bbHistory.slice(-3).every((pos: string) => pos === 'BELOW');
 
-  let recommendation: 'STRONG SELL' | 'SELL' | 'HOLD' | 'BUY' | 'STRONG BUY' = 'HOLD';
+  let recommendation: 'STRONG BEAR' | 'BEAR' | 'HOLD' | 'BULL' | 'STRONG BULL' = 'HOLD';
   let bgColor = 'bg-gray-500/20';
   let borderColor = 'border-gray-500/30';
   let textColor = 'text-gray-600 dark:text-gray-400';
   let icon = '●';
 
-  // STRONG SELL: Downtrend + bearish indicators
+  // STRONG BEAR: Downtrend + bearish indicators
   if (
     trendStructure === 'DOWNTREND' &&
     (rsi < 30 || (rsi > 70 && !isAbove50MA)) &&
     !isAbove50MA &&
     belowBBMiddle3Days
   ) {
-    recommendation = 'STRONG SELL';
+    recommendation = 'STRONG BEAR';
     bgColor = 'bg-red-500/20';
     borderColor = 'border-red-500/30';
     textColor = 'text-red-600 dark:text-red-400';
     icon = '▼▼';
   }
-  // SELL: Weak trend or below MAs
+  // BEAR: Weak trend or below MAs
   else if (
     (trendStructure === 'DOWNTREND' || !isAbove50MA) &&
     rsi < 50 &&
     tech.bollingerMiddle && currentPrice < tech.bollingerMiddle
   ) {
-    recommendation = 'SELL';
+    recommendation = 'BEAR';
     bgColor = 'bg-orange-500/20';
     borderColor = 'border-orange-500/30';
     textColor = 'text-orange-600 dark:text-orange-400';
     icon = '▼';
   }
-  // STRONG BUY: Uptrend + golden cross + bullish indicators
+  // STRONG BULL: Uptrend + golden cross + bullish indicators
   else if (
     trendStructure === 'UPTREND' &&
     rsi >= 50 && rsi <= 70 &&
@@ -269,20 +269,20 @@ export function getOverallRecommendation(position: any): {
     macdBullish &&
     volumeHigh
   ) {
-    recommendation = 'STRONG BUY';
+    recommendation = 'STRONG BULL';
     bgColor = 'bg-green-600/20';
     borderColor = 'border-green-600/30';
     textColor = 'text-green-700 dark:text-green-500';
     icon = '▲▲';
   }
-  // BUY: Good momentum building
+  // BULL: Good momentum building
   else if (
     (trendStructure === 'UPTREND' || trendStructure === 'SIDEWAYS') &&
     rsi > 50 &&
     isAbove50MA &&
     (aboveBBMiddle3Days || macdBullish)
   ) {
-    recommendation = 'BUY';
+    recommendation = 'BULL';
     bgColor = 'bg-green-500/20';
     borderColor = 'border-green-500/30';
     textColor = 'text-green-600 dark:text-green-400';

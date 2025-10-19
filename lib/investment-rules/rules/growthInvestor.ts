@@ -22,11 +22,12 @@ export function checkGrowthInvestorEntry(
   ].filter(Boolean).length;
 
   // Momentum score (need at least 4 of 6)
+  const rsi = technical.rsi ?? technical.rsi14;
   const momentumScore = [
     signals.goldenCross === true,
     signals.macdBullish === true,
-    technical.macdHistogram > 0, // Histogram positive (momentum increasing)
-    technical.rsi14 >= 50, // RSI above 50 = positive momentum (no upper limit for growth)
+    (technical.macdHistogram !== undefined && technical.macdHistogram !== null) && technical.macdHistogram > 0, // Histogram positive (momentum increasing)
+    (rsi !== undefined && rsi !== null) && rsi >= 50, // RSI above 50 = positive momentum (no upper limit for growth)
     signals.priceCrossEMA50 === 'above',
     signals.supertrendBullish === true
   ].filter(Boolean).length;
@@ -63,9 +64,10 @@ export function checkGrowthInvestorExit(
   highestPrice: number
 ): ExitAnalysis {
   // Momentum loss score (exit if 3+ signals)
+  const rsi = technical.rsi ?? technical.rsi14;
   const momentumLossScore = [
     signals.macdBearish === true,
-    technical.rsi14 < 40,
+    (rsi !== undefined && rsi !== null) && rsi < 40,
     signals.deathCross === true,
     signals.priceCrossEMA50 === 'below',
     signals.supertrendBearish === true
@@ -85,7 +87,7 @@ export function checkGrowthInvestorExit(
     momentumLoss: momentumLossScore >= 3,
 
     // RSI overbought
-    rsiOverbought: signals.rsiOverbought === true || technical.rsi14 > 75,
+    rsiOverbought: signals.rsiOverbought === true || ((rsi !== undefined && rsi !== null) && rsi > 75),
 
     // Stop loss
     stopLoss: (technical.lastPrice / entryPrice) <= 0.80,

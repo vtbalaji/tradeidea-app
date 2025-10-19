@@ -23,9 +23,10 @@ export function checkDividendInvestorEntry(
   ].filter(Boolean).length;
 
   // Technical confirmation score (need at least 2 of 3)
+  const rsi = technical.rsi ?? technical.rsi14;
   const technicalScore = [
     signals.priceCrossSMA200 === 'above',
-    technical.rsi14 >= 35 && technical.rsi14 <= 65,
+    (rsi !== undefined && rsi !== null) && rsi >= 35 && rsi <= 65,
     signals.macdBullish === true
   ].filter(Boolean).length;
 
@@ -62,6 +63,7 @@ export function checkDividendInvestorExit(
   entryPrice: number,
   holdingDays: number
 ): ExitAnalysis {
+  const rsi = technical.rsi ?? technical.rsi14;
   // Financial distress score (exit if 2+ signals)
   const distressScore = [
     fundamental.debtToEquity !== null && fundamental.debtToEquity > 2.0,
@@ -81,7 +83,8 @@ export function checkDividendInvestorExit(
     stopLoss: (technical.lastPrice / entryPrice) <= 0.70,
 
     // Severe technical breakdown
-    severeBreakdown: signals.deathCross === true && technical.rsi14 < 30,
+    severeBreakdown: signals.deathCross === true &&
+                    ((rsi !== undefined && rsi !== null) && rsi < 30),
 
     // Time-based review (5 years)
     holdingReview: holdingDays > 1825

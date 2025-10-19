@@ -42,28 +42,50 @@ export class InvestmentRuleEngine {
    * Maps from TechnicalData structure to TechnicalSignals
    */
   static buildSignals(technical: TechnicalData): TechnicalSignals {
+    const rsi = technical.rsi ?? technical.rsi14;
+
     return {
       // Price vs Moving Averages
-      priceCrossSMA200: technical.lastPrice > technical.sma200 ? 'above' : 'below',
-      priceCrossEMA50: technical.lastPrice > technical.ema50 ? 'above' : 'below',
-      priceCrossSMA100: technical.sma100 ?
-        (technical.lastPrice > technical.sma100 ? 'above' : 'below') : null,
+      priceCrossSMA200: technical.sma200 !== undefined && technical.sma200 !== null
+        ? (technical.lastPrice > technical.sma200 ? 'above' : 'below')
+        : null,
+      priceCrossEMA50: technical.ema50 !== undefined && technical.ema50 !== null
+        ? (technical.lastPrice > technical.ema50 ? 'above' : 'below')
+        : null,
+      priceCrossSMA100: technical.sma100 !== undefined && technical.sma100 !== null
+        ? (technical.lastPrice > technical.sma100 ? 'above' : 'below')
+        : null,
 
       // Trend Indicators
-      goldenCross: technical.ema50 > technical.sma200,
-      deathCross: technical.ema50 < technical.sma200,
+      goldenCross: (technical.ema50 !== undefined && technical.ema50 !== null &&
+                   technical.sma200 !== undefined && technical.sma200 !== null)
+        ? technical.ema50 > technical.sma200
+        : false,
+      deathCross: (technical.ema50 !== undefined && technical.ema50 !== null &&
+                  technical.sma200 !== undefined && technical.sma200 !== null)
+        ? technical.ema50 < technical.sma200
+        : false,
 
       // MACD
-      macdBullish: technical.macd > 0 && technical.macdHistogram > 0,
-      macdBearish: technical.macd < 0 || technical.macdHistogram < 0,
+      macdBullish: (technical.macd !== undefined && technical.macd !== null &&
+                   technical.macdHistogram !== undefined && technical.macdHistogram !== null)
+        ? (technical.macd > 0 && technical.macdHistogram > 0)
+        : false,
+      macdBearish: (technical.macd !== undefined && technical.macd !== null &&
+                   technical.macdHistogram !== undefined && technical.macdHistogram !== null)
+        ? (technical.macd < 0 || technical.macdHistogram < 0)
+        : false,
 
       // RSI
-      rsiOverbought: technical.rsi14 > 70,
-      rsiOversold: technical.rsi14 < 30,
+      rsiOverbought: (rsi !== undefined && rsi !== null) ? rsi > 70 : false,
+      rsiOversold: (rsi !== undefined && rsi !== null) ? rsi < 30 : false,
 
       // Volume
-      volumeSpike: technical.volume > (technical.avgVolume20 * 1.5),
-      volume: technical.volume,
+      volumeSpike: (technical.volume !== undefined && technical.volume !== null &&
+                   technical.avgVolume20 !== undefined && technical.avgVolume20 !== null)
+        ? technical.volume > (technical.avgVolume20 * 1.5)
+        : false,
+      volume: technical.volume ?? 0,
 
       // Supertrend (if available)
       supertrendBullish: technical.supertrendDirection === 1.00,
@@ -78,7 +100,10 @@ export class InvestmentRuleEngine {
       ema50: technical.ema50,
 
       // EMA Cross
-      ema50CrossSMA200: technical.ema50 > technical.sma200 ? 'above' : 'below'
+      ema50CrossSMA200: (technical.ema50 !== undefined && technical.ema50 !== null &&
+                        technical.sma200 !== undefined && technical.sma200 !== null)
+        ? (technical.ema50 > technical.sma200 ? 'above' : 'below')
+        : null
     };
   }
 

@@ -14,27 +14,39 @@ export function checkMomentumTraderEntry(
   fundamental: FundamentalData
 ): EntryAnalysis {
   // Momentum score (need at least 5 of 7)
+  const rsi = technical.rsi ?? technical.rsi14;
   const momentumScore = [
     signals.goldenCross === true,
     signals.macdBullish === true,
+    (technical.macdHistogram !== undefined && technical.macdHistogram !== null &&
+     technical.macdSignal !== undefined && technical.macdSignal !== null) &&
     technical.macdHistogram > technical.macdSignal,
-    technical.rsi14 >= 50 ,
+    (rsi !== undefined && rsi !== null) && rsi >= 50,
     signals.supertrendBullish === true,
     signals.ema50CrossSMA200 === 'above',
-    technical.lastPrice > technical.ema9
+    (technical.ema9 !== undefined && technical.ema9 !== null) && technical.lastPrice > technical.ema9
   ].filter(Boolean).length;
+
+  const bollingerMiddle = technical.bollingerBands?.middle ?? technical.bollingerMiddle;
+  const bollingerUpper = technical.bollingerBands?.upper ?? technical.bollingerUpper;
 
   const conditions = {
     momentumSignals: momentumScore >= 5,
-    priceAboveSMA20: technical.lastPrice > technical.sma20,
-    priceAboveSMA50: technical.lastPrice > technical.sma50,
-    rsiNotOverbought: technical.rsi14 > 50,
-    withinOrAboveBollingerBands: technical.lastPrice > technical.bollingerMiddle &&
-                                  technical.lastPrice <= (technical.bollingerUpper * 1.05),
+    priceAboveSMA20: (technical.sma20 !== undefined && technical.sma20 !== null) && technical.lastPrice > technical.sma20,
+    priceAboveSMA50: (technical.sma50 !== undefined && technical.sma50 !== null) && technical.lastPrice > technical.sma50,
+    rsiNotOverbought: (rsi !== undefined && rsi !== null) && rsi > 50,
+    withinOrAboveBollingerBands: (bollingerMiddle !== undefined && bollingerMiddle !== null &&
+                                  bollingerUpper !== undefined && bollingerUpper !== null) &&
+                                  technical.lastPrice > bollingerMiddle &&
+                                  technical.lastPrice <= (bollingerUpper * 1.05),
     volumeConfirmation: signals.volumeSpike === true ||
-                        (technical.volume / technical.avgVolume20) >= 0.8,
+                        ((technical.volume !== undefined && technical.volume !== null &&
+                          technical.avgVolume20 !== undefined && technical.avgVolume20 !== null) &&
+                         (technical.volume / technical.avgVolume20) >= 0.8),
     // positiveChange: technical.changePercent > 0,
-    Supertrend: technical.supertrend ? technical.lastPrice > technical.supertrend : false
+    Supertrend: (technical.supertrend !== undefined && technical.supertrend !== null)
+      ? technical.lastPrice > technical.supertrend
+      : false
   };
 
   const allMet = Object.values(conditions).every(v => v === true);
@@ -58,12 +70,13 @@ export function checkMomentumTraderExit(
   holdingDays: number
 ): ExitAnalysis {
   // Momentum reversal score (exit if 3+ signals)
+  const rsi = technical.rsi ?? technical.rsi14;
   const momentumReversalScore = [
     signals.macdBearish === true,
-    technical.macd < 0,
-    technical.rsi14 > 70 || technical.rsi14 < 30,
+    (technical.macd !== undefined && technical.macd !== null) && technical.macd < 0,
+    (rsi !== undefined && rsi !== null) && (rsi > 70 || rsi < 30),
     signals.supertrendBearish === true,
-    technical.lastPrice < technical.ema9,
+    (technical.ema9 !== undefined && technical.ema9 !== null) && technical.lastPrice < technical.ema9,
     signals.priceCrossEMA50 === 'below'
   ].filter(Boolean).length;
 

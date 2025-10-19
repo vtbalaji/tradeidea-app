@@ -25,10 +25,11 @@ export function checkQualityInvestorEntry(
   ].filter(Boolean).length;
 
   // Technical confirmation score (need at least 3 of 5)
+  const rsi = technical.rsi ?? technical.rsi14;
   const technicalScore = [
     signals.priceCrossSMA200 === 'above',
     signals.macdBullish === true,
-    technical.rsi14 >= 45 && technical.rsi14 <= 65,
+    (rsi !== undefined && rsi !== null) && rsi >= 45 && rsi <= 65,
     signals.supertrendBullish === true,
     technical.overallSignal ? ['STRONG_BUY', 'BUY'].includes(technical.overallSignal) : false
   ].filter(Boolean).length;

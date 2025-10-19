@@ -31,13 +31,18 @@ export function checkValueInvestorEntry(
     debtToEquity: fundamental.debtToEquity !== null && fundamental.debtToEquity >= 0 && fundamental.debtToEquity < 1.0,
 
     // Price not too far above SMA200
-    priceVsSMA200: technical.lastPrice < (technical.sma200 * 1.10),
+    priceVsSMA200: (technical.sma200 !== undefined && technical.sma200 !== null) &&
+                   technical.lastPrice < (technical.sma200 * 1.10),
 
     // Technical Confirmation (at least 2 of 3)
     technicalConfirmation: [
       signals.priceCrossSMA200 === 'above',
-      technical.rsi14 >= 30 && technical.rsi14 <= 60,
-      technical.lastPrice < technical.bollingerUpper
+      (technical.rsi !== undefined && technical.rsi !== null) ?
+        (technical.rsi >= 30 && technical.rsi <= 60) :
+        (technical.rsi14 !== undefined && technical.rsi14 !== null) && (technical.rsi14 >= 30 && technical.rsi14 <= 60),
+      (technical.bollingerUpper !== undefined && technical.bollingerUpper !== null ||
+       technical.bollingerBands?.upper !== undefined && technical.bollingerBands?.upper !== null) &&
+      technical.lastPrice < (technical.bollingerBands?.upper ?? technical.bollingerUpper)
     ].filter(Boolean).length >= 2
   };
 

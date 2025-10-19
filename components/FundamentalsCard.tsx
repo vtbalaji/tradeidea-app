@@ -117,31 +117,6 @@ export const FundamentalsCard: React.FC<FundamentalsCardProps> = ({
       {/* Expandable Content */}
       {isExpanded && (
         <>
-          {/* Graham Valuation and Piotroski Score */}
-          {(grahamValuation || fundamentals.piotroskiScore !== undefined) && (
-            <div className="grid grid-cols-2 gap-2 mb-3 text-xs">
-              {/* Graham Valuation */}
-              {grahamValuation && (
-                <div>
-                  <span className="text-gray-600 dark:text-[#8b949e]">Graham Score:</span>
-                  <span className={`ml-1 font-bold ${grahamValuation.color}`}>
-                    {grahamValuation.label}
-                  </span>
-                </div>
-              )}
-
-              {/* Financial Strength (Piotroski Score) */}
-              {fundamentals.piotroskiScore !== undefined && (
-                <div>
-                  <span className="text-gray-600 dark:text-[#8b949e]">Financial Strength:</span>
-                  <span className={`ml-1 font-bold ${getPiotroskiColor(fundamentals.piotroskiScore)}`}>
-                    {fundamentals.piotroskiScore}/9
-                  </span>
-                </div>
-              )}
-            </div>
-          )}
-
           {/* Fundamentals Grid */}
           <div className="grid grid-cols-2 gap-2 text-xs">
         {/* PE Ratio */}
@@ -164,16 +139,6 @@ export const FundamentalsCard: React.FC<FundamentalsCardProps> = ({
           </div>
         )}
 
-        {/* Debt to Equity */}
-        {fundamentals.debtToEquity !== undefined && fundamentals.debtToEquity !== null && (
-          <div>
-            <span className="text-gray-600 dark:text-[#8b949e]">Debt-to-Equity:</span>
-            <span className="ml-1 font-semibold text-gray-900 dark:text-white">
-              {fundamentals.debtToEquity.toFixed(1)}
-            </span>
-          </div>
-        )}
-
         {/* Earnings Growth */}
         {fundamentals.earningsGrowth !== undefined && fundamentals.earningsGrowth !== null && (
           <div>
@@ -190,6 +155,16 @@ export const FundamentalsCard: React.FC<FundamentalsCardProps> = ({
                 <span className="text-gray-600 dark:text-[#8b949e]">Operating Margin:</span>
                 <span className="ml-1 font-semibold text-gray-900 dark:text-white">
                   {fundamentals.operatingMargins.toFixed(1)}%
+                </span>
+              </div>
+            )}
+
+            {/* Graham Valuation */}
+            {grahamValuation && (
+              <div>
+                <span className="text-gray-600 dark:text-[#8b949e]">Graham Score:</span>
+                <span className={`ml-1 font-bold ${grahamValuation.color}`}>
+                  {grahamValuation.label}
                 </span>
               </div>
             )}

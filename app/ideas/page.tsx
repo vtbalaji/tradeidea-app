@@ -12,6 +12,7 @@ import { trackPositionAdded } from '@/lib/analytics';
 import InvestorAnalysisModal from '@/components/InvestorAnalysisModal';
 import TechnicalLevelsCard from '@/components/TechnicalLevelsCard';
 import FundamentalsCard from '@/components/FundamentalsCard';
+import FinancialCard from '@/components/FinancialCard';
 import AnalysisButton from '@/components/AnalysisButton';
 import AddPositionModal from '@/components/portfolio/modals/AddPositionModal';
 import RatingGuide from '@/components/RatingGuide';
@@ -255,7 +256,7 @@ export default function IdeasHubPage() {
           </div>
         )}
 
-        {/* Technical Levels & Fundamentals */}
+        {/* Technical Levels, Fundamentals & Financial */}
         {(idea.technicals || idea.fundamentals) && (
           <div className="mb-3 p-3 bg-white dark:bg-[#0f1419] border border-gray-200 dark:border-[#30363d] rounded-lg">
             {idea.technicals && (
@@ -265,6 +266,16 @@ export default function IdeasHubPage() {
               <FundamentalsCard
                 fundamentals={idea.fundamentals}
                 showBorder={!!idea.technicals}
+                className="mb-3"
+              />
+            )}
+            {idea.fundamentals && (idea.fundamentals.debtToEquity !== undefined || idea.fundamentals.piotroskiScore !== undefined) && (
+              <FinancialCard
+                financial={{
+                  debtToEquity: idea.fundamentals.debtToEquity,
+                  piotroskiScore: idea.fundamentals.piotroskiScore
+                }}
+                showBorder={!!(idea.technicals || idea.fundamentals)}
               />
             )}
           </div>
