@@ -170,16 +170,32 @@ export default function InvestorAnalysisModal({
         {/* Scores (if available) */}
         {analysis.scores && Object.keys(analysis.scores).length > 0 && (
           <div className="mt-3 pt-3 border-t border-gray-200 dark:border-[#30363d]">
-            <p className="text-xs font-semibold text-gray-900 dark:text-white mb-2">Scores:</p>
-            <div className="flex gap-3">
-              {Object.entries(analysis.scores).map(([key, value]) => (
-                <div key={key} className="text-xs">
-                  <span className="text-gray-600 dark:text-[#8b949e]">
-                    {formatConditionName(key)}:
-                  </span>
-                  <span className="ml-1 font-semibold text-gray-900 dark:text-white">{value}</span>
-                </div>
-              ))}
+            <p className="text-xs font-semibold text-gray-900 dark:text-white mb-2">Detailed Scores:</p>
+            <div className="flex flex-wrap gap-3">
+              {Object.entries(analysis.scores).map(([key, value]) => {
+                // Define max scores for each score type
+                const maxScores: Record<string, number> = {
+                  momentumScore: type === 'growth' ? 6 : (type === 'momentum' ? 7 : 6),
+                  growthScore: 4,
+                  valueScore: 5,
+                  qualityScore: 6,
+                  dividendScore: 5
+                };
+                const maxValue = maxScores[key] || 10;
+                const scorePercent = ((value as number) / maxValue) * 100;
+                const isGood = scorePercent >= 50;
+
+                return (
+                  <div key={key} className="text-xs">
+                    <span className="text-gray-600 dark:text-[#8b949e]">
+                      {formatConditionName(key)}:
+                    </span>
+                    <span className={`ml-1 font-semibold ${isGood ? 'text-green-600 dark:text-green-400' : 'text-red-500'}`}>
+                      {value}/{maxValue}
+                    </span>
+                  </div>
+                );
+              })}
             </div>
           </div>
         )}
@@ -366,6 +382,16 @@ export default function InvestorAnalysisModal({
               renderAnalysisCard(type as InvestorType, analysis)
             )}
           </div>
+
+          {/* Business Description */}
+          {fundamentals?.longBusinessSummary && (
+            <div className="mt-4 p-3 bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800/30 rounded-lg">
+              <h4 className="text-xs font-bold text-blue-900 dark:text-blue-400 mb-2">About the Company</h4>
+              <p className="text-xs text-blue-800 dark:text-blue-300 leading-relaxed">
+                {fundamentals.longBusinessSummary}
+              </p>
+            </div>
+          )}
 
           {/* Footer Note */}
           <div className="mt-4 p-3 bg-blue-500/10 border border-blue-500/30 rounded-lg">

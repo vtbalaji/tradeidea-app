@@ -101,6 +101,7 @@ def fetch_fundamentals(symbol):
             'sector': info.get('sector', None),
             'industry': info.get('industry', None),
             'companyName': info.get('longName', None) or info.get('shortName', None),
+            'longBusinessSummary': info.get('longBusinessSummary', None),
         }
 
         # Convert percentages to actual percentages (Yahoo returns as decimals)
@@ -109,7 +110,11 @@ def fetch_fundamentals(symbol):
 
         for field in percentage_fields:
             if fundamentals[field] is not None and isinstance(fundamentals[field], (int, float)):
-                fundamentals[field] = round(fundamentals[field] * 100, 2)  # Convert to percentage
+                # Skip if value is 0 (likely missing data)
+                if fundamentals[field] == 0:
+                    fundamentals[field] = None
+                else:
+                    fundamentals[field] = round(fundamentals[field] * 100, 2)  # Convert to percentage
 
         # Don't calculate PEG - Yahoo data is unreliable for Indian stocks
         # Screener.in uses 3-year CAGR which we don't have access to

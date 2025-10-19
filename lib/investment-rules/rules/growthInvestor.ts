@@ -25,8 +25,8 @@ export function checkGrowthInvestorEntry(
   const momentumScore = [
     signals.goldenCross === true,
     signals.macdBullish === true,
-    technical.macd > 0 && technical.macdHistogram > 0,
-    technical.rsi14 >= 50 && technical.rsi14 <= 70,
+    technical.macdHistogram > 0, // Histogram positive (momentum increasing)
+    technical.rsi14 >= 50, // RSI above 50 = positive momentum (no upper limit for growth)
     signals.priceCrossEMA50 === 'above',
     signals.supertrendBullish === true
   ].filter(Boolean).length;
@@ -34,7 +34,7 @@ export function checkGrowthInvestorEntry(
   const conditions = {
     growthScore: growthScore >= 3,
     pegRatio: fundamental.pegRatio === null || fundamental.pegRatio < 2.0,
-    momentumScore: momentumScore >= 4,
+    momentumScore: momentumScore >= 3,
     priceAboveEMA50: signals.priceCrossEMA50 === 'above',
     priceAboveSMA200: signals.priceCrossSMA200 === 'above',
     volumeConfirmation: technical.lastPrice > 0 &&

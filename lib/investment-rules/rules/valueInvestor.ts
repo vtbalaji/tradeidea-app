@@ -15,10 +15,12 @@ export function checkValueInvestorEntry(
 ): EntryAnalysis {
   const conditions = {
     // Valuation Metrics
-    priceToBook: fundamental.priceToBook !== null && fundamental.priceToBook < 5.0,
-    priceToSales: fundamental.priceToSales !== null && fundamental.priceToSales < 5.0,
-    forwardPE: fundamental.forwardPE !== null && fundamental.forwardPE < 20.0,
-    trailingPE: fundamental.trailingPE !== null && fundamental.trailingPE < 25.0,
+    priceToBook: fundamental.priceToBook !== null && fundamental.priceToBook > 0 && fundamental.priceToBook < 5.0,
+    priceToSales: fundamental.priceToSales !== null && fundamental.priceToSales > 0 && fundamental.priceToSales < 5.0,
+    // Forward PE: ignore if negative or > 100 (unreliable), otherwise < 20
+    forwardPE: fundamental.forwardPE !== null && fundamental.forwardPE > 0 && fundamental.forwardPE < 100 ?
+      fundamental.forwardPE < 20.0 : true, // Don't fail if unreliable, rely on trailing PE
+    trailingPE: fundamental.trailingPE !== null && fundamental.trailingPE > 0 && fundamental.trailingPE < 25.0,
 
     // Quality Metrics
     // fundamentalRating: fundamental.fundamentalRating ?
@@ -26,7 +28,7 @@ export function checkValueInvestorEntry(
     fundamentalScore: fundamental.fundamentalScore ? fundamental.fundamentalScore >= 60 : false,
     profitMargins: fundamental.profitMargins !== null && fundamental.profitMargins >= 15,
     operatingMargins: fundamental.operatingMargins !== null && fundamental.operatingMargins >= 20,
-    debtToEquity: fundamental.debtToEquity !== null && fundamental.debtToEquity < 1.0,
+    debtToEquity: fundamental.debtToEquity !== null && fundamental.debtToEquity >= 0 && fundamental.debtToEquity < 1.0,
 
     // Price not too far above SMA200
     priceVsSMA200: technical.lastPrice < (technical.sma200 * 1.10),
@@ -61,9 +63,11 @@ export function checkValueInvestorExit(
     // Profit target reached
     profitTarget: (technical.lastPrice / entryPrice) >= 1.50,
 
-    // Overvaluation
-    overvalued_PE: fundamental.forwardPE !== null && fundamental.forwardPE > 30,
-    overvalued_PB: fundamental.priceToBook !== null && fundamental.priceToBook > 5.0,
+    // Overvaluation (only if PE is reliable)
+    overvalued_PE: fundamental.forwardPE !== null && fundamental.forwardPE > 0 &&
+                   fundamental.forwardPE < 100 && fundamental.forwardPE > 30,
+    overvalued_PB: fundamental.priceToBook !== null && fundamental.priceToBook > 0 &&
+                   fundamental.priceToBook > 5.0,
 
     // Fundamental deterioration
     fundamentalDeterioration: fundamental.fundamentalScore ? fundamental.fundamentalScore < 50 : false,

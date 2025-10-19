@@ -220,7 +220,7 @@ export default function IdeasHubPage() {
         <div className="grid grid-cols-4 gap-3 mb-3">
           <div className="text-center">
             <div className="text-sm text-gray-600 dark:text-[#8b949e] mb-1">LTP</div>
-            <div className={`text-sm font-semibold ${
+            <div className={`text-base font-bold ${
               idea.technicals?.lastPrice
                 ? 'text-gray-900 dark:text-white'
                 : 'text-gray-500 dark:text-[#8b949e]'
@@ -230,19 +230,19 @@ export default function IdeasHubPage() {
           </div>
           <div className="text-center">
             <div className="text-sm text-gray-600 dark:text-[#8b949e] mb-1">Entry</div>
-            <div className="text-sm font-semibold text-gray-900 dark:text-white">
+            <div className="text-base font-bold text-gray-900 dark:text-white">
               {typeof idea.entryPrice === 'number' ? `₹${Math.round(idea.entryPrice).toLocaleString('en-IN')}` : idea.entryPrice}
             </div>
           </div>
           <div className="text-center">
             <div className="text-sm text-gray-600 dark:text-[#8b949e] mb-1">Target</div>
-            <div className="text-sm font-semibold text-gray-900 dark:text-white">
+            <div className="text-base font-bold text-gray-900 dark:text-white">
               ₹{Math.round(idea.target1).toLocaleString('en-IN')} {target1Percent && <span className="text-xs text-gray-600 dark:text-[#8b949e]">+{target1Percent}%</span>}
             </div>
           </div>
           <div className="text-center">
             <div className="text-sm text-gray-600 dark:text-[#8b949e] mb-1">Stop Loss</div>
-            <div className="text-sm font-semibold text-gray-900 dark:text-white">₹{Math.round(idea.stopLoss).toLocaleString('en-IN')}</div>
+            <div className="text-base font-bold text-gray-900 dark:text-white">₹{Math.round(idea.stopLoss).toLocaleString('en-IN')}</div>
           </div>
         </div>
 

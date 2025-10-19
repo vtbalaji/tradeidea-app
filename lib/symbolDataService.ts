@@ -91,6 +91,7 @@ export interface FundamentalData {
   companyName: string;
   sector: string | null;
   industry: string | null;
+  longBusinessSummary: string | null;
 
   // Fundamental Analysis Score (calculated)
   fundamentalScore: number | null;  // 0-100

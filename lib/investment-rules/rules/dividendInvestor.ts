@@ -36,8 +36,10 @@ export function checkDividendInvestorEntry(
                  fundamental.payoutRatio <= 70,
     stabilityScore: stabilityScore >= 4,
     earningsGrowth: fundamental.earningsGrowth !== null && fundamental.earningsGrowth >= 0,
-    forwardPE: fundamental.forwardPE !== null && fundamental.forwardPE < 25,
-    priceToBook: fundamental.priceToBook !== null && fundamental.priceToBook < 5,
+    // Forward PE: ignore if negative or > 100 (unreliable)
+    forwardPE: fundamental.forwardPE !== null && fundamental.forwardPE > 0 && fundamental.forwardPE < 100 ?
+      fundamental.forwardPE < 25 : true,
+    priceToBook: fundamental.priceToBook !== null && fundamental.priceToBook > 0 && fundamental.priceToBook < 5,
     technicalConfirmation: technicalScore >= 2
   };
 

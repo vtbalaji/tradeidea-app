@@ -110,8 +110,16 @@ export default function PriceChart({ symbol, days = 365, height = '400px' }: Pri
     );
   }
 
+  // Format dates to Month-Year
+  const formatDateLabel = (dateStr: string) => {
+    const date = new Date(dateStr);
+    const month = date.toLocaleString('en-US', { month: 'short' });
+    const year = date.getFullYear();
+    return `${month} ${year}`;
+  };
+
   const chartData = {
-    labels: data.map(d => d.date),
+    labels: data.map(d => formatDateLabel(d.date)),
     datasets: [
       {
         label: 'Price',
@@ -153,7 +161,8 @@ export default function PriceChart({ symbol, days = 365, height = '400px' }: Pri
         displayColors: false,
         callbacks: {
           title: function(context: any) {
-            return context[0].label;
+            // Show full date in tooltip
+            return data[context[0].dataIndex].date;
           },
           label: function(context: any) {
             const dataPoint = data[context.dataIndex];

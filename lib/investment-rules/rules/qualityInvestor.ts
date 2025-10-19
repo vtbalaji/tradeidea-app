@@ -35,14 +35,16 @@ export function checkQualityInvestorEntry(
 
   const conditions = {
     qualityScore: qualityScore >= 5,
-    beta: fundamental.beta !== null && fundamental.beta < 1.0,
+    beta: fundamental.beta !== null && fundamental.beta > 0 && fundamental.beta < 1.0,
     earningsGrowth: fundamental.earningsGrowth !== null && fundamental.earningsGrowth >= 8,
     quarterlyGrowth: fundamental.earningsQuarterlyGrowth !== null &&
                      fundamental.earningsQuarterlyGrowth >= 10,
     // marketCap: fundamental.marketCap !== null && fundamental.marketCap > 100000000000, // >100B
     technicalConfirmation: technicalScore >= 3,
-    forwardPE: fundamental.forwardPE !== null && fundamental.forwardPE < 50,
-    priceToBook: fundamental.priceToBook !== null && fundamental.priceToBook < 10
+    // Forward PE: ignore if negative or > 100 (unreliable)
+    forwardPE: fundamental.forwardPE !== null && fundamental.forwardPE > 0 && fundamental.forwardPE < 100 ?
+      fundamental.forwardPE < 50 : true,
+    priceToBook: fundamental.priceToBook !== null && fundamental.priceToBook > 0 && fundamental.priceToBook < 10
   };
 
   const allMet = Object.values(conditions).every(v => v === true);
@@ -83,9 +85,11 @@ export function checkQualityInvestorExit(
     earningsDecline: fundamental.earningsGrowth !== null && fundamental.earningsGrowth < 5,
     revenueDecline: fundamental.revenueGrowth !== null && fundamental.revenueGrowth < 0,
 
-    // Overvaluation
-    overvaluedPE: fundamental.forwardPE !== null && fundamental.forwardPE > 60,
-    overvaluedPB: fundamental.priceToBook !== null && fundamental.priceToBook > 15,
+    // Overvaluation (only if PE is reliable)
+    overvaluedPE: fundamental.forwardPE !== null && fundamental.forwardPE > 0 &&
+                  fundamental.forwardPE < 100 && fundamental.forwardPE > 60,
+    overvaluedPB: fundamental.priceToBook !== null && fundamental.priceToBook > 0 &&
+                  fundamental.priceToBook > 15,
 
     // Major technical breakdown
     majorBreakdown: signals.deathCross === true && signals.priceCrossSMA200 === 'below',

@@ -76,6 +76,10 @@ export interface TechnicalData {
   volume: number;
   avgVolume20: number;
 
+  // Supertrend
+  supertrend?: number;
+  supertrendDirection?: number; // 1.00 = bullish, -1.00 = bearish
+
   // Price Action / Trend Structure
   trendStructure?: 'UPTREND' | 'DOWNTREND' | 'SIDEWAYS' | 'UNKNOWN';
   pricePattern?: {

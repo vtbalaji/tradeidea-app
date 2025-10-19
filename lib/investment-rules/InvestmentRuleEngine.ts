@@ -66,9 +66,9 @@ export class InvestmentRuleEngine {
       volume: technical.volume,
 
       // Supertrend (if available)
-      supertrendBullish: undefined,
-      supertrendBearish: undefined,
-      supertrend: undefined,
+      supertrendBullish: technical.supertrendDirection === 1.00,
+      supertrendBearish: technical.supertrendDirection === -1.00,
+      supertrend: technical.supertrend || undefined,
 
       // Moving Average values
       sma20: technical.sma20,
