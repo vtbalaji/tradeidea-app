@@ -364,10 +364,11 @@ export async function validateSymbol(symbol: string, firestoreDb: any): Promise<
       }
     }
 
-    // STRICT VALIDATION: Reject symbols not found in database
-    // This prevents invalid symbols from entering the system
-    console.warn(`❌ Symbol ${upperSymbol} not found in NSE database - rejecting`);
-    return null;
+    // LENIENT VALIDATION: Allow symbols that look valid even if not in database
+    // The symbol will be validated when EOD data is fetched
+    // This allows users to import newer symbols that haven't been added to the database yet
+    console.warn(`⚠️  Symbol ${upperSymbol} not found in database, but allowing (valid format)`);
+    return upperSymbol;
   } catch (error) {
     console.error('Error validating symbol:', error);
     // On error, reject the symbol (strict mode)
@@ -669,29 +670,19 @@ export function csvRowToPosition(row: CSVRow, currentDate?: string) {
   const quantity = parseFloat(row.quantity);
 
   // Smart defaults for missing fields
-  const target1 = row.target1 ? parseFloat(row.target1) : entryPrice * 1.15; // +15%
+  const target = row.target1 ? parseFloat(row.target1) : entryPrice * 1.15; // +15%
   const stopLoss = row.stopLoss ? parseFloat(row.stopLoss) : entryPrice * 0.92; // -8%
-  const dateTaken = row.dateTaken || currentDate || formatTodayDate();
+  const entryDate = row.dateTaken || currentDate || formatTodayDate();
 
   return {
     symbol: row.symbol.toUpperCase(),
-    tradeType: (row.tradeType || 'Long') as 'Long' | 'Short',
+    direction: (row.tradeType || 'Long') as 'Long' | 'Short', // API expects 'direction' not 'tradeType'
     entryPrice,
-    currentPrice: entryPrice, // Use entry price as current price
-    target1,
-    stopLoss,
     quantity,
-    totalValue: entryPrice * quantity,
-    dateTaken,
-    exitCriteria: {
-      exitAtStopLoss: true,
-      exitAtTarget: true,
-      exitBelow50EMA: false,
-      exitBelow100MA: false,
-      exitBelow200MA: true, // Default true
-      exitOnWeeklySupertrend: true, // Default true
-      customNote: '',
-    }
+    entryDate, // API expects 'entryDate' not 'dateTaken'
+    target, // API expects 'target' not 'target1'
+    stopLoss,
+    notes: '', // Add empty notes field
   };
 }
 

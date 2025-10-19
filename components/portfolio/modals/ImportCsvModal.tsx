@@ -98,30 +98,21 @@ export const ImportCsvModal: React.FC<ImportCsvModalProps> = ({
         for (const row of result.validRows) {
           const basePosition = csvRowToPosition(row, currentDate);
 
-          // Ensure all required fields are present and properly typed
-          const position = {
-            symbol: basePosition.symbol,
-            tradeType: basePosition.tradeType,
-            entryPrice: Number(basePosition.entryPrice),
-            currentPrice: Number(basePosition.currentPrice),
-            target1: Number(basePosition.target1),
-            stopLoss: Number(basePosition.stopLoss),
-            quantity: Number(basePosition.quantity),
-            totalValue: Number(basePosition.totalValue),
-            dateTaken: basePosition.dateTaken,
-            exitCriteria: basePosition.exitCriteria,
-            accountId: targetAccountId,
-            status: 'open' as const,
-            createdAt: new Date(),
+          // csvRowToPosition now returns API-compatible format
+          // Fields: symbol, direction, entryPrice, quantity, entryDate, target, stopLoss, notes
+          // Add accountId to the position data
+          const positionWithAccount = {
+            ...basePosition,
+            accountId: targetAccountId, // Add the target account ID
           };
 
-          console.log('Importing position:', JSON.stringify(position, null, 2)); // Debug log
+          console.log('Importing position:', JSON.stringify(positionWithAccount, null, 2)); // Debug log
 
           try {
-            // Call with empty ideaId since this is a direct portfolio import
-            await onAddPosition('', position);
+            // Call addToPortfolio with API-compatible position data including accountId
+            await onAddPosition('', positionWithAccount);
           } catch (error) {
-            console.error(`Error importing ${row.symbol}:`, error, 'Position data:', JSON.stringify(position, null, 2));
+            console.error(`Error importing ${row.symbol}:`, error, 'Position data:', JSON.stringify(positionWithAccount, null, 2));
             setImportErrors(prev => [...prev, {
               row: 0,
               field: row.symbol,

@@ -2,9 +2,10 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import Navigation from '../../components/Navigation';
-import { useTrading } from '../../contexts/TradingContext';
+// import { useTrading } from '../../contexts/TradingContext'; // Removed - portfolio uses API directly
 import { useAuth } from '../../contexts/AuthContext';
 import { useAccounts } from '../../contexts/AccountsContext';
+import { apiClient } from '@/lib/apiClient';
 import { formatDateForDisplay } from '@/lib/dateUtils';
 import { db } from '@/lib/firebase';
 import { getSymbolData } from '@/lib/symbolDataService';
@@ -26,7 +27,9 @@ import {
 export default function PortfolioPage() {
   const router = useRouter();
   const { user } = useAuth();
-  const { myPortfolio, addTransaction, addToPortfolio, updatePosition } = useTrading();
+  // const { myPortfolio, addTransaction, addToPortfolio, updatePosition } = useTrading();
+  const [myPortfolio, setMyPortfolio] = useState<any[]>([]);
+  const [portfolioLoading, setPortfolioLoading] = useState(true);
   const { accounts, activeAccount, setActiveAccount } = useAccounts();
 
   // UI State
@@ -55,10 +58,50 @@ export default function PortfolioPage() {
     }
   }, [user, router]);
 
+  // Fetch portfolio data from API
+  const fetchPortfolio = useCallback(async () => {
+    if (!user) {
+      setMyPortfolio([]);
+      setPortfolioLoading(false);
+      return;
+    }
+
+    try {
+      setPortfolioLoading(true);
+      const response = await apiClient.portfolio.list(activeAccount?.id);
+      setMyPortfolio(response.positions || []);
+    } catch (error) {
+      console.error('Error fetching portfolio:', error);
+      setMyPortfolio([]);
+    } finally {
+      setPortfolioLoading(false);
+    }
+  }, [user, activeAccount]);
+
+  useEffect(() => {
+    fetchPortfolio();
+  }, [fetchPortfolio]);
+
+  // Portfolio operation wrappers
+  const addToPortfolio = useCallback(async (ideaId: string, position: any) => {
+    await apiClient.portfolio.create({ ideaId, ...position });
+    await fetchPortfolio(); // Refresh
+  }, [fetchPortfolio]);
+
+  const addTransaction = useCallback(async (positionId: string, transaction: any) => {
+    await apiClient.portfolio.addTransaction(positionId, transaction);
+    await fetchPortfolio(); // Refresh
+  }, [fetchPortfolio]);
+
+  const updatePosition = useCallback(async (positionId: string, updates: any) => {
+    await apiClient.portfolio.update(positionId, updates);
+    await fetchPortfolio(); // Refresh
+  }, [fetchPortfolio]);
+
   // Fetch symbol data and enrich positions
   useEffect(() => {
     const enrichPositions = async () => {
-      if (myPortfolio.length === 0) {
+      if (!myPortfolio || myPortfolio.length === 0) {
         setEnrichedPositions([]);
         return;
       }

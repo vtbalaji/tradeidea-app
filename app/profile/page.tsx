@@ -12,7 +12,8 @@ import { collection, doc, updateDoc, serverTimestamp } from 'firebase/firestore'
 export default function ProfilePage() {
   const router = useRouter();
   const { user, userData, updateUserProfile, logout } = useAuth();
-  const { myPortfolio, exitTrade } = useTrading();
+  // Note: Portfolio management moved to dedicated portfolio page
+  // const { myPortfolio, exitTrade } = useTrading();
   const [isEditing, setIsEditing] = useState(false);
   const [showClearConfirmModal, setShowClearConfirmModal] = useState(false);
   const [isClearing, setIsClearing] = useState(false);
@@ -56,6 +57,13 @@ export default function ProfilePage() {
 
     setIsClearing(true);
     try {
+      // TODO: Re-implement with portfolio API
+      setMessage('Portfolio management moved to dedicated portfolio page');
+      setShowClearConfirmModal(false);
+      setIsClearing(false);
+      return;
+
+      /* Commented out - needs portfolio API
       // Filter to only current user's open positions
       const openPositions = myPortfolio.filter(p =>
         p.status === 'open' && p.userId === user.uid
@@ -67,7 +75,9 @@ export default function ProfilePage() {
         setIsClearing(false);
         return;
       }
+      */
 
+      /* Commented out - needs portfolio API
       // Get current date in DD-MM-YYYY format
       const today = new Date();
       const exitDate = `${String(today.getDate()).padStart(2, '0')}-${String(today.getMonth() + 1).padStart(2, '0')}-${today.getFullYear()}`;
@@ -84,6 +94,7 @@ export default function ProfilePage() {
 
       setShowClearConfirmModal(false);
       setMessage(`Successfully closed ${openPositions.length} position${openPositions.length !== 1 ? 's' : ''} at current LTP`);
+      */
     } catch (error) {
       console.error('Error clearing portfolio:', error);
       setMessage('Error: Failed to clear portfolio');
@@ -92,7 +103,8 @@ export default function ProfilePage() {
     }
   };
 
-  const openPositionsCount = myPortfolio.filter(p => p.status === 'open').length;
+  const openPositionsCount = 0; // TODO: Fetch from portfolio API
+  // const openPositionsCount = myPortfolio.filter(p => p.status === 'open').length;
 
   return (
     <div className="min-h-screen bg-white dark:bg-[#0f1419]">

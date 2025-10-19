@@ -1,8 +1,11 @@
 import { getAuthInstance } from './firebase';
 
 export class ApiError extends Error {
-  constructor(public status: number, message: string) {
+  public status: number;
+
+  constructor(status: number, message: string) {
     super(message);
+    this.status = status;
     this.name = 'ApiError';
   }
 }
@@ -34,9 +37,16 @@ function invalidateCache(pattern: string) {
 async function getAuthToken(): Promise<string | null> {
   const auth = getAuthInstance();
   if (!auth || !auth.currentUser) {
+    console.warn('No authenticated user found for API call');
     return null;
   }
-  return await auth.currentUser.getIdToken();
+  try {
+    const token = await auth.currentUser.getIdToken();
+    return token;
+  } catch (error) {
+    console.error('Error getting auth token:', error);
+    return null;
+  }
 }
 
 async function fetchWithAuth(url: string, options: RequestInit = {}, useCache = false) {
@@ -54,8 +64,11 @@ async function fetchWithAuth(url: string, options: RequestInit = {}, useCache = 
   const token = await getAuthToken();
 
   if (!token) {
+    console.error('API call failed: No authentication token available');
     throw new ApiError(401, 'Not authenticated');
   }
+
+  console.log(`API ${method} ${url} - Token: ${token.substring(0, 20)}...`);
 
   const headers = {
     'Content-Type': 'application/json',
@@ -70,7 +83,9 @@ async function fetchWithAuth(url: string, options: RequestInit = {}, useCache = 
 
   if (!response.ok) {
     const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
-    throw new ApiError(response.status, errorData.error || `HTTP ${response.status}`);
+    const errorMessage = errorData.error || `HTTP ${response.status}`;
+    console.error(`API Error [${response.status}] ${url}:`, errorMessage);
+    throw new ApiError(response.status, errorMessage);
   }
 
   const data = await response.json();
@@ -115,6 +130,108 @@ export const apiClient = {
     setDefault: async (accountId: string) => {
       return fetchWithAuth(`/api/accounts/${accountId}/set-default`, {
         method: 'POST',
+      });
+    },
+  },
+
+  // Ideas operations
+  ideas: {
+    list: async (filter?: string, status?: string, limit?: number) => {
+      const params = new URLSearchParams();
+      if (filter) params.set('filter', filter);
+      if (status) params.set('status', status);
+      if (limit) params.set('limit', limit.toString());
+      const url = `/api/ideas${params.toString() ? '?' + params.toString() : ''}`;
+      return fetchWithAuth(url, {}, true); // Enable cache
+    },
+    get: async (ideaId: string) => {
+      return fetchWithAuth(`/api/ideas/${ideaId}`, {}, true);
+    },
+    create: async (data: {
+      symbol: string;
+      title: string;
+      analysis: string;
+      entryPrice: number;
+      target1: number;
+      target2?: number;
+      stopLoss: number;
+      timeframe?: string;
+      riskLevel?: string;
+      analysisType?: string;
+      tradeType?: string;
+      tags?: string[];
+    }) => {
+      return fetchWithAuth('/api/ideas', {
+        method: 'POST',
+        body: JSON.stringify(data),
+      });
+    },
+    update: async (ideaId: string, data: {
+      title?: string;
+      analysis?: string;
+      entryPrice?: number;
+      target1?: number;
+      target2?: number;
+      stopLoss?: number;
+      status?: string;
+      timeframe?: string;
+      riskLevel?: string;
+      analysisType?: string;
+    }) => {
+      return fetchWithAuth(`/api/ideas/${ideaId}`, {
+        method: 'PATCH',
+        body: JSON.stringify(data),
+      });
+    },
+    like: async (ideaId: string, like: boolean) => {
+      return fetchWithAuth(`/api/ideas/${ideaId}`, {
+        method: 'PATCH',
+        body: JSON.stringify({ like }),
+      });
+    },
+    follow: async (ideaId: string, follow: boolean) => {
+      return fetchWithAuth(`/api/ideas/${ideaId}`, {
+        method: 'PATCH',
+        body: JSON.stringify({ follow }),
+      });
+    },
+    delete: async (ideaId: string) => {
+      return fetchWithAuth(`/api/ideas/${ideaId}`, {
+        method: 'DELETE',
+      });
+    },
+    comments: {
+      list: async (ideaId: string) => {
+        return fetchWithAuth(`/api/ideas/${ideaId}/comments`, {}, true);
+      },
+      create: async (ideaId: string, text: string) => {
+        return fetchWithAuth(`/api/ideas/${ideaId}/comments`, {
+          method: 'POST',
+          body: JSON.stringify({ text }),
+        });
+      },
+    },
+  },
+
+  // Notifications operations
+  notifications: {
+    list: async (unreadOnly?: boolean, limit?: number) => {
+      const params = new URLSearchParams();
+      if (unreadOnly) params.set('unreadOnly', 'true');
+      if (limit) params.set('limit', limit.toString());
+      const url = `/api/notifications${params.toString() ? '?' + params.toString() : ''}`;
+      return fetchWithAuth(url, {}, true);
+    },
+    markAsRead: async (notificationId: string) => {
+      return fetchWithAuth('/api/notifications', {
+        method: 'PATCH',
+        body: JSON.stringify({ notificationId }),
+      });
+    },
+    markAllAsRead: async () => {
+      return fetchWithAuth('/api/notifications', {
+        method: 'PATCH',
+        body: JSON.stringify({ markAllAsRead: true }),
       });
     },
   },

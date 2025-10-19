@@ -5,14 +5,16 @@ import { useRouter } from 'next/navigation';
 import Navigation from '@/components/Navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { useAccounts } from '@/contexts/AccountsContext';
-import { useTrading } from '@/contexts/TradingContext';
+// import { useTrading } from '@/contexts/TradingContext'; // Removed - use API directly
+import { apiClient } from '@/lib/apiClient';
 import type { PortfolioAnalysis, Position } from '@/lib/portfolioAnalysis';
 
 export default function RiskAnalysisPage() {
   const router = useRouter();
   const { user } = useAuth();
   const { activeAccount, accounts } = useAccounts();
-  const { myPortfolio } = useTrading();
+  // const { myPortfolio } = useTrading(); // Removed - fetch from API
+  const [myPortfolio, setMyPortfolio] = useState<any[]>([]);
   const [analysis, setAnalysis] = useState<PortfolioAnalysis | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -28,11 +30,31 @@ export default function RiskAnalysisPage() {
     }
   }, [user, router]);
 
+  // Fetch portfolio data from API
+  useEffect(() => {
+    const fetchPortfolio = async () => {
+      if (!user) {
+        setMyPortfolio([]);
+        return;
+      }
+
+      try {
+        const response = await apiClient.portfolio.list(activeAccount?.id);
+        setMyPortfolio(response.positions || []);
+      } catch (error) {
+        console.error('Error fetching portfolio:', error);
+        setMyPortfolio([]);
+      }
+    };
+
+    fetchPortfolio();
+  }, [user, activeAccount]);
+
   // Filter positions by active account
   const accountPositions = useMemo(() => {
-    if (!activeAccount) return myPortfolio;
+    if (!activeAccount) return myPortfolio || [];
     // Filter positions that belong to active account (or have no accountId - legacy positions)
-    return myPortfolio.filter(p =>
+    return (myPortfolio || []).filter(p =>
       p.status === 'open' && (!p.accountId || p.accountId === activeAccount.id)
     );
   }, [myPortfolio, activeAccount]);
