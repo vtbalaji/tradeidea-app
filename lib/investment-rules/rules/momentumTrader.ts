@@ -18,7 +18,7 @@ export function checkMomentumTraderEntry(
     signals.goldenCross === true,
     signals.macdBullish === true,
     technical.macdHistogram > technical.macdSignal,
-    technical.rsi14 >= 50 && technical.rsi14 <= 70,
+    technical.rsi14 >= 50 ,
     signals.supertrendBullish === true,
     signals.ema50CrossSMA200 === 'above',
     technical.lastPrice > technical.ema9
@@ -28,9 +28,9 @@ export function checkMomentumTraderEntry(
     momentumSignals: momentumScore >= 5,
     priceAboveSMA20: technical.lastPrice > technical.sma20,
     priceAboveSMA50: technical.lastPrice > technical.sma50,
-    rsiNotOverbought: technical.rsi14 < 70,
-    withinBollingerBands: technical.lastPrice < technical.bollingerUpper &&
-                          technical.lastPrice > technical.bollingerLower,
+    rsiNotOverbought: technical.rsi14 > 50,
+    withinOrAboveBollingerBands: technical.lastPrice > technical.bollingerMiddle &&
+                                  technical.lastPrice <= (technical.bollingerUpper * 1.05),
     volumeConfirmation: signals.volumeSpike === true ||
                         (technical.volume / technical.avgVolume20) >= 0.8,
     // positiveChange: technical.changePercent > 0,
