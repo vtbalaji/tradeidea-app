@@ -497,17 +497,26 @@ export default function IdeasHubPage() {
               <div className="flex items-center gap-2 mb-4">
                 <span className="text-xs text-orange-600 dark:text-orange-400">
                   Technical data updated: {(() => {
-                    const updatedAt = filteredIdeas[0].technicals.updatedAt.toDate();
-                    const now = new Date();
-                    const diffHours = Math.floor((now.getTime() - updatedAt.getTime()) / (1000 * 60 * 60));
+                    try {
+                      // Handle both Firestore Timestamp and ISO string
+                      const updatedAtValue = filteredIdeas[0].technicals.updatedAt;
+                      const updatedAt = typeof updatedAtValue === 'string'
+                        ? new Date(updatedAtValue)
+                        : updatedAtValue.toDate?.() || new Date(updatedAtValue);
 
-                    if (diffHours < 1) {
-                      return 'just now';
-                    } else if (diffHours < 24) {
-                      return `${diffHours}h ago`;
-                    } else {
-                      const diffDays = Math.floor(diffHours / 24);
-                      return `${diffDays}d ago`;
+                      const now = new Date();
+                      const diffHours = Math.floor((now.getTime() - updatedAt.getTime()) / (1000 * 60 * 60));
+
+                      if (diffHours < 1) {
+                        return 'just now';
+                      } else if (diffHours < 24) {
+                        return `${diffHours}h ago`;
+                      } else {
+                        const diffDays = Math.floor(diffHours / 24);
+                        return `${diffDays}d ago`;
+                      }
+                    } catch (error) {
+                      return 'recently';
                     }
                   })()}
                 </span>

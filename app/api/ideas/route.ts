@@ -59,14 +59,17 @@ export async function GET(request: NextRequest) {
 
       for (const batch of batches) {
         try {
-          const batchPromises = batch.map(symbol =>
-            db.collection('symbols').doc(symbol).get()
-          );
+          const batchPromises = batch.map(symbol => {
+            // Try with NS_ prefix first, then fallback to symbol without prefix
+            const symbolWithPrefix = symbol.startsWith('NS_') ? symbol : `NS_${symbol}`;
+            return db.collection('symbols').doc(symbolWithPrefix).get();
+          });
           const batchDocs = await Promise.all(batchPromises);
 
-          batchDocs.forEach(doc => {
+          batchDocs.forEach((doc, index) => {
             if (doc.exists) {
-              symbolsMap.set(doc.id, {
+              const originalSymbol = batch[index];
+              symbolsMap.set(originalSymbol, {
                 technical: doc.data()?.technical,
                 fundamental: doc.data()?.fundamental,
               });

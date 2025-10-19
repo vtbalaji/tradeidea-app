@@ -1,13 +1,18 @@
-import React from 'react';
+import React, { useState } from 'react';
 
 export default function PiotroskiGuide() {
+  const [isExpanded, setIsExpanded] = useState(false);
+
   return (
     <div className="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-950/20 dark:to-indigo-950/20 border border-blue-200 dark:border-blue-800/30 rounded-xl p-6">
-      <div className="flex items-start gap-3 mb-4">
+      <button
+        onClick={() => setIsExpanded(!isExpanded)}
+        className="w-full flex items-start gap-3 mb-4 text-left group"
+      >
         <div className="w-10 h-10 rounded-lg bg-blue-500/20 flex items-center justify-center flex-shrink-0">
           <span className="text-2xl">📊</span>
         </div>
-        <div>
+        <div className="flex-1">
           <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-1">
             Understanding Financial Strength vs Fundamental Score
           </h3>
@@ -15,7 +20,20 @@ export default function PiotroskiGuide() {
             Two different metrics that measure different aspects of a company
           </p>
         </div>
-      </div>
+        <svg
+          className={`w-5 h-5 text-gray-600 dark:text-[#8b949e] transition-transform flex-shrink-0 mt-1 ${
+            isExpanded ? 'rotate-180' : ''
+          }`}
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+        </svg>
+      </button>
+
+      {isExpanded && (
+        <div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
         {/* Financial Strength (Piotroski F-Score) */}
@@ -134,6 +152,8 @@ export default function PiotroskiGuide() {
           </div>
         </div>
       </div>
+        </div>
+      )}
     </div>
   );
 }

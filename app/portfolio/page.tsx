@@ -339,13 +339,22 @@ export default function PortfolioPage() {
           {activeTab === 'open' && openPositions.length > 0 && openPositions[0]?.technicals?.updatedAt && (
             <span className="text-xs text-orange-600 dark:text-orange-400">
               Technical data updated: {(() => {
-                const updatedAt = openPositions[0].technicals.updatedAt.toDate();
-                const now = new Date();
-                const diffHours = Math.floor((now.getTime() - updatedAt.getTime()) / (1000 * 60 * 60));
+                try {
+                  // Handle both Firestore Timestamp and ISO string
+                  const updatedAtValue = openPositions[0].technicals.updatedAt;
+                  const updatedAt = typeof updatedAtValue === 'string'
+                    ? new Date(updatedAtValue)
+                    : updatedAtValue.toDate?.() || new Date(updatedAtValue);
 
-                if (diffHours < 1) return 'just now';
-                else if (diffHours < 24) return `${diffHours}h ago`;
-                else return `${Math.floor(diffHours / 24)}d ago`;
+                  const now = new Date();
+                  const diffHours = Math.floor((now.getTime() - updatedAt.getTime()) / (1000 * 60 * 60));
+
+                  if (diffHours < 1) return 'just now';
+                  else if (diffHours < 24) return `${diffHours}h ago`;
+                  else return `${Math.floor(diffHours / 24)}d ago`;
+                } catch (error) {
+                  return 'recently';
+                }
               })()}
             </span>
           )}
