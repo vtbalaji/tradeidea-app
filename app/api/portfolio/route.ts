@@ -86,13 +86,19 @@ export async function POST(request: NextRequest) {
       profitLoss: 0,
       profitLossPercentage: 0,
       // Default exit criteria: Stop Loss, Target, 200MA, and Weekly Supertrend enabled
-      exitOnStopLoss: true,
-      exitOnTarget: true,
-      exitOn200MA: true,
-      exitOnWeeklyST: true,
-      exitOnDailyST: false,
-      exitOnHourlyST: false,
-      exitOn15MinST: false,
+      exitCriteria: {
+        exitAtStopLoss: true,
+        exitAtTarget: false,
+        exitBelow50EMA: false,
+        exitBelow100MA: false,
+        exitBelow200MA: false,
+        exitOnWeeklySupertrend: false,
+        customNote: ''
+      },
+      // Smart SL - will be set to 'yes' by manage-portfolio-stoploss.py script
+      smartSLTrigger: 'no',
+      smartSLPhase: null,
+      smartSLSource: null,
       transactions: [
         {
           type: 'buy',

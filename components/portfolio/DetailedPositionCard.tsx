@@ -84,30 +84,23 @@ export function DetailedPositionCard({
         </div>
       )}
 
-      {/* Exit Analysis Alerts - Only SL and Target */}
+      {/* Exit Analysis Alerts */}
       {alerts && position.status === 'open' && (
         <div className="space-y-2 mb-4">
-          {alerts
-            .filter(alert =>
-              alert.message.includes('SL') ||
-              alert.message.includes('TARGET') ||
-              alert.message.includes('Target') ||
-              alert.message.includes('STOP LOSS')
-            )
-            .map((alert, idx) => (
-              <div
-                key={idx}
-                className={`px-3 py-2 rounded-lg text-sm font-semibold ${
-                  alert.type === 'critical'
-                    ? 'bg-red-500/20 text-red-400 border border-red-500/30'
-                    : alert.type === 'warning'
-                    ? 'bg-yellow-500/20 text-yellow-400 border border-yellow-500/30'
-                    : 'bg-gray-500/20 text-gray-700 dark:text-gray-300 border border-gray-500/30'
-                }`}
-              >
-                {alert.message}
-              </div>
-            ))}
+          {alerts.map((alert, idx) => (
+            <div
+              key={idx}
+              className={`px-3 py-2 rounded-lg text-sm font-semibold ${
+                alert.type === 'critical'
+                  ? 'bg-red-500/20 text-red-400 border border-red-500/30'
+                  : alert.type === 'warning'
+                  ? 'bg-yellow-500/20 text-yellow-400 border border-yellow-500/30'
+                  : 'bg-gray-500/20 text-gray-700 dark:text-gray-300 border border-gray-500/30'
+              }`}
+            >
+              {alert.message}
+            </div>
+          ))}
         </div>
       )}
 

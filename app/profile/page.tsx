@@ -82,17 +82,9 @@ export default function ProfilePage() {
 
     setIsClearing(true);
     try {
-      // TODO: Re-implement with portfolio API
-      setMessage('Portfolio management moved to dedicated portfolio page');
-      setShowClearConfirmModal(false);
-      setIsClearing(false);
-      return;
-
-      /* Commented out - needs portfolio API
-      // Filter to only current user's open positions
-      const openPositions = myPortfolio.filter(p =>
-        p.status === 'open' && p.userId === user.uid
-      );
+      // Fetch all open positions from API
+      const response = await apiClient.portfolio.list();
+      const openPositions = response.positions.filter((p: any) => p.status === 'open');
 
       if (openPositions.length === 0) {
         setMessage('No positions to close');
@@ -100,26 +92,39 @@ export default function ProfilePage() {
         setIsClearing(false);
         return;
       }
-      */
 
-      /* Commented out - needs portfolio API
       // Get current date in DD-MM-YYYY format
       const today = new Date();
       const exitDate = `${String(today.getDate()).padStart(2, '0')}-${String(today.getMonth() + 1).padStart(2, '0')}-${today.getFullYear()}`;
 
-      // Use exitTrade function from TradingContext for each position
+      // Close each position using the API
+      let closedCount = 0;
       for (const position of openPositions) {
-        await exitTrade(
-          position.id,
-          position.currentPrice, // Use LTP as exit price
-          exitDate,
-          'Portfolio cleared from profile'
-        );
+        try {
+          await fetch(`/api/portfolio/${position.id}/close`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              exitPrice: position.currentPrice || position.entryPrice,
+              exitDate,
+              exitReason: 'Portfolio cleared from profile',
+            }),
+          });
+          closedCount++;
+        } catch (error) {
+          console.error(`Failed to close position ${position.symbol}:`, error);
+        }
       }
 
       setShowClearConfirmModal(false);
-      setMessage(`Successfully closed ${openPositions.length} position${openPositions.length !== 1 ? 's' : ''} at current LTP`);
-      */
+      setMessage(`Successfully closed ${closedCount} of ${openPositions.length} position${openPositions.length !== 1 ? 's' : ''} at current LTP`);
+
+      // Reload page to refresh data
+      setTimeout(() => {
+        window.location.reload();
+      }, 2000);
     } catch (error) {
       console.error('Error clearing portfolio:', error);
       setMessage('Error: Failed to clear portfolio');
@@ -128,8 +133,25 @@ export default function ProfilePage() {
     }
   };
 
-  const openPositionsCount = 0; // TODO: Fetch from portfolio API
-  // const openPositionsCount = myPortfolio.filter(p => p.status === 'open').length;
+  const [openPositionsCount, setOpenPositionsCount] = useState(0);
+
+  // Fetch open positions count
+  useEffect(() => {
+    const fetchPositionsCount = async () => {
+      try {
+        const response = await apiClient.portfolio.list();
+        const count = response.positions.filter((p: any) => p.status === 'open').length;
+        setOpenPositionsCount(count);
+      } catch (error) {
+        console.error('Error fetching positions count:', error);
+        setOpenPositionsCount(0);
+      }
+    };
+
+    if (user) {
+      fetchPositionsCount();
+    }
+  }, [user]);
 
   return (
     <div className="min-h-screen bg-white dark:bg-[#0f1419]">
