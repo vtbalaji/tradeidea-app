@@ -84,9 +84,23 @@ export default function PortfolioPage() {
 
   // Portfolio operation wrappers
   const addToPortfolio = useCallback(async (ideaId: string, position: any) => {
-    await apiClient.portfolio.create({ ideaId, ...position });
+    // Transform position data to match API expectations
+    const apiPosition = {
+      ideaId: ideaId || undefined,
+      accountId: activeAccount?.id,
+      symbol: position.symbol,
+      direction: position.tradeType || position.direction, // Map tradeType to direction
+      quantity: position.quantity,
+      entryPrice: position.entryPrice,
+      entryDate: position.dateTaken || position.entryDate, // Map dateTaken to entryDate
+      stopLoss: position.stopLoss,
+      target: position.target1 || position.target, // Map target1 to target
+      notes: position.notes,
+    };
+
+    await apiClient.portfolio.create(apiPosition);
     await fetchPortfolio(); // Refresh
-  }, [fetchPortfolio]);
+  }, [fetchPortfolio, activeAccount]);
 
   const addTransaction = useCallback(async (positionId: string, transaction: any) => {
     await apiClient.portfolio.addTransaction(positionId, transaction);
