@@ -1336,68 +1336,70 @@ export default function Cross50200Page() {
       </div>
 
       {/* Tabs */}
-      <div className="px-5 mb-4">
-        <div className="flex gap-2">
-          <button
-            onClick={() => handleTabChange('macross')}
-            className={`px-4 py-2 rounded-lg text-sm font-semibold transition-colors ${
-              activeTab === 'macross'
-                ? 'bg-[#ff8c42] text-gray-900 dark:text-white'
-                : 'bg-gray-50 dark:bg-[#1c2128] text-gray-600 dark:text-[#8b949e] hover:bg-gray-100 dark:hover:bg-[#30363d]'
-            }`}
-          >
-            Average Cross
-          </button>
-          <button
-            onClick={() => handleTabChange('advancedtrailstop')}
-            className={`px-4 py-2 rounded-lg text-sm font-semibold transition-colors ${
-              activeTab === 'advancedtrailstop'
-                ? 'bg-[#ff8c42] text-gray-900 dark:text-white'
-                : 'bg-gray-50 dark:bg-[#1c2128] text-gray-600 dark:text-[#8b949e] hover:bg-gray-100 dark:hover:bg-[#30363d]'
-            }`}
-          >
-            Advanced Trailstop
-          </button>
-          <button
-            onClick={() => handleTabChange('volume')}
-            className={`px-4 py-2 rounded-lg text-sm font-semibold transition-colors ${
-              activeTab === 'volume'
-                ? 'bg-[#ff8c42] text-gray-900 dark:text-white'
-                : 'bg-gray-50 dark:bg-[#1c2128] text-gray-600 dark:text-[#8b949e] hover:bg-gray-100 dark:hover:bg-[#30363d]'
-            }`}
-          >
-            Volume Spikes
-          </button>
-          <button
-            onClick={() => handleTabChange('darvas')}
-            className={`px-4 py-2 rounded-lg text-sm font-semibold transition-colors ${
-              activeTab === 'darvas'
-                ? 'bg-[#ff8c42] text-gray-900 dark:text-white'
-                : 'bg-gray-50 dark:bg-[#1c2128] text-gray-600 dark:text-[#8b949e] hover:bg-gray-100 dark:hover:bg-[#30363d]'
-            }`}
-          >
-            Darvas Boxes
-          </button>
-          <button
-            onClick={() => handleTabChange('bbsqueeze')}
-            className={`px-4 py-2 rounded-lg text-sm font-semibold transition-colors ${
-              activeTab === 'bbsqueeze'
-                ? 'bg-[#ff8c42] text-gray-900 dark:text-white'
-                : 'bg-gray-50 dark:bg-[#1c2128] text-gray-600 dark:text-[#8b949e] hover:bg-gray-100 dark:hover:bg-[#30363d]'
-            }`}
-          >
-            BB Squeeze
-          </button>
-          <button
-            onClick={() => handleTabChange('multi')}
-            className={`px-4 py-2 rounded-lg text-sm font-semibold transition-colors ${
-              activeTab === 'multi'
-                ? 'bg-[#ff8c42] text-gray-900 dark:text-white'
-                : 'bg-gray-50 dark:bg-[#1c2128] text-gray-600 dark:text-[#8b949e] hover:bg-gray-100 dark:hover:bg-[#30363d]'
-            }`}
-          >
-            Multi-Screener ({multiScreenerStocks.length})
-          </button>
+      <div className="mb-4">
+        <div className="overflow-x-auto scrollbar-hide">
+          <div className="flex gap-2 px-5 min-w-max">
+            <button
+              onClick={() => handleTabChange('macross')}
+              className={`px-4 py-2 rounded-lg text-sm font-semibold transition-colors whitespace-nowrap ${
+                activeTab === 'macross'
+                  ? 'bg-[#ff8c42] text-gray-900 dark:text-white'
+                  : 'bg-gray-50 dark:bg-[#1c2128] text-gray-600 dark:text-[#8b949e] hover:bg-gray-100 dark:hover:bg-[#30363d]'
+              }`}
+            >
+              Average Cross
+            </button>
+            <button
+              onClick={() => handleTabChange('advancedtrailstop')}
+              className={`px-4 py-2 rounded-lg text-sm font-semibold transition-colors whitespace-nowrap ${
+                activeTab === 'advancedtrailstop'
+                  ? 'bg-[#ff8c42] text-gray-900 dark:text-white'
+                  : 'bg-gray-50 dark:bg-[#1c2128] text-gray-600 dark:text-[#8b949e] hover:bg-gray-100 dark:hover:bg-[#30363d]'
+              }`}
+            >
+              Advanced Trailstop
+            </button>
+            <button
+              onClick={() => handleTabChange('volume')}
+              className={`px-4 py-2 rounded-lg text-sm font-semibold transition-colors whitespace-nowrap ${
+                activeTab === 'volume'
+                  ? 'bg-[#ff8c42] text-gray-900 dark:text-white'
+                  : 'bg-gray-50 dark:bg-[#1c2128] text-gray-600 dark:text-[#8b949e] hover:bg-gray-100 dark:hover:bg-[#30363d]'
+              }`}
+            >
+              Volume Spikes
+            </button>
+            <button
+              onClick={() => handleTabChange('darvas')}
+              className={`px-4 py-2 rounded-lg text-sm font-semibold transition-colors whitespace-nowrap ${
+                activeTab === 'darvas'
+                  ? 'bg-[#ff8c42] text-gray-900 dark:text-white'
+                  : 'bg-gray-50 dark:bg-[#1c2128] text-gray-600 dark:text-[#8b949e] hover:bg-gray-100 dark:hover:bg-[#30363d]'
+              }`}
+            >
+              Darvas Boxes
+            </button>
+            <button
+              onClick={() => handleTabChange('bbsqueeze')}
+              className={`px-4 py-2 rounded-lg text-sm font-semibold transition-colors whitespace-nowrap ${
+                activeTab === 'bbsqueeze'
+                  ? 'bg-[#ff8c42] text-gray-900 dark:text-white'
+                  : 'bg-gray-50 dark:bg-[#1c2128] text-gray-600 dark:text-[#8b949e] hover:bg-gray-100 dark:hover:bg-[#30363d]'
+              }`}
+            >
+              BB Squeeze
+            </button>
+            <button
+              onClick={() => handleTabChange('multi')}
+              className={`px-4 py-2 rounded-lg text-sm font-semibold transition-colors whitespace-nowrap ${
+                activeTab === 'multi'
+                  ? 'bg-[#ff8c42] text-gray-900 dark:text-white'
+                  : 'bg-gray-50 dark:bg-[#1c2128] text-gray-600 dark:text-[#8b949e] hover:bg-gray-100 dark:hover:bg-[#30363d]'
+              }`}
+            >
+              Multi-Screener ({multiScreenerStocks.length})
+            </button>
+          </div>
         </div>
       </div>
 
