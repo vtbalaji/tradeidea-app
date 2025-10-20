@@ -48,12 +48,12 @@ export function SummaryPositionCard({
           isExpanded ? 'border-[#ff8c42]' : ''
         }`}
       >
-        {/* First Row: Symbol, Trade Type, P&L, Expand Icon */}
-        <div className="flex items-center justify-between gap-3 mb-2">
-          {/* Symbol */}
+        {/* Table-like Row: Symbol and Metrics */}
+        <div className="flex items-center gap-3">
+          {/* Symbol Column */}
           <div className="flex-1 min-w-0">
             <div className="flex items-start gap-1">
-              <h3 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white truncate">{position.symbol}</h3>
+              <h3 className="text-lg font-bold text-gray-900 dark:text-white truncate">{position.symbol}</h3>
               {position.smartSLTrigger === 'yes' && (
                 <img
                   src="/logo.png"
@@ -63,29 +63,43 @@ export function SummaryPositionCard({
                 />
               )}
             </div>
-            {position.fundamentals?.industry && (
-              <p className="text-xs font-medium text-gray-600 dark:text-[#8b949e] mt-0.5">
-                {position.fundamentals?.industry}
-              </p>
-            )}
           </div>
 
-          {/* P&L and Expand Icon */}
-          <div className="flex items-center gap-3">
-            <div className={`text-right flex-shrink-0 ${isProfit ? 'text-green-500' : 'text-red-500'}`}>
-              <p className="text-base sm:text-lg font-bold">{isProfit ? '+' : ''}₹{Math.round(pnl).toLocaleString('en-IN')}</p>
+          {/* Avg Buy Price Column */}
+          <div className="text-center w-24">
+            <p className="text-sm font-semibold text-gray-900 dark:text-white">₹{Math.round(position.entryPrice).toLocaleString('en-IN')}</p>
+          </div>
+
+          {/* LTP Column */}
+          <div className="text-center w-28">
+            <div className="flex flex-col items-center">
+              <p className="text-sm font-semibold text-gray-900 dark:text-white">₹{Math.round(position.currentPrice).toLocaleString('en-IN')}</p>
+              {position.technicals && (
+                <p className={`text-xs font-semibold ${isPriceUp ? 'text-green-500' : 'text-red-500'}`}>
+                  ({isPriceUp ? '+' : ''}{priceChangePercent.toFixed(1)}%)
+                </p>
+              )}
+            </div>
+          </div>
+
+          {/* Profit/Loss Column */}
+          <div className="text-right w-28">
+            <div className={`${isProfit ? 'text-green-500' : 'text-red-500'}`}>
+              <p className="text-sm font-bold">{isProfit ? '+' : ''}₹{Math.round(pnl).toLocaleString('en-IN')}</p>
               <p className="text-xs">({isProfit ? '+' : ''}{pnlPercent.toFixed(2)}%)</p>
             </div>
-            <ChevronDownIcon
-              size={20}
-              className={`w-5 h-5 text-gray-600 dark:text-[#8b949e] transition-transform flex-shrink-0 ${isExpanded ? 'rotate-180' : ''}`}
-            />
           </div>
+
+          {/* Expand Icon */}
+          <ChevronDownIcon
+            size={20}
+            className={`w-5 h-5 text-gray-600 dark:text-[#8b949e] transition-transform flex-shrink-0 ${isExpanded ? 'rotate-180' : ''}`}
+          />
         </div>
 
-        {/* Second Row: Stop Loss Status */}
+        {/* Third Row: Stop Loss Status */}
         {alerts && position.status === 'open' && (
-          <div className="space-y-1.5">
+          <div className="space-y-1.5 mt-2">
             {alerts
               .filter(alert =>
                 alert.message.includes('SL') ||

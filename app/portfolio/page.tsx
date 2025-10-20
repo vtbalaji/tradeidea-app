@@ -277,6 +277,26 @@ export default function PortfolioPage() {
     if (viewMode === 'summary') {
       return (
         <div className="space-y-3">
+          {/* Table Header */}
+          <div className="bg-gray-100 dark:bg-[#0f1419] border border-gray-200 dark:border-[#30363d] rounded-lg p-4">
+            <div className="flex items-center gap-3">
+              <div className="flex-1 min-w-0">
+                <p className="text-xs font-bold text-gray-600 dark:text-[#8b949e] uppercase">Symbol</p>
+              </div>
+              <div className="text-center w-24">
+                <p className="text-xs font-bold text-gray-600 dark:text-[#8b949e] uppercase">Avg Buy</p>
+              </div>
+              <div className="text-center w-28">
+                <p className="text-xs font-bold text-gray-600 dark:text-[#8b949e] uppercase">LTP</p>
+              </div>
+              <div className="text-right w-28">
+                <p className="text-xs font-bold text-gray-600 dark:text-[#8b949e] uppercase">Profit/Loss</p>
+              </div>
+              <div className="w-5"></div>
+            </div>
+          </div>
+
+          {/* Position Cards */}
           {positions.map((position) => (
             <SummaryPositionCard
               key={position.id}

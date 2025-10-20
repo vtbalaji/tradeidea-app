@@ -101,9 +101,18 @@ export function calculatePerformanceAttribution(
   // Calculate P&L for each position
   const positionsWithPnL = positions.map(p => {
     const invested = p.entryPrice * p.quantity;
-    const current = p.currentPrice * p.quantity;
+    const current = (p.currentPrice || p.entryPrice || 0) * p.quantity;
     const pnl = current - invested;
-    const pnlPercent = (pnl / invested) * 100;
+    const pnlPercent = invested > 0 ? (pnl / invested) * 100 : 0;
+
+    console.log(`Performance Attribution - ${p.symbol}:`, {
+      entryPrice: p.entryPrice,
+      currentPrice: p.currentPrice,
+      quantity: p.quantity,
+      invested,
+      current
+    });
+
     return { ...p, invested, current, pnl, pnlPercent };
   });
 

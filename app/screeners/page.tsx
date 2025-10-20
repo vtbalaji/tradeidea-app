@@ -2047,21 +2047,30 @@ export default function Cross50200Page() {
                       <div
                         key={stock.symbol}
                         className="bg-white dark:bg-[#0d1117] border border-gray-200 dark:border-[#30363d] rounded-xl p-4 hover:shadow-lg transition-shadow cursor-pointer"
-                        onClick={() => {
+                        onClick={(e) => {
                           // Get the first available screener data for price
                           const priceData = stock.ma50 || stock.ma200 || stock.advancedTrailstop || stock.volumeSpike || stock.darvas || stock.bbsqueeze;
                           const currentPrice = priceData
                             ? ('todayClose' in priceData ? priceData.todayClose : 'currentPrice' in priceData ? priceData.currentPrice : 0)
                             : 0;
 
-                          handleConvertToIdea(
-                            displaySymbol,
-                            currentPrice,
-                            stock.ma50?.crossoverType === 'bullish_cross' ||
+                          const isBullish = stock.ma50?.crossoverType === 'bullish_cross' ||
                             stock.advancedTrailstop?.crossoverType === 'bullish_cross' ||
                             stock.bbsqueeze?.signalType === 'BUY' ||
                             stock.darvas?.status === 'broken' ||
-                            (stock.volumeSpike && stock.volumeSpike.priceChangePercent > 0)
+                            (stock.volumeSpike && stock.volumeSpike.priceChangePercent > 0);
+
+                          // Build analysis text
+                          const screenersList = stock.screeners.join(', ');
+                          const analysisText = `Multi-screener signal detected for ${displaySymbol}.\n\nActive Screeners: ${screenersList}\n\nCurrent Price: ₹${currentPrice.toFixed(2)}\n\nThis stock is showing ${isBullish ? 'bullish' : 'bearish'} signals across multiple technical indicators.`;
+
+                          handleConvertToIdea(
+                            e,
+                            stock.symbol,
+                            displaySymbol,
+                            currentPrice,
+                            isBullish,
+                            analysisText
                           );
                         }}
                       >
@@ -2071,25 +2080,8 @@ export default function Cross50200Page() {
                             <h3 className="text-lg font-bold text-gray-900 dark:text-white">
                               {displaySymbol}
                             </h3>
-                            <div className="flex items-center gap-2 mt-1">
-                              <span className="px-2 py-0.5 bg-[#ff8c42]/20 text-[#ff8c42] text-xs font-bold rounded">
-                                {stock.count} {stock.count === 1 ? 'Screener' : 'Screeners'}
-                              </span>
-                            </div>
                           </div>
                           <AnalysisButton symbol={displaySymbol} />
-                        </div>
-
-                        {/* Screener Badges */}
-                        <div className="flex flex-wrap gap-1.5 mb-3">
-                          {stock.screeners.map((screener) => (
-                            <span
-                              key={screener}
-                              className={`px-2 py-0.5 text-xs font-semibold rounded ${screenerBadgeColors[screener]}`}
-                            >
-                              {screener}
-                            </span>
-                          ))}
                         </div>
 
                         {/* Screener Details */}
