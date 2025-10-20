@@ -196,7 +196,7 @@ export default function Navigation() {
           </div>
 
           {/* Notification Bell */}
-          <div className="hidden md:block mr-2">
+          <div className="mr-2">
             <NotificationBell />
           </div>
 
