@@ -145,21 +145,21 @@ export default function ProfilePage() {
         {/* Profile Card */}
         <div className="bg-gray-50 dark:bg-[#1c2128] rounded-xl border border-gray-200 dark:border-[#30363d] overflow-hidden">
           {/* Profile Header */}
-          <div className="bg-gradient-to-r from-[#ff8c42] to-[#ff6b1a] p-8">
-            <div className="flex items-center gap-6">
-              <div className="w-24 h-24 rounded-full bg-white flex items-center justify-center text-5xl">
+          <div className="bg-gradient-to-r from-[#ff8c42] to-[#ff6b1a] p-4 sm:p-8">
+            <div className="flex flex-col sm:flex-row items-center gap-4 sm:gap-6">
+              <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-full bg-white flex items-center justify-center text-4xl sm:text-5xl">
                 👤
               </div>
-              <div className="flex-1">
-                <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-1">
+              <div className="flex-1 text-center sm:text-left">
+                <h2 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white mb-1">
                   {userData?.displayName || user?.email?.split('@')[0] || 'Trader'}
                 </h2>
-                <p className="text-gray-900 dark:text-white/80">{user?.email}</p>
+                <p className="text-sm sm:text-base text-gray-900 dark:text-white/80 break-all">{user?.email}</p>
               </div>
               {!isEditing && (
                 <button
                   onClick={() => setIsEditing(true)}
-                  className="px-6 py-2 bg-white/20 hover:bg-white/30 text-gray-900 dark:text-white rounded-lg border border-white/30 transition-colors"
+                  className="w-full sm:w-auto px-6 py-2 bg-white/20 hover:bg-white/30 text-gray-900 dark:text-white rounded-lg border border-white/30 transition-colors"
                 >
                   ✏️ Edit Profile
                 </button>
@@ -337,7 +337,7 @@ export default function ProfilePage() {
               Test the notification system to ensure it's working properly after the API migration.
             </p>
 
-            <div className="flex items-center justify-between p-4 bg-white dark:bg-[#1c2128] border border-blue-200 dark:border-blue-900/30 rounded-lg">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 p-4 bg-white dark:bg-[#1c2128] border border-blue-200 dark:border-blue-900/30 rounded-lg">
               <div className="flex-1">
                 <h4 className="font-semibold text-gray-900 dark:text-white mb-1">Create Test Notification</h4>
                 <p className="text-sm text-gray-600 dark:text-[#8b949e]">
@@ -347,7 +347,7 @@ export default function ProfilePage() {
               <button
                 onClick={handleTestNotification}
                 disabled={testNotifLoading}
-                className="ml-4 px-6 py-2 bg-blue-500 hover:bg-blue-600 text-white font-semibold rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full sm:w-auto px-6 py-3 sm:py-2 bg-blue-500 hover:bg-blue-600 text-white font-semibold rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {testNotifLoading ? 'Creating...' : '🧪 Test Notification'}
               </button>
@@ -363,7 +363,7 @@ export default function ProfilePage() {
               Actions in this section are permanent and cannot be undone.
             </p>
 
-            <div className="flex items-center justify-between p-4 bg-white dark:bg-[#1c2128] border border-red-200 dark:border-red-900/30 rounded-lg">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 p-4 bg-white dark:bg-[#1c2128] border border-red-200 dark:border-red-900/30 rounded-lg">
               <div className="flex-1">
                 <h4 className="font-semibold text-gray-900 dark:text-white mb-1">Clear Portfolio</h4>
                 <p className="text-sm text-gray-600 dark:text-[#8b949e]">
@@ -373,7 +373,7 @@ export default function ProfilePage() {
               <button
                 onClick={() => setShowClearConfirmModal(true)}
                 disabled={openPositionsCount === 0}
-                className="ml-4 px-6 py-2 bg-red-500 hover:bg-red-600 text-white font-semibold rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full sm:w-auto px-6 py-3 sm:py-2 bg-red-500 hover:bg-red-600 text-white font-semibold rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 Clear Portfolio
               </button>
