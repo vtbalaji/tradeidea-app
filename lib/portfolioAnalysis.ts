@@ -36,6 +36,21 @@ export interface RiskMetrics {
   sharpeRatio: number; // Risk-adjusted returns
   benchmarkBeta: number; // Nifty 50 beta (always 1.0)
   benchmarkStdDev: number; // Nifty 50 standard deviation
+  valueAtRisk?: ValueAtRisk; // VaR metrics
+}
+
+export interface ValueAtRisk {
+  historicalVaR95: number; // 95% confidence level (₹)
+  historicalVaR99: number; // 99% confidence level (₹)
+  parametricVaR95: number; // Parametric VaR 95% (₹)
+  parametricVaR99: number; // Parametric VaR 99% (₹)
+  historicalVaR95Percent: number; // 95% as percentage
+  historicalVaR99Percent: number; // 99% as percentage
+  parametricVaR95Percent: number; // Parametric 95% as percentage
+  parametricVaR99Percent: number; // Parametric 99% as percentage
+  portfolioValue: number; // Total portfolio value
+  timeHorizon: number; // Days (usually 1 day)
+  explanation: string; // Simple explanation
 }
 
 // New Report Interfaces
@@ -339,6 +354,99 @@ export function calculateAnnualizedReturn(returns: number[]): number {
 }
 
 /**
+ * Calculate Value at Risk (VaR) using multiple methods
+ * VaR estimates the maximum potential loss at a given confidence level
+ *
+ * @param returns - Array of historical daily returns
+ * @param portfolioValue - Total portfolio value in ₹
+ * @param confidenceLevels - Array of confidence levels (e.g., [0.95, 0.99])
+ * @param timeHorizon - Number of days (default: 1)
+ * @returns ValueAtRisk object with multiple VaR calculations
+ */
+export function calculateValueAtRisk(
+  returns: number[],
+  portfolioValue: number,
+  timeHorizon: number = 1
+): ValueAtRisk {
+  // If no historical data, return conservative estimates
+  if (returns.length < 30) {
+    return {
+      historicalVaR95: portfolioValue * 0.05, // 5% loss
+      historicalVaR99: portfolioValue * 0.10, // 10% loss
+      parametricVaR95: portfolioValue * 0.05,
+      parametricVaR99: portfolioValue * 0.10,
+      historicalVaR95Percent: 5.0,
+      historicalVaR99Percent: 10.0,
+      parametricVaR95Percent: 5.0,
+      parametricVaR99Percent: 10.0,
+      portfolioValue,
+      timeHorizon,
+      explanation: 'Insufficient historical data. Using conservative estimates.'
+    };
+  }
+
+  // Sort returns for historical VaR calculation
+  const sortedReturns = [...returns].sort((a, b) => a - b);
+
+  // 1. HISTORICAL VaR (Non-parametric method)
+  // Find the return at the specified percentile
+  const var95Index = Math.floor(sortedReturns.length * 0.05); // 5th percentile (95% confidence)
+  const var99Index = Math.floor(sortedReturns.length * 0.01); // 1st percentile (99% confidence)
+
+  const historicalReturn95 = sortedReturns[var95Index];
+  const historicalReturn99 = sortedReturns[var99Index];
+
+  // Scale for time horizon (square root of time rule)
+  const scaleFactor = Math.sqrt(timeHorizon);
+
+  const historicalVaR95Percent = Math.abs(historicalReturn95) * 100 * scaleFactor;
+  const historicalVaR99Percent = Math.abs(historicalReturn99) * 100 * scaleFactor;
+
+  const historicalVaR95 = portfolioValue * Math.abs(historicalReturn95) * scaleFactor;
+  const historicalVaR99 = portfolioValue * Math.abs(historicalReturn99) * scaleFactor;
+
+  // 2. PARAMETRIC VaR (Variance-Covariance method)
+  // Assumes returns are normally distributed
+  const mean = returns.reduce((sum, r) => sum + r, 0) / returns.length;
+  const variance = returns.reduce((sum, r) => sum + Math.pow(r - mean, 2), 0) / (returns.length - 1);
+  const stdDev = Math.sqrt(variance);
+
+  // Z-scores for confidence levels (normal distribution)
+  const z95 = 1.645; // 95% confidence
+  const z99 = 2.326; // 99% confidence
+
+  // Parametric VaR = (mean - z * stdDev) * portfolioValue
+  // We use negative because we're interested in losses
+  const parametricReturn95 = Math.abs(mean - z95 * stdDev) * scaleFactor;
+  const parametricReturn99 = Math.abs(mean - z99 * stdDev) * scaleFactor;
+
+  const parametricVaR95Percent = parametricReturn95 * 100;
+  const parametricVaR99Percent = parametricReturn99 * 100;
+
+  const parametricVaR95 = portfolioValue * parametricReturn95;
+  const parametricVaR99 = portfolioValue * parametricReturn99;
+
+  // Generate explanation
+  const explanation = `Based on ${returns.length} days of historical data, there is a ${
+    timeHorizon === 1 ? '1-day' : `${timeHorizon}-day`
+  } risk analysis.`;
+
+  return {
+    historicalVaR95: Number(historicalVaR95.toFixed(0)),
+    historicalVaR99: Number(historicalVaR99.toFixed(0)),
+    parametricVaR95: Number(parametricVaR95.toFixed(0)),
+    parametricVaR99: Number(parametricVaR99.toFixed(0)),
+    historicalVaR95Percent: Number(historicalVaR95Percent.toFixed(2)),
+    historicalVaR99Percent: Number(historicalVaR99Percent.toFixed(2)),
+    parametricVaR95Percent: Number(parametricVaR95Percent.toFixed(2)),
+    parametricVaR99Percent: Number(parametricVaR99Percent.toFixed(2)),
+    portfolioValue,
+    timeHorizon,
+    explanation
+  };
+}
+
+/**
  * Calculate diversification score (0-100)
  * Higher score = better diversified
  */
@@ -481,12 +589,58 @@ export async function analyzePortfolio(
 
   const sharpeRatio = calculateSharpeRatio(portfolioReturn, riskFreeRate, portfolioStdDev);
 
+  // Calculate Value at Risk (VaR)
+  // If we have historical returns, use them. Otherwise, generate synthetic returns from std dev
+  let valueAtRisk: ValueAtRisk | undefined;
+
+  if (portfolioReturns.length > 0) {
+    // Use actual historical returns
+    valueAtRisk = calculateValueAtRisk(portfolioReturns, totalValue, 1);
+  } else {
+    // Generate synthetic VaR from portfolio std dev (parametric method only)
+    // Convert annualized std dev to daily std dev
+    const dailyStdDev = (portfolioStdDev / 100) / Math.sqrt(252);
+
+    // Assume mean daily return of 0 (conservative)
+    const mean = 0;
+
+    // Z-scores for confidence levels
+    const z95 = 1.645;
+    const z99 = 2.326;
+
+    // Parametric VaR calculation
+    const parametricReturn95 = Math.abs(mean - z95 * dailyStdDev);
+    const parametricReturn99 = Math.abs(mean - z99 * dailyStdDev);
+
+    const parametricVaR95 = totalValue * parametricReturn95;
+    const parametricVaR99 = totalValue * parametricReturn99;
+
+    // For historical VaR, use slightly more conservative estimates (1.2x parametric)
+    const historicalVaR95 = parametricVaR95 * 1.2;
+    const historicalVaR99 = parametricVaR99 * 1.2;
+
+    valueAtRisk = {
+      historicalVaR95: Number(historicalVaR95.toFixed(0)),
+      historicalVaR99: Number(historicalVaR99.toFixed(0)),
+      parametricVaR95: Number(parametricVaR95.toFixed(0)),
+      parametricVaR99: Number(parametricVaR99.toFixed(0)),
+      historicalVaR95Percent: Number((parametricReturn95 * 1.2 * 100).toFixed(2)),
+      historicalVaR99Percent: Number((parametricReturn99 * 1.2 * 100).toFixed(2)),
+      parametricVaR95Percent: Number((parametricReturn95 * 100).toFixed(2)),
+      parametricVaR99Percent: Number((parametricReturn99 * 100).toFixed(2)),
+      portfolioValue: totalValue,
+      timeHorizon: 1,
+      explanation: `Estimated from portfolio volatility of ${portfolioStdDev}% (annualized). For more accurate VaR, historical price data is recommended.`
+    };
+  }
+
   const riskMetrics: RiskMetrics = {
     beta: portfolioBeta,
     standardDeviation: portfolioStdDev,
     sharpeRatio,
     benchmarkBeta: 1.0, // Nifty 50 beta is always 1.0
     benchmarkStdDev,
+    valueAtRisk,
   };
 
   // Calculate diversification score

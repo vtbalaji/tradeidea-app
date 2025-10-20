@@ -120,7 +120,7 @@ export default function Navigation() {
             <span>Analysis</span>
           </Link>
 
-          <Link
+          {/* <Link
             href="/ideas/new"
             className={`flex items-center gap-1.5 px-4 py-2 rounded-md ${
               pathname === '/ideas/new' ? 'bg-gray-100 dark:bg-[#30363d] text-gray-900 dark:text-white' : 'text-gray-600 dark:text-[#8b949e]'
@@ -128,7 +128,7 @@ export default function Navigation() {
           >
             <SparklesIcon size={18} />
             <span>New Idea</span>
-          </Link>
+          </Link> */}
         </div>
 
         {/* Right - User Menu */}
@@ -381,7 +381,7 @@ export default function Navigation() {
                 <span>Analysis</span>
               </Link>
 
-              <Link
+              {/* <Link
                 href="/ideas/new"
                 onClick={() => setShowMobileMenu(false)}
                 className={`flex items-center gap-3 px-4 py-3 rounded-md ${
@@ -390,7 +390,7 @@ export default function Navigation() {
               >
                 <SparklesIcon size={20} />
                 <span>New Idea</span>
-              </Link>
+              </Link> */}
             </div>
           </div>
         </>

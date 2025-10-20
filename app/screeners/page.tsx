@@ -20,8 +20,8 @@ interface Crossover {
   yesterdayMA?: number;
   todayClose: number;
   todayMA?: number;
-  yesterdaySupertrend?: number;
-  todaySupertrend?: number;
+  yesterdayTrailstop?: number;
+  todayTrailstop?: number;
   crossPercent: number;
   ma_period?: number;
 }
@@ -80,22 +80,35 @@ interface BBSqueeze {
   distanceToLowerPercent: number;
 }
 
+interface MultiScreenerStock {
+  symbol: string;
+  screeners: string[]; // List of screeners this stock appears in
+  count: number; // Number of screeners
+  // Details from each screener
+  ma50?: Crossover;
+  ma200?: Crossover;
+  advancedTrailstop?: Crossover;
+  darvas?: DarvasBox;
+  bbsqueeze?: BBSqueeze;
+}
+
 export default function Cross50200Page() {
   const router = useRouter();
   const { user } = useAuth();
-  const [activeTab, setActiveTab] = useState<'macross' | 'volume' | 'darvas' | 'bbsqueeze'>('macross');
+  const [activeTab, setActiveTab] = useState<'macross' | 'advancedtrailstop' | 'volume' | 'darvas' | 'bbsqueeze' | 'multi'>('macross');
 
   // Track tab change
-  const handleTabChange = (tab: 'macross' | 'volume' | 'darvas' | 'bbsqueeze') => {
+  const handleTabChange = (tab: 'macross' | 'advancedtrailstop' | 'volume' | 'darvas' | 'bbsqueeze' | 'multi') => {
     setActiveTab(tab);
     trackScreenerViewed(tab);
   };
   const [crossovers50, setCrossovers50] = useState<Crossover[]>([]);
   const [crossovers200, setCrossovers200] = useState<Crossover[]>([]);
-  const [supertrendCrossovers, setSupertrendCrossovers] = useState<Crossover[]>([]);
+  const [advancedTrailstopCrossovers, setAdvancedTrailstopCrossovers] = useState<Crossover[]>([]);
   const [volumeSpikes, setVolumeSpikes] = useState<VolumeSpike[]>([]);
   const [darvasBoxes, setDarvasBoxes] = useState<DarvasBox[]>([]);
   const [bbSqueezeSignals, setBBSqueezeSignals] = useState<BBSqueeze[]>([]);
+  const [multiScreenerStocks, setMultiScreenerStocks] = useState<MultiScreenerStock[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showAnalysisModal, setShowAnalysisModal] = useState<string | null>(null);
@@ -105,6 +118,7 @@ export default function Cross50200Page() {
   const [bbSqueezeFilter, setBBSqueezeFilter] = useState<'ALL' | 'BUY' | 'SELL' | 'SQUEEZE' | 'BREAKOUT'>('ALL');
   const [maCrossFilter, setMACrossFilter] = useState<'both' | '50ma' | '200ma'>('both');
   const [darvasFilter, setDarvasFilter] = useState<'ALL' | 'broken' | 'active'>('ALL');
+  const [advancedTrailstopFilter, setAdvancedTrailstopFilter] = useState<'ALL' | 'bullish' | 'bearish'>('ALL');
 
   // Convert date to Indian format (DD-MM-YYYY)
   const formatDateIndian = (dateStr: string | null) => {
@@ -173,7 +187,7 @@ export default function Cross50200Page() {
         // Try to fetch with multiple date formats
         let data50: Crossover[] = [];
         let data200: Crossover[] = [];
-        let dataSupertrend: Crossover[] = [];
+        let dataAdvancedTrailstop: Crossover[] = [];
         let dataVolumeSpike: VolumeSpike[] = [];
         let dataDarvasBoxes: DarvasBox[] = [];
         let dataBBSqueeze: BBSqueeze[] = [];
@@ -243,23 +257,23 @@ export default function Cross50200Page() {
             console.error('❌ Error accessing macrossover200:', err.message);
           }
 
-          // Fetch Supertrend - use the same latestDate
+          // Fetch Advanced Trailstop - use the same latestDate
           try {
-            const testSupertrend = await getDocs(collection(db, 'supertrendcrossover'));
-            console.log(`✅ Can access supertrendcrossover: ${testSupertrend.docs.length} total documents`);
+            const testAdvancedTrailstop = await getDocs(collection(db, 'advancedtrailstop'));
+            console.log(`✅ Can access advancedtrailstop: ${testAdvancedTrailstop.docs.length} total documents`);
 
-            if (testSupertrend.docs.length > 0) {
-              const filteredSupertrend = testSupertrend.docs.filter(doc => doc.data().date === latestDate);
-              if (filteredSupertrend.length > 0) {
-                console.log(`✅ Found ${filteredSupertrend.length} records in supertrendcrossover for ${latestDate}`);
-                dataSupertrend = filteredSupertrend.map(doc => ({
+            if (testAdvancedTrailstop.docs.length > 0) {
+              const filteredAdvancedTrailstop = testAdvancedTrailstop.docs.filter(doc => doc.data().date === latestDate);
+              if (filteredAdvancedTrailstop.length > 0) {
+                console.log(`✅ Found ${filteredAdvancedTrailstop.length} records in advancedtrailstop for ${latestDate}`);
+                dataAdvancedTrailstop = filteredAdvancedTrailstop.map(doc => ({
                   id: doc.id,
                   ...doc.data()
                 } as Crossover));
               }
             }
           } catch (err: any) {
-            console.error('❌ Error accessing supertrendcrossover:', err.message);
+            console.error('❌ Error accessing advancedtrailstop:', err.message);
           }
 
           // Fetch Volume Spikes - use the same latestDate
@@ -337,20 +351,20 @@ export default function Cross50200Page() {
         }
 
         // If still no records found, fetch a sample to show what dates are available
-        if (data50.length === 0 && data200.length === 0 && dataSupertrend.length === 0 && dataVolumeSpike.length === 0) {
+        if (data50.length === 0 && data200.length === 0 && dataAdvancedTrailstop.length === 0 && dataVolumeSpike.length === 0) {
           console.warn('⚠️ No records found for any date format. Fetching sample records...');
 
           try {
             // Fetch sample from each collection without orderBy to avoid index issues
             const sample50 = await getDocs(collection(db, 'macrossover50'));
             const sample200 = await getDocs(collection(db, 'macrossover200'));
-            const sampleSupertrend = await getDocs(collection(db, 'supertrendcrossover'));
+            const sampleAdvancedTrailstop = await getDocs(collection(db, 'advancedtrailstop'));
             const sampleVolume = await getDocs(collection(db, 'volumespike'));
 
             console.log('📋 Total documents in Firebase:');
             console.log(`  macrossover50: ${sample50.docs.length} documents`);
             console.log(`  macrossover200: ${sample200.docs.length} documents`);
-            console.log(`  supertrendcrossover: ${sampleSupertrend.docs.length} documents`);
+            console.log(`  advancedtrailstop: ${sampleAdvancedTrailstop.docs.length} documents`);
             console.log(`  volumespike: ${sampleVolume.docs.length} documents`);
 
             console.log('\n📋 Sample dates in Firebase:');
@@ -372,13 +386,13 @@ export default function Cross50200Page() {
               console.log('  macrossover200: No documents found');
             }
 
-            if (sampleSupertrend.docs.length > 0) {
-              const allDatesSupertrend = sampleSupertrend.docs.map(d => d.data().date);
-              const uniqueDatesSupertrend = [...new Set(allDatesSupertrend)].sort().reverse().slice(0, 10);
-              console.log('  supertrendcrossover (latest 10 unique dates):', uniqueDatesSupertrend);
-              console.log('  First record sample:', sampleSupertrend.docs[0].data());
+            if (sampleAdvancedTrailstop.docs.length > 0) {
+              const allDatesAdvancedTrailstop = sampleAdvancedTrailstop.docs.map(d => d.data().date);
+              const uniqueDatesAdvancedTrailstop = [...new Set(allDatesAdvancedTrailstop)].sort().reverse().slice(0, 10);
+              console.log('  advancedtrailstop (latest 10 unique dates):', uniqueDatesAdvancedTrailstop);
+              console.log('  First record sample:', sampleAdvancedTrailstop.docs[0].data());
             } else {
-              console.log('  supertrendcrossover: No documents found');
+              console.log('  advancedtrailstop: No documents found');
             }
 
             if (sampleVolume.docs.length > 0) {
@@ -397,7 +411,7 @@ export default function Cross50200Page() {
         // Sort in memory
         data50 = data50.sort((a, b) => Math.abs(b.crossPercent) - Math.abs(a.crossPercent));
         data200 = data200.sort((a, b) => Math.abs(b.crossPercent) - Math.abs(a.crossPercent));
-        dataSupertrend = dataSupertrend.sort((a, b) => Math.abs(b.crossPercent) - Math.abs(a.crossPercent));
+        dataAdvancedTrailstop = dataAdvancedTrailstop.sort((a, b) => Math.abs(b.crossPercent) - Math.abs(a.crossPercent));
         dataVolumeSpike = dataVolumeSpike.sort((a, b) => b.spikePercent - a.spikePercent);
         dataDarvasBoxes = dataDarvasBoxes.sort((a, b) => b.consolidationDays - a.consolidationDays);
         dataBBSqueeze = dataBBSqueeze.sort((a, b) => {
@@ -408,19 +422,95 @@ export default function Cross50200Page() {
 
         setCrossovers50(data50);
         setCrossovers200(data200);
-        setSupertrendCrossovers(dataSupertrend);
+        setAdvancedTrailstopCrossovers(dataAdvancedTrailstop);
         setVolumeSpikes(dataVolumeSpike);
         setDarvasBoxes(dataDarvasBoxes);
         setBBSqueezeSignals(dataBBSqueeze);
         setDisplayDate(latestDate);
 
+        // Calculate multi-screener stocks (excluding volumespike and supertrend)
+        const symbolMap = new Map<string, MultiScreenerStock>();
+
+        // Add MA50 crosses
+        data50.forEach(item => {
+          const existing = symbolMap.get(item.symbol) || {
+            symbol: item.symbol,
+            screeners: [],
+            count: 0
+          };
+          existing.screeners.push('MA50');
+          existing.ma50 = item;
+          existing.count = existing.screeners.length;
+          symbolMap.set(item.symbol, existing);
+        });
+
+        // Add MA200 crosses
+        data200.forEach(item => {
+          const existing = symbolMap.get(item.symbol) || {
+            symbol: item.symbol,
+            screeners: [],
+            count: 0
+          };
+          existing.screeners.push('MA200');
+          existing.ma200 = item;
+          existing.count = existing.screeners.length;
+          symbolMap.set(item.symbol, existing);
+        });
+
+        // Add Advanced Trailstop
+        dataAdvancedTrailstop.forEach(item => {
+          const existing = symbolMap.get(item.symbol) || {
+            symbol: item.symbol,
+            screeners: [],
+            count: 0
+          };
+          existing.screeners.push('Advanced Trailstop');
+          existing.advancedTrailstop = item;
+          existing.count = existing.screeners.length;
+          symbolMap.set(item.symbol, existing);
+        });
+
+        // Add Darvas Boxes
+        dataDarvasBoxes.forEach(item => {
+          const existing = symbolMap.get(item.symbol) || {
+            symbol: item.symbol,
+            screeners: [],
+            count: 0
+          };
+          existing.screeners.push('Darvas Box');
+          existing.darvas = item;
+          existing.count = existing.screeners.length;
+          symbolMap.set(item.symbol, existing);
+        });
+
+        // Add BB Squeeze
+        dataBBSqueeze.forEach(item => {
+          const existing = symbolMap.get(item.symbol) || {
+            symbol: item.symbol,
+            screeners: [],
+            count: 0
+          };
+          existing.screeners.push('BB Squeeze');
+          existing.bbsqueeze = item;
+          existing.count = existing.screeners.length;
+          symbolMap.set(item.symbol, existing);
+        });
+
+        // Filter stocks that appear in 2 or more screeners
+        const multiStocks = Array.from(symbolMap.values())
+          .filter(stock => stock.count >= 2)
+          .sort((a, b) => b.count - a.count);
+
+        setMultiScreenerStocks(multiStocks);
+
         console.log('📊 Final counts:', {
           ma50: data50.length,
           ma200: data200.length,
-          supertrend: dataSupertrend.length,
+          advancedtrailstop: dataAdvancedTrailstop.length,
           volumeSpikes: dataVolumeSpike.length,
           darvasBoxes: dataDarvasBoxes.length,
           bbSqueeze: dataBBSqueeze.length,
+          multiScreener: multiStocks.length,
           date: latestDate
         });
       } catch (error: any) {
@@ -992,7 +1082,7 @@ export default function Cross50200Page() {
     );
   };
 
-  const renderCrossoverCard = (crossover: Crossover, showBothLabel: boolean = false, isSupertrend: boolean = false) => {
+  const renderCrossoverCard = (crossover: Crossover, showBothLabel: boolean = false, isAdvancedTrailstop: boolean = false) => {
     const isBullish = crossover.crossoverType === 'bullish_cross';
     const changePercent = ((crossover.todayClose - crossover.yesterdayClose) / crossover.yesterdayClose) * 100;
     // Display symbol without NS_ prefix
@@ -1007,7 +1097,7 @@ export default function Cross50200Page() {
           <div>
             <h3 className="text-xl font-bold text-gray-900 dark:text-white">{displaySymbol}</h3>
             <p className="text-xs text-gray-600 dark:text-[#8b949e] mt-0.5">
-              {isSupertrend ? 'Supertrend Crossover' : (showBothLabel ? '50 & 200 MA Crossover' : `${crossover.ma_period} MA Crossover`)}
+              {isAdvancedTrailstop ? 'Advanced Trailstop Crossover' : (showBothLabel ? '50 & 200 MA Crossover' : `${crossover.ma_period} MA Crossover`)}
             </p>
           </div>
           <span className={`px-3 py-1 text-xs font-semibold rounded ${
@@ -1033,11 +1123,11 @@ export default function Cross50200Page() {
           </div>
         </div>
 
-        {/* MA/Supertrend Info */}
+        {/* MA/Advanced Trailstop Info */}
         <div className="bg-white dark:bg-[#0f1419] border border-gray-200 dark:border-[#30363d] rounded-lg p-3 mb-3">
           <div className="flex justify-between items-center mb-2">
             <p className="text-xs font-semibold text-[#ff8c42]">
-              {isSupertrend ? 'Supertrend Level' : `${crossover.ma_period} MA Level`}
+              {isAdvancedTrailstop ? 'Advanced Trailstop Level' : `${crossover.ma_period} MA Level`}
             </p>
             <p className={`text-xs font-semibold ${
               isBullish ? 'text-green-500' : 'text-red-500'
@@ -1048,21 +1138,21 @@ export default function Cross50200Page() {
           <div className="grid grid-cols-2 gap-2 text-xs">
             <div>
               <span className="text-gray-600 dark:text-[#8b949e]">
-                Yesterday {isSupertrend ? 'ST' : 'MA'}:
+                Yesterday {isAdvancedTrailstop ? 'ATS' : 'MA'}:
               </span>
               <span className="ml-1 font-semibold text-gray-900 dark:text-white">
-                ₹{isSupertrend
-                  ? crossover.yesterdaySupertrend?.toFixed(2)
+                ₹{isAdvancedTrailstop
+                  ? crossover.yesterdayTrailstop?.toFixed(2)
                   : crossover.yesterdayMA?.toFixed(2)}
               </span>
             </div>
             <div>
               <span className="text-gray-600 dark:text-[#8b949e]">
-                Today {isSupertrend ? 'ST' : 'MA'}:
+                Today {isAdvancedTrailstop ? 'ATS' : 'MA'}:
               </span>
               <span className="ml-1 font-semibold text-gray-900 dark:text-white">
-                ₹{isSupertrend
-                  ? crossover.todaySupertrend?.toFixed(2)
+                ₹{isAdvancedTrailstop
+                  ? crossover.todayTrailstop?.toFixed(2)
                   : crossover.todayMA?.toFixed(2)}
               </span>
             </div>
@@ -1072,10 +1162,10 @@ export default function Cross50200Page() {
         {/* Crossover Description */}
         <div className="bg-blue-500/10 border border-blue-500/30 rounded-lg p-2 mb-3">
           <p className="text-xs text-blue-600 dark:text-blue-400">
-            {isSupertrend
+            {isAdvancedTrailstop
               ? (isBullish
-                  ? `💡 Supertrend turned bullish today - Strong buy signal`
-                  : `⚠️ Supertrend turned bearish today - Consider exit`)
+                  ? `💡 Advanced Trailstop turned bullish - 9-bar rising lows detected`
+                  : `⚠️ Advanced Trailstop turned bearish - 9-bar falling highs detected`)
               : (isBullish
                   ? `💡 Price crossed above ${crossover.ma_period} MA today - Potential bullish signal`
                   : `⚠️ Price crossed below ${crossover.ma_period} MA today - Potential bearish signal`)
@@ -1196,8 +1286,8 @@ export default function Cross50200Page() {
               });
 
               // Build the analysis text based on crossover type
-              const analysisText = isSupertrend
-                ? `${isBullish ? 'Bullish' : 'Bearish'} Supertrend crossover detected.\n\nKey Points:\n- Price is ${isBullish ? 'above' : 'below'} Supertrend level by ${Math.abs(crossover.crossPercent).toFixed(2)}%\n- Current Price: ₹${crossover.todayClose.toFixed(2)}\n- Supertrend Level: ₹${(isSupertrend ? crossover.todaySupertrend : crossover.todayMA)?.toFixed(2)}\n\n${isBullish ? 'This signals potential upward momentum. Consider entering on pullbacks to support levels.' : 'This signals potential downward pressure. Consider exiting long positions or avoiding new entries.'}`
+              const analysisText = isAdvancedTrailstop
+                ? `${isBullish ? 'Bullish' : 'Bearish'} Advanced Trailstop crossover detected.\n\nKey Points:\n- Price is ${isBullish ? 'above' : 'below'} Advanced Trailstop by ${Math.abs(crossover.crossPercent).toFixed(2)}%\n- Current Price: ₹${crossover.todayClose.toFixed(2)}\n- Trailstop Level: ₹${crossover.todayTrailstop?.toFixed(2)}\n- System: 9-bar ${isBullish ? 'rising lows' : 'falling highs'} with ATR-based trailing stop\n\n${isBullish ? 'This signals strong upward momentum with 9 consecutive rising lows. The Advanced Trailstop adapts to volatility and trails below support. Consider entry on pullbacks to the trailstop level.' : 'This signals downward pressure with 9 consecutive falling highs. The Advanced Trailstop has flipped bearish. Consider exiting long positions or avoiding new entries.'}`
                 : `${isBullish ? 'Bullish' : 'Bearish'} ${crossover.ma_period} MA crossover detected.\n\nKey Points:\n- Price crossed ${isBullish ? 'above' : 'below'} ${crossover.ma_period} MA today\n- Current Price: ₹${crossover.todayClose.toFixed(2)}\n- ${crossover.ma_period} MA Level: ₹${crossover.todayMA?.toFixed(2)}\n- Price change: ${((crossover.todayClose - crossover.yesterdayClose) / crossover.yesterdayClose * 100).toFixed(2)}%\n\n${isBullish ? 'This crossover suggests potential bullish momentum. Entry recommended near support levels with proper risk management.' : 'This crossover indicates potential bearish pressure. Consider profit booking or avoiding fresh longs.'}`;
 
               // Track screener converted to idea
@@ -1245,6 +1335,16 @@ export default function Cross50200Page() {
             Average Cross
           </button>
           <button
+            onClick={() => handleTabChange('advancedtrailstop')}
+            className={`px-4 py-2 rounded-lg text-sm font-semibold transition-colors ${
+              activeTab === 'advancedtrailstop'
+                ? 'bg-[#ff8c42] text-gray-900 dark:text-white'
+                : 'bg-gray-50 dark:bg-[#1c2128] text-gray-600 dark:text-[#8b949e] hover:bg-gray-100 dark:hover:bg-[#30363d]'
+            }`}
+          >
+            Advanced Trailstop
+          </button>
+          <button
             onClick={() => handleTabChange('volume')}
             className={`px-4 py-2 rounded-lg text-sm font-semibold transition-colors ${
               activeTab === 'volume'
@@ -1273,6 +1373,16 @@ export default function Cross50200Page() {
             }`}
           >
             BB Squeeze
+          </button>
+          <button
+            onClick={() => handleTabChange('multi')}
+            className={`px-4 py-2 rounded-lg text-sm font-semibold transition-colors ${
+              activeTab === 'multi'
+                ? 'bg-[#ff8c42] text-gray-900 dark:text-white'
+                : 'bg-gray-50 dark:bg-[#1c2128] text-gray-600 dark:text-[#8b949e] hover:bg-gray-100 dark:hover:bg-[#30363d]'
+            }`}
+          >
+            Multi-Screener ({multiScreenerStocks.length})
           </button>
         </div>
       </div>
@@ -1380,6 +1490,125 @@ export default function Cross50200Page() {
                       {renderCrossoverCard(crossover, maCrossFilter === 'both', false)}
                     </div>
                   ))}
+                </div>
+              </>
+            );
+          }
+
+          // Handle Advanced Trailstop tab
+          if (activeTab === 'advancedtrailstop') {
+            // Apply filter
+            let filteredAdvancedTrailstop = advancedTrailstopCrossovers;
+            if (advancedTrailstopFilter === 'bullish') {
+              filteredAdvancedTrailstop = advancedTrailstopCrossovers.filter(c => c.crossoverType === 'bullish_cross');
+            } else if (advancedTrailstopFilter === 'bearish') {
+              filteredAdvancedTrailstop = advancedTrailstopCrossovers.filter(c => c.crossoverType === 'bearish_cross');
+            }
+
+            return filteredAdvancedTrailstop.length === 0 ? (
+              <div className="text-center py-16">
+                <div className="text-6xl mb-4">📈</div>
+                <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">No Advanced Trailstop crossovers found</h3>
+                <p className="text-gray-600 dark:text-[#8b949e]">
+                  {advancedTrailstopFilter === 'ALL'
+                    ? 'No stocks crossed Advanced Trailstop levels today'
+                    : `No ${advancedTrailstopFilter} crossovers found`
+                  }
+                </p>
+              </div>
+            ) : (
+              <>
+                {/* Summary with Filter Buttons */}
+                <div className="mb-4">
+                  <div className="flex items-center gap-2 flex-wrap mb-3">
+                    <h2 className="text-xl font-bold text-gray-900 dark:text-white">Advanced Trailstop Crossovers</h2>
+                    <span className="px-2 py-0.5 bg-[#ff8c42]/20 text-[#ff8c42] text-xs font-semibold rounded-full">
+                      {filteredAdvancedTrailstop.length} {filteredAdvancedTrailstop.length === 1 ? 'stock' : 'stocks'}
+                    </span>
+                  </div>
+
+                  {/* Filter Buttons */}
+                  <div className="flex gap-2 flex-wrap">
+                    <button
+                      onClick={() => setAdvancedTrailstopFilter('ALL')}
+                      className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors ${
+                        advancedTrailstopFilter === 'ALL'
+                          ? 'bg-[#ff8c42] text-white'
+                          : 'bg-gray-100 dark:bg-[#1c2128] text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-[#30363d]'
+                      }`}
+                    >
+                      All ({advancedTrailstopCrossovers.length})
+                    </button>
+                    <button
+                      onClick={() => setAdvancedTrailstopFilter('bullish')}
+                      className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors ${
+                        advancedTrailstopFilter === 'bullish'
+                          ? 'bg-green-500 text-white'
+                          : 'bg-gray-100 dark:bg-[#1c2128] text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-[#30363d]'
+                      }`}
+                    >
+                      🟢 Bullish ({advancedTrailstopCrossovers.filter(c => c.crossoverType === 'bullish_cross').length})
+                    </button>
+                    <button
+                      onClick={() => setAdvancedTrailstopFilter('bearish')}
+                      className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors ${
+                        advancedTrailstopFilter === 'bearish'
+                          ? 'bg-red-500 text-white'
+                          : 'bg-gray-100 dark:bg-[#1c2128] text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-[#30363d]'
+                      }`}
+                    >
+                      🔴 Bearish ({advancedTrailstopCrossovers.filter(c => c.crossoverType === 'bearish_cross').length})
+                    </button>
+                  </div>
+                </div>
+
+                {/* Cards Grid */}
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
+                  {filteredAdvancedTrailstop.map((crossover) => (
+                    <div key={crossover.id}>
+                      {renderCrossoverCard(crossover, false, true)}
+                    </div>
+                  ))}
+                </div>
+
+                {/* Advanced Trailstop Rules Reference */}
+                <div className="mt-8 bg-indigo-50 dark:bg-indigo-900/10 border border-indigo-200 dark:border-indigo-800 rounded-xl p-6">
+                  <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+                    <span className="text-2xl">📈</span>
+                    Advanced Trailstop System (AFL-based)
+                  </h3>
+                  <div className="space-y-3 text-sm text-gray-700 dark:text-gray-300">
+                    <div>
+                      <span className="font-semibold text-indigo-600 dark:text-indigo-400">Market Cap Filter:</span> &gt;1000 Cr
+                    </div>
+                    <div>
+                      <span className="font-semibold text-indigo-600 dark:text-indigo-400">ATR Period:</span> 7 days (default)
+                    </div>
+                    <div>
+                      <span className="font-semibold text-indigo-600 dark:text-indigo-400">Multiplier:</span> 2.0x ATR
+                    </div>
+                    <div>
+                      <span className="font-semibold text-indigo-600 dark:text-indigo-400">Trend Detection:</span> 9-bar lookback (rising lows = bullish, falling highs = bearish)
+                    </div>
+                    <div className="pt-2 border-t border-indigo-200 dark:border-indigo-800">
+                      <p className="font-semibold text-indigo-600 dark:text-indigo-400 mb-2">How it Works:</p>
+                      <ul className="list-disc list-inside space-y-1 ml-2">
+                        <li><strong>Bullish Signal:</strong> When last 9 lows are rising AND close &gt; previous trailstop</li>
+                        <li><strong>Bearish Signal:</strong> When last 9 highs are falling AND close &lt; previous trailstop</li>
+                        <li><strong>Trailstop Calculation:</strong> Low - (2.0 × ATR) for bullish, High + (2.0 × ATR) for bearish</li>
+                        <li><strong>Dynamic Adjustment:</strong> Trailstop follows price action, tightening as trend strengthens</li>
+                      </ul>
+                    </div>
+                    <div className="pt-2 border-t border-indigo-200 dark:border-indigo-800">
+                      <p className="font-semibold text-indigo-600 dark:text-indigo-400 mb-2">Advantages over Standard Supertrend:</p>
+                      <ul className="list-disc list-inside space-y-1 ml-2">
+                        <li>More sensitive to trend changes (9-bar vs single bar)</li>
+                        <li>Better at catching early trend reversals</li>
+                        <li>Adapts to volatility through ATR-based calculation</li>
+                        <li>Reduces false signals in ranging markets</li>
+                      </ul>
+                    </div>
+                  </div>
                 </div>
               </>
             );
@@ -1755,6 +1984,190 @@ export default function Cross50200Page() {
                         <li>• <strong className="text-blue-600 dark:text-blue-400">🟦 Consolidating:</strong> Consolidating OR potential breakout (needs confirmation)</li>
                         <li>• <strong className="text-orange-600 dark:text-orange-400">⚠️ False:</strong> Breakout without proper volume confirmation</li>
                       </ul>
+                    </div>
+                  </div>
+                </div>
+              </>
+            );
+          }
+
+          // Handle Multi-Screener tab
+          if (activeTab === 'multi') {
+            return multiScreenerStocks.length === 0 ? (
+              <div className="text-center py-16">
+                <div className="text-6xl mb-4">🎯</div>
+                <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">No multi-screener stocks</h3>
+                <p className="text-gray-600 dark:text-[#8b949e]">No stocks appearing in multiple screeners today</p>
+              </div>
+            ) : (
+              <>
+                {/* Summary */}
+                <div className="mb-4">
+                  <div className="flex items-center gap-2 flex-wrap mb-3">
+                    <h2 className="text-xl font-bold text-gray-900 dark:text-white">Multi-Screener Stocks</h2>
+                    <span className="px-2 py-0.5 bg-[#ff8c42]/20 text-[#ff8c42] text-xs font-semibold rounded-full">
+                      {multiScreenerStocks.length} {multiScreenerStocks.length === 1 ? 'stock' : 'stocks'}
+                    </span>
+                  </div>
+                  <p className="text-sm text-gray-600 dark:text-[#8b949e]">
+                    Stocks appearing in 2 or more screeners (excluding Volume Spike and Supertrend)
+                  </p>
+                </div>
+
+                {/* Cards Grid */}
+                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+                  {multiScreenerStocks.map((stock) => {
+                    const displaySymbol = stock.symbol.replace('NS_', '');
+                    const screenerBadgeColors: { [key: string]: string } = {
+                      'MA50': 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300',
+                      'MA200': 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300',
+                      'Advanced Trailstop': 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300',
+                      'Darvas Box': 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-300',
+                      'BB Squeeze': 'bg-pink-100 text-pink-700 dark:bg-pink-900/30 dark:text-pink-300'
+                    };
+
+                    return (
+                      <div
+                        key={stock.symbol}
+                        className="bg-white dark:bg-[#0d1117] border border-gray-200 dark:border-[#30363d] rounded-xl p-4 hover:shadow-lg transition-shadow cursor-pointer"
+                        onClick={() => {
+                          // Get the first available screener data for price
+                          const priceData = stock.ma50 || stock.ma200 || stock.advancedTrailstop || stock.darvas || stock.bbsqueeze;
+                          const currentPrice = priceData
+                            ? ('todayClose' in priceData ? priceData.todayClose : 'currentPrice' in priceData ? priceData.currentPrice : 0)
+                            : 0;
+
+                          handleConvertToIdea(
+                            displaySymbol,
+                            currentPrice,
+                            stock.ma50?.crossoverType === 'bullish_cross' ||
+                            stock.advancedTrailstop?.crossoverType === 'bullish_cross' ||
+                            stock.bbsqueeze?.signalType === 'BUY' ||
+                            stock.darvas?.status === 'broken'
+                          );
+                        }}
+                      >
+                        {/* Header */}
+                        <div className="flex items-start justify-between mb-3">
+                          <div>
+                            <h3 className="text-lg font-bold text-gray-900 dark:text-white">
+                              {displaySymbol}
+                            </h3>
+                            <div className="flex items-center gap-2 mt-1">
+                              <span className="px-2 py-0.5 bg-[#ff8c42]/20 text-[#ff8c42] text-xs font-bold rounded">
+                                {stock.count} {stock.count === 1 ? 'Screener' : 'Screeners'}
+                              </span>
+                            </div>
+                          </div>
+                          <AnalysisButton symbol={displaySymbol} />
+                        </div>
+
+                        {/* Screener Badges */}
+                        <div className="flex flex-wrap gap-1.5 mb-3">
+                          {stock.screeners.map((screener) => (
+                            <span
+                              key={screener}
+                              className={`px-2 py-0.5 text-xs font-semibold rounded ${screenerBadgeColors[screener]}`}
+                            >
+                              {screener}
+                            </span>
+                          ))}
+                        </div>
+
+                        {/* Screener Details */}
+                        <div className="space-y-2 text-xs text-gray-700 dark:text-gray-300">
+                          {stock.ma50 && (
+                            <div className="flex justify-between items-center py-1 border-t border-gray-100 dark:border-gray-800">
+                              <span className="font-semibold">MA50:</span>
+                              <span className={stock.ma50.crossoverType === 'bullish_cross' ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}>
+                                {stock.ma50.crossoverType === 'bullish_cross' ? '🟢 Bullish' : '🔴 Bearish'} ({stock.ma50.crossPercent.toFixed(2)}%)
+                              </span>
+                            </div>
+                          )}
+                          {stock.ma200 && (
+                            <div className="flex justify-between items-center py-1 border-t border-gray-100 dark:border-gray-800">
+                              <span className="font-semibold">MA200:</span>
+                              <span className={stock.ma200.crossoverType === 'bullish_cross' ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}>
+                                {stock.ma200.crossoverType === 'bullish_cross' ? '🟢 Bullish' : '🔴 Bearish'} ({stock.ma200.crossPercent.toFixed(2)}%)
+                              </span>
+                            </div>
+                          )}
+                          {stock.advancedTrailstop && (
+                            <div className="flex justify-between items-center py-1 border-t border-gray-100 dark:border-gray-800">
+                              <span className="font-semibold">Trailstop:</span>
+                              <span className={stock.advancedTrailstop.crossoverType === 'bullish_cross' ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}>
+                                {stock.advancedTrailstop.crossoverType === 'bullish_cross' ? '🟢 Bullish' : '🔴 Bearish'} ({stock.advancedTrailstop.crossPercent.toFixed(2)}%)
+                              </span>
+                            </div>
+                          )}
+                          {stock.darvas && (
+                            <div className="flex justify-between items-center py-1 border-t border-gray-100 dark:border-gray-800">
+                              <span className="font-semibold">Darvas:</span>
+                              <span className={
+                                stock.darvas.status === 'broken' ? 'text-green-600 dark:text-green-400' :
+                                stock.darvas.status === 'active' ? 'text-blue-600 dark:text-blue-400' :
+                                'text-orange-600 dark:text-orange-400'
+                              }>
+                                {stock.darvas.status === 'broken' ? '🟢 Breakout' :
+                                 stock.darvas.status === 'active' ? '🟦 Active' : '⚠️ False'}
+                              </span>
+                            </div>
+                          )}
+                          {stock.bbsqueeze && (
+                            <div className="flex justify-between items-center py-1 border-t border-gray-100 dark:border-gray-800">
+                              <span className="font-semibold">BB Squeeze:</span>
+                              <span className={
+                                stock.bbsqueeze.signalType === 'BUY' ? 'text-green-600 dark:text-green-400' :
+                                stock.bbsqueeze.signalType === 'SELL' ? 'text-red-600 dark:text-red-400' :
+                                stock.bbsqueeze.signalType === 'BREAKOUT' ? 'text-orange-600 dark:text-orange-400' :
+                                'text-blue-600 dark:text-blue-400'
+                              }>
+                                {stock.bbsqueeze.signalType === 'BUY' ? '🟢 BUY' :
+                                 stock.bbsqueeze.signalType === 'SELL' ? '🔴 SELL' :
+                                 stock.bbsqueeze.signalType === 'BREAKOUT' ? '💥 BREAKOUT' : '🔒 SQUEEZE'}
+                              </span>
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Current Price */}
+                        <div className="mt-3 pt-3 border-t border-gray-200 dark:border-gray-800">
+                          <div className="flex justify-between items-center">
+                            <span className="text-xs text-gray-600 dark:text-gray-400">Current Price:</span>
+                            <span className="text-sm font-bold text-gray-900 dark:text-white">
+                              ₹{(() => {
+                                const priceData = stock.ma50 || stock.ma200 || stock.advancedTrailstop || stock.darvas || stock.bbsqueeze;
+                                if (!priceData) return '0.00';
+                                if ('todayClose' in priceData) return priceData.todayClose.toFixed(2);
+                                if ('currentPrice' in priceData) return priceData.currentPrice.toFixed(2);
+                                return '0.00';
+                              })()}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {/* Info Box */}
+                <div className="mt-6 bg-gradient-to-r from-indigo-50 to-purple-50 dark:from-indigo-950/30 dark:to-purple-950/30 rounded-lg p-4">
+                  <div className="flex items-start gap-3">
+                    <div className="text-2xl">💡</div>
+                    <div className="flex-1">
+                      <h3 className="font-semibold text-gray-900 dark:text-white mb-2">About Multi-Screener</h3>
+                      <p className="text-sm text-gray-700 dark:text-gray-300 mb-3">
+                        Stocks appearing in multiple screeners often have stronger technical signals. These represent stocks with multiple confirmation signals across different technical strategies.
+                      </p>
+                      <div className="pt-2 border-t border-indigo-200 dark:border-indigo-800">
+                        <span className="font-semibold text-indigo-600 dark:text-indigo-400">Included Screeners:</span>
+                        <ul className="ml-6 mt-1 space-y-1 text-xs">
+                          <li>• <strong>MA50 & MA200:</strong> Moving average crossovers</li>
+                          <li>• <strong>Advanced Trailstop:</strong> Dynamic support/resistance levels</li>
+                          <li>• <strong>Darvas Box:</strong> Consolidation and breakout patterns</li>
+                          <li>• <strong>BB Squeeze:</strong> Volatility compression and expansion</li>
+                        </ul>
+                      </div>
                     </div>
                   </div>
                 </div>

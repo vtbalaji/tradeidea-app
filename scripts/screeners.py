@@ -234,10 +234,11 @@ def detect_ma_crossover(symbol, ma_period=50):
         print(f"  ❌ Error for {symbol}: {str(e)}")
         return None
 
-def calculate_supertrend(df, period=10, multiplier=3):
+def calculate_advanced_trailstop(df, atr_period=7, multiplier=2.0):
     """
-    Calculate Supertrend indicator
-    Returns DataFrame with supertrend and trend columns
+    Calculate Advanced Trailing Stop based on AFL code
+    Uses 9-bar lookback for trend detection and ATR for volatility
+    Returns DataFrame with trailstop and trend columns
     """
     high = df['High']
     low = df['Low']
@@ -248,53 +249,44 @@ def calculate_supertrend(df, period=10, multiplier=3):
     df['tr2'] = abs(high - close.shift())
     df['tr3'] = abs(low - close.shift())
     df['tr'] = df[['tr1', 'tr2', 'tr3']].max(axis=1)
-    df['atr'] = df['tr'].rolling(window=period).mean()
+    df['atr'] = df['tr'].rolling(window=atr_period).mean()
 
-    # Calculate basic upper and lower bands
-    hl_avg = (high + low) / 2
-    df['basic_ub'] = hl_avg + (multiplier * df['atr'])
-    df['basic_lb'] = hl_avg - (multiplier * df['atr'])
+    # Calculate ATR value for trailing stop
+    atr_value = multiplier * df['atr']
 
-    # Calculate final bands
-    df['final_ub'] = 0.0
-    df['final_lb'] = 0.0
-    df['supertrend'] = 0.0
+    # Initialize trailstop column
+    df['trailstop'] = 0.0
     df['trend'] = 1  # 1 for uptrend, -1 for downtrend
 
-    for i in range(period, len(df)):
-        # Final upper band
-        if df['basic_ub'].iloc[i] < df['final_ub'].iloc[i-1] or close.iloc[i-1] > df['final_ub'].iloc[i-1]:
-            df.loc[df.index[i], 'final_ub'] = df['basic_ub'].iloc[i]
-        else:
-            df.loc[df.index[i], 'final_ub'] = df['final_ub'].iloc[i-1]
+    # Start calculation from index 9 (need 9 bars lookback)
+    for i in range(9, len(df)):
+        # Check if last 9 lows are rising AND close > previous trailstop (BULLISH)
+        lows_rising = all(low.iloc[i] > low.iloc[i-j] for j in range(1, 10))
+        close_above_prev_bs = close.iloc[i] > df['trailstop'].iloc[i-1] if i > 9 else True
 
-        # Final lower band
-        if df['basic_lb'].iloc[i] > df['final_lb'].iloc[i-1] or close.iloc[i-1] < df['final_lb'].iloc[i-1]:
-            df.loc[df.index[i], 'final_lb'] = df['basic_lb'].iloc[i]
-        else:
-            df.loc[df.index[i], 'final_lb'] = df['final_lb'].iloc[i-1]
+        # Check if last 9 highs are falling AND close < previous trailstop (BEARISH)
+        highs_falling = all(high.iloc[i] < high.iloc[i-j] for j in range(1, 10))
+        close_below_prev_bs = close.iloc[i] < df['trailstop'].iloc[i-1] if i > 9 else False
 
-        # Supertrend
-        if df['trend'].iloc[i-1] == 1:
-            if close.iloc[i] <= df['final_lb'].iloc[i]:
-                df.loc[df.index[i], 'trend'] = -1
-                df.loc[df.index[i], 'supertrend'] = df['final_ub'].iloc[i]
-            else:
-                df.loc[df.index[i], 'trend'] = 1
-                df.loc[df.index[i], 'supertrend'] = df['final_lb'].iloc[i]
+        if lows_rising and close_above_prev_bs:
+            # Bullish condition: trail stop below price
+            df.loc[df.index[i], 'trailstop'] = low.iloc[i] - atr_value.iloc[i]
+            df.loc[df.index[i], 'trend'] = 1
+        elif highs_falling and close_below_prev_bs:
+            # Bearish condition: trail stop above price
+            df.loc[df.index[i], 'trailstop'] = high.iloc[i] + atr_value.iloc[i]
+            df.loc[df.index[i], 'trend'] = -1
         else:
-            if close.iloc[i] >= df['final_ub'].iloc[i]:
-                df.loc[df.index[i], 'trend'] = 1
-                df.loc[df.index[i], 'supertrend'] = df['final_lb'].iloc[i]
-            else:
-                df.loc[df.index[i], 'trend'] = -1
-                df.loc[df.index[i], 'supertrend'] = df['final_ub'].iloc[i]
+            # Maintain previous trailstop
+            df.loc[df.index[i], 'trailstop'] = df['trailstop'].iloc[i-1]
+            # Maintain previous trend
+            df.loc[df.index[i], 'trend'] = df['trend'].iloc[i-1]
 
     return df
 
-def detect_supertrend_crossover(symbol, period=10, multiplier=3):
+def detect_advanced_trailstop_crossover(symbol, atr_period=7, multiplier=2.0):
     """
-    Detect if a stock crossed supertrend today
+    Detect if a stock crossed Advanced Trailing Stop today
     Returns: 'bullish_cross', 'bearish_cross', 'no_cross', or None (error)
     """
     try:
@@ -303,10 +295,10 @@ def detect_supertrend_crossover(symbol, period=10, multiplier=3):
         if not meets_filter:
             return None  # Skip stocks with market cap < 1000 Cr
 
-        # Get 100 days of data (enough for supertrend calculation)
+        # Get 100 days of data (enough for advanced trailstop calculation)
         df = nse_fetcher.get_data(symbol, days=100)
 
-        if df.empty or len(df) < period + 20:
+        if df.empty or len(df) < atr_period + 20:
             return None
 
         # Rename columns to uppercase
@@ -319,37 +311,37 @@ def detect_supertrend_crossover(symbol, period=10, multiplier=3):
             'volume': 'Volume'
         })
 
-        # Calculate supertrend
-        df = calculate_supertrend(df, period=period, multiplier=multiplier)
+        # Calculate advanced trailstop
+        df = calculate_advanced_trailstop(df, atr_period=atr_period, multiplier=multiplier)
 
         # Get last 2 days data
         today_close = float(df['Close'].iloc[-1])
         yesterday_close = float(df['Close'].iloc[-2])
         today_trend = int(df['trend'].iloc[-1])
         yesterday_trend = int(df['trend'].iloc[-2])
-        today_supertrend = float(df['supertrend'].iloc[-1])
-        yesterday_supertrend = float(df['supertrend'].iloc[-2])
+        today_trailstop = float(df['trailstop'].iloc[-1])
+        yesterday_trailstop = float(df['trailstop'].iloc[-2])
 
         # Check for trend change (crossover)
-        # Bullish: trend changes from -1 to 1
-        if yesterday_trend == -1 and today_trend == 1:
+        # Bullish: Close crosses ABOVE trailstop
+        if yesterday_close < yesterday_trailstop and today_close > today_trailstop:
             return {
                 'type': 'bullish_cross',
                 'yesterday_close': yesterday_close,
-                'yesterday_supertrend': yesterday_supertrend,
+                'yesterday_trailstop': yesterday_trailstop,
                 'today_close': today_close,
-                'today_supertrend': today_supertrend,
-                'cross_percent': ((today_close - today_supertrend) / today_supertrend) * 100
+                'today_trailstop': today_trailstop,
+                'cross_percent': ((today_close - today_trailstop) / today_trailstop) * 100
             }
-        # Bearish: trend changes from 1 to -1
-        elif yesterday_trend == 1 and today_trend == -1:
+        # Bearish: Close crosses BELOW trailstop
+        elif yesterday_close > yesterday_trailstop and today_close < today_trailstop:
             return {
                 'type': 'bearish_cross',
                 'yesterday_close': yesterday_close,
-                'yesterday_supertrend': yesterday_supertrend,
+                'yesterday_trailstop': yesterday_trailstop,
                 'today_close': today_close,
-                'today_supertrend': today_supertrend,
-                'cross_percent': ((today_supertrend - today_close) / today_supertrend) * 100
+                'today_trailstop': today_trailstop,
+                'cross_percent': ((today_trailstop - today_close) / today_trailstop) * 100
             }
         else:
             return {'type': 'no_cross'}
@@ -949,7 +941,7 @@ def get_last_trading_day():
 
     return target_date.strftime('%Y-%m-%d')
 
-def save_to_firebase(crossovers_50, crossovers_200, supertrend_crosses, volume_spikes, darvas_boxes, bb_squeeze_signals):
+def save_to_firebase(crossovers_50, crossovers_200, advancedtrailstop_crosses, volume_spikes, darvas_boxes, bb_squeeze_signals):
     """Save crossover, volume spike, Darvas box, and BB Squeeze data to Firebase collections"""
     try:
         today = get_last_trading_day()
@@ -967,9 +959,9 @@ def save_to_firebase(crossovers_50, crossovers_200, supertrend_crosses, volume_s
         for doc in ma200_ref.where('date', '==', today).stream():
             doc.reference.delete()
 
-        # Delete old supertrend crossovers
-        supertrend_ref = db.collection('supertrendcrossover')
-        for doc in supertrend_ref.where('date', '==', today).stream():
+        # Delete old advanced trailstop crossovers
+        advancedtrailstop_ref = db.collection('advancedtrailstop')
+        for doc in advancedtrailstop_ref.where('date', '==', today).stream():
             doc.reference.delete()
 
         # Delete old volume spikes
@@ -1045,24 +1037,24 @@ def save_to_firebase(crossovers_50, crossovers_200, supertrend_crosses, volume_s
 
             doc_ref.set(doc_data)
 
-        # Save supertrend crossovers
-        print(f'💾 Saving {len(supertrend_crosses)} stocks to supertrendcrossover collection...')
-        for cross in supertrend_crosses:
+        # Save advanced trailstop crossovers
+        print(f'💾 Saving {len(advancedtrailstop_crosses)} stocks to advancedtrailstop collection...')
+        for cross in advancedtrailstop_crosses:
             # Add NS_ prefix to match symbols collection format
             symbol_with_prefix = f"NS_{cross['symbol']}" if not cross['symbol'].startswith('NS_') else cross['symbol']
 
             # Get lastPrice from DuckDB
             last_price = get_last_price(cross['symbol'])
 
-            doc_ref = supertrend_ref.document(f"{symbol_with_prefix}_{today}")
+            doc_ref = advancedtrailstop_ref.document(f"{symbol_with_prefix}_{today}")
             doc_data = {
                 'symbol': symbol_with_prefix,
                 'date': today,
                 'crossoverType': cross['type'],  # 'bullish_cross' or 'bearish_cross'
                 'yesterdayClose': cross['yesterday_close'],
-                'yesterdaySupertrend': cross['yesterday_supertrend'],
+                'yesterdayTrailstop': cross['yesterday_trailstop'],
                 'todayClose': cross['today_close'],
-                'todaySupertrend': cross['today_supertrend'],
+                'todayTrailstop': cross['today_trailstop'],
                 'crossPercent': cross['cross_percent'],
                 'createdAt': firestore.SERVER_TIMESTAMP
             }
@@ -1188,8 +1180,8 @@ def save_to_firebase(crossovers_50, crossovers_200, supertrend_crosses, volume_s
         traceback.print_exc()
 
 def main():
-    """Main function to detect MA, Supertrend crossovers, Volume Spikes, Darvas Boxes & BB Squeeze"""
-    print('🔍 Stock Screeners: MA & Supertrend Crossovers, Volume Spikes, Darvas Boxes & BB Squeeze')
+    """Main function to detect MA, Advanced Trailstop crossovers, Volume Spikes, Darvas Boxes & BB Squeeze"""
+    print('🔍 Stock Screeners: MA & Advanced Trailstop Crossovers, Volume Spikes, Darvas Boxes & BB Squeeze')
     print('=' * 80)
 
     # Get all symbols
@@ -1206,8 +1198,8 @@ def main():
     bearish_50ma_crosses = []
     bullish_200ma_crosses = []
     bearish_200ma_crosses = []
-    bullish_supertrend_crosses = []
-    bearish_supertrend_crosses = []
+    bullish_advancedtrailstop_crosses = []
+    bearish_advancedtrailstop_crosses = []
     volume_spikes = []
     darvas_boxes_active = []
     darvas_boxes_broken = []
@@ -1218,7 +1210,7 @@ def main():
     bb_squeeze_breakout = []
     all_50ma_crosses = []  # Combined for Firebase
     all_200ma_crosses = []  # Combined for Firebase
-    all_supertrend_crosses = []  # Combined for Firebase
+    all_advancedtrailstop_crosses = []  # Combined for Firebase
     all_volume_spikes = []  # For Firebase
     all_darvas_boxes = []  # For Firebase
     all_bb_squeeze = []  # For Firebase
@@ -1249,15 +1241,15 @@ def main():
             elif result_200['type'] == 'bearish_cross':
                 bearish_200ma_crosses.append(data_200)
 
-        # Check Supertrend crossover
-        result_supertrend = detect_supertrend_crossover(symbol, period=10, multiplier=3)
-        if result_supertrend and result_supertrend['type'] != 'no_cross':
-            data_supertrend = {'symbol': symbol, **result_supertrend}
-            all_supertrend_crosses.append(data_supertrend)
-            if result_supertrend['type'] == 'bullish_cross':
-                bullish_supertrend_crosses.append(data_supertrend)
-            elif result_supertrend['type'] == 'bearish_cross':
-                bearish_supertrend_crosses.append(data_supertrend)
+        # Check Advanced Trailstop crossover
+        result_advancedtrailstop = detect_advanced_trailstop_crossover(symbol, atr_period=7, multiplier=2.0)
+        if result_advancedtrailstop and result_advancedtrailstop['type'] != 'no_cross':
+            data_advancedtrailstop = {'symbol': symbol, **result_advancedtrailstop}
+            all_advancedtrailstop_crosses.append(data_advancedtrailstop)
+            if result_advancedtrailstop['type'] == 'bullish_cross':
+                bullish_advancedtrailstop_crosses.append(data_advancedtrailstop)
+            elif result_advancedtrailstop['type'] == 'bearish_cross':
+                bearish_advancedtrailstop_crosses.append(data_advancedtrailstop)
 
         # Check Volume Spike
         result_volume = detect_volume_spike(symbol, ma_period=20)
@@ -1293,7 +1285,7 @@ def main():
                 bb_squeeze_breakout.append(data_bb)
 
     # Save to Firebase
-    save_to_firebase(all_50ma_crosses, all_200ma_crosses, all_supertrend_crosses, all_volume_spikes, all_darvas_boxes, all_bb_squeeze)
+    save_to_firebase(all_50ma_crosses, all_200ma_crosses, all_advancedtrailstop_crosses, all_volume_spikes, all_darvas_boxes, all_bb_squeeze)
 
     # Print results
     print('\n' + '=' * 80)
@@ -1365,37 +1357,37 @@ def main():
     else:
         print('  No bearish 200 MA crossovers today')
 
-    # Bullish Supertrend Crosses
-    print(f'\n🟢 BULLISH SUPERTREND CROSSOVERS ({len(bullish_supertrend_crosses)} stocks):')
+    # Bullish Advanced Trailstop Crosses
+    print(f'\n🟢 BULLISH ADVANCED TRAILSTOP CROSSOVERS ({len(bullish_advancedtrailstop_crosses)} stocks):')
     print('-' * 80)
-    if bullish_supertrend_crosses:
-        bullish_supertrend_crosses.sort(key=lambda x: x['cross_percent'], reverse=True)
-        print(f"{'Symbol':<12} {'Yesterday':<12} {'Supertrend':<12} {'Today':<12} {'% Above ST':<12}")
+    if bullish_advancedtrailstop_crosses:
+        bullish_advancedtrailstop_crosses.sort(key=lambda x: x['cross_percent'], reverse=True)
+        print(f"{'Symbol':<12} {'Yesterday':<12} {'Trailstop':<12} {'Today':<12} {'% Above ATS':<12}")
         print('-' * 80)
-        for cross in bullish_supertrend_crosses:
+        for cross in bullish_advancedtrailstop_crosses:
             print(f"{cross['symbol']:<12} "
                   f"₹{cross['yesterday_close']:<11.2f} "
-                  f"₹{cross['yesterday_supertrend']:<11.2f} "
+                  f"₹{cross['yesterday_trailstop']:<11.2f} "
                   f"₹{cross['today_close']:<11.2f} "
                   f"{cross['cross_percent']:>10.2f}%")
     else:
-        print('  No bullish supertrend crossovers today')
+        print('  No bullish advanced trailstop crossovers today')
 
-    # Bearish Supertrend Crosses
-    print(f'\n🔴 BEARISH SUPERTREND CROSSOVERS ({len(bearish_supertrend_crosses)} stocks):')
+    # Bearish Advanced Trailstop Crosses
+    print(f'\n🔴 BEARISH ADVANCED TRAILSTOP CROSSOVERS ({len(bearish_advancedtrailstop_crosses)} stocks):')
     print('-' * 80)
-    if bearish_supertrend_crosses:
-        bearish_supertrend_crosses.sort(key=lambda x: x['cross_percent'], reverse=True)
-        print(f"{'Symbol':<12} {'Yesterday':<12} {'Supertrend':<12} {'Today':<12} {'% Below ST':<12}")
+    if bearish_advancedtrailstop_crosses:
+        bearish_advancedtrailstop_crosses.sort(key=lambda x: x['cross_percent'], reverse=True)
+        print(f"{'Symbol':<12} {'Yesterday':<12} {'Trailstop':<12} {'Today':<12} {'% Below ATS':<12}")
         print('-' * 80)
-        for cross in bearish_supertrend_crosses:
+        for cross in bearish_advancedtrailstop_crosses:
             print(f"{cross['symbol']:<12} "
                   f"₹{cross['yesterday_close']:<11.2f} "
-                  f"₹{cross['yesterday_supertrend']:<11.2f} "
+                  f"₹{cross['yesterday_trailstop']:<11.2f} "
                   f"₹{cross['today_close']:<11.2f} "
                   f"{cross['cross_percent']:>10.2f}%")
     else:
-        print('  No bearish supertrend crossovers today')
+        print('  No bearish advanced trailstop crossovers today')
 
     # Volume Spikes
     print(f'\n📊 VOLUME SPIKES ({len(volume_spikes)} stocks):')
@@ -1545,8 +1537,8 @@ def main():
     print(f'  Bearish 50 MA Crosses: {len(bearish_50ma_crosses)}')
     print(f'  Bullish 200 MA Crosses: {len(bullish_200ma_crosses)}')
     print(f'  Bearish 200 MA Crosses: {len(bearish_200ma_crosses)}')
-    print(f'  Bullish Supertrend Crosses: {len(bullish_supertrend_crosses)}')
-    print(f'  Bearish Supertrend Crosses: {len(bearish_supertrend_crosses)}')
+    print(f'  Bullish Advanced Trailstop Crosses: {len(bullish_advancedtrailstop_crosses)}')
+    print(f'  Bearish Advanced Trailstop Crosses: {len(bearish_advancedtrailstop_crosses)}')
     print(f'  Volume Spikes: {len(volume_spikes)}')
     print(f'  Darvas Boxes (Active): {len(darvas_boxes_active)}')
     print(f'  Darvas Boxes (Broken): {len(darvas_boxes_broken)}')
