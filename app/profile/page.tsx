@@ -99,12 +99,15 @@ export default function ProfilePage() {
 
       // Close each position using the API
       let closedCount = 0;
+      const token = await user.getIdToken();
+
       for (const position of openPositions) {
         try {
-          await fetch(`/api/portfolio/${position.id}/close`, {
+          const response = await fetch(`/api/portfolio/${position.id}/close`, {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
+              'Authorization': `Bearer ${token}`,
             },
             body: JSON.stringify({
               exitPrice: position.currentPrice || position.entryPrice,
@@ -112,6 +115,13 @@ export default function ProfilePage() {
               exitReason: 'Portfolio cleared from profile',
             }),
           });
+
+          if (!response.ok) {
+            const errorData = await response.json();
+            console.error(`Failed to close position ${position.symbol}:`, errorData);
+            continue;
+          }
+
           closedCount++;
         } catch (error) {
           console.error(`Failed to close position ${position.symbol}:`, error);
