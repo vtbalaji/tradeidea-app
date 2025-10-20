@@ -209,13 +209,49 @@ def calculate_sl_phase(position, current_price, technical_sl, technical_sl_sourc
 
 def update_position_sl(position_id, sl_update, current_price):
     """Update position in Firebase with new effective stop-loss"""
-    # Update stopLoss and add minimal phase info for UI
+    from datetime import datetime as dt
+
+    # Build the stopLossManagement object
+    slm = sl_update['slm']
+
+    # Add history entry if phase changed
+    if sl_update['phaseChanged']:
+        history_entry = {
+            'timestamp': dt.now(),
+            'fromSL': slm['effectiveStopLoss'],
+            'toSL': sl_update['effectiveStopLoss'],
+            'fromPhase': slm['phase'],
+            'toPhase': sl_update['phase'],
+            'reason': sl_update['reason'],
+            'priceAtChange': current_price,
+            'profitInR': sl_update['profitInR'],
+            'technicalSL': sl_update.get('technicalSL'),
+            'technicalSLSource': sl_update.get('technicalSLSource')
+        }
+
+        # Update history
+        if 'slHistory' not in slm:
+            slm['slHistory'] = []
+        slm['slHistory'].append(history_entry)
+
+        # Add phase transition timestamps
+        if sl_update['phase'] == 'breakeven' and slm['phase'] == 'protection':
+            slm['breakevenCrossedAt'] = dt.now()
+        elif sl_update['phase'] == 'trailing' and slm['phase'] == 'breakeven':
+            slm['profitLockTriggeredAt'] = dt.now()
+
+    # Update to new values
+    slm['effectiveStopLoss'] = sl_update['effectiveStopLoss']
+    slm['phase'] = sl_update['phase']
+
+    # Update position in Firebase with full stopLossManagement object
     position_ref = db.collection('portfolios').document(position_id)
     position_ref.update({
         'stopLoss': sl_update['effectiveStopLoss'],
         'smartSLTrigger': 'yes',
         'smartSLPhase': sl_update['phase'],  # protection | breakeven | trailing
         'smartSLSource': sl_update.get('technicalSLSource'),  # 100MA | Supertrend | None
+        'stopLossManagement': slm,  # Save full object with history
         'updatedAt': firestore.SERVER_TIMESTAMP
     })
 

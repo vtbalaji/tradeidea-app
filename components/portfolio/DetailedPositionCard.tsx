@@ -19,6 +19,11 @@ export function DetailedPositionCard({
   onBuySell,
   onEdit,
 }: DetailedPositionCardProps) {
+  // Debug: Log smart SL data for each position
+  if (typeof window !== 'undefined') {
+    console.log(`[${position.symbol}] smartSLTrigger:`, position.smartSLTrigger, 'Phase:', position.smartSLPhase);
+  }
+
   const investedAmount = position.entryPrice * position.quantity;
   const currentValue = position.currentPrice * position.quantity;
   const pnl = currentValue - investedAmount;
@@ -41,15 +46,23 @@ export function DetailedPositionCard({
       {/* Header */}
       <div className="flex justify-between items-start mb-4">
         <div>
-          <div className="flex items-start gap-1">
+          <div className="flex items-start gap-2">
             <h3 className="text-2xl font-bold text-gray-900 dark:text-white">{position.symbol}</h3>
-            {position.smartSLTrigger === 'yes' && (
-              <img
-                src="/logo.png"
-                alt="Smart SL"
-                className="h-4 w-4 opacity-80 flex-shrink-0 mt-0.5"
-                title="Protected by Smart SL"
-              />
+            {/* DEBUG: Show badge for all positions to test rendering */}
+            {position.smartSLTrigger === 'yes' ? (
+              <span
+                className="inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400"
+                title={`Smart SL: ${position.smartSLPhase || 'Active'} (trigger=${position.smartSLTrigger})`}
+              >
+                🛡️ SL
+              </span>
+            ) : (
+              <span
+                className="inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400"
+                title={`No Smart SL (trigger=${position.smartSLTrigger})`}
+              >
+                ⚠️ NO SL
+              </span>
             )}
           </div>
           {position.fundamentals?.industry && (

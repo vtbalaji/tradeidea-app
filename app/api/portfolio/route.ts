@@ -85,6 +85,14 @@ export async function POST(request: NextRequest) {
       status: 'open',
       profitLoss: 0,
       profitLossPercentage: 0,
+      // Default exit criteria: Stop Loss, Target, 200MA, and Weekly Supertrend enabled
+      exitOnStopLoss: true,
+      exitOnTarget: true,
+      exitOn200MA: true,
+      exitOnWeeklyST: true,
+      exitOnDailyST: false,
+      exitOnHourlyST: false,
+      exitOn15MinST: false,
       transactions: [
         {
           type: 'buy',

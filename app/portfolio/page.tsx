@@ -69,6 +69,20 @@ export default function PortfolioPage() {
     try {
       setPortfolioLoading(true);
       const response = await apiClient.portfolio.list(activeAccount?.id);
+      console.log('📦 Portfolio API Response:', response);
+      console.log('📊 Total positions fetched:', response.positions?.length || 0);
+
+      // Debug: Check smartSL fields in first few positions
+      if (response.positions && response.positions.length > 0) {
+        response.positions.slice(0, 3).forEach((pos: any) => {
+          console.log(`Position ${pos.symbol}:`, {
+            smartSLTrigger: pos.smartSLTrigger,
+            smartSLPhase: pos.smartSLPhase,
+            stopLoss: pos.stopLoss
+          });
+        });
+      }
+
       setMyPortfolio(response.positions || []);
     } catch (error) {
       console.error('Error fetching portfolio:', error);
