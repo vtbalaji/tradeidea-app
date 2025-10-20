@@ -90,6 +90,7 @@ interface MultiScreenerStock {
   advancedTrailstop?: Crossover;
   darvas?: DarvasBox;
   bbsqueeze?: BBSqueeze;
+  volumeSpike?: VolumeSpike;
 }
 
 export default function Cross50200Page() {
@@ -428,7 +429,7 @@ export default function Cross50200Page() {
         setBBSqueezeSignals(dataBBSqueeze);
         setDisplayDate(latestDate);
 
-        // Calculate multi-screener stocks (excluding volumespike and supertrend)
+        // Calculate multi-screener stocks (excluding supertrend)
         const symbolMap = new Map<string, MultiScreenerStock>();
 
         // Add MA50 crosses
@@ -466,6 +467,19 @@ export default function Cross50200Page() {
           };
           existing.screeners.push('Advanced Trailstop');
           existing.advancedTrailstop = item;
+          existing.count = existing.screeners.length;
+          symbolMap.set(item.symbol, existing);
+        });
+
+        // Add Volume Spikes
+        dataVolumeSpike.forEach(item => {
+          const existing = symbolMap.get(item.symbol) || {
+            symbol: item.symbol,
+            screeners: [],
+            count: 0
+          };
+          existing.screeners.push('Volume Spike');
+          existing.volumeSpike = item;
           existing.count = existing.screeners.length;
           symbolMap.set(item.symbol, existing);
         });
@@ -2010,7 +2024,7 @@ export default function Cross50200Page() {
                     </span>
                   </div>
                   <p className="text-sm text-gray-600 dark:text-[#8b949e]">
-                    Stocks appearing in 2 or more screeners (excluding Volume Spike and Supertrend)
+                    Stocks appearing in 2 or more screeners (excluding Supertrend)
                   </p>
                 </div>
 
@@ -2022,6 +2036,7 @@ export default function Cross50200Page() {
                       'MA50': 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300',
                       'MA200': 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300',
                       'Advanced Trailstop': 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300',
+                      'Volume Spike': 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-300',
                       'Darvas Box': 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-300',
                       'BB Squeeze': 'bg-pink-100 text-pink-700 dark:bg-pink-900/30 dark:text-pink-300'
                     };
@@ -2032,7 +2047,7 @@ export default function Cross50200Page() {
                         className="bg-white dark:bg-[#0d1117] border border-gray-200 dark:border-[#30363d] rounded-xl p-4 hover:shadow-lg transition-shadow cursor-pointer"
                         onClick={() => {
                           // Get the first available screener data for price
-                          const priceData = stock.ma50 || stock.ma200 || stock.advancedTrailstop || stock.darvas || stock.bbsqueeze;
+                          const priceData = stock.ma50 || stock.ma200 || stock.advancedTrailstop || stock.volumeSpike || stock.darvas || stock.bbsqueeze;
                           const currentPrice = priceData
                             ? ('todayClose' in priceData ? priceData.todayClose : 'currentPrice' in priceData ? priceData.currentPrice : 0)
                             : 0;
@@ -2043,7 +2058,8 @@ export default function Cross50200Page() {
                             stock.ma50?.crossoverType === 'bullish_cross' ||
                             stock.advancedTrailstop?.crossoverType === 'bullish_cross' ||
                             stock.bbsqueeze?.signalType === 'BUY' ||
-                            stock.darvas?.status === 'broken'
+                            stock.darvas?.status === 'broken' ||
+                            (stock.volumeSpike && stock.volumeSpike.priceChangePercent > 0)
                           );
                         }}
                       >
@@ -2100,6 +2116,14 @@ export default function Cross50200Page() {
                               </span>
                             </div>
                           )}
+                          {stock.volumeSpike && (
+                            <div className="flex justify-between items-center py-1 border-t border-gray-100 dark:border-gray-800">
+                              <span className="font-semibold">Volume Spike:</span>
+                              <span className={stock.volumeSpike.priceChangePercent > 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}>
+                                {stock.volumeSpike.priceChangePercent > 0 ? '🟢' : '🔴'} {stock.volumeSpike.spikePercent.toFixed(1)}% ({stock.volumeSpike.priceChangePercent > 0 ? '+' : ''}{stock.volumeSpike.priceChangePercent.toFixed(2)}%)
+                              </span>
+                            </div>
+                          )}
                           {stock.darvas && (
                             <div className="flex justify-between items-center py-1 border-t border-gray-100 dark:border-gray-800">
                               <span className="font-semibold">Darvas:</span>
@@ -2136,7 +2160,7 @@ export default function Cross50200Page() {
                             <span className="text-xs text-gray-600 dark:text-gray-400">Current Price:</span>
                             <span className="text-sm font-bold text-gray-900 dark:text-white">
                               ₹{(() => {
-                                const priceData = stock.ma50 || stock.ma200 || stock.advancedTrailstop || stock.darvas || stock.bbsqueeze;
+                                const priceData = stock.ma50 || stock.ma200 || stock.advancedTrailstop || stock.volumeSpike || stock.darvas || stock.bbsqueeze;
                                 if (!priceData) return '0.00';
                                 if ('todayClose' in priceData) return priceData.todayClose.toFixed(2);
                                 if ('currentPrice' in priceData) return priceData.currentPrice.toFixed(2);
@@ -2164,6 +2188,7 @@ export default function Cross50200Page() {
                         <ul className="ml-6 mt-1 space-y-1 text-xs">
                           <li>• <strong>MA50 & MA200:</strong> Moving average crossovers</li>
                           <li>• <strong>Advanced Trailstop:</strong> Dynamic support/resistance levels</li>
+                          <li>• <strong>Volume Spike:</strong> Unusual volume with price movement</li>
                           <li>• <strong>Darvas Box:</strong> Consolidation and breakout patterns</li>
                           <li>• <strong>BB Squeeze:</strong> Volatility compression and expansion</li>
                         </ul>
