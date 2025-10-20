@@ -185,6 +185,64 @@ const ICICI_SYMBOL_MAP: { [key: string]: string } = {
 };
 
 /**
+ * Company name to NSE symbol mapping
+ * Handles cases where CSV has full company names instead of symbols
+ */
+const COMPANY_NAME_TO_SYMBOL: { [key: string]: string } = {
+  // Common company names with variations
+  'BHARAT ELECTRONICS': 'BEL',
+  'BHARAT ELECTRONICS LTD': 'BEL',
+  'BHARAT ELECTRONICS LIMITED': 'BEL',
+  'GE POWER INDIA': 'GEPIL',
+  'GE POWER INDIA LIMITED': 'GEPIL',
+  'GE POWER INDIA LTD': 'GEPIL',
+  'HINDALCO INDUSTRIES': 'HINDALCO',
+  'HINDALCO INDUSTRIES LTD': 'HINDALCO',
+  'HINDALCO INDUSTRIES LIMITED': 'HINDALCO',
+  'RELIANCE INDUSTRIES': 'RELIANCE',
+  'RELIANCE INDUSTRIES LTD': 'RELIANCE',
+  'RELIANCE INDUSTRIES LIMITED': 'RELIANCE',
+  'TATA CONSULTANCY SERVICES': 'TCS',
+  'TATA CONSULTANCY SERVICES LTD': 'TCS',
+  'INFOSYS': 'INFY',
+  'INFOSYS LTD': 'INFY',
+  'INFOSYS LIMITED': 'INFY',
+  'HDFC BANK': 'HDFCBANK',
+  'HDFC BANK LTD': 'HDFCBANK',
+  'HDFC BANK LIMITED': 'HDFCBANK',
+  'ICICI BANK': 'ICICIBANK',
+  'ICICI BANK LTD': 'ICICIBANK',
+  'ICICI BANK LIMITED': 'ICICIBANK',
+  'STATE BANK OF INDIA': 'SBIN',
+  'BHARTI AIRTEL': 'BHARTIARTL',
+  'BHARTI AIRTEL LTD': 'BHARTIARTL',
+  'LARSEN & TOUBRO': 'LT',
+  'LARSEN AND TOUBRO': 'LT',
+  'L&T': 'LT',
+  'MARUTI SUZUKI INDIA': 'MARUTI',
+  'MARUTI SUZUKI INDIA LTD': 'MARUTI',
+  'TATA MOTORS': 'TATAMOTORS',
+  'TATA MOTORS LTD': 'TATAMOTORS',
+  'TATA STEEL': 'TATASTEEL',
+  'TATA STEEL LTD': 'TATASTEEL',
+  'WIPRO': 'WIPRO',
+  'WIPRO LTD': 'WIPRO',
+  'WIPRO LIMITED': 'WIPRO',
+  'BAJAJ FINANCE': 'BAJFINANCE',
+  'BAJAJ FINANCE LTD': 'BAJFINANCE',
+  'ASIAN PAINTS': 'ASIANPAINT',
+  'ASIAN PAINTS LTD': 'ASIANPAINT',
+  'AXIS BANK': 'AXISBANK',
+  'AXIS BANK LTD': 'AXISBANK',
+  'KOTAK MAHINDRA BANK': 'KOTAKBANK',
+  'HINDUSTAN UNILEVER': 'HINDUNILVR',
+  'HINDUSTAN UNILEVER LTD': 'HINDUNILVR',
+  'ITC': 'ITC',
+  'ITC LTD': 'ITC',
+  'ITC LIMITED': 'ITC',
+};
+
+/**
  * List of known NSE symbols (subset for quick validation)
  * Full list is in Firestore, but this provides fast offline validation
  */
@@ -199,7 +257,7 @@ const KNOWN_NSE_SYMBOLS = [
   'TATACHEM', 'NMDC', 'COCHINSHIP', 'GATEWAY', 'BALRAMCHIN', 'FINOLEXCAB', 'SARDAEN', 'AMARAJABAT', 'WHEELS',
   'ARE&M', 'SDBL',
   // Additional symbols from various broker formats
-  'BALKRISIND', 'BEL', 'CEATLTD', 'CDSL', 'AXISBANK'
+  'BALKRISIND', 'BEL', 'CEATLTD', 'CDSL', 'AXISBANK', 'GEPIL'
 ];
 
 /**
@@ -308,9 +366,32 @@ export async function validateSymbol(symbol: string, firestoreDb: any): Promise<
   try {
     let upperSymbol = symbol.toUpperCase().trim();
 
-    // Basic format validation first - reject obviously invalid symbols
-    if (!upperSymbol || upperSymbol.length === 0 || upperSymbol.length > 20) {
-      console.warn(`❌ Invalid symbol format: ${symbol} (empty or too long)`);
+    // Remove excessive spaces (e.g., "HINDALCO  INDUSTRIES  LTD" → "HINDALCO INDUSTRIES LTD")
+    upperSymbol = upperSymbol.replace(/\s+/g, ' ');
+
+    // Basic format validation first
+    if (!upperSymbol || upperSymbol.length === 0) {
+      console.warn(`❌ Invalid symbol format: ${symbol} (empty)`);
+      return null;
+    }
+
+    // Check if it's a full company name with direct mapping
+    if (upperSymbol in COMPANY_NAME_TO_SYMBOL) {
+      const mapped = COMPANY_NAME_TO_SYMBOL[upperSymbol];
+      console.log(`✅ Mapped company name: "${symbol}" → ${mapped}`);
+      return mapped;
+    }
+
+    // Reject symbols with spaces that aren't in the company name mapping
+    // (after this point, we expect trading symbols only)
+    if (upperSymbol.includes(' ')) {
+      console.warn(`❌ Unknown company name: "${symbol}". Not found in company name mapping.`);
+      return null;
+    }
+
+    // Validate symbol length (trading symbols are typically 1-20 chars)
+    if (upperSymbol.length > 20) {
+      console.warn(`❌ Invalid symbol format: ${symbol} (too long)`);
       return null;
     }
 
@@ -320,13 +401,7 @@ export async function validateSymbol(symbol: string, firestoreDb: any): Promise<
       return null;
     }
 
-    // If it looks like a full company name (has spaces), try to extract symbol
-    if (upperSymbol.includes(' ')) {
-      upperSymbol = extractSymbolFromName(upperSymbol);
-      console.log(`Extracted symbol from name: ${symbol} → ${upperSymbol}`);
-    }
-
-    // First, check if this is an ICICI symbol that needs mapping
+    // Check if this is an ICICI symbol that needs mapping
     if (upperSymbol in ICICI_SYMBOL_MAP) {
       const mapped = ICICI_SYMBOL_MAP[upperSymbol];
       if (mapped === null) {
@@ -544,25 +619,27 @@ export async function parseAndValidateCSV(
       const validatedSymbol = await validateSymbol(row.symbol, db);
       if (!validatedSymbol) {
         // Symbol validation failed - try ISIN fallback if available
+        let resolvedSymbol = null;
+
         if (row.isin) {
           console.log(`⚙️  Symbol '${row.symbol}' invalid, attempting ISIN fallback: ${row.isin}`);
-          const symbolFromISIN = await lookupSymbolByISIN(row.isin, db);
-          if (symbolFromISIN) {
-            row.symbol = symbolFromISIN;
-            console.log(`✅ Corrected symbol from '${row.symbol}' to '${symbolFromISIN}' using ISIN ${row.isin}`);
-          } else {
-            rowErrors.push({
-              row: rowNumber,
-              field: 'symbol',
-              message: `Invalid or unknown NSE symbol: '${row.symbol}'. ISIN lookup also failed for: ${row.isin}. Please verify the symbol exists on NSE.`
-            });
+          resolvedSymbol = await lookupSymbolByISIN(row.isin, db);
+          if (resolvedSymbol) {
+            console.log(`✅ Resolved symbol '${resolvedSymbol}' using ISIN ${row.isin}`);
           }
-        } else {
+        }
+
+        // If ISIN lookup failed or no ISIN, the company name mapping already handled it in validateSymbol
+        // So this error means both company name mapping and ISIN lookup failed
+        if (!resolvedSymbol) {
+          const isinInfo = row.isin ? ` ISIN lookup also failed for: ${row.isin}.` : '';
           rowErrors.push({
             row: rowNumber,
             field: 'symbol',
-            message: `Invalid or unknown NSE symbol: '${row.symbol}'. Please verify the symbol exists on NSE or provide an ISIN number.`
+            message: `Invalid or unknown NSE symbol: '${row.symbol}'.${isinInfo} Please verify the symbol exists on NSE. If you have the full company name, ensure it's exactly: "BHARAT ELECTRONICS LTD", "GE POWER INDIA LIMITED", or "HINDALCO INDUSTRIES LTD".`
           });
+        } else {
+          row.symbol = resolvedSymbol;
         }
       } else {
         // Update row with normalized symbol
