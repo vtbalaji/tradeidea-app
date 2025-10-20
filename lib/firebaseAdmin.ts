@@ -41,6 +41,12 @@ export function getAdminApp(): App {
       }),
     });
   } else {
+    console.error('❌ Firebase Admin credentials not found!', {
+      hasServiceAccountKey: !!process.env.FIREBASE_SERVICE_ACCOUNT_KEY,
+      hasClientEmail: !!process.env.FIREBASE_ADMIN_CLIENT_EMAIL,
+      hasPrivateKey: !!process.env.FIREBASE_ADMIN_PRIVATE_KEY,
+      hasProjectId: !!process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
+    });
     throw new Error(
       'Firebase Admin credentials not found. Please set FIREBASE_SERVICE_ACCOUNT_KEY or FIREBASE_ADMIN_CLIENT_EMAIL and FIREBASE_ADMIN_PRIVATE_KEY environment variables.'
     );

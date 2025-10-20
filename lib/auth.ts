@@ -13,9 +13,13 @@ export async function verifyAuthToken(request: NextRequest): Promise<string> {
   try {
     const decodedToken = await getAdminAuth().verifyIdToken(token);
     return decodedToken.uid;
-  } catch (error) {
-    console.error('Error verifying token:', error);
-    throw new Error('Unauthorized: Invalid token');
+  } catch (error: any) {
+    console.error('❌ Error verifying token:', {
+      error: error.message,
+      code: error.code,
+      stack: error.stack
+    });
+    throw new Error(`Unauthorized: Invalid token - ${error.message}`);
   }
 }
 

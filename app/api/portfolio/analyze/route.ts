@@ -117,6 +117,11 @@ async function fetchSymbolMetadata(symbols: string[]) {
           industry: data?.fundamental?.industry || data?.industry || null,
           marketCap: data?.fundamental?.marketCap || null,
           beta: data?.fundamental?.beta || null,
+          fundamentalScore: data?.fundamental?.fundamentalScore || 0,
+          fundamentalRating: data?.fundamental?.fundamentalRating || null,
+          debtToEquity: data?.fundamental?.debtToEquity || null,
+          returnOnEquity: data?.fundamental?.returnOnEquity || null,
+          technical: data?.technical || null,  // Include all technical data
         };
       }
 
@@ -126,6 +131,11 @@ async function fetchSymbolMetadata(symbols: string[]) {
         industry: null,
         marketCap: null,
         beta: null,
+        fundamentalScore: 0,
+        fundamentalRating: null,
+        debtToEquity: null,
+        returnOnEquity: null,
+        technical: null,
       };
     });
 
@@ -181,10 +191,30 @@ export async function POST(request: NextRequest) {
       7.0 // Risk-free rate: 7% (Indian 10Y G-Sec)
     );
 
-    // Step 4: Calculate additional reports (REUSING existing logic)
+    // Step 4: Enrich positions with symbol metadata for reports
+    console.log('📈 Enriching positions with symbol metadata...');
+    const enrichedPositions = positions.map(p => {
+      const metadata = symbolMetadata.get(p.symbol.toUpperCase());
+      return {
+        ...p,
+        fundamentals: {
+          ...p.fundamentals,
+          fundamentalScore: metadata?.fundamentalScore || 0,
+          fundamentalRating: metadata?.fundamentalRating || null,
+          debtToEquity: metadata?.debtToEquity || null,
+          returnOnEquity: metadata?.returnOnEquity || null,
+          sector: metadata?.sector || null,
+          industry: metadata?.industry || null,
+          marketCap: metadata?.marketCap || null,
+        },
+        technicals: metadata?.technical || null,  // Add technical data for Today's P&L calculation
+      };
+    });
+
+    // Step 5: Calculate additional reports (REUSING existing logic)
     console.log('📈 Generating additional reports...');
-    const performanceAttribution = calculatePerformanceAttribution(positions, symbolMetadata);
-    const qualityScorecard = calculatePositionQuality(positions);
+    const performanceAttribution = calculatePerformanceAttribution(enrichedPositions, symbolMetadata);
+    const qualityScorecard = calculatePositionQuality(enrichedPositions);
 
     console.log('✅ Portfolio analysis completed');
 

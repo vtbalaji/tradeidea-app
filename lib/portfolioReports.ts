@@ -235,8 +235,21 @@ export function calculatePerformanceAttribution(
 export function calculatePositionQuality(positions: any[]): PositionQualityScorecard {
   const qualityPositions: PositionQuality[] = [];
 
+  console.log(`📊 Position Quality - Analyzing ${positions.length} positions`);
+
   for (const p of positions) {
     const { symbol, currentPrice, quantity, fundamentals, technicals } = p;
+
+    // Debug log for first few positions
+    if (qualityPositions.length < 3) {
+      console.log(`Position ${symbol}:`, {
+        hasFundamentals: !!fundamentals,
+        fundamentalScore: fundamentals?.fundamentalScore,
+        fundamentalRating: fundamentals?.fundamentalRating,
+        hasTechnicals: !!technicals,
+        technicalSignal: technicals?.overallSignal
+      });
+    }
 
     // REUSE existing fundamental score from Firestore
     // Don't show rating if no meaningful fundamental data (score = 0 or no rating)
