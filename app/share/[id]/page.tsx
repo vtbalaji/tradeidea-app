@@ -1,7 +1,6 @@
 import { Metadata } from 'next';
-import { doc, getDoc, collection, query, where, getDocs, orderBy } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
 import { notFound } from 'next/navigation';
+import { getAdminDb } from '@/lib/firebaseAdmin';
 import SharePageClient from './SharePageClient';
 
 interface PageProps {
@@ -13,10 +12,10 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const { id } = await params;
 
   try {
-    const ideaRef = doc(db, 'tradingIdeas', id);
-    const ideaDoc = await getDoc(ideaRef);
+    const adminDb = getAdminDb();
+    const ideaDoc = await adminDb.collection('tradingIdeas').doc(id).get();
 
-    if (!ideaDoc.exists()) {
+    if (!ideaDoc.exists) {
       return {
         title: 'Idea Not Found - TradeIdea',
         description: 'This trading idea does not exist or has been removed.',
@@ -62,8 +61,8 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
         creator: '@tradeidea_in',
       },
       other: {
-        'article:author': idea.userName || 'TradeIdea User',
-        'article:published_time': idea.createdAt?.toDate?.()?.toISOString?.() || new Date().toISOString(),
+        'article:author': idea?.userName || 'TradeIdea User',
+        'article:published_time': idea?.createdAt?._seconds ? new Date(idea.createdAt._seconds * 1000).toISOString() : new Date().toISOString(),
       },
     };
   } catch (error) {
@@ -79,31 +78,42 @@ export default async function PublicIdeaSharePage({ params }: PageProps) {
   const { id } = await params;
 
   try {
-    // Fetch idea data
-    const ideaRef = doc(db, 'tradingIdeas', id);
-    const ideaDoc = await getDoc(ideaRef);
+    // Fetch idea data using Admin SDK
+    const adminDb = getAdminDb();
+    const ideaDoc = await adminDb.collection('tradingIdeas').doc(id).get();
 
-    if (!ideaDoc.exists()) {
+    if (!ideaDoc.exists) {
       notFound();
     }
 
+    const ideaData = ideaDoc.data();
     const idea = {
       id: ideaDoc.id,
-      ...ideaDoc.data()
+      ...ideaData,
+      // Convert Firestore Timestamp to serializable format
+      createdAt: ideaData?.createdAt?._seconds ? {
+        toDate: () => new Date(ideaData.createdAt._seconds * 1000)
+      } : null,
     };
 
-    // Fetch comments
-    const commentsRef = collection(db, 'comments');
-    const q = query(
-      commentsRef,
-      where('ideaId', '==', id),
-      orderBy('createdAt', 'desc')
-    );
-    const snapshot = await getDocs(q);
-    const comments = snapshot.docs.map(doc => ({
-      id: doc.id,
-      ...doc.data()
-    }));
+    // Fetch comments using Admin SDK
+    const commentsSnapshot = await adminDb
+      .collection('comments')
+      .where('ideaId', '==', id)
+      .orderBy('createdAt', 'desc')
+      .get();
+
+    const comments = commentsSnapshot.docs.map(doc => {
+      const data = doc.data();
+      return {
+        id: doc.id,
+        ...data,
+        // Convert Firestore Timestamp to serializable format
+        createdAt: data?.createdAt?._seconds ? {
+          toDate: () => new Date(data.createdAt._seconds * 1000)
+        } : null,
+      };
+    });
 
     return <SharePageClient idea={idea} comments={comments} />;
   } catch (error) {

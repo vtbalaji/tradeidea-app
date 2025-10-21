@@ -1,6 +1,5 @@
 import { ImageResponse } from 'next/og';
-import { doc, getDoc } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
+import { getAdminDb } from '@/lib/firebaseAdmin';
 
 // Image metadata
 export const alt = 'TradeIdea - Investment Idea';
@@ -16,11 +15,11 @@ export default async function Image({ params }: { params: Promise<{ id: string }
   const { id } = await params;
 
   try {
-    // Fetch idea data
-    const ideaRef = doc(db, 'tradingIdeas', id);
-    const ideaDoc = await getDoc(ideaRef);
+    // Fetch idea data using Admin SDK
+    const adminDb = getAdminDb();
+    const ideaDoc = await adminDb.collection('tradingIdeas').doc(id).get();
 
-    if (!ideaDoc.exists()) {
+    if (!ideaDoc.exists) {
       // Return a default image if idea not found
       return new ImageResponse(
         (
