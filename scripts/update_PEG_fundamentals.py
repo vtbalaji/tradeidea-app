@@ -8,14 +8,17 @@ Main script to:
 3. Update Firebase with lean summary (only 6 PEG fields)
 
 Usage:
-    # Update all symbols in portfolio
-    python scripts/update_yahoo_fundamentals.py
+    # Update all symbols in portfolio (default)
+    python scripts/update_PEG_fundamentals.py
 
     # Update specific symbols
-    python scripts/update_yahoo_fundamentals.py RELIANCE TCS INFY
+    python scripts/update_PEG_fundamentals.py RELIANCE TCS INFY
 
     # Update from watchlist file
-    python scripts/update_yahoo_fundamentals.py --file watchlist.txt
+    python scripts/update_PEG_fundamentals.py --file watchlist.txt
+
+    # Skip Firebase updates (DuckDB only)
+    python scripts/update_PEG_fundamentals.py --no-firebase
 """
 
 import sys
@@ -297,9 +300,14 @@ def main():
     elif args.symbols:
         symbols = args.symbols
     else:
-        # Default: common Indian stocks for testing
-        symbols = ['RELIANCE', 'TCS', 'INFY', 'HDFCBANK', 'ICICIBANK']
-        print(f'ℹ️  No symbols specified. Using default test symbols.')
+        # Default: process all portfolio symbols
+        symbols = get_portfolio_symbols()
+        if symbols:
+            print(f'ℹ️  No symbols specified. Processing all portfolio symbols ({len(symbols)} total).')
+        else:
+            # Fallback to test symbols if portfolio is empty or Firebase unavailable
+            symbols = ['RELIANCE', 'TCS', 'INFY', 'HDFCBANK', 'ICICIBANK']
+            print(f'ℹ️  Portfolio empty or Firebase unavailable. Using default test symbols.')
 
     if not symbols:
         print('❌ No symbols to process. Use --help for usage information.')

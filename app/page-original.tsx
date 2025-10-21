@@ -226,7 +226,7 @@ export default function Home() {
         <div className="mt-12 flex flex-wrap justify-center gap-6 text-sm font-semibold text-gray-700 dark:text-[#8b949e]">
           <div className="flex items-center gap-2">
             <span className="text-green-500 text-lg">✓</span>
-            <span>Free Forever Plan</span>
+            <span>Free For sometime</span>
           </div>
           <div className="flex items-center gap-2">
             <span className="text-green-500 text-lg">✓</span>
@@ -570,7 +570,7 @@ export default function Home() {
                     </td>
                     <td className="px-6 py-4 text-center bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-900/10 dark:to-emerald-900/10">
                       <div className="text-green-600 dark:text-green-400 text-3xl font-bold">₹0</div>
-                      <div className="text-xs text-gray-900 dark:text-white font-semibold mt-1">Free Forever</div>
+                      <div className="text-xs text-gray-900 dark:text-white font-semibold mt-1">Free For Now</div>
                     </td>
                   </tr>
                 </tbody>
@@ -825,7 +825,7 @@ export default function Home() {
                 <span className="text-xl">→</span>
               </button>
               <p className="text-xs text-gray-500 dark:text-[#8b949e] mt-3">
-                Import your holdings in 2 minutes • Free forever • No credit card
+                Import your holdings in 2 minutes • Free for Now • No credit card
               </p>
             </div>
           </div>

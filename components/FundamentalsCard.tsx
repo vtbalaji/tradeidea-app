@@ -223,10 +223,14 @@ export const FundamentalsCard: React.FC<FundamentalsCardProps> = ({
           {fundamentals.pegRatios && (
             <div className="mt-3 pt-3 border-t border-gray-200 dark:border-[#30363d]">
               <div className="flex items-center justify-between mb-2">
-                <p className="text-xs font-bold text-[#ff8c42]">PEG Analysis (Indian Context)</p>
-                <span className={`px-2 py-0.5 text-xs font-semibold rounded ${getConfidenceColor(fundamentals.pegRatios.confidence)}`}>
-                  {fundamentals.pegRatios.confidence}
-                </span>
+                <p className="text-xs font-bold text-[#ff8c42]">
+                  PEG Analysis - Data Confidence: {fundamentals.pegRatios.confidence}
+                </p>
+                {fundamentals.pegRatios.recommendation && (
+                  <span className={`px-2 py-0.5 text-xs font-semibold rounded ${getPegRecommendationColor(fundamentals.pegRatios.recommendation)}`}>
+                    {fundamentals.pegRatios.recommendation.split('(')[0].trim().replace(/_/g, ' ')}
+                  </span>
+                )}
               </div>
 
               <div className="grid grid-cols-2 gap-2 text-xs">

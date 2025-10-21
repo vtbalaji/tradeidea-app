@@ -45,7 +45,12 @@ export function checkQualityInvestorEntry(
     // Forward PE: ignore if negative or > 100 (unreliable)
     forwardPE: fundamental.forwardPE !== null && fundamental.forwardPE > 0 && fundamental.forwardPE < 100 ?
       fundamental.forwardPE < 50 : true,
-    priceToBook: fundamental.priceToBook !== null && fundamental.priceToBook > 0 && fundamental.priceToBook < 10
+    priceToBook: fundamental.priceToBook !== null && fundamental.priceToBook > 0 && fundamental.priceToBook < 10,
+    // Use hybrid PEG (Indian market context) - quality investors accept premium but want PEG < 2.0
+    // Falls back to legacy pegRatio if pegHybrid not available
+    pegRatio: fundamental.pegRatios?.pegHybrid !== undefined && fundamental.pegRatios?.pegHybrid !== null
+      ? fundamental.pegRatios.pegHybrid < 2.0
+      : (fundamental.pegRatio === null || fundamental.pegRatio < 2.5)
   };
 
   const allMet = Object.values(conditions).every(v => v === true);

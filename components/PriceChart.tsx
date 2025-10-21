@@ -118,6 +118,15 @@ export default function PriceChart({ symbol, days = 365, height = '400px' }: Pri
     return `${month} ${year}`;
   };
 
+  // Format date to dd-MMM-YYYY
+  const formatFullDate = (dateStr: string) => {
+    const date = new Date(dateStr);
+    const day = date.getDate().toString().padStart(2, '0');
+    const month = date.toLocaleString('en-US', { month: 'short' });
+    const year = date.getFullYear();
+    return `${day}-${month}-${year}`;
+  };
+
   const chartData = {
     labels: data.map(d => formatDateLabel(d.date)),
     datasets: [
@@ -223,7 +232,7 @@ export default function PriceChart({ symbol, days = 365, height = '400px' }: Pri
       </div>
       {lastUpdated && (
         <p className="text-xs text-gray-500 dark:text-gray-400 text-center mt-2">
-          Last updated: {lastUpdated}
+          Last updated: {formatFullDate(lastUpdated)}
         </p>
       )}
     </div>

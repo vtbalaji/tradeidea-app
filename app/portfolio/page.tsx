@@ -406,6 +406,11 @@ export default function PortfolioPage() {
                     ? new Date(updatedAtValue)
                     : updatedAtValue.toDate?.() || new Date(updatedAtValue);
 
+                  // Check if date is valid
+                  if (isNaN(updatedAt.getTime())) {
+                    return 'recently';
+                  }
+
                   const now = new Date();
                   const diffHours = Math.floor((now.getTime() - updatedAt.getTime()) / (1000 * 60 * 60));
 

@@ -257,7 +257,7 @@ def detect_bb_squeeze_breakout(symbol, bb_period=20, bb_std=2, keltner_period=14
         sell_signal = sell_condition_1 and sell_condition_2 and sell_condition_3 and sell_condition_4
 
         # Calculate distance from BB bands
-        distance_to_upper = ((current_bb_upper - current_close) / current_close) * 100
+        distance_to_upper = ((current_close - current_bb_upper) / current_close) * 100
         distance_to_lower = ((current_close - current_bb_lower) / current_close) * 100
 
         # Calculate volatility (BB width as % of price)
