@@ -178,26 +178,32 @@ export default function PortfolioPage() {
     return enrichedPositions.filter(p => !p.accountId || p.accountId === activeAccount.id);
   }, [enrichedPositions, activeAccount]);
 
-  // Memoized open and closed positions
+  // Memoized open and closed positions (sorted alphabetically by symbol)
   const openPositions = useMemo(() =>
-    accountPositions.filter(p => p.status === 'open'),
+    accountPositions
+      .filter(p => p.status === 'open')
+      .sort((a, b) => a.symbol.localeCompare(b.symbol)),
     [accountPositions]
   );
 
   const closedPositions = useMemo(() =>
-    accountPositions.filter(p => p.status === 'closed'),
+    accountPositions
+      .filter(p => p.status === 'closed')
+      .sort((a, b) => a.symbol.localeCompare(b.symbol)),
     [accountPositions]
   );
 
-  // Filter positions by recommendation
+  // Filter positions by recommendation (maintain alphabetical sort)
   const filteredOpenPositions = useMemo(() => {
     if (recommendationFilter === 'all') return openPositions;
 
-    return openPositions.filter(position => {
-      if (!position.technicals) return false;
-      const { recommendation } = getOverallRecommendation(position);
-      return recommendation === recommendationFilter;
-    });
+    return openPositions
+      .filter(position => {
+        if (!position.technicals) return false;
+        const { recommendation } = getOverallRecommendation(position);
+        return recommendation === recommendationFilter;
+      })
+      .sort((a, b) => a.symbol.localeCompare(b.symbol));
   }, [openPositions, recommendationFilter]);
 
   // Memoized portfolio metrics
