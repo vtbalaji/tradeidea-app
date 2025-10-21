@@ -45,6 +45,9 @@ export default function InvestorTypeGuide() {
                 <div className="bg-gray-50 dark:bg-[#0f1419] rounded p-2 border-l-2 border-blue-500">
                   <strong>Trailing PE:</strong> &lt; 25.0
                 </div>
+                <div className="bg-gray-50 dark:bg-[#0f1419] rounded p-2 border-l-2 border-green-500">
+                  <strong>PEG Hybrid:</strong> &lt; 1.0 <span className="text-gray-500 dark:text-gray-400">(Indian context)</span>
+                </div>
               </div>
             </div>
             <div>
@@ -130,7 +133,7 @@ export default function InvestorTypeGuide() {
           </div>
           <div className="mt-3 pt-3 border-t border-gray-200 dark:border-[#30363d] space-y-1.5 text-xs text-gray-900 dark:text-white">
             <div className="bg-gray-50 dark:bg-[#0f1419] rounded p-2">
-              <strong>Additional:</strong> PEG Ratio &lt; 2.0 (or null), Price Above SMA200, Volume ≥ 50% of avg, Overall Signal: BUY/STRONG_BUY
+              <strong>Additional:</strong> PEG Hybrid &lt; 1.5 <span className="text-gray-500 dark:text-gray-400">(Indian context: 70% 3Y CAGR + 30% forward)</span>, Price Above SMA200, Volume ≥ 50% of avg, Overall Signal: BUY/STRONG_BUY
             </div>
           </div>
         </div>

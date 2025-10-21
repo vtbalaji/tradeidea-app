@@ -34,7 +34,11 @@ export function checkGrowthInvestorEntry(
 
   const conditions = {
     growthScore: growthScore >= 3,
-    pegRatio: fundamental.pegRatio === null || fundamental.pegRatio < 2.0,
+    // Use hybrid PEG (Indian market context) - prefer pegHybrid < 1.5 for growth stocks
+    // Falls back to legacy pegRatio if pegHybrid not available
+    pegRatio: fundamental.pegRatios?.pegHybrid !== undefined && fundamental.pegRatios?.pegHybrid !== null
+      ? fundamental.pegRatios.pegHybrid < 1.5
+      : (fundamental.pegRatio === null || fundamental.pegRatio < 2.0),
     momentumScore: momentumScore >= 3,
     priceBelowEMA50: signals.priceCrossEMA50 === 'above',
     priceBelowSMA200: signals.priceCrossSMA200 === 'above',

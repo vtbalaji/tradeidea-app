@@ -109,7 +109,7 @@ export interface FundamentalData {
   // Valuation Ratios
   trailingPE: number | null;
   forwardPE: number | null;
-  pegRatio: number | null;
+  pegRatio: number | null;  // Legacy Yahoo PEG (unreliable for Indian stocks)
   priceToBook: number | null;
   priceToSales: number | null;
 
@@ -136,6 +136,18 @@ export interface FundamentalData {
   // Market Data
   marketCap: number | null;
   beta: number | null;
+
+  // PEG Ratios (Indian Market Context)
+  pegRatios?: {
+    pegHistorical3Y: number | null;        // Based on 3-year CAGR (Indian standard)
+    pegForward1Y: number | null;           // Based on analyst estimates (Global standard)
+    pegHybrid: number | null;              // Weighted average: 70% historical + 30% forward
+    earningsCagr3Y: number | null;         // 3-year earnings CAGR %
+    earningsGrowthForward: number | null;  // Forward earnings growth %
+    confidence: 'HIGH' | 'MEDIUM' | 'LOW'; // Data quality indicator
+    recommendation: string;                // e.g., 'UNDERVALUED', 'FAIR_VALUE', 'OVERVALUED'
+    lastCalculated?: string;               // ISO timestamp
+  };
 
   // Fundamental Score
   fundamentalScore?: number;

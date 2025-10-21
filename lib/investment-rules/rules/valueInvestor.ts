@@ -21,6 +21,11 @@ export function checkValueInvestorEntry(
     forwardPE: fundamental.forwardPE !== null && fundamental.forwardPE > 0 && fundamental.forwardPE < 100 ?
       fundamental.forwardPE < 20.0 : true, // Don't fail if unreliable, rely on trailing PE
     trailingPE: fundamental.trailingPE !== null && fundamental.trailingPE > 0 && fundamental.trailingPE < 25.0,
+    // Use hybrid PEG (Indian market context) - value investors want PEG < 1.0
+    // Falls back to legacy pegRatio if pegHybrid not available
+    pegRatio: fundamental.pegRatios?.pegHybrid !== undefined && fundamental.pegRatios?.pegHybrid !== null
+      ? fundamental.pegRatios.pegHybrid < 1.0
+      : (fundamental.pegRatio === null || fundamental.pegRatio < 1.5),
 
     // Quality Metrics
     // fundamentalRating: fundamental.fundamentalRating ?

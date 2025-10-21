@@ -104,6 +104,18 @@ export interface FundamentalData {
   // Piotroski F-Score (Financial Strength)
   piotroskiScore: number | null;  // 0-9
 
+  // PEG Ratios (Indian Market Context)
+  pegRatios?: {
+    pegHistorical3Y: number | null;        // Based on 3-year CAGR (Indian standard)
+    pegForward1Y: number | null;           // Based on analyst estimates (Global standard)
+    pegHybrid: number | null;              // Weighted average: 70% historical + 30% forward
+    earningsCagr3Y: number | null;         // 3-year earnings CAGR %
+    earningsGrowthForward: number | null;  // Forward earnings growth %
+    confidence: 'HIGH' | 'MEDIUM' | 'LOW'; // Data quality indicator
+    recommendation: string;                // e.g., 'UNDERVALUED', 'FAIR_VALUE', 'OVERVALUED'
+    lastCalculated?: string;               // ISO timestamp
+  };
+
   // Metadata
   lastUpdated: Date;
   dataSource: string;

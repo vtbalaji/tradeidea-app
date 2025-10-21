@@ -2106,7 +2106,24 @@ export default function Cross50200Page() {
                               {displaySymbol}
                             </h3>
                           </div>
-                          <AnalysisButton symbol={displaySymbol} />
+                          <AnalysisButton onClick={async (e) => {
+                            e.stopPropagation();
+
+                            // Create a temporary crossover object for the handleAnalyze function
+                            // Use stock.symbol (with NS_ prefix) for Firebase lookup
+                            const tempCrossover: Crossover = {
+                              id: stock.symbol,
+                              symbol: stock.symbol, // Use NS_ prefixed symbol for Firebase
+                              crossoverType: stock.ma50?.crossoverType || stock.ma200?.crossoverType || stock.advancedTrailstop?.crossoverType || 'bullish_cross',
+                              date: stock.ma50?.date || stock.ma200?.date || stock.advancedTrailstop?.date || new Date(),
+                              currentPrice: stock.ma50?.todayClose || stock.ma200?.todayClose || stock.advancedTrailstop?.todayClose || 0,
+                              yesterdayClose: 0,
+                              crossPercent: stock.ma50?.crossPercent || stock.ma200?.crossPercent || stock.advancedTrailstop?.crossPercent || 0,
+                              type: 'multi-screener' as const,
+                            };
+
+                            await handleAnalyze(e, tempCrossover);
+                          }} />
                         </div>
 
                         {/* Screener Details */}
