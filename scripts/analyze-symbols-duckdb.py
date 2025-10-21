@@ -808,6 +808,9 @@ def analyze_symbols():
     fetcher = NSEDataFetcher()
     print()
 
+    # List to track symbols with suspicious price changes
+    suspicious_symbols = []
+
     try:
         symbols = get_symbols()
 
@@ -840,10 +843,19 @@ def analyze_symbols():
                 print(f'  📈 Calculating indicators...')
                 analysis = calculate_indicators(df)
 
-                # CHECK FOR CORPORATE ACTIONS (NEW)
+                # CHECK FOR CORPORATE ACTIONS (splits/bonus) during batch processing
                 corporate_action = detect_corporate_action(df, symbol)
                 if corporate_action:
-                    log_corporate_action(corporate_action)
+                    # Add to suspicious symbols list for file output
+                    suspicious_symbols.append({
+                        'symbol': symbol,
+                        'type': corporate_action.get('splitType') or corporate_action.get('bonusType'),
+                        'priceChange': corporate_action['priceChange'],
+                        'oldPrice': corporate_action['oldPrice'],
+                        'newPrice': corporate_action['newPrice'],
+                        'date': corporate_action['detectedDate']
+                    })
+                    print(f'  ⚠️  SUSPICIOUS PRICE CHANGE DETECTED - Added to review list')
 
                 # Save to Firestore
                 print(f'  💾 Saving to Firestore...')
@@ -872,12 +884,40 @@ def analyze_symbols():
 
         duration = (datetime.now() - start_time).total_seconds()
 
+        # Write suspicious symbols to file if any found
+        if suspicious_symbols:
+            output_file = 'data/split_bonus_alerts.txt'
+            os.makedirs('data', exist_ok=True)
+
+            with open(output_file, 'w') as f:
+                f.write(f'# Stock Splits & Bonus Issues - Detected Corporate Actions\n')
+                f.write(f'# Generated: {datetime.now().strftime("%Y-%m-%d %H:%M:%S")}\n')
+                f.write(f'# Total: {len(suspicious_symbols)} symbols requiring review\n')
+                f.write(f'#\n')
+                f.write(f'# IMPORTANT: Review each symbol and adjust historical data if confirmed\n')
+                f.write(f'#\n')
+                f.write(f'# To fix a split/bonus for a symbol, run:\n')
+                f.write(f'#   python3 scripts/analyze-symbols-duckdb.py <SYMBOL>\n')
+                f.write(f'#\n')
+                f.write(f'# Format: SYMBOL | TYPE | PRICE_CHANGE | OLD_PRICE → NEW_PRICE | DATE\n')
+                f.write(f'#\n\n')
+
+                for item in suspicious_symbols:
+                    f.write(f"{item['symbol']}\t{item['type']}\t{item['priceChange']:+.2f}%\t")
+                    f.write(f"₹{item['oldPrice']:.2f} → ₹{item['newPrice']:.2f}\t{item['date']}\n")
+
+            print(f'\n🚨 CORPORATE ACTIONS DETECTED (Splits/Bonus)!')
+            print(f'📝 {len(suspicious_symbols)} symbols written to: {output_file}')
+            print(f'   Review and fix each symbol using:')
+            print(f'   python3 scripts/analyze-symbols-duckdb.py <SYMBOL>')
+
         print('\n' + '=' * 60)
         print('📊 Technical Analysis Complete!')
         print('=' * 60)
         print(f'✅ Success: {success_count} symbols')
         print(f'⏭️  Skipped: {skipped_count} symbols (no data or insufficient data)')
         print(f'❌ Failed: {fail_count} symbols')
+        print(f'🚨 Corporate Actions: {len(suspicious_symbols)} symbols (splits/bonus)')
         print(f'⏱️  Duration: {duration:.1f}s')
         print('=' * 60)
 

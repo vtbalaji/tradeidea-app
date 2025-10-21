@@ -284,7 +284,7 @@ export default function IdeasHubPage() {
         {/* Footer */}
         <div className="pt-3 border-t border-gray-200 dark:border-[#30363d]">
           {/* Action Buttons */}
-          <div className="grid grid-cols-3 gap-2 mb-3">
+          <div className="grid grid-cols-4 gap-2 mb-3">
             {/* Analyze Button */}
             <AnalysisButton
               onClick={(e) => handleAnalyze(e, idea)}
@@ -300,6 +300,25 @@ export default function IdeasHubPage() {
                 <path d="M2 8h12M8 2v12" strokeLinecap="round" strokeLinejoin="round"/>
               </svg>
               <span>To Portfolio</span>
+            </button>
+
+            {/* Share Button */}
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                const shareUrl = `${window.location.origin}/share/${idea.id}`;
+                navigator.clipboard.writeText(shareUrl);
+                alert('Share link copied! Anyone can view this idea without logging in.');
+              }}
+              className="flex items-center justify-center gap-1.5 px-3 py-1.5 bg-gray-100 dark:bg-[#30363d] hover:bg-gray-200 dark:hover:bg-[#3c444d] border border-gray-200 dark:border-[#444c56] text-gray-700 dark:text-gray-300 text-xs font-semibold rounded-lg transition-colors"
+            >
+              <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
+                <circle cx="4" cy="8" r="2"/>
+                <circle cx="12" cy="4" r="2"/>
+                <circle cx="12" cy="12" r="2"/>
+                <path d="M5.5 7L10.5 5M5.5 9L10.5 11"/>
+              </svg>
+              <span>Share</span>
             </button>
 
             {/* Edit Button */}
