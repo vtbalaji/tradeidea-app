@@ -43,10 +43,10 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
         siteName: 'TradeIdea',
         images: [
           {
-            url: '/opengraph-image',
+            url: `https://tradeidea.co.in/share/${id}/opengraph-image`,
             width: 1200,
             height: 630,
-            alt: `TradeIdea - ${idea.symbol} Investment Idea`,
+            alt: `TradeIdea - ${idea?.symbol} Investment Idea`,
           },
         ],
         locale: 'en_IN',
@@ -57,7 +57,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
         card: 'summary_large_image',
         title,
         description: twitterDescription,
-        images: ['/twitter-image'],
+        images: [`https://tradeidea.co.in/share/${id}/opengraph-image`],
         creator: '@tradeidea_in',
       },
       other: {
