@@ -12,7 +12,6 @@ import { getSymbolData } from '@/lib/symbolDataService';
 import InvestorAnalysisModal from '@/components/InvestorAnalysisModal';
 import { createInvestmentEngine } from '@/lib/investment-rules';
 import { trackPositionAdded, trackAnalysisViewed } from '@/lib/analytics';
-import { getOverallRecommendation } from '@/lib/exitCriteriaAnalysis';
 import {
   PortfolioMetrics,
   SummaryPositionCard,
@@ -33,10 +32,9 @@ export default function PortfolioPage() {
   const { accounts, activeAccount, setActiveAccount } = useAccounts();
 
   // UI State
-  const [activeTab, setActiveTab] = useState<'open' | 'closed'>('open');
+  const [activeTab, setActiveTab] = useState<'open' | 'closed' | 'alerts'>('open');
   const [viewMode, setViewMode] = useState<'summary' | 'detailed'>('detailed');
   const [expandedPositionId, setExpandedPositionId] = useState<string | null>(null);
-  const [recommendationFilter, setRecommendationFilter] = useState<string>('all');
 
   // Modal State
   const [showTransactionModal, setShowTransactionModal] = useState(false);
@@ -193,18 +191,26 @@ export default function PortfolioPage() {
     [accountPositions]
   );
 
-  // Filter positions by recommendation (maintain alphabetical sort)
-  const filteredOpenPositions = useMemo(() => {
-    if (recommendationFilter === 'all') return openPositions;
+  // Alert positions - SL hit or SL near (within 3% of stop loss)
+  const alertPositions = useMemo(() =>
+    accountPositions
+      .filter(p => {
+        if (p.status !== 'open' || !p.stopLoss || !p.currentPrice) return false;
 
-    return openPositions
-      .filter(position => {
-        if (!position.technicals) return false;
-        const { recommendation } = getOverallRecommendation(position);
-        return recommendation === recommendationFilter;
+        const slThreshold = p.stopLoss * 1.03; // 3% above SL
+        const isSlHit = p.currentPrice <= p.stopLoss;
+        const isSlNear = p.currentPrice > p.stopLoss && p.currentPrice <= slThreshold;
+
+        return isSlHit || isSlNear;
       })
-      .sort((a, b) => a.symbol.localeCompare(b.symbol));
-  }, [openPositions, recommendationFilter]);
+      .sort((a, b) => {
+        // Sort by distance to SL (closest first)
+        const distanceA = ((a.currentPrice - a.stopLoss) / a.stopLoss) * 100;
+        const distanceB = ((b.currentPrice - b.stopLoss) / b.stopLoss) * 100;
+        return distanceA - distanceB;
+      }),
+    [accountPositions]
+  );
 
   // Memoized portfolio metrics
   const portfolioMetrics = useMemo(() => {
@@ -331,9 +337,9 @@ export default function PortfolioPage() {
         ))}
       </div>
     );
-  }, [viewMode, expandedPositionId, openPositions.length, closedPositions.length, activeTab, handleToggleExpand, handleOpenAnalysis, handleBuySell, handleEdit]);
+  }, [viewMode, expandedPositionId, openPositions.length, closedPositions.length, alertPositions.length, activeTab, handleToggleExpand, handleOpenAnalysis, handleBuySell, handleEdit]);
 
-  const displayedPositions = activeTab === 'open' ? filteredOpenPositions : closedPositions;
+  const displayedPositions = activeTab === 'open' ? openPositions : activeTab === 'alerts' ? alertPositions : closedPositions;
 
   return (
     <div className="min-h-screen bg-white dark:bg-[#0f1419]">
@@ -416,51 +422,43 @@ export default function PortfolioPage() {
 
         {/* Tabs, Filter, and View Mode */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-3 gap-3">
-          {/* Open/Closed Toggle - Hidden on mobile */}
+          {/* Tab Navigation - Hidden on mobile */}
           <div className="hidden sm:flex items-center gap-2">
-            <button
-              onClick={() => setActiveTab(activeTab === 'open' ? 'closed' : 'open')}
-              className="relative inline-flex items-center bg-gray-200 dark:bg-[#30363d] rounded-full p-0.5 transition-colors"
-            >
-              <span className={`px-4 py-2 rounded-full text-xs font-semibold transition-all whitespace-nowrap ${
-                activeTab === 'open'
-                  ? 'bg-[#ff8c42] text-white'
-                  : 'text-gray-600 dark:text-[#8b949e]'
-              }`}>
+            <div className="inline-flex items-center bg-gray-200 dark:bg-[#30363d] rounded-full p-0.5 transition-colors">
+              <button
+                onClick={() => setActiveTab('open')}
+                className={`px-4 py-2 rounded-full text-xs font-semibold transition-all whitespace-nowrap ${
+                  activeTab === 'open'
+                    ? 'bg-[#ff8c42] text-white'
+                    : 'text-gray-600 dark:text-[#8b949e] hover:text-gray-900 dark:hover:text-white'
+                }`}
+              >
                 Open ({openPositions.length})
-              </span>
-              <span className={`px-4 py-2 rounded-full text-xs font-semibold transition-all whitespace-nowrap ${
-                activeTab === 'closed'
-                  ? 'bg-[#ff8c42] text-white'
-                  : 'text-gray-600 dark:text-[#8b949e]'
-              }`}>
+              </button>
+              <button
+                onClick={() => setActiveTab('alerts')}
+                className={`px-4 py-2 rounded-full text-xs font-semibold transition-all whitespace-nowrap ${
+                  activeTab === 'alerts'
+                    ? 'bg-red-500 text-white'
+                    : 'text-gray-600 dark:text-[#8b949e] hover:text-gray-900 dark:hover:text-white'
+                }`}
+              >
+                ⚠️ Alerts ({alertPositions.length})
+              </button>
+              <button
+                onClick={() => setActiveTab('closed')}
+                className={`px-4 py-2 rounded-full text-xs font-semibold transition-all whitespace-nowrap ${
+                  activeTab === 'closed'
+                    ? 'bg-[#ff8c42] text-white'
+                    : 'text-gray-600 dark:text-[#8b949e] hover:text-gray-900 dark:hover:text-white'
+                }`}
+              >
                 Closed ({closedPositions.length})
-              </span>
-            </button>
+              </button>
+            </div>
           </div>
 
-          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
-            {/* Recommendation Filter - Only show for Open tab */}
-            {activeTab === 'open' && (
-              <div className="flex items-center gap-2">
-                <label className="text-xs font-semibold text-gray-600 dark:text-[#8b949e] whitespace-nowrap">
-                  Filter by recommendation:
-                </label>
-                <select
-                  value={recommendationFilter}
-                  onChange={(e) => setRecommendationFilter(e.target.value)}
-                  className="bg-white dark:bg-[#1c2128] border border-gray-200 dark:border-[#30363d] rounded-lg px-3 py-2 text-xs font-semibold text-gray-900 dark:text-white hover:border-[#ff8c42] transition-colors"
-                >
-                  <option value="all">All ({openPositions.length})</option>
-                  <option value="STRONG BUY">▲▲ Strong Buy</option>
-                  <option value="BUY">▲ Buy</option>
-                  <option value="HOLD">■ Hold</option>
-                  <option value="SELL">▼ Sell</option>
-                  <option value="STRONG SELL">▼▼ Strong Sell</option>
-                </select>
-              </div>
-            )}
-
+          <div className="flex items-center gap-2">
             {/* View Mode Toggle */}
             <div className="flex items-center gap-2">
               <button
@@ -485,23 +483,6 @@ export default function PortfolioPage() {
             </div>
           </div>
         </div>
-
-        {/* Filter Results Info */}
-        {activeTab === 'open' && recommendationFilter !== 'all' && (
-          <div className="mb-4 px-3 py-2 bg-[#ff8c42]/10 border border-[#ff8c42]/30 rounded-lg">
-            <p className="text-xs font-semibold text-[#ff8c42]">
-              Showing {filteredOpenPositions.length} position{filteredOpenPositions.length !== 1 ? 's' : ''} with "{recommendationFilter}" recommendation
-              {filteredOpenPositions.length > 0 && (
-                <button
-                  onClick={() => setRecommendationFilter('all')}
-                  className="ml-2 underline hover:no-underline"
-                >
-                  Clear filter
-                </button>
-              )}
-            </p>
-          </div>
-        )}
 
         {/* Holdings Cards */}
         <div className="pb-8">

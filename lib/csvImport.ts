@@ -748,7 +748,7 @@ export function csvRowToPosition(row: CSVRow, currentDate?: string) {
 
   // Smart defaults for missing fields
   const target = row.target1 ? parseFloat(row.target1) : entryPrice * 1.15; // +15%
-  const stopLoss = row.stopLoss ? parseFloat(row.stopLoss) : entryPrice * 0.92; // -8%
+  const stopLoss = row.stopLoss ? parseFloat(row.stopLoss) : entryPrice * 0.95; // -5%
   const entryDate = row.dateTaken || currentDate || formatTodayDate();
 
   return {
