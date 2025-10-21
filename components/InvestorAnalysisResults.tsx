@@ -59,10 +59,47 @@ export default function InvestorAnalysisResults({
   const [showDetails, setShowDetails] = React.useState(false);
 
   const handleConvertToIdea = () => {
-    // Calculate suggested entry price, stop loss, and target
-    const entryPrice = technicals?.lastPrice || '';
-    const stopLoss = technicals?.sma50 || technicals?.sma20 || '';
-    const target = entryPrice && stopLoss ? (entryPrice + (entryPrice - stopLoss) * 1.5).toFixed(2) : '';
+    // Determine if this is a bullish setup based on suitable investor types
+    const isBullish = recommendation.suitableFor.length > 0;
+
+    // Calculate suggested entry price, stop loss, and target using support levels
+    let entryPrice = technicals?.lastPrice || 0;
+    let stopLoss = 0;
+    let target = 0;
+
+    if (isBullish && technicals) {
+      // For bullish signals, use support levels for entry
+      const supportLevels = [];
+
+      if (technicals.supertrend && technicals.supertrend > 0) {
+        supportLevels.push(technicals.supertrend);
+      }
+      if (technicals.sma100 && technicals.sma100 > 0) {
+        supportLevels.push(technicals.sma100);
+      }
+      if (technicals.sma50 && technicals.sma50 > 0) {
+        supportLevels.push(technicals.sma50);
+      }
+
+      if (supportLevels.length > 0) {
+        // Entry is the highest of available support levels
+        entryPrice = Math.max(...supportLevels);
+        // Stop loss: 2% below the highest support level
+        stopLoss = entryPrice * 0.98;
+      } else {
+        // Fallback if no technical levels available
+        entryPrice = technicals.lastPrice || 0;
+        stopLoss = entryPrice * 0.95;
+      }
+    } else {
+      // For bearish/neutral or short ideas
+      entryPrice = technicals?.lastPrice || 0;
+      stopLoss = entryPrice * 1.05;
+    }
+
+    // Calculate target based on risk-reward ratio (2:1)
+    const riskAmount = Math.abs(entryPrice - stopLoss);
+    target = entryPrice + (riskAmount * 2);
 
     // Build analysis text based on suitable investor types
     let analysisText = 'Investment Analysis:\n\n';
@@ -105,9 +142,9 @@ export default function InvestorAnalysisResults({
     const params = new URLSearchParams({
       symbol: symbol,
       ...(analysisText && { analysis: analysisText }),
-      ...(entryPrice && { entryPrice: entryPrice.toString() }),
-      ...(stopLoss && { stopLoss: stopLoss.toString() }),
-      ...(target && { target: target.toString() })
+      ...(entryPrice > 0 && { entryPrice: entryPrice.toFixed(2) }),
+      ...(stopLoss > 0 && { stopLoss: stopLoss.toFixed(2) }),
+      ...(target > 0 && { target: target.toFixed(2) })
     });
 
     // Navigate to new idea page with pre-filled data

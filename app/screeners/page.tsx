@@ -786,10 +786,82 @@ export default function Cross50200Page() {
         {/* Action Buttons */}
         <div className="flex gap-2 pt-3 border-t border-gray-200 dark:border-[#30363d]">
           <button
-            onClick={(e) => {
+            onClick={async (e) => {
+              e.stopPropagation();
+
+              const isBullish = isPriceUp;
+
+              // Fetch symbol data to get technical levels (Supertrend, 100MA, 50MA)
+              let entryPrice = spike.todayClose;
+              let stopLoss = isBullish ? spike.todayClose * 0.95 : spike.todayClose * 1.05;
+              let target = isBullish ? spike.todayClose * 1.10 : spike.todayClose * 0.90;
+              let supertrendLevel = null;
+              let sma100Level = null;
+              let sma50Level = null;
+
+              try {
+                const symbolDoc = await getDoc(doc(db, 'symbols', spike.symbol));
+                if (symbolDoc.exists()) {
+                  const data = symbolDoc.data();
+                  const technicals = data.technicals || data.technical;
+
+                  if (technicals) {
+                    supertrendLevel = parseFloat(technicals.supertrend || technicals.supertrendLevel) || null;
+                    sma100Level = parseFloat(technicals.sma100 || technicals.ma100) || null;
+                    sma50Level = parseFloat(technicals.sma50 || technicals.ema50 || technicals.ma50) || null;
+                  }
+                }
+              } catch (error) {
+                console.error('Error fetching symbol data:', error);
+              }
+
+              // For bullish signals, use support levels for entry
+              if (isBullish) {
+                const supportLevels = [];
+                if (supertrendLevel && supertrendLevel > 0 && !isNaN(supertrendLevel)) {
+                  supportLevels.push(supertrendLevel);
+                }
+                if (sma100Level && sma100Level > 0 && !isNaN(sma100Level)) {
+                  supportLevels.push(sma100Level);
+                }
+                if (sma50Level && sma50Level > 0 && !isNaN(sma50Level)) {
+                  supportLevels.push(sma50Level);
+                }
+
+                if (supportLevels.length > 0) {
+                  entryPrice = Math.max(...supportLevels);
+                  stopLoss = entryPrice * 0.98;
+                } else {
+                  entryPrice = spike.todayClose;
+                  stopLoss = entryPrice * 0.95;
+                }
+              } else {
+                // For bearish/short ideas
+                entryPrice = spike.todayClose;
+                const resistanceLevels = [spike.todayClose * 1.05];
+                if (supertrendLevel && supertrendLevel > 0 && !isNaN(supertrendLevel)) {
+                  resistanceLevels.push(supertrendLevel);
+                }
+                if (sma100Level && sma100Level > 0 && !isNaN(sma100Level)) {
+                  resistanceLevels.push(sma100Level);
+                }
+
+                if (resistanceLevels.length > 0) {
+                  stopLoss = Math.min(...resistanceLevels) * 1.02;
+                }
+              }
+
+              // Calculate target based on risk-reward ratio (2:1)
+              const riskAmount = Math.abs(entryPrice - stopLoss);
+              target = entryPrice + (riskAmount * 2);
+
               const analysisText = `High volume spike detected (${spike.spikePercent.toFixed(1)}% above 20MA).\n\nKey Points:\n- Today's Volume: ${spike.todayVolume.toLocaleString()}\n- 20MA Volume: ${spike.volumeMA20.toLocaleString()}\n- Price Change: ${isPriceUp ? '+' : ''}${spike.priceChangePercent.toFixed(2)}%\n- Current Price: ₹${spike.todayClose.toFixed(2)}\n\n${isPriceUp ? 'Strong volume with price increase suggests bullish momentum. Consider entry on pullbacks with proper stop loss.' : 'High volume despite price decline may indicate selling climax or distribution. Monitor for reversal signals.'}`;
 
-              handleConvertToIdea(e, spike.symbol, displaySymbol, spike.todayClose, isPriceUp, analysisText);
+              // Track screener converted to idea
+              trackScreenerConvertedToIdea(displaySymbol, activeTab);
+
+              // Navigate to new idea page with pre-populated data
+              router.push(`/ideas/new?symbol=${encodeURIComponent(displaySymbol)}&analysis=${encodeURIComponent(analysisText)}&entryPrice=${entryPrice.toFixed(2)}&stopLoss=${stopLoss.toFixed(2)}&target=${target.toFixed(2)}`);
             }}
             className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 bg-gray-100 dark:bg-[#30363d] hover:bg-gray-200 dark:hover:bg-[#3c444d] border border-gray-200 dark:border-[#444c56] text-gray-700 dark:text-gray-300 text-xs font-semibold rounded-lg transition-colors"
           >
@@ -913,7 +985,89 @@ export default function Cross50200Page() {
         {/* Action Buttons */}
         <div className="flex gap-2 pt-3 border-t border-gray-200 dark:border-[#30363d]">
           <button
-            onClick={(e) => {
+            onClick={async (e) => {
+              e.stopPropagation();
+
+              const isBullish = box.status === 'broken' || box.status === 'active';
+
+              // Fetch symbol data to get technical levels (Supertrend, 100MA, 50MA)
+              let entryPrice = box.currentPrice;
+              let stopLoss = isBullish ? box.currentPrice * 0.95 : box.currentPrice * 1.05;
+              let target = isBullish ? box.currentPrice * 1.10 : box.currentPrice * 0.90;
+              let supertrendLevel = null;
+              let sma100Level = null;
+              let sma50Level = null;
+
+              try {
+                const symbolDoc = await getDoc(doc(db, 'symbols', box.symbol));
+                if (symbolDoc.exists()) {
+                  const data = symbolDoc.data();
+                  const technicals = data.technicals || data.technical;
+
+                  if (technicals) {
+                    supertrendLevel = parseFloat(technicals.supertrend || technicals.supertrendLevel) || null;
+                    sma100Level = parseFloat(technicals.sma100 || technicals.ma100) || null;
+                    sma50Level = parseFloat(technicals.sma50 || technicals.ema50 || technicals.ma50) || null;
+                  }
+                }
+              } catch (error) {
+                console.error('Error fetching symbol data:', error);
+              }
+
+              // For Darvas boxes, use box low as a key support level
+              if (isBullish) {
+                const supportLevels = [];
+
+                // Box low is a critical support for Darvas pattern
+                if (box.boxLow && box.boxLow > 0) {
+                  supportLevels.push(box.boxLow);
+                }
+
+                if (supertrendLevel && supertrendLevel > 0 && !isNaN(supertrendLevel)) {
+                  supportLevels.push(supertrendLevel);
+                }
+                if (sma100Level && sma100Level > 0 && !isNaN(sma100Level)) {
+                  supportLevels.push(sma100Level);
+                }
+                if (sma50Level && sma50Level > 0 && !isNaN(sma50Level)) {
+                  supportLevels.push(sma50Level);
+                }
+
+                if (supportLevels.length > 0) {
+                  // For Darvas, if box is broken, entry should be box high (breakout level)
+                  if (box.status === 'broken') {
+                    entryPrice = box.boxHigh;
+                    // Stop loss at box low
+                    stopLoss = box.boxLow;
+                  } else {
+                    // For active box, entry at current price, stop at box low
+                    entryPrice = box.currentPrice;
+                    stopLoss = box.boxLow * 0.98; // Slightly below box low
+                  }
+                } else {
+                  entryPrice = box.currentPrice;
+                  stopLoss = entryPrice * 0.95;
+                }
+              } else {
+                // For false breakout/bearish
+                entryPrice = box.currentPrice;
+                const resistanceLevels = [box.currentPrice * 1.05];
+                if (supertrendLevel && supertrendLevel > 0 && !isNaN(supertrendLevel)) {
+                  resistanceLevels.push(supertrendLevel);
+                }
+                if (sma100Level && sma100Level > 0 && !isNaN(sma100Level)) {
+                  resistanceLevels.push(sma100Level);
+                }
+
+                if (resistanceLevels.length > 0) {
+                  stopLoss = Math.min(...resistanceLevels) * 1.02;
+                }
+              }
+
+              // Calculate target based on risk-reward ratio (2:1)
+              const riskAmount = Math.abs(entryPrice - stopLoss);
+              target = entryPrice + (riskAmount * 2);
+
               const analysisText = `Darvas Box Pattern Detected (${box.status.replace('_', ' ').toUpperCase()}).\n\nBox Metrics:\n- Box High: ₹${box.boxHigh.toFixed(2)}\n- Box Low: ₹${box.boxLow.toFixed(2)}\n- Box Range: ${box.boxRangePercent.toFixed(1)}%\n- Consolidation Days: ${box.consolidationDays}\n- Current Price: ₹${box.currentPrice.toFixed(2)}\n- 52-Week High: ₹${box.week52High.toFixed(2)}\n\n${
                 box.status === 'broken'
                   ? `Breakout Analysis:\n- Breakout Price: ₹${box.breakoutPrice.toFixed(2)}\n- Volume Confirmed: ${box.volumeConfirmed ? 'Yes ✓' : 'No ✗'}\n- Price Above Box: ${box.priceToBoxHighPercent.toFixed(2)}%\n\nBullish breakout detected. Consider entry on pullback to box high with stop loss below box low.`
@@ -922,7 +1076,11 @@ export default function Cross50200Page() {
                     : `False Breakout:\n- Price failed to sustain above ₹${box.boxHigh.toFixed(2)}\n- Volume: ${box.volumeConfirmed ? 'Confirmed' : 'Weak'}\n\nAvoid entry. Wait for proper consolidation and re-breakout attempt.`
               }`;
 
-              handleConvertToIdea(e, box.symbol, displaySymbol, box.currentPrice, box.status === 'broken' || box.status === 'active', analysisText);
+              // Track screener converted to idea
+              trackScreenerConvertedToIdea(displaySymbol, activeTab);
+
+              // Navigate to new idea page with pre-populated data
+              router.push(`/ideas/new?symbol=${encodeURIComponent(displaySymbol)}&analysis=${encodeURIComponent(analysisText)}&entryPrice=${entryPrice.toFixed(2)}&stopLoss=${stopLoss.toFixed(2)}&target=${target.toFixed(2)}`);
             }}
             className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 bg-gray-100 dark:bg-[#30363d] hover:bg-gray-200 dark:hover:bg-[#3c444d] border border-gray-200 dark:border-[#444c56] text-gray-700 dark:text-gray-300 text-xs font-semibold rounded-lg transition-colors"
           >
@@ -1079,8 +1237,75 @@ export default function Cross50200Page() {
         {/* Action Buttons */}
         <div className="flex gap-2 pt-3 border-t border-gray-200 dark:border-[#30363d]">
           <button
-            onClick={(e) => {
+            onClick={async (e) => {
+              e.stopPropagation();
+
               const isBullish = signal.signalType === 'BUY' || signal.signalType === 'BREAKOUT';
+
+              // Fetch symbol data to get technical levels (Supertrend, 100MA, 50MA)
+              let entryPrice = signal.currentPrice;
+              let stopLoss = isBullish ? signal.currentPrice * 0.95 : signal.currentPrice * 1.05;
+              let target = isBullish ? signal.currentPrice * 1.10 : signal.currentPrice * 0.90;
+              let supertrendLevel = null;
+              let sma100Level = null;
+              let sma50Level = null;
+
+              try {
+                const symbolDoc = await getDoc(doc(db, 'symbols', signal.symbol));
+                if (symbolDoc.exists()) {
+                  const data = symbolDoc.data();
+                  const technicals = data.technicals || data.technical;
+
+                  if (technicals) {
+                    supertrendLevel = parseFloat(technicals.supertrend || technicals.supertrendLevel) || null;
+                    sma100Level = parseFloat(technicals.sma100 || technicals.ma100) || null;
+                    sma50Level = parseFloat(technicals.sma50 || technicals.ema50 || technicals.ma50) || null;
+                  }
+                }
+              } catch (error) {
+                console.error('Error fetching symbol data:', error);
+              }
+
+              // For bullish signals, use support levels for entry
+              if (isBullish) {
+                const supportLevels = [];
+                if (supertrendLevel && supertrendLevel > 0 && !isNaN(supertrendLevel)) {
+                  supportLevels.push(supertrendLevel);
+                }
+                if (sma100Level && sma100Level > 0 && !isNaN(sma100Level)) {
+                  supportLevels.push(sma100Level);
+                }
+                if (sma50Level && sma50Level > 0 && !isNaN(sma50Level)) {
+                  supportLevels.push(sma50Level);
+                }
+
+                if (supportLevels.length > 0) {
+                  entryPrice = Math.max(...supportLevels);
+                  stopLoss = entryPrice * 0.98;
+                } else {
+                  entryPrice = signal.currentPrice;
+                  stopLoss = entryPrice * 0.95;
+                }
+              } else {
+                // For bearish/short ideas
+                entryPrice = signal.currentPrice;
+                const resistanceLevels = [signal.currentPrice * 1.05];
+                if (supertrendLevel && supertrendLevel > 0 && !isNaN(supertrendLevel)) {
+                  resistanceLevels.push(supertrendLevel);
+                }
+                if (sma100Level && sma100Level > 0 && !isNaN(sma100Level)) {
+                  resistanceLevels.push(sma100Level);
+                }
+
+                if (resistanceLevels.length > 0) {
+                  stopLoss = Math.min(...resistanceLevels) * 1.02;
+                }
+              }
+
+              // Calculate target based on risk-reward ratio (2:1)
+              const riskAmount = Math.abs(entryPrice - stopLoss);
+              target = entryPrice + (riskAmount * 2);
+
               const analysisText = `BB Squeeze ${signal.signalType} Signal Detected.\n\nIndicators:\n- Signal Type: ${signal.signalType}\n- Current Price: ₹${signal.currentPrice.toFixed(2)}\n- BB Upper: ₹${signal.bbUpper.toFixed(2)}\n- BB Lower: ₹${signal.bbLower.toFixed(2)}\n- BB MA: ₹${signal.bbMA.toFixed(2)}\n- BB Width: ${signal.bbWidthPercent.toFixed(2)}%\n- RSI: ${signal.rsi.toFixed(1)}\n- MACD: ${signal.macd.toFixed(2)}\n- Days in Squeeze: ${signal.daysInSqueeze}\n- In Squeeze: ${signal.inSqueeze ? 'Yes' : 'No'}\n- BB Breakout: ${signal.bbBreakout ? 'Yes' : 'No'}\n\n${
                 signal.signalType === 'BUY'
                   ? `Strong bullish momentum detected. Price broke above BB upper band with RSI > 60 and positive MACD. Consider entry on pullbacks with stop below BB MA.`
@@ -1091,7 +1316,11 @@ export default function Cross50200Page() {
                       : `Volatility expansion after ${signal.daysInSqueeze} day squeeze. Monitor price action and volume for directional clarity before entry.`
               }`;
 
-              handleConvertToIdea(e, signal.symbol, displaySymbol, signal.currentPrice, isBullish, analysisText);
+              // Track screener converted to idea
+              trackScreenerConvertedToIdea(displaySymbol, activeTab);
+
+              // Navigate to new idea page with pre-populated data
+              router.push(`/ideas/new?symbol=${encodeURIComponent(displaySymbol)}&analysis=${encodeURIComponent(analysisText)}&entryPrice=${entryPrice.toFixed(2)}&stopLoss=${stopLoss.toFixed(2)}&target=${target.toFixed(2)}`);
             }}
             className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 bg-gray-100 dark:bg-[#30363d] hover:bg-gray-200 dark:hover:bg-[#3c444d] border border-gray-200 dark:border-[#444c56] text-gray-700 dark:text-gray-300 text-xs font-semibold rounded-lg transition-colors"
           >
@@ -2072,7 +2301,9 @@ export default function Cross50200Page() {
                       <div
                         key={stock.symbol}
                         className="bg-white dark:bg-[#0d1117] border border-gray-200 dark:border-[#30363d] rounded-xl p-4 hover:shadow-lg transition-shadow cursor-pointer"
-                        onClick={(e) => {
+                        onClick={async (e) => {
+                          e.stopPropagation();
+
                           // Get the first available screener data for price
                           const priceData = stock.ma50 || stock.ma200 || stock.advancedTrailstop || stock.volumeSpike || stock.darvas || stock.bbsqueeze;
                           const currentPrice = priceData
@@ -2085,18 +2316,79 @@ export default function Cross50200Page() {
                             stock.darvas?.status === 'broken' ||
                             (stock.volumeSpike && stock.volumeSpike.priceChangePercent > 0);
 
+                          // Fetch symbol data to get technical levels (Supertrend, 100MA, 50MA)
+                          let entryPrice = currentPrice;
+                          let stopLoss = isBullish ? currentPrice * 0.95 : currentPrice * 1.05;
+                          let target = isBullish ? currentPrice * 1.10 : currentPrice * 0.90;
+                          let supertrendLevel = null;
+                          let sma100Level = null;
+                          let sma50Level = null;
+
+                          try {
+                            const symbolDoc = await getDoc(doc(db, 'symbols', stock.symbol));
+                            if (symbolDoc.exists()) {
+                              const data = symbolDoc.data();
+                              const technicals = data.technicals || data.technical;
+
+                              if (technicals) {
+                                supertrendLevel = parseFloat(technicals.supertrend || technicals.supertrendLevel) || null;
+                                sma100Level = parseFloat(technicals.sma100 || technicals.ma100) || null;
+                                sma50Level = parseFloat(technicals.sma50 || technicals.ema50 || technicals.ma50) || null;
+                              }
+                            }
+                          } catch (error) {
+                            console.error('Error fetching symbol data:', error);
+                          }
+
+                          // For bullish signals, use support levels for entry
+                          if (isBullish) {
+                            const supportLevels = [];
+                            if (supertrendLevel && supertrendLevel > 0 && !isNaN(supertrendLevel)) {
+                              supportLevels.push(supertrendLevel);
+                            }
+                            if (sma100Level && sma100Level > 0 && !isNaN(sma100Level)) {
+                              supportLevels.push(sma100Level);
+                            }
+                            if (sma50Level && sma50Level > 0 && !isNaN(sma50Level)) {
+                              supportLevels.push(sma50Level);
+                            }
+
+                            if (supportLevels.length > 0) {
+                              entryPrice = Math.max(...supportLevels);
+                              stopLoss = entryPrice * 0.98;
+                            } else {
+                              entryPrice = currentPrice;
+                              stopLoss = entryPrice * 0.95;
+                            }
+                          } else {
+                            // For bearish/short ideas
+                            entryPrice = currentPrice;
+                            const resistanceLevels = [currentPrice * 1.05];
+                            if (supertrendLevel && supertrendLevel > 0 && !isNaN(supertrendLevel)) {
+                              resistanceLevels.push(supertrendLevel);
+                            }
+                            if (sma100Level && sma100Level > 0 && !isNaN(sma100Level)) {
+                              resistanceLevels.push(sma100Level);
+                            }
+
+                            if (resistanceLevels.length > 0) {
+                              stopLoss = Math.min(...resistanceLevels) * 1.02;
+                            }
+                          }
+
+                          // Calculate target based on risk-reward ratio (2:1)
+                          const riskAmount = Math.abs(entryPrice - stopLoss);
+                          target = entryPrice + (riskAmount * 2);
+
                           // Build analysis text
                           const screenersList = stock.screeners.join(', ');
                           const analysisText = `Multi-screener signal detected for ${displaySymbol}.\n\nActive Screeners: ${screenersList}\n\nCurrent Price: ₹${currentPrice.toFixed(2)}\n\nThis stock is showing ${isBullish ? 'bullish' : 'bearish'} signals across multiple technical indicators.`;
 
-                          handleConvertToIdea(
-                            e,
-                            stock.symbol,
-                            displaySymbol,
-                            currentPrice,
-                            isBullish,
-                            analysisText
-                          );
+                          // Track screener converted to idea
+                          trackScreenerConvertedToIdea(displaySymbol, activeTab);
+
+                          // Navigate to new idea page with pre-populated data
+                          router.push(`/ideas/new?symbol=${encodeURIComponent(displaySymbol)}&analysis=${encodeURIComponent(analysisText)}&entryPrice=${entryPrice.toFixed(2)}&stopLoss=${stopLoss.toFixed(2)}&target=${target.toFixed(2)}`);
                         }}
                       >
                         {/* Header */}

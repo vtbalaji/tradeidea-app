@@ -358,11 +358,13 @@ def manage_portfolio_stoploss():
                     # Notify user if phase changed (not just SL ratchet within same phase)
                     if sl_update['phase'] != sl_update['slm']['phase']:
                         phase_changed_count += 1
-                        create_notification(
-                            pos['userId'],
-                            pos,
-                            f"{symbol}: {sl_update['reason']}"
-                        )
+                        # Only send notification if position still exists and is open
+                        if pos.get('status') == 'open' and pos.get('id'):
+                            create_notification(
+                                pos['userId'],
+                                pos,
+                                f"{symbol}: {sl_update['reason']}"
+                            )
 
                     print(f'  ✅ SL Updated in Firebase')
                 else:

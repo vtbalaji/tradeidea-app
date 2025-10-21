@@ -404,6 +404,11 @@ def check_portfolio_positions():
                         print(f'  ⏭️  {symbol} ({user_id[:8]}): Skipping {alert_type} (recent alert exists)')
                         continue
 
+                    # Only send notification if position is still open
+                    if position.get('status') != 'open':
+                        print(f'  ⏭️  {symbol} ({user_id[:8]}): Skipping {alert_type} (position not open)')
+                        continue
+
                     icon = '🎯' if alert_type == 'target_alert' else '⚠️'
                     print(f'  {icon} {symbol} ({user_id[:8]}): {alert["triggerReason"]}')
                     print(f'     Current: ₹{current_price:.2f}, Trigger: ₹{alert["triggerPrice"]:.2f}')

@@ -64,17 +64,92 @@ export default function InvestorAnalysisModal({
   const [showDetails, setShowDetails] = React.useState(false);
 
   const handleConvertToIdea = () => {
-    // Calculate suggested entry price, stop loss, and target
-    const entryPrice = technicals?.lastPrice || '';
-    const stopLoss = technicals?.sma50 || technicals?.sma20 || '';
-    const target = entryPrice && stopLoss ? (entryPrice + (entryPrice - stopLoss) * 1.5).toFixed(2) : '';
+    // Determine if this is a bullish setup based on suitable investor types
+    const isBullish = recommendation.suitableFor.length > 0;
+
+    // Calculate suggested entry price, stop loss, and target using support levels
+    let entryPrice = technicals?.lastPrice || 0;
+    let stopLoss = 0;
+    let target = 0;
+
+    if (isBullish && technicals) {
+      // For bullish signals, use support levels for entry
+      const supportLevels = [];
+
+      if (technicals.supertrend && technicals.supertrend > 0) {
+        supportLevels.push(technicals.supertrend);
+      }
+      if (technicals.sma100 && technicals.sma100 > 0) {
+        supportLevels.push(technicals.sma100);
+      }
+      if (technicals.sma50 && technicals.sma50 > 0) {
+        supportLevels.push(technicals.sma50);
+      }
+
+      if (supportLevels.length > 0) {
+        // Entry is the highest of available support levels
+        entryPrice = Math.max(...supportLevels);
+        // Stop loss: 2% below the highest support level
+        stopLoss = entryPrice * 0.98;
+      } else {
+        // Fallback if no technical levels available
+        entryPrice = technicals.lastPrice || 0;
+        stopLoss = entryPrice * 0.95;
+      }
+    } else {
+      // For bearish/neutral or short ideas
+      entryPrice = technicals?.lastPrice || 0;
+      stopLoss = entryPrice * 1.05;
+    }
+
+    // Calculate target based on risk-reward ratio (2:1)
+    const riskAmount = Math.abs(entryPrice - stopLoss);
+    target = entryPrice + (riskAmount * 2);
+
+    // Build analysis text based on suitable investor types
+    let analysisText = 'Investment Analysis:\n\n';
+
+    if (recommendation.suitableFor.length > 0) {
+      analysisText += `✓ Suitable for: ${recommendation.suitableFor.map(type => investorTypeInfo[type].name).join(', ')}\n\n`;
+
+      // Add details for each suitable type
+      recommendation.suitableFor.forEach(type => {
+        const analysis = recommendation.details[type];
+        const info = investorTypeInfo[type];
+        analysisText += `${info.icon} ${info.name}:\n`;
+        analysisText += `- ${info.description}\n`;
+        analysisText += `- Investment horizon: ${info.horizon}\n`;
+        analysisText += `- Criteria met: ${analysis.met}/${analysis.total}\n\n`;
+      });
+    } else {
+      analysisText += '⚠️ No suitable investor type found for current market conditions.\n\n';
+    }
+
+    // Add key technical levels
+    analysisText += 'Key Levels:\n';
+    if (technicals) {
+      if (technicals.lastPrice) analysisText += `- Current Price: ₹${technicals.lastPrice.toFixed(2)}\n`;
+      if (technicals.sma50) analysisText += `- 50 MA: ₹${technicals.sma50.toFixed(2)}\n`;
+      if (technicals.sma200) analysisText += `- 200 MA: ₹${technicals.sma200.toFixed(2)}\n`;
+      if (technicals.rsi) analysisText += `- RSI: ${technicals.rsi.toFixed(2)}\n`;
+    }
+
+    // Add fundamental highlights
+    if (fundamentals) {
+      analysisText += '\nFundamental Highlights:\n';
+      if (fundamentals.sector) analysisText += `- Sector: ${fundamentals.sector}\n`;
+      if (fundamentals.pe) analysisText += `- P/E Ratio: ${fundamentals.pe.toFixed(2)}\n`;
+      if (fundamentals.roe) analysisText += `- ROE: ${fundamentals.roe.toFixed(2)}%\n`;
+      if (fundamentals.dividendYield) analysisText += `- Dividend Yield: ${fundamentals.dividendYield.toFixed(2)}%\n`;
+    }
 
     // Build query parameters
     const params = new URLSearchParams({
       symbol: symbol,
-      ...(entryPrice && { entryPrice: entryPrice.toString() }),
-      ...(stopLoss && { stopLoss: stopLoss.toString() }),
-      ...(target && { target: target.toString() })
+      ...(analysisText && { analysis: analysisText }),
+      ...(entryPrice > 0 && { entryPrice: entryPrice.toFixed(2) }),
+      ...(stopLoss > 0 && { stopLoss: stopLoss.toFixed(2) }),
+      ...(target > 0 && { target: target.toFixed(2) })
     });
 
     // Navigate to new idea page with pre-filled data

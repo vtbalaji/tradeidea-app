@@ -223,8 +223,9 @@ export const FundamentalsCard: React.FC<FundamentalsCardProps> = ({
           {fundamentals.pegRatios && (
             <div className="mt-3 pt-3 border-t border-gray-200 dark:border-[#30363d]">
               <div className="flex items-center justify-between mb-2">
-                <p className="text-xs font-bold text-[#ff8c42]">
-                  PEG Analysis - Data Confidence: {fundamentals.pegRatios.confidence}
+                <p className="text-xs">
+                  <span className="font-bold text-[#ff8c42]">PEG Analysis </span>
+                  <span className="text-gray-600 dark:text-[#8b949e]">(Data Conf: {fundamentals.pegRatios.confidence})</span>
                 </p>
                 {fundamentals.pegRatios.recommendation && (
                   <span className={`px-2 py-0.5 text-xs font-semibold rounded ${getPegRecommendationColor(fundamentals.pegRatios.recommendation)}`}>
