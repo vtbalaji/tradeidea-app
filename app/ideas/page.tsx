@@ -141,7 +141,7 @@ export default function IdeasHubPage() {
     e.stopPropagation();
 
     if (!idea.technicals || !idea.fundamentals) {
-      alert('⚠️ Technical or fundamental data not available. Run batch analysis first.');
+      alert('⚠️ Analysis data not available for this stock yet. Please check back later.');
       return;
     }
 

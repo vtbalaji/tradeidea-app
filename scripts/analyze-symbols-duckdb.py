@@ -62,12 +62,13 @@ except ValueError:
 db = firestore.client()
 
 def fetch_eod_data(fetcher, symbol):
-    """Fetch 730 days of EOD data from DuckDB (2 years for weekly calculation)"""
+    """Fetch up to 200 days of EOD data from DuckDB (uses whatever is available, min 50 days)"""
     try:
         print(f'  📥 Fetching data for {symbol} from DuckDB...')
 
-        # Fetch data from DuckDB
-        df = fetcher.get_data(symbol, days=730)
+        # Try to fetch 200 days for full analysis (SMA200, etc.)
+        # If symbol doesn't have 200 days, DuckDB will return whatever is available
+        df = fetcher.get_data(symbol, days=200)
 
         if df.empty:
             print(f'  ⚠️  No data available')
@@ -339,13 +340,16 @@ def log_corporate_action(action_data):
         print(f'  ⚠️  Failed to log corporate action: {str(e)}')
 
 def calculate_indicators(df):
-    """Calculate all technical indicators"""
+    """Calculate all technical indicators (adapts based on available data)"""
 
-    # Moving Averages
-    sma20 = SMAIndicator(close=df['Close'], window=20).sma_indicator()
-    sma50 = SMAIndicator(close=df['Close'], window=50).sma_indicator()
-    sma100 = SMAIndicator(close=df['Close'], window=100).sma_indicator()
-    sma200 = SMAIndicator(close=df['Close'], window=200).sma_indicator()
+    data_points = len(df)
+    print(f'  📊 Calculating indicators with {data_points} days of data...')
+
+    # Moving Averages - calculate only if we have enough data
+    sma20 = SMAIndicator(close=df['Close'], window=20).sma_indicator() if data_points >= 20 else None
+    sma50 = SMAIndicator(close=df['Close'], window=50).sma_indicator() if data_points >= 50 else None
+    sma100 = SMAIndicator(close=df['Close'], window=100).sma_indicator() if data_points >= 100 else None
+    sma200 = SMAIndicator(close=df['Close'], window=200).sma_indicator() if data_points >= 200 else None
 
     ema9 = EMAIndicator(close=df['Close'], window=9).ema_indicator()
     ema21 = EMAIndicator(close=df['Close'], window=21).ema_indicator()
@@ -391,14 +395,20 @@ def calculate_indicators(df):
 
     weekly_close = get_close_n_days_ago(5)  # ~1 week (5 trading days)
     monthly_close = get_close_n_days_ago(21)  # ~1 month (21 trading days)
-    quarterly_close = get_close_n_days_ago(63)  # ~3 months (63 trading days)
 
     weekly_change = last_price - weekly_close
     weekly_change_percent = (weekly_change / weekly_close) * 100
     monthly_change = last_price - monthly_close
     monthly_change_percent = (monthly_change / monthly_close) * 100
-    quarterly_change = last_price - quarterly_close
-    quarterly_change_percent = (quarterly_change / quarterly_close) * 100
+
+    # Quarterly - only if we have enough data (63+ days)
+    if data_points >= 63:
+        quarterly_close = get_close_n_days_ago(63)  # ~3 months (63 trading days)
+        quarterly_change = last_price - quarterly_close
+        quarterly_change_percent = (quarterly_change / quarterly_close) * 100
+    else:
+        quarterly_change = 0
+        quarterly_change_percent = 0
 
     # Calculate daily supertrend
     daily_supertrend, daily_supertrend_direction = calculate_supertrend(df, period=10, multiplier=3)
@@ -418,10 +428,10 @@ def calculate_indicators(df):
         'quarterlyChange': quarterly_change,
         'quarterlyChangePercent': quarterly_change_percent,
 
-        'sma20': float(sma20.iloc[-1]) if not pd.isna(sma20.iloc[-1]) else 0,
-        'sma50': float(sma50.iloc[-1]) if not pd.isna(sma50.iloc[-1]) else 0,
-        'sma100': float(sma100.iloc[-1]) if not pd.isna(sma100.iloc[-1]) else 0,
-        'sma200': float(sma200.iloc[-1]) if not pd.isna(sma200.iloc[-1]) else 0,
+        'sma20': float(sma20.iloc[-1]) if sma20 is not None and not pd.isna(sma20.iloc[-1]) else 0,
+        'sma50': float(sma50.iloc[-1]) if sma50 is not None and not pd.isna(sma50.iloc[-1]) else 0,
+        'sma100': float(sma100.iloc[-1]) if sma100 is not None and not pd.isna(sma100.iloc[-1]) else 0,
+        'sma200': float(sma200.iloc[-1]) if sma200 is not None and not pd.isna(sma200.iloc[-1]) else 0,
 
         'ema9': float(ema9.iloc[-1]) if not pd.isna(ema9.iloc[-1]) else 0,
         'ema21': float(ema21.iloc[-1]) if not pd.isna(ema21.iloc[-1]) else 0,
@@ -697,8 +707,8 @@ def analyze_single_symbol(symbol):
         print(f'\n📥 Fetching historical data for {symbol}...')
         df = fetch_eod_data(fetcher, symbol)
 
-        if df is None or len(df) < 200:
-            print(f'❌ Insufficient data for {symbol}')
+        if df is None or len(df) < 50:
+            print(f'❌ Insufficient data for {symbol} (need at least 50 days)')
             return
 
         # STEP 1: Ask user about corporate action
@@ -821,8 +831,8 @@ def analyze_symbols():
                     skipped_count += 1
                     continue
 
-                if len(df) < 200:
-                    print(f'  ⏭️  Skipping - insufficient data ({len(df)} < 200 days)')
+                if len(df) < 50:
+                    print(f'  ⏭️  Skipping - insufficient data ({len(df)} < 50 days)')
                     fail_count += 1
                     continue
 

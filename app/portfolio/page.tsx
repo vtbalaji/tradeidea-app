@@ -236,7 +236,7 @@ export default function PortfolioPage() {
   // Handler functions with useCallback for optimization
   const handleOpenAnalysis = useCallback((position: any) => {
     if (!position.technicals || !position.fundamentals) {
-      alert('Technical or fundamental data not available for this symbol yet. Please wait for the next analysis cycle.');
+      alert(`⚠️ Analysis data not available for ${position.symbol} yet. Please check back later.`);
       return;
     }
 

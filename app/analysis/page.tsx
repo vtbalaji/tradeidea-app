@@ -90,7 +90,7 @@ export default function AnalysisPage() {
       const symbolData = await getSymbolData(symbolWithPrefix);
 
       if (!symbolData || !symbolData.technical || !symbolData.fundamental) {
-        setError('Technical or fundamental data not available for this symbol. Please try another symbol.');
+        setError('Analysis data not available for this symbol yet. Please try another symbol or check back later.');
         setLoading(false);
         return;
       }

@@ -548,7 +548,7 @@ export default function Cross50200Page() {
     if (symbolData[crossover.symbol]) {
       const { technicals, fundamentals } = symbolData[crossover.symbol];
       if (!technicals || !fundamentals) {
-        alert('⚠️ Technical or fundamental data not available for this symbol.');
+        alert('⚠️ Analysis data not available for this stock yet. Please check back later.');
         return;
       }
       const engine = createInvestmentEngine(technicals, fundamentals);
@@ -572,7 +572,7 @@ export default function Cross50200Page() {
       const fundamentals = data.fundamentals || data.fundamental;
 
       if (!technicals || !fundamentals) {
-        alert('⚠️ Technical or fundamental data not available. Run batch analysis first.');
+        alert('⚠️ Analysis data not available for this stock yet. Please check back later.');
         return;
       }
 
@@ -699,11 +699,36 @@ export default function Cross50200Page() {
       riskAmount: riskAmount
     });
 
-    // Track screener converted to idea
-    trackScreenerConvertedToIdea(displaySymbol, activeTab);
+    // Show analysis instead of navigating to idea creation
+    // Fetch symbol data from Firestore for analysis
+    try {
+      const symbolDoc = await getDoc(doc(db, 'symbols', symbol));
+      if (!symbolDoc.exists()) {
+        alert('⚠️ Symbol data not found in database.');
+        return;
+      }
 
-    // Navigate to new idea page with pre-populated data
-    router.push(`/ideas/new?symbol=${encodeURIComponent(displaySymbol)}&analysis=${encodeURIComponent(analysisText)}&entryPrice=${entryPrice.toFixed(2)}&stopLoss=${stopLoss.toFixed(2)}&target=${target.toFixed(2)}`);
+      const data = symbolDoc.data();
+      const technicals = data.technicals || data.technical;
+      const fundamentals = data.fundamentals || data.fundamental;
+
+      if (!technicals || !fundamentals) {
+        alert('⚠️ Analysis data not available for this stock yet. Please check back later.');
+        return;
+      }
+
+      // Track analysis viewed
+      trackAnalysisViewed(symbol, 'screener-multi');
+
+      // Create investment engine and show analysis
+      const engine = createInvestmentEngine(technicals, fundamentals);
+      const rec = engine.getRecommendation();
+      setCurrentRecommendation(rec);
+      setShowAnalysisModal(symbol);
+    } catch (error) {
+      console.error('Error fetching symbol data:', error);
+      alert('⚠️ Failed to fetch analysis data.');
+    }
   };
 
   const renderVolumeSpikeCard = (spike: VolumeSpike) => {

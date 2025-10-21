@@ -138,11 +138,11 @@ export const TradingProvider = ({ children }: { children: ReactNode }) => {
       fetchIdeas();
       fetchNotifications();
 
-      // Set up polling for updates (every 30 seconds)
+      // Set up polling for updates (every 5 minutes)
       const interval = setInterval(() => {
         fetchIdeas();
         fetchNotifications();
-      }, 30000);
+      }, 300000); // 5 minutes
 
       return () => clearInterval(interval);
     } else {
