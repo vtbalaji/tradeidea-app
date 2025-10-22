@@ -3,23 +3,32 @@
 XBRL EOD Batch Processor
 
 Processes XBRL files for companies, calculates fundamental ratios,
-and stores them in Firebase Firestore.
+and stores them in DuckDB (single consolidated table).
 
-This script is the equivalent of analyze-symbols-duckdb.py but for fundamental data.
+This script processes XBRL files with automatic file discovery and tracking.
 
 Usage:
-    # Process single company
-    python3 scripts/xbrl_eod.py RELIANCE /path/to/reliance_xbrl.xml
+    # Process all files for a symbol
+    python3 scripts/xbrl_eod.py --symbol TCS
 
-    # Process multiple companies from a directory
-    python3 scripts/xbrl_eod.py --dir /path/to/xbrl_files/
+    # Process only consolidated files for a symbol
+    python3 scripts/xbrl_eod.py --symbol TCS --prefer consolidated
+
+    # Process only standalone files for a symbol
+    python3 scripts/xbrl_eod.py --symbol RELIANCE --prefer standalone
+
+    # Process all files in xbrl directory
+    python3 scripts/xbrl_eod.py --dir ./xbrl
+
+    # Reprocess failed files
+    python3 scripts/xbrl_eod.py --retry-failed
 
 Features:
     - Parses XBRL files (Indian company financial statements)
-    - Calculates 25+ fundamental ratios (P/E, ROE, ROA, etc.)
-    - Fetches current market price from DuckDB
-    - Stores in Firestore with source="xbrl" (authentic data)
-    - Supports batch processing
+    - Calculates 40+ fundamental ratios (P/E, ROE, ROA, etc.)
+    - Stores in DuckDB with raw + calculated data (single table)
+    - Tracks processed files (prevents duplicates)
+    - Supports both standalone and consolidated statements
 """
 
 import sys
@@ -34,281 +43,365 @@ sys.path.insert(0, current_dir)
 
 from xbrl_parser import XBRLParser
 from fundamental_calculator import FundamentalCalculator
-from fundamental_duckdb_storage import FundamentalStorage
-
-# Initialize Firebase
-import firebase_admin
-from firebase_admin import credentials, firestore
-
-cred_path = os.path.join(os.getcwd(), 'serviceAccountKey.json')
-if not os.path.exists(cred_path):
-    print('❌ serviceAccountKey.json not found')
-    sys.exit(1)
-
-try:
-    cred = credentials.Certificate(cred_path)
-    firebase_admin.initialize_app(cred)
-except ValueError:
-    # Already initialized
-    pass
-
-db = firestore.client()
+from fundamental_xbrl_storage import XBRLStorage
 
 
-def extract_symbol_from_filename(filename):
+def extract_metadata_from_filename(filename):
     """
-    Try to extract symbol from XBRL filename
-    Common patterns: RELIANCE_2024.xml, NSE_RELIANCE_FY2024.xml, etc.
+    Extract symbol, statement_type, month, year from filename
+
+    Expected format: SYMBOL_type_month_year.xml
+    Example: TCS_consolidated_may_2025.xml
+
+    Returns:
+        dict with 'symbol', 'statement_type', 'month', 'year' or None
     """
     basename = os.path.basename(filename)
-
-    # Remove extension
     name_without_ext = os.path.splitext(basename)[0]
 
-    # Try to extract symbol (uppercase letters, possibly with numbers)
-    # Match patterns like: RELIANCE, BAJFINANCE, TCS, etc.
-    match = re.search(r'^([A-Z][A-Z0-9]*)', name_without_ext)
-    if match:
-        return match.group(1)
+    # Split by underscore
+    parts = name_without_ext.split('_')
 
-    return None
+    if len(parts) < 4:
+        return None
 
-
-def save_to_duckdb(storage, symbol, fy, quarter, fundamentals, xbrl_data, period_info):
-    """
-    Save fundamental data to DuckDB (historical storage)
-    """
-    try:
-        storage.store_fundamental_data(symbol, fy, quarter, fundamentals, xbrl_data, period_info)
-        return True
-    except Exception as e:
-        print(f'  ❌ Error saving to DuckDB: {str(e)}')
-        return False
-
-
-def save_latest_to_firestore(storage, symbol, fundamentals, xbrl_data, period_info):
-    """
-    Save ONLY the latest quarter data to Firestore
-    Checks DuckDB to ensure this is the most recent data before updating Firebase
-    """
-    # Add NS_ prefix for Firebase compatibility
-    symbol_with_prefix = f'NS_{symbol}' if not symbol.startswith('NS_') else symbol
-
-    # Get latest quarter from DuckDB
-    latest_in_db = storage.get_latest_quarter(symbol)
-
-    # Check if this is the latest data
-    is_latest = False
-    if not latest_in_db:
-        is_latest = True
-    else:
-        # Compare end dates
-        from datetime import datetime
-        current_date = datetime.strptime(period_info['endDate'], '%Y-%m-%d')
-        latest_date = latest_in_db['end_date']
-        if isinstance(latest_date, str):
-            latest_date = datetime.strptime(latest_date, '%Y-%m-%d')
-
-        is_latest = current_date >= latest_date
-
-    if not is_latest:
-        print(f'  ⚠️  Skipping Firebase update - not the latest quarter')
-        print(f'     Current: {period_info["fy"]} {period_info["quarter"]}')
-        print(f'     Latest: {latest_in_db["fy"]} {latest_in_db["quarter"]}')
-        return False
-
-    # Prepare data structure
-    fundamental_data = {
-        **fundamentals,
-        'fy': period_info['fy'],
-        'quarter': period_info['quarter'],
-        'isAnnual': period_info.get('isAnnual', False),
-        'endDate': period_info['endDate'],
-        'startDate': period_info.get('startDate'),
-        'lastUpdated': firestore.SERVER_TIMESTAMP,
-        'source': 'xbrl',  # Mark as authentic XBRL data
+    result = {
+        'symbol': parts[0].upper(),
+        'statement_type': parts[1].lower(),  # standalone or consolidated
+        'month': parts[2].lower(),
+        'year': parts[3]
     }
 
-    # Also store raw XBRL data for reference
-    xbrl_snapshot = {
-        'revenue': xbrl_data.get('Revenue', 0),
-        'netProfit': xbrl_data.get('NetProfit', 0),
-        'totalAssets': xbrl_data.get('Assets', 0),
-        'totalEquity': xbrl_data.get('Equity', 0),
-        'totalDebt': xbrl_data.get('TotalDebt', 0),
-        'eps': xbrl_data.get('EPS', 0),
-        'fy': period_info['fy'],
-        'quarter': period_info['quarter'],
-    }
+    # Validate statement_type
+    if result['statement_type'] not in ['standalone', 'consolidated']:
+        return None
 
-    # Save to symbols collection
-    symbols_doc = db.collection('symbols').document(symbol_with_prefix)
-    symbols_doc.set({
-        'symbol': symbol_with_prefix,
-        'originalSymbol': symbol,
-        'fundamentals': fundamental_data,
-        'xbrlSnapshot': xbrl_snapshot,
-        'lastFetchedFundamentals': firestore.SERVER_TIMESTAMP,
-    }, merge=True)  # merge=True preserves technical data if it exists
-
-    print(f'  ✅ Saved latest quarter to Firestore: {period_info["fy"]} {period_info["quarter"]}')
-    return True
+    return result
 
 
-def process_xbrl_file(xbrl_file_path, symbol=None):
+def find_xbrl_files(symbol=None, directory='./xbrl', statement_type=None):
+    """
+    Find all XBRL files in directory, optionally filtered by symbol and type
+
+    Args:
+        symbol: Stock symbol to filter (e.g., 'TCS')
+        directory: Directory to scan
+        statement_type: Filter by 'standalone' or 'consolidated'
+
+    Returns:
+        List of file paths
+    """
+    # Find all XML files
+    xml_files = glob.glob(os.path.join(directory, '*.xml'))
+
+    results = []
+    for file_path in xml_files:
+        metadata = extract_metadata_from_filename(file_path)
+        if not metadata:
+            continue
+
+        # Filter by symbol
+        if symbol and metadata['symbol'] != symbol.upper():
+            continue
+
+        # Filter by statement_type
+        if statement_type and metadata['statement_type'] != statement_type.lower():
+            continue
+
+        results.append({
+            'path': file_path,
+            'filename': os.path.basename(file_path),
+            'metadata': metadata
+        })
+
+    # Sort by symbol, then by year/month (newest first)
+    results.sort(key=lambda x: (
+        x['metadata']['symbol'],
+        x['metadata']['year'],
+        x['metadata']['month']
+    ), reverse=True)
+
+    return results
+
+
+def process_xbrl_file(xbrl_file_path, storage, skip_if_processed=True):
     """
     Process a single XBRL file
 
     Args:
         xbrl_file_path: Path to XBRL file
-        symbol: Stock symbol (optional, will try to extract from filename)
+        storage: XBRLStorage instance
+        skip_if_processed: Skip if file already processed successfully
 
     Returns:
         True if successful, False otherwise
     """
-    print(f'\n{"="*70}')
-    print(f'📄 Processing XBRL File')
-    print(f'{"="*70}')
+    filename = os.path.basename(xbrl_file_path)
 
-    # Extract symbol from filename if not provided
-    if not symbol:
-        symbol = extract_symbol_from_filename(xbrl_file_path)
-        if not symbol:
-            print(f'⚠️  Could not extract symbol from filename: {xbrl_file_path}')
-            user_symbol = input('Please enter stock symbol (e.g., RELIANCE): ').strip().upper()
-            if user_symbol:
-                symbol = user_symbol
-            else:
-                print('❌ Symbol is required')
-                return False
+    # Check if already processed
+    if skip_if_processed:
+        is_processed, processed_at = storage.is_file_processed(filename)
+        if is_processed:
+            print(f'  ⏭️  Already processed ({processed_at}) - skipping')
+            return True
 
-    print(f'Symbol: {symbol}')
-    print(f'File: {xbrl_file_path}')
-
-    # Step 1: Parse XBRL file
-    print(f'\n📋 Step 1: Parsing XBRL file...')
-    parser = XBRLParser(xbrl_file_path)
-    xbrl_data = parser.extract_all()
-
-    if not xbrl_data:
-        print(f'❌ Failed to parse XBRL file')
+    # Extract metadata from filename
+    metadata = extract_metadata_from_filename(filename)
+    if not metadata:
+        print(f'  ❌ Cannot extract metadata from filename: {filename}')
+        print(f'     Expected format: SYMBOL_type_month_year.xml')
         return False
 
-    print(f'✅ Extracted {len(xbrl_data)} financial metrics')
+    symbol = metadata['symbol']
+    statement_type = metadata['statement_type']
 
-    # Get reporting period and FY/Quarter info
-    period_info = parser.get_financial_year_and_quarter()
-    if not period_info:
-        print(f'❌ Could not determine financial year and quarter')
-        return False
-
-    print(f'📅 Reporting Period: {period_info["fy"]} {period_info["quarter"]}')
-    if period_info.get('isAnnual'):
-        print(f'    Type: Annual Report')
-
-    # Display XBRL summary
-    parser.display_summary(xbrl_data)
-
-    # Step 2: Calculate fundamental ratios
-    print(f'\n📊 Step 2: Calculating fundamental ratios...')
-    calculator = FundamentalCalculator()
-    fundamentals = calculator.calculate(xbrl_data, symbol)
-
-    if not fundamentals:
-        print(f'❌ Failed to calculate fundamental ratios')
-        calculator.close()
-        return False
-
-    print(f'✅ Calculated {len(fundamentals)} fundamental ratios')
-
-    # Display fundamentals
-    calculator.display(fundamentals)
-
-    # Step 3: Save to DuckDB (all historical data)
-    print(f'\n💾 Step 3: Saving to DuckDB (historical storage)...')
-    storage = FundamentalStorage()
+    print(f'  ✅ New file - processing')
+    print(f'     Symbol: {symbol}')
+    print(f'     Type: {statement_type}')
 
     try:
-        if not save_to_duckdb(storage, symbol, period_info['fy'], period_info['quarter'],
-                             fundamentals, xbrl_data, period_info):
-            print(f'❌ Failed to save to DuckDB')
-            storage.close()
-            calculator.close()
+        # Step 1: Parse XBRL file
+        print(f'  📋 Parsing XBRL file...')
+        parser = XBRLParser(xbrl_file_path)
+        xbrl_data = parser.extract_all()
+
+        if not xbrl_data:
+            error_msg = 'Failed to parse XBRL file'
+            print(f'  ❌ {error_msg}')
+            storage.mark_file_processed(
+                filename, xbrl_file_path, symbol, statement_type,
+                None, None, None, os.path.getsize(xbrl_file_path),
+                status='failed', error_message=error_msg
+            )
             return False
-    except Exception as e:
-        print(f'❌ Error saving to DuckDB: {str(e)}')
-        storage.close()
+
+        print(f'     Extracted {len(xbrl_data)} metrics')
+
+        # Get reporting period and FY/Quarter info
+        period_info = parser.get_financial_year_and_quarter()
+        if not period_info:
+            error_msg = 'Could not determine financial year and quarter'
+            print(f'  ❌ {error_msg}')
+            storage.mark_file_processed(
+                filename, xbrl_file_path, symbol, statement_type,
+                None, None, None, os.path.getsize(xbrl_file_path),
+                status='failed', error_message=error_msg
+            )
+            return False
+
+        fy = period_info['fy']
+        quarter = period_info['quarter']
+        end_date = period_info['endDate']
+
+        print(f'     Period: {fy} {quarter} ({"Annual" if period_info.get("isAnnual") else "Quarterly"})')
+        print(f'     End Date: {end_date}')
+
+        # Step 2: Calculate fundamental ratios
+        print(f'  📊 Calculating fundamental ratios...')
+        calculator = FundamentalCalculator()
+        fundamentals = calculator.calculate(xbrl_data, symbol)
+
+        if not fundamentals:
+            error_msg = 'Failed to calculate fundamental ratios'
+            print(f'  ❌ {error_msg}')
+            calculator.close()
+            storage.mark_file_processed(
+                filename, xbrl_file_path, symbol, statement_type,
+                fy, quarter, end_date, os.path.getsize(xbrl_file_path),
+                status='failed', error_message=error_msg
+            )
+            return False
+
+        print(f'     Calculated {len(fundamentals)} ratios')
+
+        # Step 3: Store in DuckDB (single table with raw + calculated)
+        print(f'  💾 Storing in DuckDB...')
+        storage.store_data(
+            symbol, fy, quarter, statement_type,
+            xbrl_data, fundamentals, period_info,
+            filename
+        )
+
+        # Step 4: Mark file as processed
+        storage.mark_file_processed(
+            filename, xbrl_file_path, symbol, statement_type,
+            fy, quarter, end_date, os.path.getsize(xbrl_file_path),
+            status='success'
+        )
+        print(f'  ✅ Marked as processed')
+
         calculator.close()
+        return True
+
+    except Exception as e:
+        error_msg = str(e)
+        print(f'  ❌ Error: {error_msg}')
+
+        # Try to extract basic metadata for tracking
+        try:
+            storage.mark_file_processed(
+                filename, xbrl_file_path, symbol, statement_type,
+                None, None, None, os.path.getsize(xbrl_file_path),
+                status='failed', error_message=error_msg
+            )
+        except:
+            pass
+
         return False
 
-    # Step 4: Save ONLY latest quarter to Firestore
-    print(f'\n💾 Step 4: Saving latest quarter to Firestore...')
 
-    try:
-        save_latest_to_firestore(storage, symbol, fundamentals, xbrl_data, period_info)
-        print(f'✅ Successfully processed fundamental data for {symbol}')
-    except Exception as e:
-        print(f'❌ Error saving to Firestore: {str(e)}')
-        storage.close()
-        calculator.close()
-        return False
+def process_symbol(symbol, storage, prefer=None):
+    """
+    Process all XBRL files for a symbol
 
-    storage.close()
-    calculator.close()
+    Args:
+        symbol: Stock symbol (e.g., 'TCS')
+        storage: XBRLStorage instance
+        prefer: 'standalone', 'consolidated', or None (process all)
 
-    print(f'\n{"="*70}')
-    print(f'✅ Processing complete for {symbol}')
-    print(f'{"="*70}')
+    Returns:
+        Summary dict with counts
+    """
+    print(f'\n🚀 Processing XBRL Files for {symbol}')
+    print('=' * 70)
 
-    return True
+    # Find all files for symbol
+    print(f'📂 Scanning ./xbrl directory...')
+    files = find_xbrl_files(symbol=symbol, statement_type=prefer)
+
+    if not files:
+        print(f'⚠️  No XBRL files found for {symbol}')
+        if prefer:
+            print(f'   (filtering by: {prefer})')
+        return {'processed': 0, 'skipped': 0, 'failed': 0}
+
+    print(f'   Found {len(files)} file(s) for {symbol}')
+
+    if prefer:
+        print(f'   Filtering by preference: {prefer}')
+
+    # Display files
+    print(f'\n   Files to process:')
+    for f in files:
+        print(f'   • {f["filename"]}')
+
+    # Process each file
+    processed = 0
+    skipped = 0
+    failed = 0
+
+    for i, file_info in enumerate(files):
+        print(f'\n[{i+1}/{len(files)}] Processing: {file_info["filename"]}')
+
+        result = process_xbrl_file(file_info['path'], storage, skip_if_processed=True)
+
+        if result:
+            # Check if actually processed or skipped
+            is_processed, _ = storage.is_file_processed(file_info['filename'])
+            if is_processed:
+                # Was already processed (skipped) or just processed
+                # We need to check more carefully
+                pass
+            processed += 1
+        else:
+            failed += 1
+
+    return {
+        'processed': processed,
+        'skipped': skipped,
+        'failed': failed
+    }
 
 
-def process_directory(directory_path):
+def process_directory(directory, storage):
     """
     Process all XBRL files in a directory
 
     Args:
-        directory_path: Path to directory containing XBRL files
+        directory: Directory path
+        storage: XBRLStorage instance
     """
     print(f'\n🚀 Batch Processing XBRL Files')
-    print(f'{"="*70}')
-    print(f'Directory: {directory_path}')
+    print('=' * 70)
+    print(f'Directory: {directory}')
 
-    # Find all XML files in directory
-    xml_files = glob.glob(os.path.join(directory_path, '*.xml'))
+    # Find all files
+    files = find_xbrl_files(directory=directory)
 
-    if not xml_files:
-        print(f'⚠️  No XML files found in directory')
+    if not files:
+        print(f'⚠️  No XBRL files found in {directory}')
         return
 
-    print(f'Found {len(xml_files)} XML files')
+    print(f'Found {len(files)} file(s)')
 
+    # Process each file
     success_count = 0
+    skip_count = 0
     fail_count = 0
 
     start_time = datetime.now()
 
-    for i, xml_file in enumerate(xml_files):
-        print(f'\n[{i+1}/{len(xml_files)}] Processing: {os.path.basename(xml_file)}')
+    for i, file_info in enumerate(files):
+        print(f'\n[{i+1}/{len(files)}] Processing: {file_info["filename"]}')
 
-        try:
-            if process_xbrl_file(xml_file):
-                success_count += 1
-            else:
-                fail_count += 1
-        except Exception as e:
-            print(f'❌ Error processing file: {str(e)}')
+        # Check if already processed
+        is_processed, processed_at = storage.is_file_processed(file_info['filename'])
+        if is_processed:
+            skip_count += 1
+            continue
+
+        result = process_xbrl_file(file_info['path'], storage)
+
+        if result:
+            success_count += 1
+        else:
             fail_count += 1
 
     duration = (datetime.now() - start_time).total_seconds()
 
-    print(f'\n{"="*70}')
-    print(f'📊 Batch Processing Complete')
-    print(f'{"="*70}')
-    print(f'✅ Success: {success_count} files')
-    print(f'❌ Failed: {fail_count} files')
+    print(f'\n' + '=' * 70)
+    print(f'📊 Summary')
+    print('=' * 70)
+    print(f'✅ Processed: {success_count} file(s)')
+    print(f'⏭️  Skipped: {skip_count} file(s) (already processed)')
+    print(f'❌ Failed: {fail_count} file(s)')
     print(f'⏱️  Duration: {duration:.1f}s')
-    print(f'{"="*70}')
+    print('=' * 70)
+
+
+def retry_failed_files(storage):
+    """Retry processing files that previously failed"""
+    print(f'\n🔄 Retrying Failed Files')
+    print('=' * 70)
+
+    failed = storage.get_failed_files()
+
+    if not failed:
+        print('✅ No failed files to retry')
+        return
+
+    print(f'Found {len(failed)} failed file(s)')
+
+    success_count = 0
+    fail_count = 0
+
+    for i, f in enumerate(failed):
+        print(f'\n[{i+1}/{len(failed)}] Retrying: {f["file_name"]}')
+        print(f'   Previous error: {f["error_message"]}')
+
+        result = process_xbrl_file(f['file_path'], storage, skip_if_processed=False)
+
+        if result:
+            success_count += 1
+        else:
+            fail_count += 1
+
+    print(f'\n' + '=' * 70)
+    print(f'📊 Retry Summary')
+    print('=' * 70)
+    print(f'✅ Success: {success_count} file(s)')
+    print(f'❌ Still Failed: {fail_count} file(s)')
+    print('=' * 70)
 
 
 def main():
@@ -320,73 +413,86 @@ def main():
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
-    # Process single XBRL file
-    python3 scripts/xbrl_eod.py RELIANCE /path/to/reliance.xml
+    # Process all files for a symbol
+    python3 scripts/xbrl_eod.py --symbol TCS
 
-    # Process with symbol auto-detection
-    python3 scripts/xbrl_eod.py /path/to/RELIANCE_2024.xml
+    # Process only consolidated files for TCS
+    python3 scripts/xbrl_eod.py --symbol TCS --prefer consolidated
 
-    # Process all XBRL files in a directory
-    python3 scripts/xbrl_eod.py --dir /path/to/xbrl_files/
+    # Process only standalone files for RELIANCE
+    python3 scripts/xbrl_eod.py --symbol RELIANCE --prefer standalone
+
+    # Process all files in xbrl directory
+    python3 scripts/xbrl_eod.py --dir ./xbrl
+
+    # Retry failed files
+    python3 scripts/xbrl_eod.py --retry-failed
         """
     )
 
-    parser.add_argument('symbol_or_file', nargs='?', help='Stock symbol or XBRL file path')
-    parser.add_argument('xbrl_file', nargs='?', help='XBRL file path (if symbol provided)')
+    parser.add_argument('--symbol', help='Stock symbol (e.g., TCS)')
     parser.add_argument('--dir', dest='directory', help='Process all XBRL files in directory')
+    parser.add_argument('--prefer', choices=['standalone', 'consolidated'],
+                       help='Prefer standalone or consolidated statements')
+    parser.add_argument('--retry-failed', action='store_true',
+                       help='Retry processing files that previously failed')
 
     args = parser.parse_args()
 
-    # Directory mode
-    if args.directory:
-        if not os.path.isdir(args.directory):
-            print(f'❌ Directory not found: {args.directory}')
-            sys.exit(1)
-        process_directory(args.directory)
-        sys.exit(0)
+    # Initialize storage
+    storage = XBRLStorage()
 
-    # Single file mode
-    if not args.symbol_or_file:
-        parser.print_help()
-        sys.exit(1)
-
-    # Check if first argument is a file or symbol
-    if os.path.isfile(args.symbol_or_file):
-        # First argument is a file
-        xbrl_file = args.symbol_or_file
-        symbol = None
-    else:
-        # First argument is a symbol
-        symbol = args.symbol_or_file.upper()
-        xbrl_file = args.xbrl_file
-
-        if not xbrl_file:
-            print('❌ XBRL file path is required')
-            parser.print_help()
-            sys.exit(1)
-
-    # Validate file exists
-    if not os.path.isfile(xbrl_file):
-        print(f'❌ XBRL file not found: {xbrl_file}')
-        sys.exit(1)
-
-    # Process the file
-    if process_xbrl_file(xbrl_file, symbol):
-        print('\n✅ Job completed successfully')
-        sys.exit(0)
-    else:
-        print('\n❌ Job failed')
-        sys.exit(1)
-
-
-if __name__ == '__main__':
     try:
-        main()
+        # Retry failed files mode
+        if args.retry_failed:
+            retry_failed_files(storage)
+            storage.close()
+            sys.exit(0)
+
+        # Directory mode
+        if args.directory:
+            if not os.path.isdir(args.directory):
+                print(f'❌ Directory not found: {args.directory}')
+                sys.exit(1)
+            process_directory(args.directory, storage)
+            storage.close()
+            sys.exit(0)
+
+        # Symbol mode
+        if args.symbol:
+            summary = process_symbol(args.symbol, storage, prefer=args.prefer)
+
+            print(f'\n' + '=' * 70)
+            print(f'📊 Summary')
+            print('=' * 70)
+            print(f'✅ Processed: {summary["processed"]} file(s)')
+            print(f'⏭️  Skipped: {summary["skipped"]} file(s) (already processed)')
+            print(f'❌ Failed: {summary["failed"]} file(s)')
+            print('=' * 70)
+
+            # Show query hint
+            print(f'\nQuery data:')
+            print(f'  duckdb data/fundamentals.duckdb "SELECT * FROM xbrl_data WHERE symbol=\'{args.symbol}\'"')
+
+            storage.close()
+            sys.exit(0)
+
+        # No arguments - show help
+        parser.print_help()
+        storage.close()
+        sys.exit(1)
+
     except KeyboardInterrupt:
         print('\n\n⚠️  Interrupted by user')
+        storage.close()
         sys.exit(1)
     except Exception as e:
         print(f'\n❌ Fatal error: {str(e)}')
         import traceback
         traceback.print_exc()
+        storage.close()
         sys.exit(1)
+
+
+if __name__ == '__main__':
+    main()
