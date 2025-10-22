@@ -59,7 +59,7 @@ const calculateBadgeStatus = (idea: any) => {
 
 export default function IdeasHubPage() {
   const router = useRouter();
-  const { ideas, loading, addToPortfolio } = useTrading();
+  const { ideas, loading, addToPortfolio, toggleLike } = useTrading();
   const { user } = useAuth();
   const [searchQuery, setSearchQuery] = useState('');
   const [activeTab, setActiveTab] = useState('all');
@@ -337,11 +337,29 @@ export default function IdeasHubPage() {
           {/* Stats and Creator Info */}
           <div className="flex justify-between items-center">
             <div className="flex gap-3 text-sm text-gray-600 dark:text-[#8b949e]">
-              <span className="flex items-center gap-1">
+              <button
+                onClick={async (e) => {
+                  e.stopPropagation();
+                  await toggleLike(idea.id);
+                }}
+                className={`flex items-center gap-1 hover:text-red-500 transition-colors ${
+                  idea.likedBy?.includes(user?.uid || '') ? 'text-red-500' : ''
+                }`}
+                title="Like this idea"
+              >
                 <HeartFilledIcon size={14} />
                 {idea.likes}
-              </span>
-              <span>💬 {idea.commentCount}</span>
+              </button>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  router.push(`/ideas/${idea.id}#comments`);
+                }}
+                className="flex items-center gap-1 hover:text-gray-900 dark:hover:text-white transition-colors"
+                title="View and add comments"
+              >
+                💬 {idea.commentCount}
+              </button>
               {/* <span>📅 {formatIndianDate(idea.createdAt, 'relative')}</span> */}
             </div>
 
@@ -517,14 +535,37 @@ export default function IdeasHubPage() {
                 <span className="text-xs text-orange-600 dark:text-orange-400">
                   Technical data updated: {(() => {
                     try {
-                      // Handle both Firestore Timestamp and ISO string
                       const updatedAtValue = filteredIdeas[0].technicals.updatedAt;
-                      const updatedAt = typeof updatedAtValue === 'string'
-                        ? new Date(updatedAtValue)
-                        : updatedAtValue.toDate?.() || new Date(updatedAtValue);
+                      let updatedAt: Date;
+
+                      // Handle Firestore Timestamp (with seconds and nanoseconds)
+                      if (updatedAtValue && typeof updatedAtValue === 'object' && 'seconds' in updatedAtValue) {
+                        updatedAt = new Date(updatedAtValue.seconds * 1000);
+                      }
+                      // Handle Firestore Timestamp with toDate method
+                      else if (updatedAtValue && typeof updatedAtValue === 'object' && typeof updatedAtValue.toDate === 'function') {
+                        updatedAt = updatedAtValue.toDate();
+                      }
+                      // Handle ISO string or other date formats
+                      else if (typeof updatedAtValue === 'string') {
+                        updatedAt = new Date(updatedAtValue);
+                      }
+                      // Handle Date object
+                      else if (updatedAtValue instanceof Date) {
+                        updatedAt = updatedAtValue;
+                      }
+                      // Handle timestamp number
+                      else if (typeof updatedAtValue === 'number') {
+                        updatedAt = new Date(updatedAtValue);
+                      }
+                      else {
+                        console.warn('Unknown date format:', updatedAtValue);
+                        return 'recently';
+                      }
 
                       // Check if date is valid
                       if (isNaN(updatedAt.getTime())) {
+                        console.warn('Invalid date:', updatedAt);
                         return 'recently';
                       }
 
@@ -540,6 +581,7 @@ export default function IdeasHubPage() {
                         return `${diffDays}d ago`;
                       }
                     } catch (error) {
+                      console.error('Error parsing date:', error);
                       return 'recently';
                     }
                   })()}

@@ -414,7 +414,7 @@ export default function IdeaDetailPage() {
         </div>
 
         {/* Discussion Section */}
-        <div className="bg-gray-50 dark:bg-[#1c2128] border border-gray-200 dark:border-[#30363d] rounded-xl p-5">
+        <div id="comments" className="bg-gray-50 dark:bg-[#1c2128] border border-gray-200 dark:border-[#30363d] rounded-xl p-5 scroll-mt-20">
           <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-4">💬 Discussion ({comments.length})</h3>
 
           <form onSubmit={handleAddComment} className="mb-5">

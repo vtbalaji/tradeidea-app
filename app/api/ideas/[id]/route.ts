@@ -63,7 +63,8 @@ export async function PATCH(
     const ideaData = ideaDoc.data();
 
     // Only the owner can update the idea details (not likes/follows)
-    if (ideaData?.userId !== userId && !body.like && !body.follow) {
+    // Allow anyone to like/follow, but only owner can update other fields
+    if (ideaData?.userId !== userId && body.like === undefined && body.follow === undefined) {
       return createErrorResponse('You can only update your own ideas', 403);
     }
 

@@ -400,14 +400,37 @@ export default function PortfolioPage() {
             <span className="text-xs text-orange-600 dark:text-orange-400">
               Technical data updated: {(() => {
                 try {
-                  // Handle both Firestore Timestamp and ISO string
                   const updatedAtValue = openPositions[0].technicals.updatedAt;
-                  const updatedAt = typeof updatedAtValue === 'string'
-                    ? new Date(updatedAtValue)
-                    : updatedAtValue.toDate?.() || new Date(updatedAtValue);
+                  let updatedAt: Date;
+
+                  // Handle Firestore Timestamp (with seconds and nanoseconds)
+                  if (updatedAtValue && typeof updatedAtValue === 'object' && 'seconds' in updatedAtValue) {
+                    updatedAt = new Date(updatedAtValue.seconds * 1000);
+                  }
+                  // Handle Firestore Timestamp with toDate method
+                  else if (updatedAtValue && typeof updatedAtValue === 'object' && typeof updatedAtValue.toDate === 'function') {
+                    updatedAt = updatedAtValue.toDate();
+                  }
+                  // Handle ISO string or other date formats
+                  else if (typeof updatedAtValue === 'string') {
+                    updatedAt = new Date(updatedAtValue);
+                  }
+                  // Handle Date object
+                  else if (updatedAtValue instanceof Date) {
+                    updatedAt = updatedAtValue;
+                  }
+                  // Handle timestamp number
+                  else if (typeof updatedAtValue === 'number') {
+                    updatedAt = new Date(updatedAtValue);
+                  }
+                  else {
+                    console.warn('Unknown date format:', updatedAtValue);
+                    return 'recently';
+                  }
 
                   // Check if date is valid
                   if (isNaN(updatedAt.getTime())) {
+                    console.warn('Invalid date:', updatedAt);
                     return 'recently';
                   }
 
@@ -418,6 +441,7 @@ export default function PortfolioPage() {
                   else if (diffHours < 24) return `${diffHours}h ago`;
                   else return `${Math.floor(diffHours / 24)}d ago`;
                 } catch (error) {
+                  console.error('Error parsing date:', error);
                   return 'recently';
                 }
               })()}
