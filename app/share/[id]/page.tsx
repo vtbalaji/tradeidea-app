@@ -28,25 +28,30 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       : 0;
 
     const title = `${idea.symbol} - Investment Idea by ${idea.userName || 'TradeIdea User'}`;
-    const description = `🎯 ${idea.symbol} Trading Setup: Entry ₹${idea.entryPrice} | Target ₹${idea.target1} (+${target1Percent}%) | Stop Loss ₹${idea.stopLoss}. ${idea.riskLevel} risk, ${idea.timeframe} timeframe. Join TradeIdea to track this idea!`;
+    const description = `${idea.symbol} Trading Setup: Entry ₹${idea.entryPrice} | Target ₹${idea.target1} (+${target1Percent}%) | Stop Loss ₹${idea.stopLoss}. ${idea.riskLevel} risk, ${idea.timeframe} timeframe.`;
 
-    // Create a shorter description for Twitter
-    const twitterDescription = `🎯 ${idea.symbol}: Entry ₹${idea.entryPrice} → Target ₹${idea.target1} (+${target1Percent}%). ${idea.riskLevel} risk. Join TradeIdea for more ideas!`;
+    // Create a shorter description for Twitter/WhatsApp
+    const shortDescription = `${idea.symbol}: Entry ₹${idea.entryPrice} → Target ₹${idea.target1} (+${target1Percent}%). ${idea.riskLevel} risk.`;
+
+    const imageUrl = `https://tradeidea.co.in/share/${id}/opengraph-image.png`;
+    const shareUrl = `https://tradeidea.co.in/share/${id}`;
 
     return {
       title,
       description,
+      metadataBase: new URL('https://tradeidea.co.in'),
       openGraph: {
         title,
-        description,
-        url: `https://tradeidea.co.in/share/${id}`,
+        description: shortDescription,
+        url: shareUrl,
         siteName: 'TradeIdea',
         images: [
           {
-            url: `https://tradeidea.co.in/share/${id}/opengraph-image`,
+            url: imageUrl,
             width: 1200,
             height: 630,
-            alt: `TradeIdea - ${idea?.symbol} Investment Idea`,
+            alt: `${idea.symbol} Investment Idea`,
+            type: 'image/png',
           },
         ],
         locale: 'en_IN',
@@ -56,11 +61,16 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       twitter: {
         card: 'summary_large_image',
         title,
-        description: twitterDescription,
-        images: [`https://tradeidea.co.in/share/${id}/opengraph-image`],
+        description: shortDescription,
+        images: [imageUrl],
         creator: '@tradeidea_in',
       },
       other: {
+        // Additional meta tags for better WhatsApp/social compatibility
+        'og:image': imageUrl,
+        'og:image:width': '1200',
+        'og:image:height': '630',
+        'og:image:alt': `${idea.symbol} Investment Idea`,
         'article:author': idea?.userName || 'TradeIdea User',
         'article:published_time': idea?.createdAt?._seconds ? new Date(idea.createdAt._seconds * 1000).toISOString() : new Date().toISOString(),
       },

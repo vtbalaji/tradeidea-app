@@ -10,16 +10,22 @@ export const size = {
 
 export const contentType = 'image/png';
 
+// Cache the image for 1 hour
+export const revalidate = 3600;
+
 // Image generation
 export default async function Image({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
 
   try {
-    // Fetch idea data using Admin SDK
+    // Fetch idea data using Admin SDK with timeout
     const adminDb = getAdminDb();
-    const ideaDoc = await adminDb.collection('tradingIdeas').doc(id).get();
+    const ideaDoc = await Promise.race([
+      adminDb.collection('tradingIdeas').doc(id).get(),
+      new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout')), 5000))
+    ]) as any;
 
-    if (!ideaDoc.exists) {
+    if (!ideaDoc || !ideaDoc.exists) {
       // Return a default image if idea not found
       return new ImageResponse(
         (
@@ -32,9 +38,14 @@ export default async function Image({ params }: { params: Promise<{ id: string }
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
+              color: 'white',
+              fontWeight: 'bold',
+              flexDirection: 'column',
+              gap: '20px',
             }}
           >
-            <div style={{ color: 'white', fontWeight: 'bold' }}>TradeIdea</div>
+            <div style={{ fontSize: 72 }}>TradeIdea</div>
+            <div style={{ fontSize: 24, opacity: 0.9 }}>Investment Ideas Hub</div>
           </div>
         ),
         { ...size }
@@ -267,9 +278,14 @@ export default async function Image({ params }: { params: Promise<{ id: string }
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
+            color: 'white',
+            fontWeight: 'bold',
+            flexDirection: 'column',
+            gap: '20px',
           }}
         >
-          <div style={{ color: 'white', fontWeight: 'bold' }}>TradeIdea</div>
+          <div style={{ fontSize: 72 }}>TradeIdea</div>
+          <div style={{ fontSize: 24, opacity: 0.9 }}>Investment Ideas Hub</div>
         </div>
       ),
       { ...size }

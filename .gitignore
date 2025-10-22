@@ -54,3 +54,6 @@ serviceAccountKey.json
 # chart data (committed to git for Vercel deployment)
 # Top 250 companies by market cap are committed
 # Local machine generates all via daily EOD batch
+
+# xbrl data
+/xbrl/
