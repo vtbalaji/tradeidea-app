@@ -95,13 +95,13 @@ export default function Home() {
 
         <h1 className="text-5xl md:text-6xl font-bold text-gray-900 dark:text-white mb-6">
           Never Miss Another Entry or Exit<br />
-          <span className="text-[#ff8c42]">Automated Alerts for Indian Stock Traders</span>
+          <span className="text-[#ff8c42]">Automated Alerts for Indian Investors</span>
         </h1>
         <p className="text-xl text-gray-600 dark:text-[#8b949e] mb-10 max-w-3xl mx-auto">
           Track NSE/BSE stocks with automated technical & fundamental analysis.
           Get instant email alerts when stocks hit your entry, target, or stop-loss levels.
           <strong className="block mt-3 text-gray-900 dark:text-white">
-            🔍 NEW: Daily market screeners find 10-15 crossover opportunities automatically
+            🔍 NEW: Daily market screeners find 10-15 potential opportunities automatically
           </strong>
         </p>
 
