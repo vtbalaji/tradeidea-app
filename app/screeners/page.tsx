@@ -123,7 +123,7 @@ export default function Cross50200Page() {
   const [displayDate, setDisplayDate] = useState<string | null>(null);
   const [bbSqueezeFilter, setBBSqueezeFilter] = useState<'ALL' | 'BUY' | 'SELL' | 'SQUEEZE' | 'BREAKOUT'>('ALL');
   const [maCrossFilter, setMACrossFilter] = useState<'both' | '50ma' | '200ma'>('both');
-  const [darvasFilter, setDarvasFilter] = useState<'ALL' | 'active' | 'buy' | 'consolidating'>('ALL');
+  const [darvasFilter, setDarvasFilter] = useState<'ALL' | 'false_breakout' | 'buy' | 'consolidating'>('ALL');
   const [advancedTrailstopFilter, setAdvancedTrailstopFilter] = useState<'ALL' | 'bullish' | 'bearish'>('ALL');
 
   // Convert date to Indian format (DD-MM-YYYY)
@@ -2234,14 +2234,14 @@ export default function Cross50200Page() {
                       All ({darvasBoxes.length})
                     </button>
                     <button
-                      onClick={() => setDarvasFilter('active')}
+                      onClick={() => setDarvasFilter('false_breakout')}
                       className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors ${
-                        darvasFilter === 'active'
-                          ? 'bg-purple-500 text-white'
+                        darvasFilter === 'false_breakout'
+                          ? 'bg-orange-500 text-white'
                           : 'bg-gray-100 dark:bg-[#1c2128] text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-[#30363d]'
                       }`}
                     >
-                      🟣 Active ({darvasBoxes.filter(b => b.status === 'active').length})
+                      ⚠️ False Breakout ({darvasBoxes.filter(b => b.status === 'false_breakout').length})
                     </button>
                     <button
                       onClick={() => setDarvasFilter('buy')}
