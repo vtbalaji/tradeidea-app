@@ -157,18 +157,13 @@ export default function Home() {
         </div>
 
         <div className="flex gap-4 justify-center flex-wrap">
-          <div className="relative">
-            <Link
-              href="/login"
-              className="inline-flex items-center gap-2 px-8 py-4 bg-[#ff8c42] hover:bg-[#ff9a58] text-white text-lg font-bold rounded-lg transition-all shadow-lg hover:shadow-xl hover:scale-105 relative group"
-            >
-              Start Free - No Credit Card
-              <span className="text-xl group-hover:translate-x-1 transition-transform">→</span>
-            </Link>
-            <div className="absolute -top-3 -right-3 bg-green-500 text-white text-xs font-bold px-3 py-1 rounded-full shadow-lg animate-pulse">
-              FREE
-            </div>
-          </div>
+          <Link
+            href="/login"
+            className="inline-flex items-center gap-2 px-8 py-4 bg-[#ff8c42] hover:bg-[#ff9a58] text-white text-lg font-bold rounded-lg transition-all shadow-lg hover:shadow-xl hover:scale-105 group"
+          >
+            Get Started Now
+            <span className="text-xl group-hover:translate-x-1 transition-transform">→</span>
+          </Link>
           <Link
             href="/login"
             className="inline-flex items-center gap-2 px-8 py-4 bg-blue-500 hover:bg-blue-600 text-white text-lg font-bold rounded-lg transition-all shadow-lg hover:shadow-xl hover:scale-105"
@@ -207,7 +202,7 @@ export default function Home() {
         <div className="mt-12 flex flex-wrap justify-center gap-6 text-sm font-semibold text-gray-700 dark:text-[#8b949e]">
           <div className="flex items-center gap-2">
             <span className="text-green-500 text-lg">✓</span>
-            <span>Free For Early adopters Plan</span>
+            <span>Start in 2 Minutes</span>
           </div>
           <div className="flex items-center gap-2">
             <span className="text-green-500 text-lg">✓</span>
@@ -278,17 +273,17 @@ export default function Home() {
               </div>
             </div>
 
-            {/* Free Plan */}
+            {/* All Features */}
             <div className="text-center">
               <div className="bg-white dark:bg-[#1c2128] rounded-lg p-6 border-2 border-[#ff8c42] dark:border-[#ff8c42]">
                 <div className="text-3xl mb-3">💎</div>
-                <h3 className="font-bold text-gray-900 dark:text-white mb-2">Free For early Adopters</h3>
+                <h3 className="font-bold text-gray-900 dark:text-white mb-2">Complete Platform Access</h3>
                 <p className="text-sm text-gray-600 dark:text-[#8b949e] mb-3">
-                  All features, no hidden costs
+                  All features included from day one
                 </p>
                 <div className="flex flex-wrap justify-center gap-2">
                   <span className="px-3 py-1 bg-orange-100 dark:bg-orange-900/30 text-orange-800 dark:text-orange-300 text-xs font-semibold rounded-full">
-                    No Credit Card
+                    Email-Only Signup
                   </span>
                   <span className="px-3 py-1 bg-orange-100 dark:bg-orange-900/30 text-orange-800 dark:text-orange-300 text-xs font-semibold rounded-full">
                     Unlimited Portfolios
@@ -427,10 +422,7 @@ export default function Home() {
                       Manual Tracking
                     </th>
                     <th scope="col" className="px-6 py-4 text-center text-xs font-semibold text-[#ff8c42] uppercase tracking-wider w-1/3 bg-orange-50 dark:bg-orange-900/10">
-                      <div className="flex items-center justify-center gap-2">
-                        <span>TradeIdea</span>
-                        <span className="px-2 py-0.5 bg-[#ff8c42] text-white text-xs rounded-full">FREE</span>
-                      </div>
+                      TradeIdea
                     </th>
                   </tr>
                 </thead>
@@ -543,15 +535,15 @@ export default function Home() {
                   {/* Row 8 - Cost */}
                   <tr className="bg-gray-50 dark:bg-[#0d1117]">
                     <td className="px-6 py-4 text-sm font-bold text-gray-900 dark:text-white">
-                      Cost
+                      Time Saved
                     </td>
                     <td className="px-6 py-4 text-center">
                       <div className="text-gray-900 dark:text-white text-2xl font-bold">Your Time</div>
                       <div className="text-xs text-gray-600 dark:text-[#8b949e] mt-1">Priceless hours wasted</div>
                     </td>
                     <td className="px-6 py-4 text-center bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-900/10 dark:to-emerald-900/10">
-                      <div className="text-green-600 dark:text-green-400 text-3xl font-bold">₹0</div>
-                      <div className="text-xs text-gray-900 dark:text-white font-semibold mt-1">Free For early Adopters</div>
+                      <div className="text-green-600 dark:text-green-400 text-3xl font-bold">5+ hrs/week</div>
+                      <div className="text-xs text-gray-900 dark:text-white font-semibold mt-1">Automated tracking saves time</div>
                     </td>
                   </tr>
                 </tbody>
@@ -569,7 +561,7 @@ export default function Home() {
             href="/login"
             className="inline-block px-8 py-3 bg-[#ff8c42] hover:bg-[#ff9a58] text-white text-lg font-bold rounded-lg transition-all shadow-lg hover:shadow-xl hover:scale-105"
           >
-            Start Free Now →
+            Get Started →
           </Link>
         </div>
       </section>
@@ -806,7 +798,7 @@ export default function Home() {
                 <span className="text-xl">→</span>
               </Link>
               <p className="text-xs text-gray-500 dark:text-[#8b949e] mt-3">
-                Import your holdings in 2 minutes • No credit card
+                Import your holdings in 2 minutes • Instant access
               </p>
             </div>
           </div>
@@ -943,7 +935,7 @@ export default function Home() {
           <div className="inline-block bg-gradient-to-r from-[#ff8c42] to-orange-500 text-white rounded-xl p-8 max-w-3xl">
             <h3 className="text-2xl font-bold mb-3">TradeIdea Solves All of This</h3>
             <p className="text-lg mb-4 opacity-95">
-              Automated alerts, daily analysis, instant notifications, and 24/7 monitoring - all in one place, completely free.
+              Automated alerts, daily analysis, instant notifications, and 24/7 monitoring - all in one powerful platform.
             </p>
             <div className="flex items-center justify-center gap-6 text-sm font-semibold">
               <div className="flex items-center gap-2">
@@ -1035,7 +1027,7 @@ export default function Home() {
             <div className="text-5xl mb-4">🔍</div>
             <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-3">Market Screeners</h3>
             <p className="text-gray-600 dark:text-[#8b949e]">
-              Discover daily crossover opportunities: 50 MA, 200 MA, and Supertrend signals.
+              Discover daily crossover opportunities: 50 MA, 200 MA, and DarvasBox signals.
               Convert screener results to trading ideas with one click.
             </p>
           </div>
@@ -1075,7 +1067,7 @@ export default function Home() {
             </h2>
             <p className="text-lg text-gray-600 dark:text-[#8b949e] max-w-3xl mx-auto mb-4">
               Discover fresh trading opportunities every day with our automated technical screeners.
-              Find stocks crossing key moving averages and Supertrend levels - the signals that matter most.
+              Find stocks crossing key moving averages and DarvasBox levels - the signals that matter most.
             </p>
 
             {/* Stats Bar */}
@@ -1121,8 +1113,8 @@ export default function Home() {
                 <div className="flex items-center gap-3">
                   <span className="text-2xl">🚀</span>
                   <div>
-                    <div className="font-bold text-gray-900 dark:text-white">Supertrend Buy Signal</div>
-                    <div className="text-xs text-gray-600 dark:text-[#8b949e]">Trend reversal from bearish to bullish</div>
+                    <div className="font-bold text-gray-900 dark:text-white">DarvasBox Buy Signal</div>
+                    <div className="text-xs text-gray-600 dark:text-[#8b949e]">Price breaking out of consolidation box</div>
                   </div>
                 </div>
                 <div className="text-right">
@@ -1162,15 +1154,15 @@ export default function Home() {
             </div>
             <div className="bg-white dark:bg-[#1c2128] border border-gray-200 dark:border-[#30363d] rounded-lg p-6">
               <div className="text-3xl mb-3">📈</div>
-              <h4 className="font-bold text-gray-900 dark:text-white mb-2">Supertrend Signals</h4>
+              <h4 className="font-bold text-gray-900 dark:text-white mb-2">DarvasBox Signals</h4>
               <p className="text-sm text-gray-600 dark:text-[#8b949e] mb-3">
-                Catch trend reversals early with Supertrend crossovers - powerful momentum
-                indicators for entry/exit timing.
+                Catch breakout opportunities early with DarvasBox method - powerful price action
+                indicators for identifying consolidation and breakout patterns.
               </p>
               <ul className="text-xs text-gray-600 dark:text-[#8b949e] space-y-1">
-                <li>• Bullish trend starts</li>
-                <li>• Bearish trend reversals</li>
-                <li>• Momentum confirmation</li>
+                <li>• Box formation detection</li>
+                <li>• Breakout confirmations</li>
+                <li>• Volume validation</li>
               </ul>
             </div>
             <div className="bg-white dark:bg-[#1c2128] border border-gray-200 dark:border-[#30363d] rounded-lg p-6">
@@ -1199,7 +1191,7 @@ export default function Home() {
               <span className="text-xl">→</span>
             </Link>
             <p className="text-xs text-gray-500 dark:text-[#6e7681] mt-3">
-               • No credit card required • Get instant access
+              Get instant access • Start in 2 minutes
             </p>
           </div>
         </div>
@@ -1239,7 +1231,7 @@ export default function Home() {
                   <div className="text-4xl mb-2">🔍</div>
                   <h3 className="text-base font-bold text-gray-900 dark:text-white mb-2">1. Screener</h3>
                   <p className="text-xs text-gray-600 dark:text-[#8b949e] mb-2">
-                    Daily crossover signals: 50/200 MA, Supertrend
+                    Daily crossover signals: 50/200 MA, DarvasBox
                   </p>
                   <div className="text-xs text-blue-600 dark:text-blue-400 font-semibold">
                     Find opportunities
@@ -1717,7 +1709,7 @@ export default function Home() {
             <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-[#ff8c42] flex items-center justify-center text-2xl font-bold text-white">
               1
             </div>
-            <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-3">Sign Up Free</h3>
+            <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-3">Sign Up</h3>
             <p className="text-gray-600 dark:text-[#8b949e]">
               Create your account in seconds and set up multiple portfolios.
             </p>
@@ -1777,14 +1769,14 @@ export default function Home() {
           <div className="bg-white dark:bg-[#1c2128] rounded-xl p-6 border-2 border-blue-200 dark:border-blue-800">
             <div className="text-4xl mb-4">🎁</div>
             <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-3">
-              Free Forever Guarantee
+              Early Adopter Benefits
             </h3>
             <p className="text-sm text-gray-600 dark:text-[#8b949e] mb-4">
-              As an early user, you're guaranteed free access to all features forever - even if we introduce paid plans later.
+              As an early user, you get access to all features and help shape the platform with your feedback and suggestions.
             </p>
             <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-3">
               <p className="text-xs font-semibold text-blue-800 dark:text-blue-300">
-                ✓ Lifetime premium access
+                ✓ Full platform access
               </p>
             </div>
           </div>
@@ -1883,8 +1875,8 @@ export default function Home() {
             {/* Pain Point 4 */}
             <div className="bg-white dark:bg-[#1c2128] rounded-xl p-6 border-l-4 border-purple-500">
               <p className="text-gray-700 dark:text-[#8b949e] italic mb-4">
-                "Every portfolio app wants ₹500/month. I'm a student learning to invest.
-                I need free tools that actually work."
+                "I'm a student learning to invest. I need tools that are simple, powerful,
+                and actually help me make better decisions."
               </p>
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-full bg-gradient-to-br from-purple-400 to-pink-500 flex items-center justify-center text-white font-bold">
@@ -1909,7 +1901,7 @@ export default function Home() {
               href="/login"
               className="px-8 py-3 bg-white text-[#ff8c42] font-bold rounded-lg hover:bg-gray-100 transition-colors inline-flex items-center gap-2"
             >
-              <span>Join Free & Give Feedback</span>
+              <span>Join & Give Feedback</span>
               <span className="text-xl">→</span>
             </Link>
             <p className="text-sm mt-3 opacity-90">
@@ -1953,10 +1945,10 @@ export default function Home() {
               <div className="text-xs text-gray-600 dark:text-[#8b949e]">Instant email alerts</div>
             </div>
 
-            {/* Stat 4 - Free Forever */}
+            {/* Stat 4 - Full Features */}
             <div className="text-center">
-              <div className="text-5xl font-bold text-[#ff8c42] mb-3">₹0</div>
-              <div className="text-sm font-semibold text-gray-900 dark:text-white mb-1">Forever Free</div>
+              <div className="text-5xl font-bold text-[#ff8c42] mb-3">∞</div>
+              <div className="text-sm font-semibold text-gray-900 dark:text-white mb-1">Full Access</div>
               <div className="text-xs text-gray-600 dark:text-[#8b949e]">All features, no limits</div>
             </div>
           </div>
