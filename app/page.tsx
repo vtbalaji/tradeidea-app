@@ -230,14 +230,14 @@ export default function Home() {
 
           <div className="grid md:grid-cols-3 gap-8 max-w-4xl mx-auto">
             {/* Broker Integrations */}
-            <div className="text-center">
-              <div className="bg-white dark:bg-[#1c2128] rounded-lg p-6 border border-gray-200 dark:border-[#30363d]">
+            <div className="text-center h-full">
+              <div className="bg-white dark:bg-[#1c2128] rounded-lg p-6 border border-gray-200 dark:border-[#30363d] h-full flex flex-col">
                 <div className="text-3xl mb-3">🔗</div>
                 <h3 className="font-bold text-gray-900 dark:text-white mb-2">Broker Integrations</h3>
                 <p className="text-sm text-gray-600 dark:text-[#8b949e] mb-3">
                   Import holdings with one click
                 </p>
-                <div className="flex flex-wrap justify-center gap-2">
+                <div className="flex flex-wrap justify-center gap-2 mt-auto">
                   <span className="px-3 py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300 text-xs font-semibold rounded-full">
                     Zerodha
                   </span>
@@ -252,14 +252,14 @@ export default function Home() {
             </div>
 
             {/* Security */}
-            <div className="text-center">
-              <div className="bg-white dark:bg-[#1c2128] rounded-lg p-6 border border-gray-200 dark:border-[#30363d]">
+            <div className="text-center h-full">
+              <div className="bg-white dark:bg-[#1c2128] rounded-lg p-6 border border-gray-200 dark:border-[#30363d] h-full flex flex-col">
                 <div className="text-3xl mb-3">🔒</div>
                 <h3 className="font-bold text-gray-900 dark:text-white mb-2">Bank-Grade Security</h3>
                 <p className="text-sm text-gray-600 dark:text-[#8b949e] mb-3">
                   Your data is encrypted and secure
                 </p>
-                <div className="flex flex-wrap justify-center gap-2">
+                <div className="flex flex-wrap justify-center gap-2 mt-auto">
                   <span className="px-3 py-1 bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300 text-xs font-semibold rounded-full">
                     Firebase Auth
                   </span>
@@ -274,14 +274,14 @@ export default function Home() {
             </div>
 
             {/* All Features */}
-            <div className="text-center">
-              <div className="bg-white dark:bg-[#1c2128] rounded-lg p-6 border-2 border-[#ff8c42] dark:border-[#ff8c42]">
+            <div className="text-center h-full">
+              <div className="bg-white dark:bg-[#1c2128] rounded-lg p-6 border-2 border-[#ff8c42] dark:border-[#ff8c42] h-full flex flex-col">
                 <div className="text-3xl mb-3">💎</div>
                 <h3 className="font-bold text-gray-900 dark:text-white mb-2">Complete Platform Access</h3>
                 <p className="text-sm text-gray-600 dark:text-[#8b949e] mb-3">
                   All features included from day one
                 </p>
-                <div className="flex flex-wrap justify-center gap-2">
+                <div className="flex flex-wrap justify-center gap-2 mt-auto">
                   <span className="px-3 py-1 bg-orange-100 dark:bg-orange-900/30 text-orange-800 dark:text-orange-300 text-xs font-semibold rounded-full">
                     Email-Only Signup
                   </span>
