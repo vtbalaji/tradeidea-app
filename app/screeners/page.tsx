@@ -42,17 +42,22 @@ interface DarvasBox {
   id: string;
   symbol: string;
   date: string;
-  status: 'active' | 'broken' | 'false_breakout';
+  status: 'active' | 'consolidating' | 'buy' | 'false_breakout';
   boxHigh: number;
   boxLow: number;
   boxHeight: number;
   boxRangePercent: number;
   currentPrice: number;
   formationDate: string;
+  breakoutDate: string; // Added for clarity
   consolidationDays: number;
   breakoutPrice: number;
   isBreakout: boolean;
   volumeConfirmed: boolean;
+  volumeExpansion?: boolean; // Added
+  volumeRatio?: number; // Added
+  resistanceTouches?: number; // Added
+  daysAboveBox?: number; // Added
   currentVolume: number;
   avgVolume: number;
   week52High: number;
@@ -118,7 +123,7 @@ export default function Cross50200Page() {
   const [displayDate, setDisplayDate] = useState<string | null>(null);
   const [bbSqueezeFilter, setBBSqueezeFilter] = useState<'ALL' | 'BUY' | 'SELL' | 'SQUEEZE' | 'BREAKOUT'>('ALL');
   const [maCrossFilter, setMACrossFilter] = useState<'both' | '50ma' | '200ma'>('both');
-  const [darvasFilter, setDarvasFilter] = useState<'ALL' | 'broken' | 'active'>('ALL');
+  const [darvasFilter, setDarvasFilter] = useState<'ALL' | 'active' | 'buy' | 'consolidating'>('ALL');
   const [advancedTrailstopFilter, setAdvancedTrailstopFilter] = useState<'ALL' | 'bullish' | 'bearish'>('ALL');
 
   // Convert date to Indian format (DD-MM-YYYY)
@@ -238,16 +243,26 @@ export default function Cross50200Page() {
           console.error('❌ Error accessing macrossover50:', err.message);
         }
 
-        // Fetch 200 MA - use the same latestDate
+        // Fetch 200 MA - fallback to latest available if current date not found
         if (latestDate) {
           try {
             const test200 = await getDocs(collection(db, 'macrossover200'));
             console.log(`✅ Can access macrossover200: ${test200.docs.length} total documents`);
 
             if (test200.docs.length > 0) {
-              const filtered200 = test200.docs.filter(doc => doc.data().date === latestDate);
+              let filtered200 = test200.docs.filter(doc => doc.data().date === latestDate);
+
+              // If no data for latestDate, fallback to most recent date in this collection
+              if (filtered200.length === 0) {
+                const allDates = test200.docs.map(doc => doc.data().date as string);
+                const uniqueDates = [...new Set(allDates)].sort().reverse();
+                const ma200LatestDate = uniqueDates[0];
+                console.log(`⚠️ No MA200 data for ${latestDate}, falling back to ${ma200LatestDate}`);
+                filtered200 = test200.docs.filter(doc => doc.data().date === ma200LatestDate);
+              }
+
               if (filtered200.length > 0) {
-                console.log(`✅ Found ${filtered200.length} records in macrossover200 for ${latestDate}`);
+                console.log(`✅ Found ${filtered200.length} records in macrossover200`);
                 data200 = filtered200.map(doc => ({
                   id: doc.id,
                   ...doc.data()
@@ -258,15 +273,25 @@ export default function Cross50200Page() {
             console.error('❌ Error accessing macrossover200:', err.message);
           }
 
-          // Fetch Advanced Trailstop - use the same latestDate
+          // Fetch Advanced Trailstop - fallback to latest available if current date not found
           try {
             const testAdvancedTrailstop = await getDocs(collection(db, 'advancedtrailstop'));
             console.log(`✅ Can access advancedtrailstop: ${testAdvancedTrailstop.docs.length} total documents`);
 
             if (testAdvancedTrailstop.docs.length > 0) {
-              const filteredAdvancedTrailstop = testAdvancedTrailstop.docs.filter(doc => doc.data().date === latestDate);
+              let filteredAdvancedTrailstop = testAdvancedTrailstop.docs.filter(doc => doc.data().date === latestDate);
+
+              // If no data for latestDate, fallback to most recent date in this collection
+              if (filteredAdvancedTrailstop.length === 0) {
+                const allDates = testAdvancedTrailstop.docs.map(doc => doc.data().date as string);
+                const uniqueDates = [...new Set(allDates)].sort().reverse();
+                const trailstopLatestDate = uniqueDates[0];
+                console.log(`⚠️ No Advanced Trailstop data for ${latestDate}, falling back to ${trailstopLatestDate}`);
+                filteredAdvancedTrailstop = testAdvancedTrailstop.docs.filter(doc => doc.data().date === trailstopLatestDate);
+              }
+
               if (filteredAdvancedTrailstop.length > 0) {
-                console.log(`✅ Found ${filteredAdvancedTrailstop.length} records in advancedtrailstop for ${latestDate}`);
+                console.log(`✅ Found ${filteredAdvancedTrailstop.length} records in advancedtrailstop`);
                 dataAdvancedTrailstop = filteredAdvancedTrailstop.map(doc => ({
                   id: doc.id,
                   ...doc.data()
@@ -277,15 +302,25 @@ export default function Cross50200Page() {
             console.error('❌ Error accessing advancedtrailstop:', err.message);
           }
 
-          // Fetch Volume Spikes - use the same latestDate
+          // Fetch Volume Spikes - fallback to latest available if current date not found
           try {
             const testVolume = await getDocs(collection(db, 'volumespike'));
             console.log(`✅ Can access volumespike: ${testVolume.docs.length} total documents`);
 
             if (testVolume.docs.length > 0) {
-              const filteredVolume = testVolume.docs.filter(doc => doc.data().date === latestDate);
+              let filteredVolume = testVolume.docs.filter(doc => doc.data().date === latestDate);
+
+              // If no data for latestDate, fallback to most recent date in this collection
+              if (filteredVolume.length === 0) {
+                const allDates = testVolume.docs.map(doc => doc.data().date as string);
+                const uniqueDates = [...new Set(allDates)].sort().reverse();
+                const volumeLatestDate = uniqueDates[0];
+                console.log(`⚠️ No Volume Spike data for ${latestDate}, falling back to ${volumeLatestDate}`);
+                filteredVolume = testVolume.docs.filter(doc => doc.data().date === volumeLatestDate);
+              }
+
               if (filteredVolume.length > 0) {
-                console.log(`✅ Found ${filteredVolume.length} records in volumespike for ${latestDate}`);
+                console.log(`✅ Found ${filteredVolume.length} records in volumespike`);
                 dataVolumeSpike = filteredVolume.map(doc => ({
                   id: doc.id,
                   ...doc.data()
@@ -296,15 +331,25 @@ export default function Cross50200Page() {
             console.error('❌ Error accessing volumespike:', err.message);
           }
 
-          // Fetch Darvas Boxes - use the same latestDate
+          // Fetch Darvas Boxes - fallback to latest available if current date not found
           try {
             const testDarvas = await getDocs(collection(db, 'darvasboxes'));
             console.log(`✅ Can access darvasboxes: ${testDarvas.docs.length} total documents`);
 
             if (testDarvas.docs.length > 0) {
-              const filteredDarvas = testDarvas.docs.filter(doc => doc.data().date === latestDate);
+              let filteredDarvas = testDarvas.docs.filter(doc => doc.data().date === latestDate);
+
+              // If no data for latestDate, fallback to most recent date in this collection
+              if (filteredDarvas.length === 0) {
+                const allDates = testDarvas.docs.map(doc => doc.data().date as string);
+                const uniqueDates = [...new Set(allDates)].sort().reverse();
+                const darvasLatestDate = uniqueDates[0];
+                console.log(`⚠️ No Darvas data for ${latestDate}, falling back to ${darvasLatestDate}`);
+                filteredDarvas = testDarvas.docs.filter(doc => doc.data().date === darvasLatestDate);
+              }
+
               if (filteredDarvas.length > 0) {
-                console.log(`✅ Found ${filteredDarvas.length} records in darvasboxes for ${latestDate}`);
+                console.log(`✅ Found ${filteredDarvas.length} records in darvasboxes`);
                 dataDarvasBoxes = filteredDarvas.map(doc => ({
                   id: doc.id,
                   ...doc.data()
@@ -315,7 +360,7 @@ export default function Cross50200Page() {
             console.error('❌ Error accessing darvasboxes:', err.message);
           }
 
-          // Fetch BB Squeeze - use the same latestDate
+          // Fetch BB Squeeze - fallback to latest available if current date not found
           try {
             const testBBSqueeze = await getDocs(collection(db, 'bbsqueeze'));
             console.log(`✅ Can access bbsqueeze: ${testBBSqueeze.docs.length} total documents`);
@@ -327,16 +372,18 @@ export default function Cross50200Page() {
               console.log('📅 Available BB Squeeze dates:', uniqueDates.slice(0, 5));
               console.log('📅 Looking for latestDate:', latestDate);
 
-              // Log a sample document to see its structure
-              if (testBBSqueeze.docs.length > 0) {
-                console.log('📄 Sample BB Squeeze document:', testBBSqueeze.docs[0].data());
-              }
-
-              const filteredBBSqueeze = testBBSqueeze.docs.filter(doc => doc.data().date === latestDate);
+              let filteredBBSqueeze = testBBSqueeze.docs.filter(doc => doc.data().date === latestDate);
               console.log(`🔍 Filtered BB Squeeze for date ${latestDate}: ${filteredBBSqueeze.length} records`);
 
+              // If no data for latestDate, fallback to most recent date in this collection
+              if (filteredBBSqueeze.length === 0 && uniqueDates.length > 0) {
+                const bbLatestDate = uniqueDates[0];
+                console.log(`⚠️ No BB Squeeze data for ${latestDate}, falling back to ${bbLatestDate}`);
+                filteredBBSqueeze = testBBSqueeze.docs.filter(doc => doc.data().date === bbLatestDate);
+              }
+
               if (filteredBBSqueeze.length > 0) {
-                console.log(`✅ Found ${filteredBBSqueeze.length} records in bbsqueeze for ${latestDate}`);
+                console.log(`✅ Found ${filteredBBSqueeze.length} records in bbsqueeze`);
                 dataBBSqueeze = filteredBBSqueeze.map(doc => ({
                   id: doc.id,
                   ...doc.data()
@@ -893,9 +940,15 @@ export default function Cross50200Page() {
 
   const renderDarvasBoxCard = (box: DarvasBox) => {
     const displaySymbol = box.symbol.replace(/^NS_/, '');
-    const statusColor = box.status === 'broken' ? 'text-green-400' : box.status === 'active' ? 'text-blue-400' : 'text-orange-400';
-    const statusBg = box.status === 'broken' ? 'bg-green-500/20' : box.status === 'active' ? 'bg-blue-500/20' : 'bg-orange-500/20';
-    const statusLabel = box.status === 'broken' ? '🟢 Buy' : box.status === 'active' ? '🟦 Consolidating' : '⚠️ False';
+    const statusColor = box.status === 'buy' ? 'text-green-400' :
+                       box.status === 'consolidating' ? 'text-blue-400' :
+                       box.status === 'active' ? 'text-purple-400' : 'text-orange-400';
+    const statusBg = box.status === 'buy' ? 'bg-green-500/20' :
+                     box.status === 'consolidating' ? 'bg-blue-500/20' :
+                     box.status === 'active' ? 'bg-purple-500/20' : 'bg-orange-500/20';
+    const statusLabel = box.status === 'buy' ? '🟢 Buy Signal' :
+                       box.status === 'consolidating' ? '🟦 Consolidating' :
+                       box.status === 'active' ? '🟣 Active Box' : '⚠️ False';
 
     return (
       <div className="bg-gray-50 dark:bg-[#1c2128] border border-gray-200 dark:border-[#30363d] rounded-xl p-4 hover:border-[#ff8c42] transition-colors">
@@ -946,24 +999,40 @@ export default function Cross50200Page() {
           </div>
         </div>
 
+        {/* Dates Section - Added breakoutDate */}
+        <div className="bg-white dark:bg-[#0f1419] border border-gray-200 dark:border-[#30363d] rounded-lg p-3 mb-3">
+          <div className="grid grid-cols-2 gap-2 text-xs">
+            <div>
+              <span className="text-gray-600 dark:text-[#8b949e]">Formation:</span>
+              <span className="ml-1 font-semibold text-gray-900 dark:text-white">{box.formationDate}</span>
+            </div>
+            {box.breakoutDate && (
+              <div>
+                <span className="text-gray-600 dark:text-[#8b949e]">Breakout:</span>
+                <span className="ml-1 font-semibold text-green-500">{box.breakoutDate}</span>
+              </div>
+            )}
+          </div>
+        </div>
+
         {/* Box Description */}
         <div className={`border rounded-lg p-2 mb-3 ${
-          box.status === 'broken'
+          box.status === 'buy'
             ? 'bg-green-500/10 border-green-500/30'
-            : box.status === 'active'
+            : box.status === 'consolidating'
               ? 'bg-blue-500/10 border-blue-500/30'
               : 'bg-orange-500/10 border-orange-500/30'
         }`}>
           <p className={`text-xs ${
-            box.status === 'broken'
+            box.status === 'buy'
               ? 'text-green-600 dark:text-green-400'
-              : box.status === 'active'
+              : box.status === 'consolidating'
                 ? 'text-blue-600 dark:text-blue-400'
                 : 'text-orange-600 dark:text-orange-400'
           }`}>
-            {box.status === 'broken'
-              ? `💡 Price broke out above box high (₹${box.boxHigh.toFixed(2)}) ${box.volumeConfirmed ? 'with strong volume' : 'but volume is weak'}. Potential bullish continuation.`
-              : box.status === 'active'
+            {box.status === 'buy'
+              ? `💡 Price broke out above box high (₹${box.boxHigh.toFixed(2)}) on ${box.breakoutDate} ${box.volumeConfirmed ? 'with strong volume' : 'but volume is weak'}. ${box.volumeRatio ? `Volume: ${box.volumeRatio.toFixed(2)}x` : ''}`
+              : box.status === 'consolidating'
                 ? `📦 Stock consolidating in ${box.consolidationDays}-day box. Breakout level: ₹${box.breakoutPrice.toFixed(2)} (${((box.breakoutPrice - box.currentPrice) / box.currentPrice * 100).toFixed(1)}% above current price).`
                 : `⚠️ Price attempted breakout but failed to sustain above box high. Possible false breakout - wait for re-entry.`
             }
@@ -988,7 +1057,7 @@ export default function Cross50200Page() {
             onClick={async (e) => {
               e.stopPropagation();
 
-              const isBullish = box.status === 'broken' || box.status === 'active';
+              const isBullish = box.status === 'buy' || box.status === 'consolidating';
 
               // Fetch symbol data to get technical levels (Supertrend, 100MA, 50MA)
               let entryPrice = box.currentPrice;
@@ -1034,15 +1103,18 @@ export default function Cross50200Page() {
                 }
 
                 if (supportLevels.length > 0) {
-                  // For Darvas, if box is broken, entry should be box high (breakout level)
-                  if (box.status === 'broken') {
+                  // For Darvas, if box has buy signal, entry should be box high (breakout level)
+                  if (box.status === 'buy') {
                     entryPrice = box.boxHigh;
                     // Stop loss at box low
                     stopLoss = box.boxLow;
-                  } else {
-                    // For active box, entry at current price, stop at box low
+                  } else if (box.status === 'active' || box.status === 'consolidating') {
+                    // For active/consolidating box, entry at current price, stop at box low
                     entryPrice = box.currentPrice;
                     stopLoss = box.boxLow * 0.98; // Slightly below box low
+                  } else {
+                    entryPrice = box.currentPrice;
+                    stopLoss = box.boxLow * 0.98;
                   }
                 } else {
                   entryPrice = box.currentPrice;
@@ -1068,12 +1140,14 @@ export default function Cross50200Page() {
               const riskAmount = Math.abs(entryPrice - stopLoss);
               target = entryPrice + (riskAmount * 2);
 
-              const analysisText = `Darvas Box Pattern Detected (${box.status.replace('_', ' ').toUpperCase()}).\n\nBox Metrics:\n- Box High: ₹${box.boxHigh.toFixed(2)}\n- Box Low: ₹${box.boxLow.toFixed(2)}\n- Box Range: ${box.boxRangePercent.toFixed(1)}%\n- Consolidation Days: ${box.consolidationDays}\n- Current Price: ₹${box.currentPrice.toFixed(2)}\n- 52-Week High: ₹${box.week52High.toFixed(2)}\n\n${
-                box.status === 'broken'
-                  ? `Breakout Analysis:\n- Breakout Price: ₹${box.breakoutPrice.toFixed(2)}\n- Volume Confirmed: ${box.volumeConfirmed ? 'Yes ✓' : 'No ✗'}\n- Price Above Box: ${box.priceToBoxHighPercent.toFixed(2)}%\n\nBullish breakout detected. Consider entry on pullback to box high with stop loss below box low.`
+              const analysisText = `Darvas Box Pattern Detected (${box.status.replace('_', ' ').toUpperCase()}).\n\nBox Metrics:\n- Box High: ₹${box.boxHigh.toFixed(2)}\n- Box Low: ₹${box.boxLow.toFixed(2)}\n- Box Range: ${box.boxRangePercent.toFixed(1)}%\n- Consolidation Days: ${box.consolidationDays}\n- Formation Date: ${box.formationDate}\n${box.breakoutDate ? `- Breakout Date: ${box.breakoutDate}\n` : ''}- Current Price: ₹${box.currentPrice.toFixed(2)}\n- 52-Week High: ₹${box.week52High.toFixed(2)}\n\n${
+                box.status === 'buy'
+                  ? `🟢 BUY SIGNAL - Breakout Analysis:\n- Breakout Price: ₹${box.breakoutPrice.toFixed(2)}\n- Breakout Date: ${box.breakoutDate}\n- Volume Confirmed: ${box.volumeConfirmed ? 'Yes ✓' : 'No ✗'}\n- Volume Ratio: ${box.volumeRatio ? box.volumeRatio.toFixed(2) + 'x' : 'N/A'}\n- Price Above Box: ${box.priceToBoxHighPercent.toFixed(2)}%\n\nBullish breakout detected. Consider entry on pullback to box high with stop loss below box low.`
                   : box.status === 'active'
-                    ? `Active Box:\n- Awaiting breakout above ₹${box.breakoutPrice.toFixed(2)}\n- Stock consolidating for ${box.consolidationDays} days\n- Risk-Reward Ratio: ${box.riskRewardRatio.toFixed(2)}:1\n\nWatch for breakout with volume confirmation. Entry at breakout, stop below box low.`
-                    : `False Breakout:\n- Price failed to sustain above ₹${box.boxHigh.toFixed(2)}\n- Volume: ${box.volumeConfirmed ? 'Confirmed' : 'Weak'}\n\nAvoid entry. Wait for proper consolidation and re-breakout attempt.`
+                    ? `🟣 ACTIVE BOX:\n- Awaiting breakout above ₹${box.breakoutPrice.toFixed(2)}\n- Stock consolidating in box for ${box.consolidationDays} days\n- Risk-Reward Ratio: ${box.riskRewardRatio ? box.riskRewardRatio.toFixed(2) + ':1' : 'N/A'}\n\nActive Darvas box detected. Watch for breakout with volume confirmation. Entry at breakout, stop below box low.`
+                  : box.status === 'consolidating'
+                    ? `🟦 CONSOLIDATING:\n- Awaiting breakout above ₹${box.breakoutPrice.toFixed(2)}\n- Stock consolidating for ${box.consolidationDays} days\n- Risk-Reward Ratio: ${box.riskRewardRatio.toFixed(2)}:1\n\nWatch for breakout with volume confirmation. Entry at breakout, stop below box low.`
+                    : `⚠️ FALSE BREAKOUT:\n- Price failed to sustain above ₹${box.boxHigh.toFixed(2)}\n- Volume: ${box.volumeConfirmed ? 'Confirmed' : 'Weak'}\n\nAvoid entry. Wait for proper consolidation and re-breakout attempt.`
               }`;
 
               // Track screener converted to idea
@@ -2160,24 +2234,34 @@ export default function Cross50200Page() {
                       All ({darvasBoxes.length})
                     </button>
                     <button
-                      onClick={() => setDarvasFilter('broken')}
+                      onClick={() => setDarvasFilter('active')}
                       className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors ${
-                        darvasFilter === 'broken'
+                        darvasFilter === 'active'
+                          ? 'bg-purple-500 text-white'
+                          : 'bg-gray-100 dark:bg-[#1c2128] text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-[#30363d]'
+                      }`}
+                    >
+                      🟣 Active ({darvasBoxes.filter(b => b.status === 'active').length})
+                    </button>
+                    <button
+                      onClick={() => setDarvasFilter('buy')}
+                      className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors ${
+                        darvasFilter === 'buy'
                           ? 'bg-green-500 text-white'
                           : 'bg-gray-100 dark:bg-[#1c2128] text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-[#30363d]'
                       }`}
                     >
-                      🟢 Buy ({darvasBoxes.filter(b => b.status === 'broken').length})
+                      🟢 Buy ({darvasBoxes.filter(b => b.status === 'buy').length})
                     </button>
                     <button
-                      onClick={() => setDarvasFilter('active')}
+                      onClick={() => setDarvasFilter('consolidating')}
                       className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors ${
-                        darvasFilter === 'active'
+                        darvasFilter === 'consolidating'
                           ? 'bg-blue-500 text-white'
                           : 'bg-gray-100 dark:bg-[#1c2128] text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-[#30363d]'
                       }`}
                     >
-                      🟦 Consolidating ({darvasBoxes.filter(b => b.status === 'active').length})
+                      🟦 Consolidating ({darvasBoxes.filter(b => b.status === 'consolidating').length})
                     </button>
                   </div>
                 </div>
@@ -2186,7 +2270,7 @@ export default function Cross50200Page() {
                 {filteredDarvas.length === 0 ? (
                   <div className="text-center py-12">
                     <div className="text-4xl mb-3">🔍</div>
-                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-1">No {darvasFilter === 'broken' ? 'buy' : 'consolidating'} boxes</h3>
+                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-1">No {darvasFilter === 'buy' ? 'buy' : 'consolidating'} boxes</h3>
                     <p className="text-sm text-gray-600 dark:text-[#8b949e]">Try selecting a different filter</p>
                   </div>
                 ) : (
@@ -2313,7 +2397,8 @@ export default function Cross50200Page() {
                           const isBullish = stock.ma50?.crossoverType === 'bullish_cross' ||
                             stock.advancedTrailstop?.crossoverType === 'bullish_cross' ||
                             stock.bbsqueeze?.signalType === 'BUY' ||
-                            stock.darvas?.status === 'broken' ||
+                            stock.darvas?.status === 'buy' ||
+                            stock.darvas?.status === 'active' ||
                             (stock.volumeSpike && stock.volumeSpike.priceChangePercent > 0);
 
                           // Fetch symbol data to get technical levels (Supertrend, 100MA, 50MA)
@@ -2456,12 +2541,14 @@ export default function Cross50200Page() {
                             <div className="flex justify-between items-center py-1 border-t border-gray-100 dark:border-gray-800">
                               <span className="font-semibold">Darvas:</span>
                               <span className={
-                                stock.darvas.status === 'broken' ? 'text-green-600 dark:text-green-400' :
-                                stock.darvas.status === 'active' ? 'text-blue-600 dark:text-blue-400' :
+                                stock.darvas.status === 'buy' ? 'text-green-600 dark:text-green-400' :
+                                stock.darvas.status === 'consolidating' ? 'text-blue-600 dark:text-blue-400' :
+                                stock.darvas.status === 'active' ? 'text-purple-600 dark:text-purple-400' :
                                 'text-orange-600 dark:text-orange-400'
                               }>
-                                {stock.darvas.status === 'broken' ? '🟢 Breakout' :
-                                 stock.darvas.status === 'active' ? '🟦 Active' : '⚠️ False'}
+                                {stock.darvas.status === 'buy' ? '🟢 Buy' :
+                                 stock.darvas.status === 'consolidating' ? '🟦 Consolidating' :
+                                 stock.darvas.status === 'active' ? '🟣 Active' : '⚠️ False'}
                               </span>
                             </div>
                           )}

@@ -685,26 +685,23 @@ def detect_bb_squeeze_breakout(symbol, bb_period=20, bb_std=2, keltner_period=14
 
 def detect_darvas_box(symbol, lookback_weeks=52, consolidation_weeks=3, breakout_threshold=0.005):
     """
-    Detect Darvas Box patterns (Optimized per Nicolas Darvas methodology):
+    Detect Darvas Box patterns (TRULY CORRECTED per Nicolas Darvas methodology):
 
-    1. Stock makes NEW HIGH (at or near 52-week high)
-    2. Consolidates for 3-8 weeks in TIGHT range (4-12%)
-    3. Multiple tests of box top (at least 2 touches)
-    4. Breaks out with STRONG volume (1.5x+ average)
-    5. Price confirms by staying above box for 2+ days
-
-    Darvas Box Rules:
-    - Box Top: Highest high during consolidation (resistance)
-    - Box Bottom: Lowest low during consolidation (support)
-    - Breakout: Price closes > box top with 1.5x+ volume
-    - Entry: On breakout or pullback to box top
-    - Stop: 2-3% below box bottom
+    CORRECT DARVAS LOGIC:
+    1. Stock makes a NEW HIGH (creates potential box top)
+    2. Price then CONSOLIDATES BELOW that high for 3+ days (Darvas: 3 days no new high)
+    3. Box TOP = The new high
+    4. Box BOTTOM = Lowest point reached AFTER the high during consolidation
+    5. Box must be tight: 4-12% range
+    6. Minimum 2 tests of box top (resistance)
+    7. BREAKOUT = Price breaks ABOVE the box top again with volume
+    8. Confirmation: Price stays above box for 1+ days
 
     Parameters:
         symbol: Stock symbol
         lookback_weeks: Period to check for highs (default 52 weeks = 1 year)
         consolidation_weeks: Minimum weeks of consolidation (default 3, max recommended 8)
-        breakout_threshold: % above box to confirm breakout (default 1% - tighter)
+        breakout_threshold: % above box to confirm breakout (default 0.5%)
 
     Returns:
         dict with box details or None (error) or 'no_box'
@@ -716,14 +713,13 @@ def detect_darvas_box(symbol, lookback_weeks=52, consolidation_weeks=3, breakout
             return None  # Skip stocks with market cap < 1200 Cr
 
         # FILTER 2: Check debt-to-equity ratio (<1.0 for financial strength)
-        # Darvas preferred financially strong companies
         if not check_debt_to_equity(symbol, max_debt_to_equity=1.0):
             return None  # Skip stocks with high debt
 
-        # Get enough data for 52-week analysis (52 weeks * 5 trading days = 260 days + buffer)
+        # Get enough data for analysis
         df = nse_fetcher.get_data(symbol, days=300)
 
-        if df.empty or len(df) < lookback_weeks * 5:
+        if df.empty or len(df) < 100:
             return None
 
         # Rename columns to uppercase
@@ -736,155 +732,241 @@ def detect_darvas_box(symbol, lookback_weeks=52, consolidation_weeks=3, breakout
             'volume': 'Volume'
         })
 
-        # Calculate 52-week high/low
-        week_high_52 = df['High'].rolling(window=lookback_weeks * 5).max()
-        week_low_52 = df['Low'].rolling(window=lookback_weeks * 5).min()
+        # Calculate 52-week rolling high
+        df['52W_High'] = df['High'].rolling(window=lookback_weeks * 5).max()
+        df['Volume_MA20'] = df['Volume'].rolling(window=20).mean()
 
-        # Get recent data (last 60 days to capture up to 12 weeks consolidation)
-        recent_days = 60
-        recent_df = df.tail(recent_days).copy()
+        current_price = float(df['Close'].iloc[-1])
+        current_52w_high = float(df['52W_High'].iloc[-1])
 
-        if len(recent_df) < consolidation_weeks * 5:
+        # RULE 1: Stock must be within 10% of 52-week high
+        if pd.isna(current_52w_high) or current_price < current_52w_high * 0.90:
             return {'type': 'no_box'}
 
-        # RULE 1: Stock must be at or near NEW HIGH (within 10% of 52-week high)
-        # Relaxed from 5% to 10% to catch more opportunities
-        current_price = float(recent_df['Close'].iloc[-1])
-        current_52w_high = float(week_high_52.iloc[-1])
+        # FIND NEW HIGHS: Points where stock made 52-week highs
+        valid_boxes = []
 
-        if pd.isna(current_52w_high) or current_price < current_52w_high * 0.90:
-            return {'type': 'no_box'}  # Must be within 10% of 52-week high
-
-        # RULE 2: Detect consolidation box - try multiple periods (3-8 weeks)
-        # Darvas boxes typically form over 3-8 weeks, not longer
-        best_box = None
-        for weeks in range(3, 9):  # Try 3, 4, 5, 6, 7, 8 weeks
-            consolidation_period = weeks * 5  # Convert weeks to days
-            if len(recent_df) < consolidation_period:
+        # Look backwards through recent data
+        for i in range(len(df) - 1, max(0, len(df) - 100), -1):
+            if pd.isna(df['52W_High'].iloc[i]):
                 continue
 
-            consolidation_df = recent_df.tail(consolidation_period)
+            high_val = float(df['High'].iloc[i])
+            high_52w = float(df['52W_High'].iloc[i])
 
-            box_high = float(consolidation_df['High'].max())
-            box_low = float(consolidation_df['Low'].min())
-            box_height = box_high - box_low
-            box_range_percent = (box_height / box_low) * 100
+            # Check if this was a new 52-week high (within 0.5%)
+            if high_val < high_52w * 0.995:
+                continue
 
-            # RULE 3: Box should be TIGHT (4-12% range) - Darvas avoided wide boxes
-            # Tighter range = stronger consolidation
-            if box_range_percent < 4 or box_range_percent > 12:
-                continue  # Skip if too tight or too wide
+            # Found a new high at index i - this becomes potential BOX TOP
+            box_top_idx = i
+            box_top = high_val
+            box_top_date = df['Date'].iloc[i]
 
-            # RULE 4: Check for multiple tests of resistance (box top)
-            # Count how many times price touched within 1% of box high
-            touches = (consolidation_df['High'] >= box_high * 0.99).sum()
-            if touches < 2:
-                continue  # Need at least 2 tests of resistance
+            # DARVAS RULE: Wait for 3 days where price doesn't exceed this high
+            # Check the next 3 days
+            if box_top_idx + 3 >= len(df):
+                continue  # Not enough data after this high
 
-            # Found a valid box - check if it's better than previous
-            if best_box is None or consolidation_period > best_box['period']:
-                best_box = {
-                    'period': consolidation_period,
-                    'df': consolidation_df,
-                    'high': box_high,
-                    'low': box_low,
-                    'height': box_height,
-                    'range_percent': box_range_percent,
+            next_3_days = df.iloc[box_top_idx + 1 : box_top_idx + 4]
+            if (next_3_days['High'] > box_top).any():
+                continue  # High was exceeded in next 3 days, not a valid top
+
+            # Box top is confirmed! Now find consolidation period AFTER this high
+            # Look at 3-8 weeks AFTER the box top
+            for weeks in range(3, 9):
+                consol_period = weeks * 5
+
+                if box_top_idx + consol_period >= len(df):
+                    continue  # Not enough data
+
+                # Consolidation period: [box_top_idx : box_top_idx + consol_period]
+                consolidation_df = df.iloc[box_top_idx : box_top_idx + consol_period + 1].copy()
+
+                if len(consolidation_df) < 10:
+                    continue
+
+                # Box high = the original new high (box top)
+                box_high = box_top
+
+                # Box low = lowest point during consolidation AFTER the high
+                box_low = float(consolidation_df['Low'].min())
+                box_height = box_high - box_low
+                box_range_percent = (box_height / box_low) * 100
+
+                # RULE 3: Box range must be 4-12% (tight consolidation)
+                if box_range_percent < 4 or box_range_percent > 12:
+                    continue
+
+                # RULE 4: Count resistance touches (tests of box top)
+                # Look for highs within 1% of box top during consolidation
+                touches = (consolidation_df['High'] >= box_high * 0.99).sum()
+                if touches < 2:
+                    continue
+
+                # Check if there was a BREAKOUT after the consolidation
+                # Look for days where price exceeded box_high after consolidation period
+                after_consol_idx = box_top_idx + consol_period + 1
+                breakout_idx = None
+                breakout_high = None
+                breakout_volume = None
+
+                if after_consol_idx < len(df):
+                    # Look at next 20 days for breakout
+                    search_end = min(after_consol_idx + 20, len(df))
+                    after_df = df.iloc[after_consol_idx:search_end]
+
+                    # Find first day that breaks above box high
+                    breakout_days = after_df[after_df['High'] > box_high]
+                    if not breakout_days.empty:
+                        breakout_idx = breakout_days.index[0]
+                        breakout_high = float(df['High'].iloc[breakout_idx])
+                        breakout_volume = int(df['Volume'].iloc[breakout_idx])
+
+                # Calculate consolidation average volume
+                consolidation_avg_volume = consolidation_df['Volume'].mean()
+
+                if breakout_idx is not None:
+                    # BREAKOUT OCCURRED - check volume and confirmation
+                    avg_volume_20 = float(df['Volume_MA20'].iloc[breakout_idx]) if not pd.isna(df['Volume_MA20'].iloc[breakout_idx]) else 0
+
+                    volume_vs_20ma = breakout_volume / avg_volume_20 if avg_volume_20 > 0 else 0
+                    volume_vs_consol = breakout_volume / consolidation_avg_volume if consolidation_avg_volume > 0 else 0
+
+                    # RULE 5: Breakout volume > 1.3x average
+                    volume_confirmed = volume_vs_20ma >= 1.3
+
+                    # RULE 6: Volume expansion vs consolidation
+                    volume_expansion = volume_vs_consol >= 1.3
+
+                    # RULE 7: Price confirmation - check if price stayed above box after breakout
+                    days_after = min(5, len(df) - breakout_idx - 1)
+                    days_above_box = 0
+
+                    if days_after > 0:
+                        after_breakout_df = df.iloc[breakout_idx + 1 : breakout_idx + 1 + days_after]
+                        days_above_box = (after_breakout_df['Close'] > box_high).sum()
+
+                    price_confirmed = days_above_box >= 1
+
+                    # Determine status
+                    if volume_confirmed and volume_expansion and price_confirmed:
+                        status = 'buy'  # Successful breakout - BUY signal
+                    elif breakout_high > box_high * 1.005:
+                        status = 'false_breakout'  # Broke out but weak
+                    else:
+                        status = 'consolidating'  # Breakout but not confirmed yet
+
+                    breakout_date = df['Date'].iloc[breakout_idx]
+                else:
+                    # NO BREAKOUT YET - still in consolidation or consolidation ended
+                    # Check if we're still in the consolidation period
+                    if after_consol_idx >= len(df) - 5:
+                        # Near current date, might still be consolidating
+                        status = 'consolidating'
+                        breakout_idx = len(df) - 1
+                        breakout_high = current_price
+                        breakout_volume = int(df['Volume'].iloc[-1])
+                        breakout_date = df['Date'].iloc[-1]
+                        volume_confirmed = False
+                        volume_expansion = False
+                        days_above_box = 0
+                        volume_vs_20ma = 0
+                        avg_volume_20 = 0
+                        price_confirmed = False
+                    else:
+                        # Consolidation ended long ago without breakout
+                        continue
+
+                # Store this valid box
+                formation_date = box_top_date
+                if isinstance(formation_date, pd.Timestamp):
+                    formation_date = formation_date.strftime('%Y-%m-%d')
+
+                if isinstance(breakout_date, pd.Timestamp):
+                    breakout_date = breakout_date.strftime('%Y-%m-%d')
+
+                valid_boxes.append({
+                    'box_top_idx': box_top_idx,
+                    'formation_date': formation_date,
+                    'box_high': box_high,
+                    'box_low': box_low,
+                    'box_height': box_height,
+                    'box_range_percent': box_range_percent,
                     'touches': touches,
-                    'weeks': weeks
-                }
+                    'weeks': weeks,
+                    'status': status,
+                    'breakout_date': breakout_date,
+                    'breakout_high': breakout_high,
+                    'breakout_volume': breakout_volume,
+                    'avg_volume': int(avg_volume_20) if 'avg_volume_20' in locals() else 0,
+                    'volume_confirmed': volume_confirmed,
+                    'volume_expansion': volume_expansion,
+                    'volume_ratio': volume_vs_20ma if 'volume_vs_20ma' in locals() else 0,
+                    'days_above_box': days_above_box,
+                    'price_confirmed': price_confirmed,
+                    'consolidation_days': len(consolidation_df)
+                })
 
-        # No valid box found
-        if best_box is None:
+                # Found valid box for this top, move to next high
+                break
+
+        if not valid_boxes:
             return {'type': 'no_box'}
 
-        # Use the best box found
-        consolidation_df = best_box['df']
-        box_high = best_box['high']
-        box_low = best_box['low']
-        box_height = best_box['height']
-        box_range_percent = best_box['range_percent']
+        # Return the BEST box based on priority:
+        # 1. First priority: 'buy' (successful breakout with all rules satisfied)
+        # 2. Second priority: 'consolidating' (consolidating, waiting for breakout)
+        # 3. Last priority: 'false_breakout' (broke out but failed volume/confirmation)
+        best_box = None
 
-        # RULE 5: Calculate volume metrics for breakout confirmation
-        # Darvas required STRONG volume on breakouts (minimum 1.5x average)
-        volume_ma20 = df['Volume'].rolling(window=20).mean()
-        current_volume = int(recent_df['Volume'].iloc[-1])
-        avg_volume = float(volume_ma20.iloc[-1]) if not pd.isna(volume_ma20.iloc[-1]) else 0
+        # First, look for any 'buy' status boxes (highest priority)
+        for box in valid_boxes:
+            if box['status'] == 'buy':
+                best_box = box
+                break
 
-        # Also check volume during consolidation (should be lower than breakout)
-        consolidation_avg_volume = consolidation_df['Volume'].mean()
+        # If no 'buy' found, look for 'consolidating' boxes
+        if best_box is None:
+            for box in valid_boxes:
+                if box['status'] == 'consolidating':
+                    best_box = box
+                    break
 
-        # RULE 6: Check for breakout
-        # Breakout = current price > box_high + 1% (tighter threshold)
-        # Darvas used tight thresholds to avoid false signals
-        breakout_price = box_high * (1 + breakout_threshold)
-        is_breakout = current_price >= breakout_price
+        # If still nothing, take any 'false_breakout'
+        if best_box is None:
+            best_box = valid_boxes[0]
 
-        # RULE 7: Volume confirmation - must be 1.3x+ average (relaxed from 1.5x)
-        volume_confirmed = current_volume > avg_volume * 1.3 if avg_volume > 0 else False
-
-        # Additional check: Volume expansion during breakout
-        # Breakout volume should be significantly higher than consolidation volume
-        volume_expansion = (current_volume > consolidation_avg_volume * 1.3) if consolidation_avg_volume > 0 else False
-
-        # RULE 8: Check if price stayed above box for confirmation (if breakout occurred)
-        # Look at last 2-3 days to see if price is holding above box
-        days_above_box = 0
-        if is_breakout and len(recent_df) >= 3:
-            last_3_days = recent_df.tail(3)
-            days_above_box = (last_3_days['Close'] > box_high).sum()
-
-        # Calculate box age (days in consolidation)
-        box_age_days = len(consolidation_df)
-
-        # RULE 9: Determine box status with balanced criteria (relaxed from strict)
-        if is_breakout and volume_confirmed and volume_expansion:
-            # True breakout: price above box + strong volume + volume expansion
-            if days_above_box >= 1:
-                status = 'broken'  # Confirmed breakout (1+ days above, relaxed from 2)
-            else:
-                status = 'active'  # Potential breakout but needs confirmation
-        elif is_breakout and (not volume_confirmed or not volume_expansion):
-            status = 'false_breakout'  # Breakout without proper volume confirmation
-        else:
-            status = 'active'  # Currently consolidating in the box
-
-        # Calculate formation date (when box started)
-        formation_date = consolidation_df['Date'].iloc[0] if 'Date' in consolidation_df.columns else None
-        if isinstance(formation_date, pd.Timestamp):
-            formation_date = formation_date.strftime('%Y-%m-%d')
-
-        # RULE 10: Calculate risk-reward ratio (Darvas style)
-        # Risk = Entry (box_high) to Stop (box_low - 2-3%)
-        # Reward = Entry to Target (box_high + 2-3x box height)
-        # Darvas aimed for 2:1 to 3:1 reward-to-risk ratios
-        stop_loss_price = box_low * 0.98  # 2% below box low
-        risk = box_high - stop_loss_price
-
-        # Target: Darvas projected 2x box height above breakout
-        target_price = box_high + (box_height * 2)
-        reward = target_price - box_high
-
+        # Risk-reward calculation
+        stop_loss_price = best_box['box_low'] * 0.98
+        risk = best_box['box_high'] - stop_loss_price
+        target_price = best_box['box_high'] + (best_box['box_height'] * 2)
+        reward = target_price - best_box['box_high']
         risk_reward_ratio = reward / risk if risk > 0 else 0
 
         return {
             'type': 'darvas_box',
-            'status': status,
-            'box_high': box_high,
-            'box_low': box_low,
-            'box_height': box_height,
-            'box_range_percent': box_range_percent,
+            'status': best_box['status'],
+            'box_high': best_box['box_high'],
+            'box_low': best_box['box_low'],
+            'box_height': best_box['box_height'],
+            'box_range_percent': best_box['box_range_percent'],
             'current_price': current_price,
-            'formation_date': formation_date,
-            'consolidation_days': box_age_days,
-            'breakout_price': breakout_price,
-            'is_breakout': is_breakout,
-            'volume_confirmed': volume_confirmed,
-            'current_volume': current_volume,
-            'avg_volume': int(avg_volume) if avg_volume > 0 else 0,
+            'formation_date': best_box['formation_date'],
+            'breakout_date': best_box['breakout_date'],
+            'consolidation_days': best_box['consolidation_days'],
+            'breakout_price': best_box['box_high'] * (1 + breakout_threshold),
+            'is_breakout': best_box['breakout_high'] > best_box['box_high'] if best_box['breakout_high'] else False,
+            'volume_confirmed': best_box['volume_confirmed'],
+            'volume_expansion': best_box['volume_expansion'],
+            'current_volume': best_box['breakout_volume'] if best_box['breakout_volume'] else 0,
+            'avg_volume': best_box['avg_volume'],
             'week_52_high': current_52w_high,
             'risk_reward_ratio': risk_reward_ratio,
-            'price_to_box_high_percent': ((current_price - box_high) / box_high) * 100
+            'price_to_box_high_percent': ((current_price - best_box['box_high']) / best_box['box_high']) * 100,
+            'resistance_touches': best_box['touches'],
+            'volume_ratio': best_box['volume_ratio'],
+            'days_above_box': best_box['days_above_box']
         }
 
     except Exception as e:
@@ -992,19 +1074,19 @@ def save_to_firebase(crossovers_50, crossovers_200, advancedtrailstop_crosses, v
             doc_data = {
                 'symbol': symbol_with_prefix,
                 'date': today,
-                'crossoverType': cross['type'],  # 'bullish_cross' or 'bearish_cross'
-                'yesterdayClose': cross['yesterday_close'],
-                'yesterdayMA': cross['yesterday_ma'],
-                'todayClose': cross['today_close'],
-                'todayMA': cross['today_ma'],
-                'crossPercent': cross['cross_percent'],
+                'crossoverType': str(cross['type']),  # 'bullish_cross' or 'bearish_cross'
+                'yesterdayClose': float(cross['yesterday_close']),
+                'yesterdayMA': float(cross['yesterday_ma']),
+                'todayClose': float(cross['today_close']),
+                'todayMA': float(cross['today_ma']),
+                'crossPercent': float(cross['cross_percent']),
                 'ma_period': 50,
                 'createdAt': firestore.SERVER_TIMESTAMP
             }
 
             # Add lastPrice if available (from DuckDB)
             if last_price is not None:
-                doc_data['lastPrice'] = last_price
+                doc_data['lastPrice'] = float(last_price)
 
             doc_ref.set(doc_data)
 
@@ -1021,19 +1103,19 @@ def save_to_firebase(crossovers_50, crossovers_200, advancedtrailstop_crosses, v
             doc_data = {
                 'symbol': symbol_with_prefix,
                 'date': today,
-                'crossoverType': cross['type'],  # 'bullish_cross' or 'bearish_cross'
-                'yesterdayClose': cross['yesterday_close'],
-                'yesterdayMA': cross['yesterday_ma'],
-                'todayClose': cross['today_close'],
-                'todayMA': cross['today_ma'],
-                'crossPercent': cross['cross_percent'],
+                'crossoverType': str(cross['type']),  # 'bullish_cross' or 'bearish_cross'
+                'yesterdayClose': float(cross['yesterday_close']),
+                'yesterdayMA': float(cross['yesterday_ma']),
+                'todayClose': float(cross['today_close']),
+                'todayMA': float(cross['today_ma']),
+                'crossPercent': float(cross['cross_percent']),
                 'ma_period': 200,
                 'createdAt': firestore.SERVER_TIMESTAMP
             }
 
             # Add lastPrice if available (from DuckDB)
             if last_price is not None:
-                doc_data['lastPrice'] = last_price
+                doc_data['lastPrice'] = float(last_price)
 
             doc_ref.set(doc_data)
 
@@ -1050,18 +1132,18 @@ def save_to_firebase(crossovers_50, crossovers_200, advancedtrailstop_crosses, v
             doc_data = {
                 'symbol': symbol_with_prefix,
                 'date': today,
-                'crossoverType': cross['type'],  # 'bullish_cross' or 'bearish_cross'
-                'yesterdayClose': cross['yesterday_close'],
-                'yesterdayTrailstop': cross['yesterday_trailstop'],
-                'todayClose': cross['today_close'],
-                'todayTrailstop': cross['today_trailstop'],
-                'crossPercent': cross['cross_percent'],
+                'crossoverType': str(cross['type']),  # 'bullish_cross' or 'bearish_cross'
+                'yesterdayClose': float(cross['yesterday_close']),
+                'yesterdayTrailstop': float(cross['yesterday_trailstop']),
+                'todayClose': float(cross['today_close']),
+                'todayTrailstop': float(cross['today_trailstop']),
+                'crossPercent': float(cross['cross_percent']),
                 'createdAt': firestore.SERVER_TIMESTAMP
             }
 
             # Add lastPrice if available (from DuckDB)
             if last_price is not None:
-                doc_data['lastPrice'] = last_price
+                doc_data['lastPrice'] = float(last_price)
 
             doc_ref.set(doc_data)
 
@@ -1078,24 +1160,24 @@ def save_to_firebase(crossovers_50, crossovers_200, advancedtrailstop_crosses, v
             doc_data = {
                 'symbol': symbol_with_prefix,
                 'date': today,
-                'todayVolume': spike['today_volume'],
-                'yesterdayVolume': spike.get('yesterday_volume', 0),
-                'volumeMA20': spike['volume_ma20'],
-                'volumeMA50': spike.get('volume_ma50', 0),
-                'spikePercent': spike['spike_percent'],
-                'rvr': spike.get('rvr', 0),  # Relative Volume Ratio
-                'qualityScore': spike.get('quality_score', 0),
-                'todayClose': spike['today_close'],
-                'yesterdayClose': spike['yesterday_close'],
-                'priceChangePercent': spike['price_change_percent'],
-                'isExceptional': spike.get('is_exceptional', False),
-                'volumeTrendConsistent': spike.get('volume_trend_consistent', False),
+                'todayVolume': int(spike['today_volume']),
+                'yesterdayVolume': int(spike.get('yesterday_volume', 0)),
+                'volumeMA20': int(spike['volume_ma20']),
+                'volumeMA50': int(spike.get('volume_ma50', 0)),
+                'spikePercent': float(spike['spike_percent']),
+                'rvr': float(spike.get('rvr', 0)),  # Relative Volume Ratio
+                'qualityScore': float(spike.get('quality_score', 0)),
+                'todayClose': float(spike['today_close']),
+                'yesterdayClose': float(spike['yesterday_close']),
+                'priceChangePercent': float(spike['price_change_percent']),
+                'isExceptional': bool(spike.get('is_exceptional', False)),
+                'volumeTrendConsistent': bool(spike.get('volume_trend_consistent', False)),
                 'createdAt': firestore.SERVER_TIMESTAMP
             }
 
             # Add lastPrice if available (from DuckDB)
             if last_price is not None:
-                doc_data['lastPrice'] = last_price
+                doc_data['lastPrice'] = float(last_price)
 
             doc_ref.set(doc_data)
 
@@ -1112,28 +1194,33 @@ def save_to_firebase(crossovers_50, crossovers_200, advancedtrailstop_crosses, v
             doc_data = {
                 'symbol': symbol_with_prefix,
                 'date': today,
-                'status': box['status'],  # 'active', 'broken', 'false_breakout'
-                'boxHigh': box['box_high'],
-                'boxLow': box['box_low'],
-                'boxHeight': box['box_height'],
-                'boxRangePercent': box['box_range_percent'],
-                'currentPrice': box['current_price'],
-                'formationDate': box['formation_date'],
-                'consolidationDays': box['consolidation_days'],
-                'breakoutPrice': box['breakout_price'],
-                'isBreakout': box['is_breakout'],
-                'volumeConfirmed': box['volume_confirmed'],
-                'currentVolume': box['current_volume'],
-                'avgVolume': box['avg_volume'],
-                'week52High': box['week_52_high'],
-                'riskRewardRatio': box['risk_reward_ratio'],
-                'priceToBoxHighPercent': box['price_to_box_high_percent'],
+                'status': str(box['status']),  # 'buy', 'consolidating', 'false_breakout'
+                'boxHigh': float(box['box_high']),
+                'boxLow': float(box['box_low']),
+                'boxHeight': float(box['box_height']),
+                'boxRangePercent': float(box['box_range_percent']),
+                'currentPrice': float(box['current_price']),
+                'formationDate': str(box['formation_date']),
+                'breakoutDate': str(box['breakout_date']),  # Added for clarity
+                'consolidationDays': int(box['consolidation_days']),
+                'breakoutPrice': float(box['breakout_price']),
+                'isBreakout': bool(box['is_breakout']),
+                'volumeConfirmed': bool(box['volume_confirmed']),
+                'volumeExpansion': bool(box.get('volume_expansion', False)),  # Added
+                'volumeRatio': float(box.get('volume_ratio', 0)),  # Added
+                'resistanceTouches': int(box.get('resistance_touches', 0)),  # Added
+                'daysAboveBox': int(box.get('days_above_box', 0)),  # Added
+                'currentVolume': int(box['current_volume']),
+                'avgVolume': int(box['avg_volume']),
+                'week52High': float(box['week_52_high']),
+                'riskRewardRatio': float(box['risk_reward_ratio']),
+                'priceToBoxHighPercent': float(box['price_to_box_high_percent']),
                 'createdAt': firestore.SERVER_TIMESTAMP
             }
 
             # Add lastPrice if available (from DuckDB)
             if last_price is not None:
-                doc_data['lastPrice'] = last_price
+                doc_data['lastPrice'] = float(last_price)
 
             doc_ref.set(doc_data)
 
@@ -1149,26 +1236,26 @@ def save_to_firebase(crossovers_50, crossovers_200, advancedtrailstop_crosses, v
             doc_data = {
                 'symbol': symbol_with_prefix,
                 'date': today,
-                'signalType': signal['type'],  # 'BUY', 'SELL', 'SQUEEZE', 'BREAKOUT'
-                'currentPrice': signal['current_price'],
-                'bbUpper': signal['bb_upper'],
-                'bbLower': signal['bb_lower'],
-                'bbMA': signal['bb_ma'],
-                'bbWidthPercent': signal['bb_width_percent'],
-                'rsi': signal['rsi'],
-                'macd': signal['macd'],
-                'inSqueeze': signal['in_squeeze'],
-                'daysInSqueeze': signal['days_in_squeeze'],
-                'proportion': signal['proportion'],
-                'bbBreakout': signal['bb_breakout'],
-                'distanceToUpperPercent': signal['distance_to_upper_percent'],
-                'distanceToLowerPercent': signal['distance_to_lower_percent'],
+                'signalType': str(signal['type']),  # 'BUY', 'SELL', 'SQUEEZE', 'BREAKOUT'
+                'currentPrice': float(signal['current_price']),
+                'bbUpper': float(signal['bb_upper']),
+                'bbLower': float(signal['bb_lower']),
+                'bbMA': float(signal['bb_ma']),
+                'bbWidthPercent': float(signal['bb_width_percent']),
+                'rsi': float(signal['rsi']),
+                'macd': float(signal['macd']),
+                'inSqueeze': bool(signal['in_squeeze']),
+                'daysInSqueeze': int(signal['days_in_squeeze']),
+                'proportion': float(signal['proportion']),
+                'bbBreakout': bool(signal['bb_breakout']),
+                'distanceToUpperPercent': float(signal['distance_to_upper_percent']),
+                'distanceToLowerPercent': float(signal['distance_to_lower_percent']),
                 'createdAt': firestore.SERVER_TIMESTAMP
             }
 
             # Add lastPrice if available (from DuckDB)
             if last_price is not None:
-                doc_data['lastPrice'] = last_price
+                doc_data['lastPrice'] = float(last_price)
 
             doc_ref.set(doc_data)
 
@@ -1263,9 +1350,9 @@ def main():
         if result_darvas and result_darvas['type'] == 'darvas_box':
             data_darvas = {'symbol': symbol, **result_darvas}
             all_darvas_boxes.append(data_darvas)
-            if result_darvas['status'] == 'active':
+            if result_darvas['status'] == 'consolidating':
                 darvas_boxes_active.append(data_darvas)
-            elif result_darvas['status'] == 'broken':
+            elif result_darvas['status'] == 'buy':
                 darvas_boxes_broken.append(data_darvas)
             elif result_darvas['status'] == 'false_breakout':
                 darvas_boxes_false.append(data_darvas)
@@ -1420,9 +1507,25 @@ def main():
     print(f'\n📦 DARVAS BOXES ({len(all_darvas_boxes)} total):')
     print('-' * 80)
 
-    # Active boxes
+    # Buy signals (successful breakouts)
+    if darvas_boxes_broken:
+        print(f'\n🟢 BUY SIGNALS ({len(darvas_boxes_broken)} stocks):')
+        darvas_boxes_broken.sort(key=lambda x: x['price_to_box_high_percent'], reverse=True)
+        print(f"{'Symbol':<12} {'Box High':<12} {'Current':<12} {'Breakout %':<12} {'Breakout Date':<15} {'Vol Ratio':<12}")
+        print('-' * 80)
+        for box in darvas_boxes_broken:
+            print(f"{box['symbol']:<12} "
+                  f"₹{box['box_high']:<11.2f} "
+                  f"₹{box['current_price']:<11.2f} "
+                  f"{box['price_to_box_high_percent']:>10.2f}% "
+                  f"{box['breakout_date']:<15} "
+                  f"{box['volume_ratio']:>10.2f}x")
+    else:
+        print('  No buy signals today')
+
+    # Consolidating boxes
     if darvas_boxes_active:
-        print(f'\n🟦 ACTIVE BOXES ({len(darvas_boxes_active)} stocks):')
+        print(f'\n🟦 CONSOLIDATING ({len(darvas_boxes_active)} stocks):')
         darvas_boxes_active.sort(key=lambda x: x['consolidation_days'], reverse=True)
         print(f"{'Symbol':<12} {'Box High':<12} {'Box Low':<12} {'Current':<12} {'Days':<8} {'Range %':<10}")
         print('-' * 80)
@@ -1434,22 +1537,7 @@ def main():
                   f"{box['consolidation_days']:<8} "
                   f"{box['box_range_percent']:>8.2f}%")
     else:
-        print('  No active Darvas boxes found')
-
-    # Broken boxes (successful breakouts)
-    if darvas_boxes_broken:
-        print(f'\n🟢 SUCCESSFUL BREAKOUTS ({len(darvas_boxes_broken)} stocks):')
-        darvas_boxes_broken.sort(key=lambda x: x['price_to_box_high_percent'], reverse=True)
-        print(f"{'Symbol':<12} {'Box High':<12} {'Current':<12} {'Breakout %':<12} {'Volume OK':<12}")
-        print('-' * 80)
-        for box in darvas_boxes_broken:
-            print(f"{box['symbol']:<12} "
-                  f"₹{box['box_high']:<11.2f} "
-                  f"₹{box['current_price']:<11.2f} "
-                  f"{box['price_to_box_high_percent']:>10.2f}% "
-                  f"{'✓' if box['volume_confirmed'] else '✗':<12}")
-    else:
-        print('  No successful breakouts today')
+        print('  No consolidating boxes found')
 
     # False breakouts
     if darvas_boxes_false:
@@ -1540,9 +1628,9 @@ def main():
     print(f'  Bullish Advanced Trailstop Crosses: {len(bullish_advancedtrailstop_crosses)}')
     print(f'  Bearish Advanced Trailstop Crosses: {len(bearish_advancedtrailstop_crosses)}')
     print(f'  Volume Spikes: {len(volume_spikes)}')
-    print(f'  Darvas Boxes (Active): {len(darvas_boxes_active)}')
-    print(f'  Darvas Boxes (Broken): {len(darvas_boxes_broken)}')
-    print(f'  Darvas Boxes (False): {len(darvas_boxes_false)}')
+    print(f'  Darvas Boxes (BUY Signals): {len(darvas_boxes_broken)}')
+    print(f'  Darvas Boxes (Consolidating): {len(darvas_boxes_active)}')
+    print(f'  Darvas Boxes (False Breakouts): {len(darvas_boxes_false)}')
     print(f'  BB Squeeze (BUY): {len(bb_squeeze_buy)}')
     print(f'  BB Squeeze (SELL): {len(bb_squeeze_sell)}')
     print(f'  BB Squeeze (SQUEEZE): {len(bb_squeeze_squeeze)}')
