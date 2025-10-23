@@ -1004,12 +1004,12 @@ export default function Cross50200Page() {
           <div className="grid grid-cols-2 gap-2 text-xs">
             <div>
               <span className="text-gray-600 dark:text-[#8b949e]">Formation:</span>
-              <span className="ml-1 font-semibold text-gray-900 dark:text-white">{box.formationDate}</span>
+              <span className="ml-1 font-semibold text-gray-900 dark:text-white">{formatDateIndian(box.formationDate)}</span>
             </div>
             {box.breakoutDate && (
               <div>
                 <span className="text-gray-600 dark:text-[#8b949e]">Breakout:</span>
-                <span className="ml-1 font-semibold text-green-500">{box.breakoutDate}</span>
+                <span className="ml-1 font-semibold text-green-500">{formatDateIndian(box.breakoutDate)}</span>
               </div>
             )}
           </div>
@@ -1031,7 +1031,7 @@ export default function Cross50200Page() {
                 : 'text-orange-600 dark:text-orange-400'
           }`}>
             {box.status === 'buy'
-              ? `💡 Price broke out above box high (₹${box.boxHigh.toFixed(2)}) on ${box.breakoutDate} ${box.volumeConfirmed ? 'with strong volume' : 'but volume is weak'}. ${box.volumeRatio ? `Volume: ${box.volumeRatio.toFixed(2)}x` : ''}`
+              ? `💡 Price broke out above box high (₹${box.boxHigh.toFixed(2)}) on ${formatDateIndian(box.breakoutDate)} ${box.volumeConfirmed ? 'with strong volume' : 'but volume is weak'}. ${box.volumeRatio ? `Volume: ${box.volumeRatio.toFixed(2)}x` : ''}`
               : box.status === 'consolidating'
                 ? `📦 Stock consolidating in ${box.consolidationDays}-day box. Breakout level: ₹${box.breakoutPrice.toFixed(2)} (${((box.breakoutPrice - box.currentPrice) / box.currentPrice * 100).toFixed(1)}% above current price).`
                 : `⚠️ Price attempted breakout but failed to sustain above box high. Possible false breakout - wait for re-entry.`
@@ -1140,9 +1140,9 @@ export default function Cross50200Page() {
               const riskAmount = Math.abs(entryPrice - stopLoss);
               target = entryPrice + (riskAmount * 2);
 
-              const analysisText = `Darvas Box Pattern Detected (${box.status.replace('_', ' ').toUpperCase()}).\n\nBox Metrics:\n- Box High: ₹${box.boxHigh.toFixed(2)}\n- Box Low: ₹${box.boxLow.toFixed(2)}\n- Box Range: ${box.boxRangePercent.toFixed(1)}%\n- Consolidation Days: ${box.consolidationDays}\n- Formation Date: ${box.formationDate}\n${box.breakoutDate ? `- Breakout Date: ${box.breakoutDate}\n` : ''}- Current Price: ₹${box.currentPrice.toFixed(2)}\n- 52-Week High: ₹${box.week52High.toFixed(2)}\n\n${
+              const analysisText = `Darvas Box Pattern Detected (${box.status.replace('_', ' ').toUpperCase()}).\n\nBox Metrics:\n- Box High: ₹${box.boxHigh.toFixed(2)}\n- Box Low: ₹${box.boxLow.toFixed(2)}\n- Box Range: ${box.boxRangePercent.toFixed(1)}%\n- Consolidation Days: ${box.consolidationDays}\n- Formation Date: ${formatDateIndian(box.formationDate)}\n${box.breakoutDate ? `- Breakout Date: ${formatDateIndian(box.breakoutDate)}\n` : ''}- Current Price: ₹${box.currentPrice.toFixed(2)}\n- 52-Week High: ₹${box.week52High.toFixed(2)}\n\n${
                 box.status === 'buy'
-                  ? `🟢 BUY SIGNAL - Breakout Analysis:\n- Breakout Price: ₹${box.breakoutPrice.toFixed(2)}\n- Breakout Date: ${box.breakoutDate}\n- Volume Confirmed: ${box.volumeConfirmed ? 'Yes ✓' : 'No ✗'}\n- Volume Ratio: ${box.volumeRatio ? box.volumeRatio.toFixed(2) + 'x' : 'N/A'}\n- Price Above Box: ${box.priceToBoxHighPercent.toFixed(2)}%\n\nBullish breakout detected. Consider entry on pullback to box high with stop loss below box low.`
+                  ? `🟢 BUY SIGNAL - Breakout Analysis:\n- Breakout Price: ₹${box.breakoutPrice.toFixed(2)}\n- Breakout Date: ${formatDateIndian(box.breakoutDate)}\n- Volume Confirmed: ${box.volumeConfirmed ? 'Yes ✓' : 'No ✗'}\n- Volume Ratio: ${box.volumeRatio ? box.volumeRatio.toFixed(2) + 'x' : 'N/A'}\n- Price Above Box: ${box.priceToBoxHighPercent.toFixed(2)}%\n\nBullish breakout detected. Consider entry on pullback to box high with stop loss below box low.`
                   : box.status === 'active'
                     ? `🟣 ACTIVE BOX:\n- Awaiting breakout above ₹${box.breakoutPrice.toFixed(2)}\n- Stock consolidating in box for ${box.consolidationDays} days\n- Risk-Reward Ratio: ${box.riskRewardRatio ? box.riskRewardRatio.toFixed(2) + ':1' : 'N/A'}\n\nActive Darvas box detected. Watch for breakout with volume confirmation. Entry at breakout, stop below box low.`
                   : box.status === 'consolidating'

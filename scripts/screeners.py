@@ -786,8 +786,9 @@ def detect_darvas_box(symbol, lookback_weeks=52, consolidation_weeks=3, breakout
                 if len(consolidation_df) < 10:
                     continue
 
-                # Box high = the original new high (box top)
-                box_high = box_top
+                # IMPROVED: Find ACTUAL resistance level (highest high in consolidation)
+                # This captures the true resistance where price gets rejected, not just initial high
+                box_high = float(consolidation_df['High'].max())
 
                 # Box low = lowest point during consolidation AFTER the high
                 box_low = float(consolidation_df['Low'].min())
@@ -955,7 +956,7 @@ def detect_darvas_box(symbol, lookback_weeks=52, consolidation_weeks=3, breakout
             'formation_date': best_box['formation_date'],
             'breakout_date': best_box['breakout_date'],
             'consolidation_days': best_box['consolidation_days'],
-            'breakout_price': best_box['box_high'] * (1 + breakout_threshold),
+            'breakout_price': best_box['box_high'],  # Use actual resistance, not buffered
             'is_breakout': best_box['breakout_high'] > best_box['box_high'] if best_box['breakout_high'] else False,
             'volume_confirmed': best_box['volume_confirmed'],
             'volume_expansion': best_box['volume_expansion'],
