@@ -35,7 +35,7 @@ export default function Home() {
             featureList: [
               'Multi-account portfolio management',
               'Real-time technical analysis with EMA/MA crossovers, RSI, MACD, Bollinger Bands',
-              'Daily market screeners for 50 MA, 200 MA, and Supertrend crossovers',
+              'Daily market screeners for 50 MA, 200 MA, and DarvasBox signals',
               'One-click conversion of screener results to trading ideas',
               'Fundamental analysis with P/E ratio, ROE, debt ratios',
               'Portfolio import from Zerodha, ICICI Direct',
@@ -824,7 +824,7 @@ export default function Home() {
             <div className="text-2xl mb-2">📈</div>
             <h4 className="font-bold text-gray-900 dark:text-white mb-1">Technical Health</h4>
             <p className="text-sm text-gray-600 dark:text-[#8b949e]">
-              EMA crossovers, Supertrend signals, and momentum indicators
+              EMA crossovers, DarvasBox signals, and momentum indicators
             </p>
           </div>
           <div className="bg-white dark:bg-[#1c2128] border border-gray-200 dark:border-[#30363d] rounded-lg p-4 text-center hover:border-[#ff8c42] transition-colors">
@@ -975,7 +975,7 @@ export default function Home() {
             <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-3">Advanced Technical Analysis</h3>
             <p className="text-gray-600 dark:text-[#8b949e]">
               Automated indicators: EMA/MA crossovers, Golden Cross, RSI, MACD, Bollinger Bands,
-              and Supertrend for every stock.
+              and DarvasBox for every stock.
             </p>
           </div>
 
@@ -1014,7 +1014,7 @@ export default function Home() {
             <div className="text-5xl mb-4">🎯</div>
             <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-3">Smart Exit Criteria</h3>
             <p className="text-gray-600 dark:text-[#8b949e]">
-              Set custom exit rules: Stop-loss, targets, EMA/MA levels, and Supertrend signals
+              Set custom exit rules: Stop-loss, targets, EMA/MA levels, and DarvasBox signals
               for automatic alerts.
             </p>
           </div>
