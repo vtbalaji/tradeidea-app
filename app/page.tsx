@@ -1205,47 +1205,6 @@ export default function Home() {
         </div>
       </section>
 
-      
-      <section className="max-w-7xl mx-auto px-6 py-16">
-        <div className="bg-gradient-to-r from-[#ff8c42]/10 to-purple-500/10 border-2 border-[#ff8c42] dark:border-[#ff8c42] rounded-2xl p-12 text-center relative overflow-hidden">
-          {/* <div className="absolute top-4 right-4 px-4 py-1 bg-[#ff8c42] text-white text-sm font-bold rounded-full">
-            Coming Soon
-          </div> */}
-          <div className="text-6xl mb-6">🔔</div>
-          <h2 className="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mb-4">
-            Smart Signal Alerts
-          </h2>
-          <p className="text-lg text-gray-600 dark:text-[#8b949e] mb-6 max-w-3xl mx-auto">
-            Set your buy/sell parameters based on technical, fundamental, and sentiment analysis.
-            Our system will automatically scan the market and notify you when opportunities match your criteria.
-            <strong className="block mt-2 text-gray-900 dark:text-white">No more manual tracking!</strong>
-          </p>
-          <div className="grid md:grid-cols-3 gap-6 mt-8 max-w-4xl mx-auto">
-            <div className="bg-white dark:bg-[#1c2128] border border-gray-200 dark:border-[#30363d] rounded-lg p-4">
-              <div className="text-2xl mb-2">📈</div>
-              <h4 className="font-bold text-gray-900 dark:text-white mb-1">Technical Signals</h4>
-              <p className="text-sm text-gray-600 dark:text-[#8b949e]">
-                EMA crossovers, RSI levels, MACD divergence, volume breakouts
-              </p>
-            </div>
-            <div className="bg-white dark:bg-[#1c2128] border border-gray-200 dark:border-[#30363d] rounded-lg p-4">
-              <div className="text-2xl mb-2">💼</div>
-              <h4 className="font-bold text-gray-900 dark:text-white mb-1">Fundamental Filters</h4>
-              <p className="text-sm text-gray-600 dark:text-[#8b949e]">
-                P/E ratio, market cap, revenue growth, profit margins
-              </p>
-            </div>
-            <div className="bg-white dark:bg-[#1c2128] border border-gray-200 dark:border-[#30363d] rounded-lg p-4">
-              <div className="text-2xl mb-2">💬</div>
-              <h4 className="font-bold text-gray-900 dark:text-white mb-1">Sentiment Analysis</h4>
-              <p className="text-sm text-gray-600 dark:text-[#8b949e]">
-                News sentiment, social media buzz, analyst ratings
-              </p>
-            </div>
-          </div>
-        </div>
-      </section>
-
       {/* Investment Journey - Visual Flow */}
       <section className="max-w-7xl mx-auto px-6 py-16">
         <div className="text-center mb-12">
@@ -1694,8 +1653,8 @@ export default function Home() {
           </div>
         </div>
 
-        {/* Key Benefits with Numbers */}
-        <div className="mt-12 grid md:grid-cols-3 gap-6">
+        {/* Key Benefits with Numbers - COMMENTED OUT */}
+        {/* <div className="mt-12 grid md:grid-cols-3 gap-6">
           <div className="bg-gradient-to-br from-blue-50 to-cyan-50 dark:from-blue-900/20 dark:to-cyan-900/20 rounded-xl p-6 border-2 border-blue-200 dark:border-blue-700">
             <div className="text-4xl mb-3">⏰</div>
             <div className="text-3xl font-bold text-blue-600 dark:text-blue-400 mb-2">5+ Hours</div>
@@ -1746,7 +1705,7 @@ export default function Home() {
               <span>Technical exit criteria</span>
             </div>
           </div>
-        </div>
+        </div> */}
       </section>
 
       {/* How It Works Section */}
@@ -2043,10 +2002,9 @@ export default function Home() {
         </div>
       </section>
 
-      {/* CTA Section */}
-      <section className="max-w-7xl mx-auto px-6 py-20">
+      {/* CTA Section - COMMENTED OUT */}
+      {/* <section className="max-w-7xl mx-auto px-6 py-20">
         <div className="bg-gradient-to-br from-[#ff8c42]/10 via-orange-500/5 to-purple-500/5 border-2 border-[#ff8c42] dark:border-[#ff8c42] rounded-2xl p-12 text-center relative overflow-hidden">
-          {/* Background Pattern */}
           <div className="absolute inset-0 opacity-5">
             <div className="absolute top-0 left-0 w-40 h-40 bg-[#ff8c42] rounded-full blur-3xl"></div>
             <div className="absolute bottom-0 right-0 w-40 h-40 bg-purple-500 rounded-full blur-3xl"></div>
@@ -2086,7 +2044,6 @@ export default function Home() {
               </div>
             </div>
 
-            {/* Social Proof Stats */}
             <div className="flex flex-wrap justify-center gap-8 pt-8 border-t border-gray-200 dark:border-[#30363d]">
               <div className="text-center">
                 <div className="text-3xl font-bold text-[#ff8c42] mb-1">24/7</div>
@@ -2107,7 +2064,7 @@ export default function Home() {
             </div>
           </div>
         </div>
-      </section>
+      </section> */}
 
       {/* Footer */}
       <footer className="border-t border-gray-200 dark:border-[#30363d] mt-16">
