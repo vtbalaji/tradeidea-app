@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useAuth } from '../contexts/AuthContext';
+import { useSubscription } from '../contexts/SubscriptionContext';
 import { useTheme } from '../contexts/ThemeContext';
 import { IdeaIcon, SparklesIcon, TrendingIcon, MyPortfolioIcon, FilterIcon, UserIcon, BookIcon, HelpIcon, LogoutIcon, AccountsIcon } from '@/components/icons';
 import NotificationBell from './NotificationBell';
@@ -13,6 +14,7 @@ export default function Navigation() {
   const pathname = usePathname();
   const router = useRouter();
   const { user, logout } = useAuth();
+  const { isPremium, isFree, getStatusDisplay } = useSubscription();
   const { theme, setTheme } = useTheme();
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const [showMobileMenu, setShowMobileMenu] = useState(false);
@@ -228,6 +230,39 @@ export default function Navigation() {
                     <UserIcon size={18} />
                     <span className="text-sm font-semibold text-gray-900 dark:text-white">Profile</span>
                   </button>
+
+                  <button
+                    onClick={() => {
+                      setShowProfileMenu(false);
+                      router.push('/subscription');
+                    }}
+                    className="w-full flex items-center justify-between gap-3 px-4 py-3 hover:bg-gray-100 dark:hover:bg-[#30363d] transition-colors"
+                  >
+                    <div className="flex items-center gap-3">
+                      <svg className="w-[18px] h-[18px]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
+                      </svg>
+                      <span className="text-sm font-semibold text-gray-900 dark:text-white">Subscription</span>
+                    </div>
+                    <span className={`text-xs px-2 py-0.5 rounded-full ${isPremium ? 'bg-gradient-to-r from-blue-500 to-purple-600 text-white' : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300'}`}>
+                      {getStatusDisplay()}
+                    </span>
+                  </button>
+
+                  {isFree && (
+                    <button
+                      onClick={() => {
+                        setShowProfileMenu(false);
+                        router.push('/pricing');
+                      }}
+                      className="w-full flex items-center gap-3 px-4 py-3 bg-gradient-to-r from-blue-500 to-purple-600 text-white hover:from-blue-600 hover:to-purple-700 transition-colors"
+                    >
+                      <svg className="w-[18px] h-[18px]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                      </svg>
+                      <span className="text-sm font-semibold">Upgrade to Premium</span>
+                    </button>
+                  )}
 
                   <button
                     onClick={() => {

@@ -1,6 +1,7 @@
 import { NextRequest } from 'next/server';
 import { getAdminDb } from '@/lib/firebaseAdmin';
 import { verifyAuthToken, createErrorResponse, createSuccessResponse } from '@/lib/auth';
+import { verifyCanCreatePosition } from '@/lib/subscriptionAuth';
 import { FieldValue } from 'firebase-admin/firestore';
 
 // GET /api/portfolio - List all portfolio positions for the authenticated user
@@ -66,6 +67,23 @@ export async function POST(request: NextRequest) {
       if (!accountDoc.exists || accountDoc.data()?.userId !== userId) {
         return createErrorResponse('Invalid account', 400);
       }
+    }
+
+    // Check subscription and position limits
+    const openPositionsSnapshot = await db
+      .collection('portfolios')
+      .where('userId', '==', userId)
+      .where('status', '==', 'open')
+      .get();
+
+    const currentOpenPositions = openPositionsSnapshot.size;
+    const canCreate = await verifyCanCreatePosition(userId, currentOpenPositions);
+
+    if (!canCreate.allowed) {
+      return createErrorResponse(
+        canCreate.reason || 'Cannot create position. Upgrade to Premium for unlimited positions.',
+        403
+      );
     }
 
     const positionData = {

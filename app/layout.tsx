@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { AuthProvider } from "../contexts/AuthContext";
+import { SubscriptionProvider } from "../contexts/SubscriptionContext";
 import { AccountsProvider } from "../contexts/AccountsContext";
 import { TradingProvider } from "../contexts/TradingContext";
 import { SymbolsProvider } from "../contexts/SymbolsContext";
@@ -125,13 +126,15 @@ export default function RootLayout({
         <GoogleAnalytics />
         <ThemeProvider>
           <AuthProvider>
-            <AccountsProvider>
-              <SymbolsProvider>
-                <TradingProvider>
-                  {children}
-                </TradingProvider>
-              </SymbolsProvider>
-            </AccountsProvider>
+            <SubscriptionProvider>
+              <AccountsProvider>
+                <SymbolsProvider>
+                  <TradingProvider>
+                    {children}
+                  </TradingProvider>
+                </SymbolsProvider>
+              </AccountsProvider>
+            </SubscriptionProvider>
           </AuthProvider>
         </ThemeProvider>
       </body>

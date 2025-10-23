@@ -22,6 +22,26 @@ interface UserData {
   farmMobileNo: string;
   createdAt: Timestamp;
   updatedAt: Timestamp;
+
+  // Subscription fields
+  subscriptionStatus?: 'free' | 'premium' | 'trial' | 'expired';
+  subscriptionTier?: 'free' | 'premium';
+  subscriptionStartDate?: Timestamp | null;
+  subscriptionEndDate?: Timestamp | null;
+  paymentProvider?: 'razorpay' | null;
+  razorpayCustomerId?: string | null;
+  razorpaySubscriptionId?: string | null;
+  lastPaymentDate?: Timestamp | null;
+  lastPaymentAmount?: number | null;
+  premiumType?: 'paid' | 'complimentary' | 'lifetime' | 'manual' | null;
+  manuallyGranted?: boolean;
+  grantedBy?: string | null;
+  grantedReason?: string | null;
+  grantedAt?: Timestamp | null;
+  autoRenew?: boolean;
+  cancelledAt?: Timestamp | null;
+  trialStartDate?: Timestamp | null;
+  trialEndDate?: Timestamp | null;
 }
 
 interface AuthContextType {
@@ -97,7 +117,26 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         userMobileNo: userMobileNo,
         farmMobileNo: farmMobileNo,
         createdAt: Timestamp.now(),
-        updatedAt: Timestamp.now()
+        updatedAt: Timestamp.now(),
+        // Initialize with free tier
+        subscriptionStatus: 'free',
+        subscriptionTier: 'free',
+        subscriptionStartDate: null,
+        subscriptionEndDate: null,
+        paymentProvider: null,
+        razorpayCustomerId: null,
+        razorpaySubscriptionId: null,
+        lastPaymentDate: null,
+        lastPaymentAmount: null,
+        premiumType: null,
+        manuallyGranted: false,
+        grantedBy: null,
+        grantedReason: null,
+        grantedAt: null,
+        autoRenew: false,
+        cancelledAt: null,
+        trialStartDate: null,
+        trialEndDate: null,
       });
 
       // Sign out user until they verify email
@@ -131,7 +170,26 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           userMobileNo: '',
           farmMobileNo: '',
           createdAt: Timestamp.now(),
-          updatedAt: Timestamp.now()
+          updatedAt: Timestamp.now(),
+          // Initialize with free tier
+          subscriptionStatus: 'free',
+          subscriptionTier: 'free',
+          subscriptionStartDate: null,
+          subscriptionEndDate: null,
+          paymentProvider: null,
+          razorpayCustomerId: null,
+          razorpaySubscriptionId: null,
+          lastPaymentDate: null,
+          lastPaymentAmount: null,
+          premiumType: null,
+          manuallyGranted: false,
+          grantedBy: null,
+          grantedReason: null,
+          grantedAt: null,
+          autoRenew: false,
+          cancelledAt: null,
+          trialStartDate: null,
+          trialEndDate: null,
         });
       }
 

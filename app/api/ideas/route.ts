@@ -1,6 +1,7 @@
 import { NextRequest } from 'next/server';
 import { getAdminDb } from '@/lib/firebaseAdmin';
 import { verifyAuthToken, createErrorResponse, createSuccessResponse } from '@/lib/auth';
+import { verifyPremiumAccess } from '@/lib/subscriptionAuth';
 import { FieldValue } from 'firebase-admin/firestore';
 
 // GET /api/ideas - List all trading ideas
@@ -106,6 +107,16 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const userId = await verifyAuthToken(request);
+
+    // Check premium access - only premium users can create ideas
+    const hasPremium = await verifyPremiumAccess(userId);
+    if (!hasPremium) {
+      return createErrorResponse(
+        'Creating trading ideas requires a premium subscription. Upgrade to Premium to share your ideas with the community.',
+        403
+      );
+    }
+
     const db = getAdminDb();
     const body = await request.json();
 
