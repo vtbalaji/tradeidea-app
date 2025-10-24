@@ -64,7 +64,7 @@ export default function SharePageClient({ idea, comments }: SharePageClientProps
               <IdeaIcon size={24} />
             </div>
             <p className="text-sm text-gray-600 dark:text-[#8b949e]">
-              Shared by {idea.userName || 'Anonymous'} · {idea.createdAt?.toDate ? idea.createdAt.toDate().toLocaleDateString() : 'Recently'}
+              Shared by {idea.userName || 'Anonymous'} · {idea.createdAt ? new Date(idea.createdAt).toLocaleDateString() : 'Recently'}
             </p>
           </div>
 
@@ -189,7 +189,7 @@ export default function SharePageClient({ idea, comments }: SharePageClientProps
                 <div>
                   <div className="text-sm font-semibold text-gray-900 dark:text-white">{comment.userName || 'Trader'}</div>
                   <div className="text-xs text-gray-600 dark:text-[#8b949e]">
-                    {comment.createdAt?.toDate ? comment.createdAt.toDate().toLocaleString() : 'Just now'}
+                    {comment.createdAt ? new Date(comment.createdAt).toLocaleString() : 'Just now'}
                   </div>
                 </div>
               </div>

@@ -72,7 +72,9 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
         'og:image:height': '630',
         'og:image:alt': `${idea.symbol} Investment Idea`,
         'article:author': idea?.userName || 'TradeIdea User',
-        'article:published_time': idea?.createdAt?._seconds ? new Date(idea.createdAt._seconds * 1000).toISOString() : new Date().toISOString(),
+        'article:published_time': idea?.createdAt?._seconds
+          ? new Date(idea.createdAt._seconds * 1000).toISOString()
+          : new Date().toISOString(),
       },
     };
   } catch (error) {
@@ -122,10 +124,10 @@ export default async function PublicIdeaSharePage({ params }: PageProps) {
       return {
         id: doc.id,
         ...data,
-        // Convert Firestore Timestamp to serializable format
-        createdAt: data?.createdAt?._seconds ? {
-          toDate: () => new Date(data.createdAt._seconds * 1000)
-        } : null,
+        // Convert Firestore Timestamp to ISO string (serializable)
+        createdAt: data?.createdAt?._seconds
+          ? new Date(data.createdAt._seconds * 1000).toISOString()
+          : null,
       };
     });
 
