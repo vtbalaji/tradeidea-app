@@ -260,6 +260,32 @@ export default function PortfolioPage() {
     setShowEditPositionModal(true);
   }, []);
 
+  const handleDelete = useCallback(async (position: any) => {
+    try {
+      const token = await user?.getIdToken();
+      if (!token) {
+        throw new Error('Not authenticated');
+      }
+
+      const response = await fetch(`/api/portfolio/${position.id}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to delete position');
+      }
+
+      // Refresh portfolio data
+      fetchPortfolio();
+    } catch (error) {
+      console.error('Error deleting position:', error);
+      alert('Failed to delete position. Please try again.');
+    }
+  }, [user]);
+
   const handleToggleExpand = useCallback((positionId: string) => {
     setExpandedPositionId(prev => prev === positionId ? null : positionId);
   }, []);
@@ -318,6 +344,7 @@ export default function PortfolioPage() {
               onAnalyze={handleOpenAnalysis}
               onBuySell={handleBuySell}
               onEdit={handleEdit}
+              onDelete={handleDelete}
             />
           ))}
         </div>
@@ -333,11 +360,12 @@ export default function PortfolioPage() {
             onAnalyze={handleOpenAnalysis}
             onBuySell={handleBuySell}
             onEdit={handleEdit}
+            onDelete={handleDelete}
           />
         ))}
       </div>
     );
-  }, [viewMode, expandedPositionId, openPositions.length, closedPositions.length, alertPositions.length, activeTab, handleToggleExpand, handleOpenAnalysis, handleBuySell, handleEdit]);
+  }, [viewMode, expandedPositionId, openPositions.length, closedPositions.length, alertPositions.length, activeTab, handleToggleExpand, handleOpenAnalysis, handleBuySell, handleEdit, handleDelete]);
 
   const displayedPositions = activeTab === 'open' ? openPositions : activeTab === 'alerts' ? alertPositions : closedPositions;
 

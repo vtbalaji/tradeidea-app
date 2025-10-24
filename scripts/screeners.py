@@ -868,12 +868,12 @@ def detect_darvas_box(symbol, lookback_weeks=52, consolidation_weeks=3, breakout
                         breakout_idx = len(df) - 1
                         breakout_high = current_price
                         breakout_volume = int(df['Volume'].iloc[-1])
-                        breakout_date = df['Date'].iloc[-1]
+                        breakout_date = None  # No breakout yet
                         volume_confirmed = False
                         volume_expansion = False
                         days_above_box = 0
                         volume_vs_20ma = 0
-                        avg_volume_20 = 0
+                        avg_volume_20 = consolidation_avg_volume  # Use consolidation average
                         price_confirmed = False
                     else:
                         # Consolidation ended long ago without breakout
@@ -884,8 +884,10 @@ def detect_darvas_box(symbol, lookback_weeks=52, consolidation_weeks=3, breakout
                 if isinstance(formation_date, pd.Timestamp):
                     formation_date = formation_date.strftime('%Y-%m-%d')
 
-                if isinstance(breakout_date, pd.Timestamp):
+                if breakout_date is not None and isinstance(breakout_date, pd.Timestamp):
                     breakout_date = breakout_date.strftime('%Y-%m-%d')
+                elif breakout_date is None:
+                    breakout_date = ''  # Empty string for no breakout
 
                 valid_boxes.append({
                     'box_top_idx': box_top_idx,

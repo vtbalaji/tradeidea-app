@@ -179,7 +179,7 @@ class NSEDataFetcher:
             print(f'  ⚠️  Yahoo Finance also failed: {str(e)}')
             return None
 
-    def fetch_and_store(self, symbol, from_date=None, to_date=None, retry_count=3):
+    def fetch_and_store(self, symbol, from_date=None, to_date=None, retry_count=1):
         """
         Fetch data from NSE and store in DuckDB
 
@@ -189,7 +189,7 @@ class NSEDataFetcher:
             symbol: Stock symbol (without .NS suffix)
             from_date: Start date (datetime.date)
             to_date: End date (datetime.date)
-            retry_count: Number of retries on failure
+            retry_count: Number of retries on failure (default: 1 for speed)
         """
         import time
 

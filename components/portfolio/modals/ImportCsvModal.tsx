@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { parseAndValidateCSV, csvRowToPosition, generateCSVTemplate, generateErrorReport, ValidationError } from '../../../lib/csvImport';
 import { getCurrentISTDate, formatDateForStorage } from '@/lib/dateUtils';
+import { getAuthInstance } from '@/lib/firebase';
 
 interface ImportCsvModalProps {
   isOpen: boolean;
@@ -27,6 +28,13 @@ export const ImportCsvModal: React.FC<ImportCsvModalProps> = ({
   const [isImporting, setIsImporting] = useState(false);
   const [importSummary, setImportSummary] = useState<{ total: number; valid: number; invalid: number } | null>(null);
   const [importErrors, setImportErrors] = useState<ValidationError[]>([]);
+  const [syncMode, setSyncMode] = useState(false);
+  const [syncPreview, setSyncPreview] = useState<{
+    toAdd: any[];
+    toUpdate: any[];
+    missing: any[];
+  } | null>(null);
+  const [validatedPositions, setValidatedPositions] = useState<any[]>([]);
 
   if (!isOpen) return null;
 
@@ -36,6 +44,9 @@ export const ImportCsvModal: React.FC<ImportCsvModalProps> = ({
     setIsImporting(false);
     setImportSummary(null);
     setImportErrors([]);
+    setSyncMode(false);
+    setSyncPreview(null);
+    setValidatedPositions([]);
     onClose();
   };
 
@@ -74,6 +85,7 @@ export const ImportCsvModal: React.FC<ImportCsvModalProps> = ({
     setIsImporting(true);
     setImportErrors([]);
     setImportSummary(null);
+    setSyncPreview(null);
 
     try {
       // Read file
@@ -95,29 +107,77 @@ export const ImportCsvModal: React.FC<ImportCsvModalProps> = ({
         const currentDate = formatDateForStorage(getCurrentISTDate());
         const targetAccountId = selectedImportAccount || activeAccount?.id;
 
-        for (const row of result.validRows) {
-          const basePosition = csvRowToPosition(row, currentDate);
+        // Convert CSV rows to position format
+        const positions = result.validRows.map(row => csvRowToPosition(row, currentDate));
 
-          // csvRowToPosition now returns API-compatible format
-          // Fields: symbol, direction, entryPrice, quantity, entryDate, target, stopLoss, notes
-          // Add accountId to the position data
-          const positionWithAccount = {
-            ...basePosition,
-            accountId: targetAccountId, // Add the target account ID
-          };
-
-          console.log('Importing position:', JSON.stringify(positionWithAccount, null, 2)); // Debug log
-
+        if (syncMode) {
+          // SYNC MODE: Preview changes first
           try {
-            // Call addToPortfolio with API-compatible position data including accountId
-            await onAddPosition('', positionWithAccount);
+            // Store validated positions for later use
+            setValidatedPositions(positions);
+
+            // Get auth token
+            const auth = getAuthInstance();
+            const token = await auth?.currentUser?.getIdToken();
+            if (!token) {
+              throw new Error('Not authenticated');
+            }
+
+            const response = await fetch('/api/portfolio/sync', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`,
+              },
+              body: JSON.stringify({
+                accountId: targetAccountId,
+                positions,
+                preview: true, // Just preview, don't apply yet
+              }),
+            });
+
+            if (!response.ok) {
+              const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
+              throw new Error(errorData.error || 'Failed to preview sync');
+            }
+
+            const data = await response.json();
+            setSyncPreview(data.changes);
+            setImportSummary({
+              total: result.summary.total,
+              valid: result.summary.valid,
+              invalid: result.summary.invalid,
+            });
           } catch (error) {
-            console.error(`Error importing ${row.symbol}:`, error, 'Position data:', JSON.stringify(positionWithAccount, null, 2));
+            console.error('Sync preview error:', error);
             setImportErrors(prev => [...prev, {
               row: 0,
-              field: row.symbol,
-              message: `Failed to import: ${error instanceof Error ? error.message : 'Unknown error'}`
+              field: 'sync',
+              message: `Failed to preview sync: ${error instanceof Error ? error.message : 'Unknown error'}`
             }]);
+          }
+        } else {
+          // NORMAL MODE: Create new positions
+          for (const row of result.validRows) {
+            const basePosition = csvRowToPosition(row, currentDate);
+
+            const positionWithAccount = {
+              ...basePosition,
+              accountId: targetAccountId,
+            };
+
+            console.log('Importing position:', JSON.stringify(positionWithAccount, null, 2));
+
+            try {
+              await onAddPosition('', positionWithAccount);
+            } catch (error) {
+              console.error(`Error importing ${row.symbol}:`, error, 'Position data:', JSON.stringify(positionWithAccount, null, 2));
+              setImportErrors(prev => [...prev, {
+                row: 0,
+                field: row.symbol,
+                message: `Failed to import: ${error instanceof Error ? error.message : 'Unknown error'}`
+              }]);
+            }
           }
         }
       }
@@ -133,6 +193,63 @@ export const ImportCsvModal: React.FC<ImportCsvModalProps> = ({
       setIsImporting(false);
       // Reset file input
       event.target.value = '';
+    }
+  };
+
+  const handleApplySync = async () => {
+    if (!syncPreview || validatedPositions.length === 0) return;
+
+    setIsImporting(true);
+
+    try {
+      const targetAccountId = selectedImportAccount || activeAccount?.id;
+
+      // Get auth token
+      const auth = getAuthInstance();
+      const token = await auth?.currentUser?.getIdToken();
+      if (!token) {
+        throw new Error('Not authenticated');
+      }
+
+      // Use the stored validated positions
+      const response = await fetch('/api/portfolio/sync', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          accountId: targetAccountId,
+          positions: validatedPositions,
+          preview: false, // Apply changes
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
+        throw new Error(errorData.error || 'Failed to apply sync');
+      }
+
+      const data = await response.json();
+      setImportSummary({
+        total: data.summary.totalProcessed,
+        valid: data.summary.newPositions + data.summary.updatedPositions,
+        invalid: 0,
+      });
+      setSyncPreview(null);
+      setValidatedPositions([]);
+
+      // Refresh the portfolio page
+      window.location.reload();
+    } catch (error) {
+      console.error('Sync apply error:', error);
+      setImportErrors(prev => [...prev, {
+        row: 0,
+        field: 'sync',
+        message: `Failed to apply sync: ${error instanceof Error ? error.message : 'Unknown error'}`
+      }]);
+    } finally {
+      setIsImporting(false);
     }
   };
 
@@ -177,6 +294,35 @@ export const ImportCsvModal: React.FC<ImportCsvModalProps> = ({
             <span>📄</span>
             Download CSV Template
           </button>
+        </div>
+
+        {/* Sync Mode Toggle */}
+        <div className="mb-6 p-4 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg">
+          <label className="flex items-start gap-3 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={syncMode}
+              onChange={(e) => setSyncMode(e.target.checked)}
+              className="mt-1 w-5 h-5 rounded border-gray-300 text-[#ff8c42] focus:ring-[#ff8c42] cursor-pointer"
+            />
+            <div className="flex-1">
+              <div className="font-semibold text-gray-900 dark:text-white mb-1">
+                🔄 Sync Mode (Recommended for re-importing from broker)
+              </div>
+              <div className="text-sm text-gray-700 dark:text-gray-300">
+                <p className="mb-2">When enabled, this will intelligently reconcile with your existing portfolio:</p>
+                <ul className="list-disc list-inside space-y-1 ml-2">
+                  <li><strong>Match existing positions</strong> by symbol and update quantities via transactions</li>
+                  <li><strong>Preserve</strong> your custom settings (targets, stop loss, notes, smart SL)</li>
+                  <li><strong>Add new positions</strong> for symbols not in your portfolio</li>
+                  <li><strong>Flag positions</strong> that exist locally but not in broker data</li>
+                </ul>
+                <p className="mt-2 text-xs text-amber-700 dark:text-amber-300">
+                  💡 Without sync mode, all CSV rows will be imported as new positions (may create duplicates)
+                </p>
+              </div>
+            </div>
+          </label>
         </div>
 
         {/* Account Selection */}
@@ -273,6 +419,98 @@ export const ImportCsvModal: React.FC<ImportCsvModalProps> = ({
                 </p>
               )}
             </div>
+          </div>
+        )}
+
+        {/* Sync Preview */}
+        {syncMode && syncPreview && (
+          <div className="mb-6 space-y-4">
+            <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
+              <h4 className="font-semibold text-blue-900 dark:text-blue-200 mb-3">
+                🔍 Sync Preview - Review Changes Before Applying
+              </h4>
+
+              {/* Summary Cards */}
+              <div className="grid grid-cols-3 gap-3 mb-4">
+                <div className="bg-white dark:bg-[#0f1419] rounded-lg p-3 border border-gray-200 dark:border-[#30363d]">
+                  <p className="text-xs text-gray-600 dark:text-[#8b949e] mb-1">New Positions</p>
+                  <p className="text-2xl font-bold text-green-500">{syncPreview.toAdd.length}</p>
+                </div>
+                <div className="bg-white dark:bg-[#0f1419] rounded-lg p-3 border border-gray-200 dark:border-[#30363d]">
+                  <p className="text-xs text-gray-600 dark:text-[#8b949e] mb-1">To Update</p>
+                  <p className="text-2xl font-bold text-blue-500">{syncPreview.toUpdate.length}</p>
+                </div>
+                <div className="bg-white dark:bg-[#0f1419] rounded-lg p-3 border border-gray-200 dark:border-[#30363d]">
+                  <p className="text-xs text-gray-600 dark:text-[#8b949e] mb-1">Missing in Broker</p>
+                  <p className="text-2xl font-bold text-amber-500">{syncPreview.missing.length}</p>
+                </div>
+              </div>
+
+              {/* New Positions */}
+              {syncPreview.toAdd.length > 0 && (
+                <div className="mb-4">
+                  <h5 className="text-sm font-semibold text-green-700 dark:text-green-400 mb-2">
+                    ➕ New Positions ({syncPreview.toAdd.length})
+                  </h5>
+                  <div className="bg-green-50 dark:bg-green-900/10 rounded-lg p-3 max-h-40 overflow-y-auto">
+                    {syncPreview.toAdd.map((pos: any, idx: number) => (
+                      <div key={idx} className="text-sm text-gray-700 dark:text-gray-300 mb-1">
+                        <strong>{pos.symbol}</strong>: {pos.quantity} @ ₹{pos.entryPrice}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Updated Positions */}
+              {syncPreview.toUpdate.length > 0 && (
+                <div className="mb-4">
+                  <h5 className="text-sm font-semibold text-blue-700 dark:text-blue-400 mb-2">
+                    🔄 Positions to Update ({syncPreview.toUpdate.length})
+                  </h5>
+                  <div className="bg-blue-50 dark:bg-blue-900/10 rounded-lg p-3 max-h-40 overflow-y-auto">
+                    {syncPreview.toUpdate.map((pos: any, idx: number) => (
+                      <div key={idx} className="text-sm text-gray-700 dark:text-gray-300 mb-1">
+                        <strong>{pos.symbol}</strong>: {pos.currentQuantity} → {pos.newQuantity} qty
+                        {pos.action && pos.action !== 'price_update' && (
+                          <span className={pos.action === 'increased' ? 'text-green-600' : 'text-red-600'}>
+                            {' '}({pos.action})
+                          </span>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Missing Positions */}
+              {syncPreview.missing.length > 0 && (
+                <div className="mb-4">
+                  <h5 className="text-sm font-semibold text-amber-700 dark:text-amber-400 mb-2">
+                    ⚠️ Positions Missing in Broker Data ({syncPreview.missing.length})
+                  </h5>
+                  <div className="bg-amber-50 dark:bg-amber-900/10 rounded-lg p-3 max-h-40 overflow-y-auto">
+                    <p className="text-xs text-amber-800 dark:text-amber-300 mb-2">
+                      These positions exist in your portfolio but were not found in the broker CSV. They may have been sold or the CSV might be incomplete.
+                    </p>
+                    {syncPreview.missing.map((pos: any, idx: number) => (
+                      <div key={idx} className="text-sm text-gray-700 dark:text-gray-300 mb-1">
+                        <strong>{pos.symbol}</strong>: {pos.quantity} qty (P&L: {pos.profitLoss >= 0 ? '+' : ''}₹{pos.profitLoss?.toFixed(2) || '0.00'})
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Confirm Button */}
+            <button
+              onClick={handleApplySync}
+              disabled={isImporting}
+              className="w-full bg-[#ff8c42] hover:bg-[#ff9a58] text-white font-semibold py-3 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {isImporting ? '⏳ Applying Changes...' : '✅ Confirm & Apply Sync'}
+            </button>
           </div>
         )}
 

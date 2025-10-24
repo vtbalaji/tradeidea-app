@@ -661,7 +661,60 @@ def analyze_fundamentals():
 
 if __name__ == '__main__':
     try:
-        analyze_fundamentals()
+        # Check if symbol provided as command line argument
+        if len(sys.argv) > 1:
+            # SINGLE SYMBOL MODE
+            symbol = sys.argv[1].upper()
+
+            # Remove NS_ prefix if present (we'll add it in save_to_firestore)
+            symbol_clean = symbol.replace('NS_', '')
+
+            print(f'🚀 Fetching Fundamentals for {symbol}\n')
+            print('=' * 60)
+
+            # Fetch fundamentals
+            fundamentals = fetch_fundamentals(symbol_clean)
+
+            if fundamentals is None:
+                print(f'\n⚠️  No fundamental data available for {symbol}')
+                print('    Possible reasons:')
+                print('    - Market cap < 1000 Cr')
+                print('    - Symbol not found on Yahoo Finance')
+                print('    - No data available')
+                sys.exit(1)
+
+            # Calculate fundamental score
+            fundamental_analysis = calculate_fundamental_score(fundamentals)
+            fundamentals['fundamentalScore'] = fundamental_analysis['score']
+            fundamentals['fundamentalRating'] = fundamental_analysis['rating']
+
+            # Save to Firestore
+            print(f'\n💾 Saving to Firestore...')
+            save_to_firestore(symbol_clean, fundamentals)
+
+            # Display summary
+            print('\n' + '=' * 60)
+            print(f'✅ {symbol} - {fundamental_analysis["rating"]} (Score: {fundamental_analysis["score"]})')
+            print('=' * 60)
+            print(f'Company: {fundamentals.get("companyName", "N/A")}')
+            print(f'Sector: {fundamentals.get("sector", "N/A")}')
+            if fundamentals.get('trailingPE'):
+                print(f'P/E Ratio: {fundamentals["trailingPE"]:.2f}')
+            if fundamentals.get('returnOnEquity'):
+                print(f'ROE: {fundamentals["returnOnEquity"]:.1f}%')
+            if fundamentals.get('debtToEquity'):
+                print(f'D/E Ratio: {fundamentals["debtToEquity"]:.1f}')
+            if fundamentals.get('piotroskiScore') is not None:
+                print(f'Piotroski F-Score: {fundamentals["piotroskiScore"]}/9')
+            if fundamentals.get('marketCap'):
+                market_cap_cr = fundamentals['marketCap'] / 10_000_000
+                print(f'Market Cap: ₹{market_cap_cr:.0f} Cr')
+            print('=' * 60)
+
+        else:
+            # BATCH MODE (existing code)
+            analyze_fundamentals()
+
         print('\n✅ Job completed')
         sys.exit(0)
     except Exception as e:

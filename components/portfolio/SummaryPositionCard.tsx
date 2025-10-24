@@ -12,6 +12,7 @@ interface SummaryPositionCardProps {
   onAnalyze: (position: any) => void;
   onBuySell: (position: any) => void;
   onEdit: (position: any) => void;
+  onDelete?: (position: any) => void;
 }
 
 export function SummaryPositionCard({
@@ -21,6 +22,7 @@ export function SummaryPositionCard({
   onAnalyze,
   onBuySell,
   onEdit,
+  onDelete,
 }: SummaryPositionCardProps) {
   const investedAmount = position.entryPrice * position.quantity;
   const currentValue = position.currentPrice * position.quantity;
@@ -65,16 +67,20 @@ export function SummaryPositionCard({
             </div>
           </div>
 
-          {/* Avg Buy Price Column */}
+          {/* Avg Buy Price / Avg Sell Price Column */}
           <div className="text-center w-24">
-            <p className="text-sm font-semibold text-gray-900 dark:text-white">₹{Math.round(position.entryPrice).toLocaleString('en-IN')}</p>
+            <p className="text-sm font-semibold text-gray-900 dark:text-white">
+              ₹{Math.round(position.status === 'closed' ? (position.exitPrice || position.currentPrice) : position.entryPrice).toLocaleString('en-IN')}
+            </p>
           </div>
 
           {/* LTP Column */}
           <div className="text-center w-28">
             <div className="flex flex-col items-center">
-              <p className="text-sm font-semibold text-gray-900 dark:text-white">₹{Math.round(position.currentPrice).toLocaleString('en-IN')}</p>
-              {position.technicals && (
+              <p className="text-sm font-semibold text-gray-900 dark:text-white">
+                ₹{Math.round(position.currentPrice).toLocaleString('en-IN')}
+              </p>
+              {position.technicals && position.status === 'open' && (
                 <p className={`text-xs font-semibold ${isPriceUp ? 'text-green-500' : 'text-red-500'}`}>
                   ({isPriceUp ? '+' : ''}{priceChangePercent.toFixed(1)}%)
                 </p>
@@ -167,14 +173,20 @@ export function SummaryPositionCard({
               <p className="text-sm font-semibold text-gray-900 dark:text-white">{position.quantity}</p>
             </div>
             <div>
-              <p className="text-xs text-gray-600 dark:text-[#8b949e] mb-1">Avg Buy Price</p>
-              <p className="text-sm font-semibold text-gray-900 dark:text-white">₹{Math.round(position.entryPrice).toLocaleString('en-IN')}</p>
+              <p className="text-xs text-gray-600 dark:text-[#8b949e] mb-1">
+                {position.status === 'closed' ? 'Avg Sell Price' : 'Avg Buy Price'}
+              </p>
+              <p className="text-sm font-semibold text-gray-900 dark:text-white">
+                ₹{Math.round(position.status === 'closed' ? (position.exitPrice || position.currentPrice) : position.entryPrice).toLocaleString('en-IN')}
+              </p>
             </div>
             <div>
               <p className="text-xs text-gray-600 dark:text-[#8b949e] mb-1">LTP</p>
               <div className="flex items-baseline gap-1.5">
-                <p className="text-sm font-semibold text-gray-900 dark:text-white">₹{Math.round(position.currentPrice).toLocaleString('en-IN')}</p>
-                {position.technicals && (
+                <p className="text-sm font-semibold text-gray-900 dark:text-white">
+                  ₹{Math.round(position.currentPrice).toLocaleString('en-IN')}
+                </p>
+                {position.technicals && position.status === 'open' && (
                   <p className={`text-xs font-semibold ${isPriceUp ? 'text-green-500' : 'text-red-500'}`}>
                     ({isPriceUp ? '+' : ''}{priceChangePercent.toFixed(2)}%)
                   </p>
@@ -216,37 +228,52 @@ export function SummaryPositionCard({
           )}
 
           {/* Actions */}
-          {position.status === 'open' && (
-            <div className="flex gap-2 pt-3 border-t border-gray-200 dark:border-[#30363d]">
-              <AnalysisButton
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onAnalyze(position);
-                }}
-                className="flex-1"
-              />
+          <div className="flex gap-2 pt-3 border-t border-gray-200 dark:border-[#30363d]">
+            <AnalysisButton
+              onClick={(e) => {
+                e.stopPropagation();
+                onAnalyze(position);
+              }}
+              className="flex-1"
+            />
+            {position.status === 'open' ? (
+              <>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onBuySell(position);
+                  }}
+                  className="flex-1 px-3 py-2 bg-gray-100 dark:bg-[#30363d] hover:bg-gray-200 dark:hover:bg-[#3c444d] border border-gray-200 dark:border-[#444c56] text-gray-700 dark:text-gray-300 text-xs font-semibold rounded-lg transition-colors flex items-center justify-center gap-1.5"
+                >
+                  <EditIcon size={14} className="w-3.5 h-3.5" />
+                  <span>Buy/Sell</span>
+                </button>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onEdit(position);
+                  }}
+                  className="flex-1 px-3 py-2 bg-gray-100 dark:bg-[#30363d] hover:bg-gray-200 dark:hover:bg-[#3c444d] border border-gray-200 dark:border-[#444c56] text-gray-700 dark:text-gray-300 text-xs font-semibold rounded-lg transition-colors flex items-center justify-center gap-1.5"
+                >
+                  <EditIcon size={14} className="w-3.5 h-3.5" />
+                  <span>Edit</span>
+                </button>
+              </>
+            ) : (
               <button
                 onClick={(e) => {
                   e.stopPropagation();
-                  onBuySell(position);
+                  if (onDelete && confirm(`Are you sure you want to delete ${position.symbol}?\n\nThis will permanently remove the position from your portfolio.`)) {
+                    onDelete(position);
+                  }
                 }}
-                className="flex-1 px-3 py-2 bg-gray-100 dark:bg-[#30363d] hover:bg-gray-200 dark:hover:bg-[#3c444d] border border-gray-200 dark:border-[#444c56] text-gray-700 dark:text-gray-300 text-xs font-semibold rounded-lg transition-colors flex items-center justify-center gap-1.5"
+                className="flex-1 px-3 py-2 bg-red-100 dark:bg-red-900/30 hover:bg-red-200 dark:hover:bg-red-900/50 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-300 text-xs font-semibold rounded-lg transition-colors flex items-center justify-center gap-1.5"
               >
-                <EditIcon size={14} className="w-3.5 h-3.5" />
-                <span>Buy/Sell</span>
+                <span>🗑️</span>
+                <span>Delete</span>
               </button>
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onEdit(position);
-                }}
-                className="flex-1 px-3 py-2 bg-gray-100 dark:bg-[#30363d] hover:bg-gray-200 dark:hover:bg-[#3c444d] border border-gray-200 dark:border-[#444c56] text-gray-700 dark:text-gray-300 text-xs font-semibold rounded-lg transition-colors flex items-center justify-center gap-1.5"
-              >
-                <EditIcon size={14} className="w-3.5 h-3.5" />
-                <span>Edit</span>
-              </button>
-            </div>
-          )}
+            )}
+          </div>
         </div>
       )}
     </div>
