@@ -46,12 +46,12 @@ export const metadata: Metadata = {
   },
   icons: {
     icon: [
-      { url: '/icon', sizes: '32x32', type: 'image/png' },
+      { url: '/icon?v=2', sizes: '32x32', type: 'image/png' },
     ],
     apple: [
-      { url: '/apple-icon', sizes: '180x180', type: 'image/png' },
+      { url: '/apple-icon?v=2', sizes: '180x180', type: 'image/png' },
     ],
-    shortcut: '/icon',
+    shortcut: '/icon?v=2',
   },
   openGraph: {
     title: "TradeIdea - Portfolio Tracker for Indian Stock Market | Free Automated Alerts",
