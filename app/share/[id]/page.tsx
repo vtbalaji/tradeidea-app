@@ -93,6 +93,7 @@ export default async function PublicIdeaSharePage({ params }: PageProps) {
     const ideaDoc = await adminDb.collection('tradingIdeas').doc(id).get();
 
     if (!ideaDoc.exists) {
+      console.log(`[Share Page] Idea not found: ${id}`);
       notFound();
     }
 
@@ -100,10 +101,13 @@ export default async function PublicIdeaSharePage({ params }: PageProps) {
     const idea = {
       id: ideaDoc.id,
       ...ideaData,
-      // Convert Firestore Timestamp to serializable format
-      createdAt: ideaData?.createdAt?._seconds ? {
-        toDate: () => new Date(ideaData.createdAt._seconds * 1000)
-      } : null,
+      // Convert Firestore Timestamp to ISO string (serializable)
+      createdAt: ideaData?.createdAt?._seconds
+        ? new Date(ideaData.createdAt._seconds * 1000).toISOString()
+        : null,
+      updatedAt: ideaData?.updatedAt?._seconds
+        ? new Date(ideaData.updatedAt._seconds * 1000).toISOString()
+        : null,
     };
 
     // Fetch comments using Admin SDK
@@ -125,9 +129,21 @@ export default async function PublicIdeaSharePage({ params }: PageProps) {
       };
     });
 
+    console.log(`[Share Page] Successfully loaded idea: ${idea.symbol} with ${comments.length} comments`);
     return <SharePageClient idea={idea} comments={comments} />;
-  } catch (error) {
-    console.error('Error fetching idea:', error);
+  } catch (error: any) {
+    console.error('[Share Page] Error fetching idea:', {
+      ideaId: id,
+      error: error.message,
+      stack: error.stack,
+      name: error.name,
+    });
+
+    // Check if it's a Firebase Admin credentials error
+    if (error.message?.includes('Firebase Admin credentials')) {
+      console.error('[Share Page] CRITICAL: Firebase Admin SDK not configured. Please set environment variables on your hosting platform.');
+    }
+
     notFound();
   }
 }

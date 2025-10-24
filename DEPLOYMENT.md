@@ -72,11 +72,12 @@ git push -u origin main
 
 ## Step 5: Add Environment Variables to Vercel
 
-You need to add your Firebase configuration to Vercel:
+⚠️ **CRITICAL**: You MUST add Firebase Admin SDK credentials or the share feature will fail!
 
 1. In Vercel project settings, go to "Environment Variables"
 2. Add the following variables:
 
+### Firebase Client Configuration (Public)
 ```
 NEXT_PUBLIC_FIREBASE_API_KEY=your_api_key
 NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=your_auth_domain
@@ -84,11 +85,41 @@ NEXT_PUBLIC_FIREBASE_PROJECT_ID=your_project_id
 NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=your_storage_bucket
 NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=your_sender_id
 NEXT_PUBLIC_FIREBASE_APP_ID=your_app_id
+NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID=your_measurement_id
+NEXT_PUBLIC_GA_MEASUREMENT_ID=your_ga_id
 ```
 
-You can find these values in your local `.env.local` file.
+### Firebase Admin SDK (Private - Server-Side Only) 🔐
+**⚠️ WITHOUT THESE, THE SHARE FEATURE WILL NOT WORK!**
 
-3. Click "Save"
+```
+FIREBASE_ADMIN_CLIENT_EMAIL=firebase-adminsdk-xxxxx@your-project.iam.gserviceaccount.com
+FIREBASE_ADMIN_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\nYOUR_PRIVATE_KEY_HERE\n-----END PRIVATE KEY-----\n"
+```
+
+**How to get Firebase Admin credentials:**
+1. Go to [Firebase Console](https://console.firebase.google.com/)
+2. Select your project
+3. Click gear icon ⚙️ → **Project Settings**
+4. Go to **Service Accounts** tab
+5. Click **Generate New Private Key**
+6. A JSON file will be downloaded containing `client_email` and `private_key`
+7. Copy those values to Vercel environment variables
+
+**Important Notes:**
+- The private key must include the quotes and `\n` characters
+- Format: `"-----BEGIN PRIVATE KEY-----\nMIIE...\n-----END PRIVATE KEY-----\n"`
+- Select all environments: Production, Preview, Development
+
+### Other Variables
+```
+RAZORPAY_KEY_ID=your_razorpay_key
+NEXT_PUBLIC_RAZORPAY_KEY_ID=your_razorpay_key
+RAZORPAY_KEY_SECRET=your_secret
+ADMIN_EMAILS=your_email@example.com
+```
+
+3. Click "Save" for each variable
 
 ## Step 6: Deploy
 
@@ -115,6 +146,20 @@ Use the deployment script for quick commits and deployments:
 
 ## Troubleshooting
 
+### Share Feature Fails with "Application error: a server-side exception has occurred"
+
+**Cause**: Firebase Admin SDK credentials missing or incorrect
+
+**Solution**:
+1. Go to Vercel Dashboard → Your Project → Settings → Environment Variables
+2. Verify these variables are set:
+   - `FIREBASE_ADMIN_CLIENT_EMAIL`
+   - `FIREBASE_ADMIN_PRIVATE_KEY`
+   - `NEXT_PUBLIC_FIREBASE_PROJECT_ID`
+3. Check Vercel Runtime Logs for error message:
+   - `❌ Firebase Admin credentials not found!`
+4. Redeploy after adding variables
+
 ### Build Fails
 
 1. Check the build logs in Vercel dashboard
@@ -124,7 +169,7 @@ Use the deployment script for quick commits and deployments:
 ### Environment Variables Not Working
 
 1. Make sure all variables start with `NEXT_PUBLIC_` for client-side access
-2. Redeploy after adding environment variables
+2. **IMPORTANT**: After adding environment variables, you MUST redeploy
 3. Check the Vercel logs for any errors
 
 ### Firebase Connection Issues
@@ -133,6 +178,15 @@ Use the deployment script for quick commits and deployments:
 2. Check that Vercel domain is added to authorized domains in Firebase
 3. Go to Firebase Console → Authentication → Settings → Authorized domains
 4. Add your Vercel domain (e.g., `tradeidea-app.vercel.app`)
+
+### How to Check Logs in Vercel
+
+1. Go to Vercel Dashboard
+2. Select your project
+3. Click on "Deployments"
+4. Click on latest deployment
+5. Click "Runtime Logs" tab
+6. Look for error messages with `[Share Page]` prefix
 
 ## Custom Domain (Optional)
 

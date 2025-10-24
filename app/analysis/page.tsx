@@ -4,6 +4,9 @@ import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Navigation from '../../components/Navigation';
 import { useAuth } from '../../contexts/AuthContext';
+import { useSubscription } from '@/contexts/SubscriptionContext';
+import { Feature } from '@/types/subscription';
+import { UpgradePrompt } from '@/components/subscription/UpgradePrompt';
 import { useSymbols } from '../../contexts/SymbolsContext';
 import { getSymbolData } from '@/lib/symbolDataService';
 import InvestorAnalysisResults from '@/components/InvestorAnalysisResults';
@@ -14,6 +17,7 @@ import InvestorTypeGuide from '@/components/InvestorTypeGuide';
 export default function AnalysisPage() {
   const router = useRouter();
   const { user } = useAuth();
+  const { hasAccess, loading: subscriptionLoading } = useSubscription();
   const { searchSymbols } = useSymbols();
   const [symbol, setSymbol] = useState('');
   const [loading, setLoading] = useState(false);
@@ -127,6 +131,38 @@ export default function AnalysisPage() {
       handleAnalyze();
     }
   };
+
+  // Check if subscription is still loading
+  if (subscriptionLoading) {
+    return (
+      <div className="min-h-screen bg-white dark:bg-[#0f1419]">
+        <Navigation />
+        <div className="p-5 pt-5">
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-1">Investor Analysis</h1>
+          <div className="text-center py-16">
+            <div className="inline-block w-12 h-12 border-4 border-[#ff8c42] border-t-transparent rounded-full animate-spin mb-4"></div>
+            <p className="text-gray-600 dark:text-[#8b949e] text-lg">Loading...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Check premium access
+  if (!hasAccess(Feature.ANALYSIS)) {
+    return (
+      <div className="min-h-screen bg-white dark:bg-[#0f1419]">
+        <Navigation />
+        <div className="p-5 pt-5">
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">Investor Analysis</h1>
+          <UpgradePrompt
+            featureName="Investor Analysis"
+            message="Upgrade to Premium to access comprehensive investor type analysis for any stock with detailed technical and fundamental insights."
+          />
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-white dark:bg-[#0f1419]">

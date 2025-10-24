@@ -5,6 +5,9 @@ import { useRouter } from 'next/navigation';
 import Navigation from '@/components/Navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { useAccounts } from '@/contexts/AccountsContext';
+import { useSubscription } from '@/contexts/SubscriptionContext';
+import { Feature } from '@/types/subscription';
+import { UpgradePrompt } from '@/components/subscription/UpgradePrompt';
 // import { useTrading } from '@/contexts/TradingContext'; // Removed - use API directly
 import { apiClient } from '@/lib/apiClient';
 import type { PortfolioAnalysis, Position } from '@/lib/portfolioAnalysis';
@@ -13,6 +16,7 @@ export default function RiskAnalysisPage() {
   const router = useRouter();
   const { user } = useAuth();
   const { activeAccount, accounts } = useAccounts();
+  const { hasAccess, loading: subscriptionLoading } = useSubscription();
   // const { myPortfolio } = useTrading(); // Removed - fetch from API
   const [myPortfolio, setMyPortfolio] = useState<any[]>([]);
   const [analysis, setAnalysis] = useState<PortfolioAnalysis | null>(null);
@@ -112,6 +116,38 @@ export default function RiskAnalysisPage() {
 
     fetchAnalysis();
   }, [activeAccount, accountPositions]);
+
+  // Check if subscription is still loading
+  if (subscriptionLoading) {
+    return (
+      <div className="min-h-screen bg-white dark:bg-[#0f1419]">
+        <Navigation />
+        <div className="p-5 pt-5">
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-6">Reports</h1>
+          <div className="text-center py-16">
+            <div className="inline-block w-12 h-12 border-4 border-[#ff8c42] border-t-transparent rounded-full animate-spin mb-4"></div>
+            <p className="text-gray-600 dark:text-[#8b949e] text-lg">Loading...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Check premium access
+  if (!hasAccess(Feature.REPORTS)) {
+    return (
+      <div className="min-h-screen bg-white dark:bg-[#0f1419]">
+        <Navigation />
+        <div className="p-5 pt-5">
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-6">Reports</h1>
+          <UpgradePrompt
+            featureName="Reports & Risk Analysis"
+            message="Upgrade to Premium to access comprehensive portfolio risk analysis, diversification metrics, and performance insights."
+          />
+        </div>
+      </div>
+    );
+  }
 
   if (loading) {
     return (
