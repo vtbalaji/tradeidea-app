@@ -33,7 +33,8 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     // Create a shorter description for Twitter/WhatsApp
     const shortDescription = `${idea.symbol}: Entry ₹${idea.entryPrice} → Target ₹${idea.target1} (+${target1Percent}%). ${idea.riskLevel} risk.`;
 
-    const imageUrl = `https://tradeidea.co.in/share/${id}/opengraph-image.png`;
+    // Use logo as fallback OG image (you can create a dedicated og-image.png later)
+    const imageUrl = `https://tradeidea.co.in/logo.png`;
     const shareUrl = `https://tradeidea.co.in/share/${id}`;
 
     return {

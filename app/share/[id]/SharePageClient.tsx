@@ -26,181 +26,308 @@ export default function SharePageClient({ idea, comments }: SharePageClientProps
     ? (((idea.target1 - idea.entryPrice) / idea.entryPrice) * 100).toFixed(2)
     : 0;
 
+  const riskRewardRatio = idea.stopLoss
+    ? (((idea.target1 - idea.entryPrice) / (idea.entryPrice - idea.stopLoss))).toFixed(2)
+    : 0;
+  const stopLossPercent = idea.entryPrice
+    ? (((idea.stopLoss - idea.entryPrice) / idea.entryPrice) * 100).toFixed(2)
+    : 0;
+
   return (
-    <div className="min-h-screen bg-white dark:bg-[#0f1419]">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-orange-50/30 dark:from-[#0d1117] dark:via-[#0f1419] dark:to-[#1c2128]">
       {/* Header with Logo and Login */}
-      <div className="bg-gray-50 dark:bg-[#1c2128] border-b border-gray-200 dark:border-[#30363d] px-5 py-4">
-        <div className="max-w-5xl mx-auto flex justify-between items-center">
-          <div className="flex items-center gap-2">
-            <span className="text-2xl font-bold text-gray-900 dark:text-white">TradeIdea</span>
-            <span className="px-2 py-1 bg-orange-500/20 text-orange-400 text-xs font-semibold rounded">Public Share</span>
+      <div className="bg-white dark:bg-[#1c2128] border-b border-gray-200 dark:border-[#30363d] px-5 py-3 sticky top-0 z-50 shadow-sm">
+        <div className="max-w-6xl mx-auto flex justify-between items-center">
+          <div className="flex items-center gap-3">
+            <a href="/" className="flex items-center gap-3">
+              <img
+                src="/logo.png"
+                alt="TradeIdea Logo"
+                width={40}
+                height={40}
+                className=""
+              />
+              <div className="text-base font-bold text-gray-900 dark:text-white leading-tight">
+                TradeIdea
+              </div>
+            </a>
+            <span className="px-3 py-1 bg-orange-100 dark:bg-orange-900/30 border border-orange-300 dark:border-orange-700 text-orange-700 dark:text-orange-400 text-xs font-bold rounded-full">
+              Public Share
+            </span>
           </div>
           <div className="flex gap-2">
             <button
               onClick={handleCopyLink}
-              className="px-4 py-2 bg-gray-200 dark:bg-[#30363d] hover:bg-gray-300 dark:hover:bg-[#3e4651] text-gray-900 dark:text-white text-sm font-semibold rounded-lg transition-colors"
+              className="px-4 py-2 bg-gray-100 dark:bg-[#30363d] hover:bg-gray-200 dark:hover:bg-[#3e4651] text-gray-700 dark:text-white text-sm font-semibold rounded-lg transition-all flex items-center gap-2"
             >
-              📋 Copy Link
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+              </svg>
+              Copy Link
             </button>
             <button
               onClick={handleLogin}
-              className="px-4 py-2 bg-[#ff8c42] hover:bg-[#ff9a58] text-gray-900 dark:text-white text-sm font-semibold rounded-lg transition-colors"
+              className="px-5 py-2 bg-[#ff8c42] hover:bg-[#ff9a58] text-white text-sm font-semibold rounded-lg transition-colors"
             >
-              Sign In to Comment
+              Sign In
             </button>
           </div>
         </div>
       </div>
 
-      <div className="max-w-5xl mx-auto p-5">
-        {/* Header */}
-        <div className="mb-5">
-          <div className="mb-5">
-            <div className="flex items-center gap-3 mb-2">
-              <h1 className="text-4xl font-bold text-gray-900 dark:text-white">{idea.symbol}</h1>
-              <span className="px-3 py-1 bg-purple-500/20 text-purple-400 text-sm font-semibold rounded">
-                {idea.status}
-              </span>
-              <IdeaIcon size={24} />
-            </div>
-            <p className="text-sm text-gray-600 dark:text-[#8b949e]">
-              Shared by {idea.userName || 'Anonymous'} · {idea.createdAt ? new Date(idea.createdAt).toLocaleDateString() : 'Recently'}
-            </p>
+      <div className="max-w-6xl mx-auto p-4 md:p-6 lg:p-8">
+        {/* Hero Section */}
+        <div className="bg-gradient-to-r from-orange-300 to-orange-400 dark:from-orange-400 dark:to-orange-500 rounded-xl p-6 md:p-8 mb-6 shadow-md relative overflow-hidden">
+          {/* Subtle Background Pattern */}
+          <div className="absolute inset-0 opacity-5">
+            <div className="absolute top-0 right-0 w-64 h-64 bg-white rounded-full blur-3xl"></div>
           </div>
 
-          <div className="flex gap-2">
-            <button
-              disabled
-              className="px-3 py-1.5 bg-gray-50 dark:bg-[#1c2128] border border-gray-200 dark:border-[#30363d] rounded-lg text-gray-900 dark:text-white text-sm flex items-center gap-1.5 opacity-60 cursor-not-allowed"
-            >
-              <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor">
-                <path d="M8 14s-6-4.5-6-8c0-2.5 2-4 4-4 1.5 0 2 1 2 1s.5-1 2-1c2 0 4 1.5 4 4 0 3.5-6 8-6 8z"/>
-              </svg>
-              {idea.likes || 0} likes
-            </button>
+          <div className="relative z-10">
+            <div className="flex items-center gap-2 mb-3">
+              <span className="px-2.5 py-1 bg-white/20 backdrop-blur-sm rounded-md text-white text-xs font-medium">
+                {idea.tradeType || 'LONG'}
+              </span>
+              <span className="px-2.5 py-1 bg-white/20 backdrop-blur-sm rounded-md text-white text-xs font-medium">
+                {idea.timeframe}
+              </span>
+              <span className="px-2.5 py-1 bg-white/20 backdrop-blur-sm rounded-md text-white text-xs font-medium">
+                {idea.riskLevel} Risk
+              </span>
+            </div>
+
+            <h1 className="text-4xl md:text-5xl font-bold text-white mb-3">
+              {idea.symbol}
+            </h1>
+
+            <div className="flex items-center gap-3 mb-4">
+              <div className="flex items-center gap-2 text-white/90">
+                <div className="w-7 h-7 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center text-white text-xs font-semibold">
+                  {idea.userName?.charAt(0).toUpperCase() || '?'}
+                </div>
+                <span className="text-sm">{idea.userName || 'Anonymous'}</span>
+              </div>
+              <span className="text-white/70 text-sm">•</span>
+              <span className="text-white/90 text-sm">
+                {idea.createdAt ? new Date(idea.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : 'Recently'}
+              </span>
+            </div>
+
+            <div className="grid grid-cols-3 gap-3 max-w-md">
+              <div className="bg-white/15 backdrop-blur-md rounded-lg p-3 border border-white/20">
+                <div className="text-white/80 text-xs mb-1">Potential Gain</div>
+                <div className="text-white text-xl font-semibold">+{target1Percent}%</div>
+              </div>
+              <div className="bg-white/15 backdrop-blur-md rounded-lg p-3 border border-white/20">
+                <div className="text-white/80 text-xs mb-1">Risk/Reward</div>
+                <div className="text-white text-xl font-semibold">1:{riskRewardRatio}</div>
+              </div>
+              <div className="bg-white/15 backdrop-blur-md rounded-lg p-3 border border-white/20">
+                <div className="text-white/80 text-xs mb-1">Likes</div>
+                <div className="text-white text-xl font-semibold">{idea.likes || 0}</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Trade Setup - Prominent Section */}
+        <div className="bg-white dark:bg-[#161b22] rounded-xl shadow-md border border-gray-200 dark:border-[#30363d] overflow-hidden mb-6">
+          <div className="bg-gray-100 dark:bg-[#1c2128] px-6 py-3.5 border-b border-gray-200 dark:border-[#30363d]">
+            <div className="flex items-center justify-between">
+              <h2 className="text-xl font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+                <TargetIcon size={24} />
+                Trade Setup & Levels
+              </h2>
+              <button
+                onClick={handleLogin}
+                className="px-5 py-2 bg-white hover:bg-gray-50 dark:bg-[#30363d] dark:hover:bg-[#3e4651] text-gray-900 dark:text-white font-semibold rounded-lg transition-all shadow-sm text-sm"
+              >
+                Sign In to Track
+              </button>
+            </div>
+          </div>
+
+          <div className="p-6">
+            {/* Price Levels Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+              {/* Entry Price */}
+              <div className="bg-gray-50 dark:bg-[#1c2128] rounded-lg p-4 border border-gray-200 dark:border-[#30363d]">
+                <div className="flex items-center gap-2 text-blue-600 dark:text-blue-400 mb-2">
+                  <EntryIcon size={18} />
+                  <span className="text-xs font-semibold uppercase">Entry Price</span>
+                </div>
+                <div className="text-2xl font-semibold text-blue-700 dark:text-blue-300">₹{idea.entryPrice.toFixed(2)}</div>
+                <div className="text-xs text-gray-600 dark:text-[#8b949e] mt-1">Recommended Entry Level</div>
+              </div>
+
+              {/* Target */}
+              <div className="bg-gray-50 dark:bg-[#1c2128] rounded-lg p-4 border border-gray-200 dark:border-[#30363d]">
+                <div className="flex items-center gap-2 text-green-600 dark:text-green-400 mb-2">
+                  <TargetIcon size={18} />
+                  <span className="text-xs font-semibold uppercase">Target</span>
+                </div>
+                <div className="text-2xl font-semibold text-green-700 dark:text-green-300">₹{idea.target1.toFixed(2)}</div>
+                <div className="flex items-center gap-2 mt-1">
+                  <span className="px-2 py-0.5 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 text-xs font-semibold rounded">
+                    +{target1Percent}%
+                  </span>
+                  <span className="text-xs text-gray-600 dark:text-[#8b949e]">Potential Profit</span>
+                </div>
+              </div>
+
+              {/* Stop Loss */}
+              <div className="bg-gray-50 dark:bg-[#1c2128] rounded-lg p-4 border border-gray-200 dark:border-[#30363d]">
+                <div className="flex items-center gap-2 text-red-600 dark:text-red-400 mb-2">
+                  <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                  </svg>
+                  <span className="text-xs font-semibold uppercase">Stop Loss</span>
+                </div>
+                <div className="text-2xl font-semibold text-red-700 dark:text-red-300">₹{idea.stopLoss.toFixed(2)}</div>
+                <div className="flex items-center gap-2 mt-1">
+                  <span className="px-2 py-0.5 bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300 text-xs font-semibold rounded">
+                    {stopLossPercent}%
+                  </span>
+                  <span className="text-xs text-gray-600 dark:text-[#8b949e]">Max Risk</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Risk Metrics */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+              <div className="bg-gray-50 dark:bg-[#1c2128] rounded-lg p-4 text-center border border-gray-200 dark:border-[#30363d]">
+                <div className="text-xs text-gray-600 dark:text-[#8b949e] mb-1">Risk/Reward</div>
+                <div className="text-2xl font-bold text-orange-600 dark:text-orange-400">1:{riskRewardRatio}</div>
+              </div>
+              <div className="bg-gray-50 dark:bg-[#1c2128] rounded-lg p-4 text-center border border-gray-200 dark:border-[#30363d]">
+                <div className="text-xs text-gray-600 dark:text-[#8b949e] mb-1">Timeframe</div>
+                <div className="text-lg font-bold text-gray-900 dark:text-white">{idea.timeframe}</div>
+              </div>
+              <div className="bg-gray-50 dark:bg-[#1c2128] rounded-lg p-4 text-center border border-gray-200 dark:border-[#30363d]">
+                <div className="text-xs text-gray-600 dark:text-[#8b949e] mb-1">Risk Level</div>
+                <div className="text-lg font-bold text-gray-900 dark:text-white">{idea.riskLevel}</div>
+              </div>
+              <div className="bg-gray-50 dark:bg-[#1c2128] rounded-lg p-4 text-center border border-gray-200 dark:border-[#30363d]">
+                <div className="text-xs text-gray-600 dark:text-[#8b949e] mb-1">Analysis</div>
+                <div className="text-lg font-bold text-gray-900 dark:text-white">{idea.analysisType}</div>
+              </div>
+            </div>
           </div>
         </div>
 
         {/* Analysis Section */}
-        <div className="bg-gray-50 dark:bg-[#1c2128] border border-gray-200 dark:border-[#30363d] rounded-xl p-5 mb-5">
-          <div className="flex justify-between items-center mb-4">
-            <div className="flex items-center gap-2 flex-wrap">
-              <h3 className="text-xl font-bold text-gray-900 dark:text-white">Analysis & Rationale</h3>
-              <span className="px-3 py-1 bg-yellow-500/20 text-gray-600 dark:text-[#8b949e] text-sm font-semibold rounded-full">
-                {idea.riskLevel} risk
-              </span>
-              <span className="px-3 py-1 bg-blue-500/20 text-gray-600 dark:text-[#8b949e] text-sm font-semibold rounded-full">
-                {idea.timeframe}
-              </span>
-              <span className="px-3 py-1 bg-gray-500/20 text-gray-600 dark:text-[#8b949e] text-sm font-semibold rounded-full">
-                {idea.analysisType}
-              </span>
+        <div className="bg-white dark:bg-[#161b22] border border-gray-200 dark:border-[#30363d] rounded-2xl shadow-md p-6 md:p-8 mb-6">
+          <div className="flex items-center gap-3 mb-6">
+            <div className="w-12 h-12 bg-gradient-to-br from-purple-300 to-pink-300 dark:from-purple-500 dark:to-pink-500 rounded-xl flex items-center justify-center">
+              <svg className="w-6 h-6 text-gray-900 dark:text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              </svg>
+            </div>
+            <div>
+              <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Analysis & Rationale</h2>
+              <p className="text-sm text-gray-600 dark:text-[#8b949e]">Detailed investment thesis</p>
             </div>
           </div>
 
-          <div className="bg-white dark:bg-[#0f1419] border border-gray-200 dark:border-[#30363d] rounded-lg p-4 mb-4">
-            <p className="text-base text-[#c9d1d9] leading-relaxed whitespace-pre-wrap">{idea.analysis}</p>
+          <div className="bg-gradient-to-br from-gray-50 to-gray-100 dark:from-[#1c2128] dark:to-[#161b22] border border-gray-200 dark:border-[#30363d] rounded-xl p-6 mb-6">
+            <p className="text-base text-gray-800 dark:text-[#c9d1d9] leading-relaxed whitespace-pre-wrap">{idea.analysis}</p>
           </div>
 
           {/* Entry/Exit Timing */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {idea.whenToEnter && (
-              <div className="bg-white dark:bg-[#0f1419] border border-gray-200 dark:border-[#30363d] rounded-lg p-4">
-                <div className="text-sm font-semibold text-[#ff8c42] mb-2">When to Enter</div>
-                <p className="text-sm text-[#c9d1d9] leading-relaxed whitespace-pre-wrap">{idea.whenToEnter}</p>
-              </div>
-            )}
-            {idea.whenToExit && (
-              <div className="bg-white dark:bg-[#0f1419] border border-gray-200 dark:border-[#30363d] rounded-lg p-4">
-                <div className="text-sm font-semibold text-[#ff8c42] mb-2">When to Exit</div>
-                <p className="text-sm text-[#c9d1d9] leading-relaxed whitespace-pre-wrap">{idea.whenToExit}</p>
-              </div>
-            )}
-          </div>
+          {(idea.whenToEnter || idea.whenToExit) && (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {idea.whenToEnter && (
+                <div className="bg-gradient-to-br from-emerald-50 to-green-50 dark:from-emerald-950/20 dark:to-green-950/20 border-2 border-emerald-200 dark:border-emerald-800 rounded-xl p-5">
+                  <div className="flex items-center gap-2 text-emerald-600 dark:text-emerald-400 mb-3">
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                    </svg>
+                    <span className="font-bold uppercase text-sm">When to Enter</span>
+                  </div>
+                  <p className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed whitespace-pre-wrap">{idea.whenToEnter}</p>
+                </div>
+              )}
+              {idea.whenToExit && (
+                <div className="bg-gradient-to-br from-orange-50 to-red-50 dark:from-orange-950/20 dark:to-red-950/20 border-2 border-orange-200 dark:border-orange-800 rounded-xl p-5">
+                  <div className="flex items-center gap-2 text-orange-600 dark:text-orange-400 mb-3">
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                    </svg>
+                    <span className="font-bold uppercase text-sm">When to Exit</span>
+                  </div>
+                  <p className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed whitespace-pre-wrap">{idea.whenToExit}</p>
+                </div>
+              )}
+            </div>
+          )}
         </div>
 
-        {/* Trade Setup */}
-        <div className="bg-gray-50 dark:bg-[#1c2128] border border-gray-200 dark:border-[#30363d] rounded-xl p-5 mb-5">
-          <div className="flex justify-between items-center mb-4">
-            <h3 className="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
-              <TargetIcon size={24} /> Trade Setup
-            </h3>
+        {/* Sign In CTA */}
+        <div className="bg-gradient-to-br from-orange-50 to-orange-100 dark:from-orange-950/20 dark:to-orange-900/20 border border-orange-200 dark:border-orange-700 rounded-2xl p-8 text-center mb-6">
+          <div className="w-16 h-16 bg-gradient-to-br from-orange-400 to-orange-500 dark:from-[#ff8c42] dark:to-[#ff6b35] rounded-full mx-auto mb-4 flex items-center justify-center">
+            <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+            </svg>
           </div>
-
-          <div className="space-y-3">
-            {/* Entry Price and Stop Loss on same line */}
-            <div className="grid grid-cols-2 gap-4">
-              <div className="bg-blue-500/10 rounded-lg p-3 border-l-4 border-blue-500">
-                <span className="text-sm text-gray-600 dark:text-[#8b949e] flex items-center gap-2 mb-1">
-                  <EntryIcon size={16} /> Entry Price
-                </span>
-                <span className="text-lg font-semibold text-gray-900 dark:text-white">₹{idea.entryPrice}</span>
-              </div>
-
-              <div className="bg-red-500/10 rounded-lg p-3 border-l-4 border-red-500">
-                <span className="text-sm text-gray-600 dark:text-[#8b949e] flex items-center gap-2 mb-1">
-                  <EntryIcon size={16} /> Stop Loss
-                </span>
-                <span className="text-lg font-semibold text-red-500">₹{idea.stopLoss}</span>
-              </div>
-            </div>
-
-            {/* Targets on next line */}
-            <div className="bg-green-500/10 rounded-lg p-3 border-l-4 border-green-500">
-              <span className="text-sm text-gray-600 dark:text-[#8b949e] flex items-center gap-2 mb-1">
-                <TargetIcon size={16} /> Targets
-              </span>
-              <div className="text-lg font-semibold text-green-500">
-                ₹{idea.target1} <span className="text-sm">(+{target1Percent}%)</span>
-              </div>
-            </div>
-
-            {/* CTA to sign in */}
-            <div className="bg-orange-50 dark:bg-orange-500/10 border border-orange-200 dark:border-orange-500/30 rounded-lg p-4 mt-4">
-              <p className="text-sm text-orange-900 dark:text-orange-400 text-center mb-3">
-                💡 Want to track this idea in your portfolio?
-              </p>
-              <button
-                onClick={handleLogin}
-                className="w-full bg-[#ff8c42] hover:bg-[#ff9a58] text-gray-900 dark:text-white font-semibold py-3 rounded-lg transition-colors"
-              >
-                Sign In to Add to Portfolio
-              </button>
-            </div>
-          </div>
+          <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">Want to track this idea?</h3>
+          <p className="text-gray-600 dark:text-gray-400 mb-6">Sign in to add this idea to your portfolio and get real-time alerts</p>
+          <button
+            onClick={handleLogin}
+            className="px-8 py-3 bg-[#ff8c42] hover:bg-[#ff9a58] text-white font-bold rounded-xl transition-all shadow-md hover:shadow-lg"
+          >
+            Sign In to Add to Portfolio
+          </button>
         </div>
 
         {/* Discussion Section */}
-        <div className="bg-gray-50 dark:bg-[#1c2128] border border-gray-200 dark:border-[#30363d] rounded-xl p-5">
-          <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-4">💬 Discussion ({comments.length})</h3>
+        <div className="bg-white dark:bg-[#161b22] border border-gray-200 dark:border-[#30363d] rounded-2xl shadow-md p-6 md:p-8">
+          <div className="flex items-center gap-3 mb-6">
+            <div className="w-12 h-12 bg-gradient-to-br from-indigo-300 to-purple-300 dark:from-indigo-500 dark:to-purple-500 rounded-xl flex items-center justify-center">
+              <svg className="w-6 h-6 text-gray-900 dark:text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+              </svg>
+            </div>
+            <div>
+              <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Discussion</h2>
+              <p className="text-sm text-gray-600 dark:text-[#8b949e]">{comments.length} comments</p>
+            </div>
+          </div>
 
-          <div className="bg-orange-50 dark:bg-orange-500/10 border border-orange-200 dark:border-orange-500/30 rounded-lg p-4 mb-4">
-            <p className="text-sm text-orange-900 dark:text-orange-400 text-center">
-              🔒 Sign in to join the discussion and share your thoughts
+          <div className="bg-gradient-to-br from-indigo-50 to-purple-50 dark:from-indigo-950/20 dark:to-purple-950/20 border-2 border-indigo-200 dark:border-indigo-800 rounded-xl p-6 text-center mb-6">
+            <svg className="w-12 h-12 text-indigo-500 mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+            </svg>
+            <p className="text-gray-700 dark:text-gray-300 font-medium">
+              Sign in to join the discussion and share your thoughts
             </p>
           </div>
 
-          {comments.map((comment) => (
-            <div key={comment.id} className="bg-white dark:bg-[#0f1419] rounded-lg p-4 mb-3">
-              <div className="flex items-center gap-3 mb-3">
-                <div className="w-9 h-9 rounded-full bg-[#ff8c42] flex items-center justify-center text-gray-900 dark:text-white font-bold">
-                  {comment.userName?.charAt(0).toUpperCase() || '?'}
-                </div>
-                <div>
-                  <div className="text-sm font-semibold text-gray-900 dark:text-white">{comment.userName || 'Trader'}</div>
-                  <div className="text-xs text-gray-600 dark:text-[#8b949e]">
-                    {comment.createdAt ? new Date(comment.createdAt).toLocaleString() : 'Just now'}
+          {comments.length === 0 ? (
+            <div className="text-center py-8">
+              <p className="text-gray-500 dark:text-[#6e7681] text-sm">No comments yet. Be the first to share your thoughts!</p>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {comments.map((comment) => (
+                <div key={comment.id} className="bg-gradient-to-br from-gray-50 to-white dark:from-[#1c2128] dark:to-[#161b22] border border-gray-200 dark:border-[#30363d] rounded-xl p-5">
+                  <div className="flex items-start gap-4 mb-3">
+                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#ff8c42] to-[#ff6b35] flex items-center justify-center text-white font-bold flex-shrink-0">
+                      {comment.userName?.charAt(0).toUpperCase() || '?'}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="text-sm font-bold text-gray-900 dark:text-white">{comment.userName || 'Trader'}</span>
+                        <span className="text-xs text-gray-500 dark:text-[#6e7681]">•</span>
+                        <span className="text-xs text-gray-500 dark:text-[#6e7681]">
+                          {comment.createdAt ? new Date(comment.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' }) : 'Just now'}
+                        </span>
+                      </div>
+                      <p className="text-sm text-gray-700 dark:text-[#c9d1d9] leading-relaxed">{comment.text}</p>
+                    </div>
                   </div>
                 </div>
-              </div>
-              <p className="text-sm text-[#c9d1d9]">{comment.text}</p>
+              ))}
             </div>
-          ))}
-
-          {comments.length === 0 && (
-            <p className="text-center text-gray-600 dark:text-[#8b949e] py-8">
-              No comments yet. Be the first to comment!
-            </p>
           )}
         </div>
 
