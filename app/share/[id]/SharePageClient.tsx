@@ -3,6 +3,17 @@
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { IdeaIcon, TargetIcon, EntryIcon } from '@/components/icons';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import {
+  faCopy,
+  faExclamationTriangle,
+  faFileAlt,
+  faArrowRight,
+  faRightFromBracket,
+  faCheck,
+  faComments,
+  faLock,
+} from '@fortawesome/free-solid-svg-icons';
 
 interface SharePageClientProps {
   idea: any;
@@ -60,9 +71,7 @@ export default function SharePageClient({ idea, comments }: SharePageClientProps
               onClick={handleCopyLink}
               className="px-4 py-2 bg-gray-100 dark:bg-[#30363d] hover:bg-gray-200 dark:hover:bg-[#3e4651] text-gray-700 dark:text-white text-sm font-semibold rounded-lg transition-all flex items-center gap-2"
             >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
-              </svg>
+              <FontAwesomeIcon icon={faCopy} className="w-4 h-4" />
               Copy Link
             </button>
             <button
@@ -178,9 +187,7 @@ export default function SharePageClient({ idea, comments }: SharePageClientProps
               {/* Stop Loss */}
               <div className="bg-gray-50 dark:bg-[#1c2128] rounded-lg p-4 border border-gray-200 dark:border-[#30363d]">
                 <div className="flex items-center gap-2 text-red-600 dark:text-red-400 mb-2">
-                  <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                  </svg>
+                  <FontAwesomeIcon icon={faExclamationTriangle} style={{ width: 18, height: 18 }} />
                   <span className="text-xs font-semibold uppercase">Stop Loss</span>
                 </div>
                 <div className="text-2xl font-semibold text-red-700 dark:text-red-300">₹{idea.stopLoss.toFixed(2)}</div>
@@ -219,9 +226,7 @@ export default function SharePageClient({ idea, comments }: SharePageClientProps
         <div className="bg-white dark:bg-[#161b22] border border-gray-200 dark:border-[#30363d] rounded-2xl shadow-md p-6 md:p-8 mb-6">
           <div className="flex items-center gap-3 mb-6">
             <div className="w-12 h-12 bg-gradient-to-br from-purple-300 to-pink-300 dark:from-purple-500 dark:to-pink-500 rounded-xl flex items-center justify-center">
-              <svg className="w-6 h-6 text-gray-900 dark:text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-              </svg>
+              <FontAwesomeIcon icon={faFileAlt} className="w-6 h-6 text-gray-900 dark:text-white" />
             </div>
             <div>
               <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Analysis & Rationale</h2>
@@ -239,9 +244,7 @@ export default function SharePageClient({ idea, comments }: SharePageClientProps
               {idea.whenToEnter && (
                 <div className="bg-gradient-to-br from-emerald-50 to-green-50 dark:from-emerald-950/20 dark:to-green-950/20 border-2 border-emerald-200 dark:border-emerald-800 rounded-xl p-5">
                   <div className="flex items-center gap-2 text-emerald-600 dark:text-emerald-400 mb-3">
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
-                    </svg>
+                    <FontAwesomeIcon icon={faArrowRight} className="w-5 h-5" />
                     <span className="font-bold uppercase text-sm">When to Enter</span>
                   </div>
                   <p className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed whitespace-pre-wrap">{idea.whenToEnter}</p>
@@ -250,9 +253,7 @@ export default function SharePageClient({ idea, comments }: SharePageClientProps
               {idea.whenToExit && (
                 <div className="bg-gradient-to-br from-orange-50 to-red-50 dark:from-orange-950/20 dark:to-red-950/20 border-2 border-orange-200 dark:border-orange-800 rounded-xl p-5">
                   <div className="flex items-center gap-2 text-orange-600 dark:text-orange-400 mb-3">
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-                    </svg>
+                    <FontAwesomeIcon icon={faRightFromBracket} className="w-5 h-5" />
                     <span className="font-bold uppercase text-sm">When to Exit</span>
                   </div>
                   <p className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed whitespace-pre-wrap">{idea.whenToExit}</p>
@@ -265,9 +266,7 @@ export default function SharePageClient({ idea, comments }: SharePageClientProps
         {/* Sign In CTA */}
         <div className="bg-gradient-to-br from-orange-50 to-orange-100 dark:from-orange-950/20 dark:to-orange-900/20 border border-orange-200 dark:border-orange-700 rounded-2xl p-8 text-center mb-6">
           <div className="w-16 h-16 bg-gradient-to-br from-orange-400 to-orange-500 dark:from-[#ff8c42] dark:to-[#ff6b35] rounded-full mx-auto mb-4 flex items-center justify-center">
-            <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-            </svg>
+            <FontAwesomeIcon icon={faCheck} className="w-8 h-8 text-white" />
           </div>
           <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">Want to track this idea?</h3>
           <p className="text-gray-600 dark:text-gray-400 mb-6">Sign in to add this idea to your portfolio and get real-time alerts</p>
@@ -283,9 +282,7 @@ export default function SharePageClient({ idea, comments }: SharePageClientProps
         <div className="bg-white dark:bg-[#161b22] border border-gray-200 dark:border-[#30363d] rounded-2xl shadow-md p-6 md:p-8">
           <div className="flex items-center gap-3 mb-6">
             <div className="w-12 h-12 bg-gradient-to-br from-indigo-300 to-purple-300 dark:from-indigo-500 dark:to-purple-500 rounded-xl flex items-center justify-center">
-              <svg className="w-6 h-6 text-gray-900 dark:text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-              </svg>
+              <FontAwesomeIcon icon={faComments} className="w-6 h-6 text-gray-900 dark:text-white" />
             </div>
             <div>
               <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Discussion</h2>
@@ -294,9 +291,7 @@ export default function SharePageClient({ idea, comments }: SharePageClientProps
           </div>
 
           <div className="bg-gradient-to-br from-indigo-50 to-purple-50 dark:from-indigo-950/20 dark:to-purple-950/20 border-2 border-indigo-200 dark:border-indigo-800 rounded-xl p-6 text-center mb-6">
-            <svg className="w-12 h-12 text-indigo-500 mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-            </svg>
+            <FontAwesomeIcon icon={faLock} className="w-12 h-12 text-indigo-500 mx-auto mb-3" />
             <p className="text-gray-700 dark:text-gray-300 font-medium">
               Sign in to join the discussion and share your thoughts
             </p>

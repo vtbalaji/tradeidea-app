@@ -5,9 +5,28 @@ import { useParams, useRouter } from 'next/navigation';
 import Navigation from '../../../components/Navigation';
 import { useTrading } from '../../../contexts/TradingContext';
 import { useAuth } from '../../../contexts/AuthContext';
-import { IdeaIcon, TargetIcon, EntryIcon, HeartIcon, EyeIcon } from '@/components/icons';
+import { IdeaIcon, TargetIcon, EntryIcon } from '@/components/icons';
 import { getCurrentISTDate, formatDateForDisplay, formatDateForStorage } from '@/lib/dateUtils';
 import { trackIdeaViewed, trackIdeaLiked, trackIdeaFollowed, trackPositionAdded } from '@/lib/analytics';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import {
+  faArrowLeft,
+  faHeart as faHeartSolid,
+  faEye,
+  faBell,
+  faPlus,
+  faShareNodes,
+  faPen,
+  faXmark,
+  faFileAlt,
+  faArrowRight,
+  faRightFromBracket,
+  faComments,
+  faReply,
+  faPaperPlane,
+  faExclamationTriangle,
+} from '@fortawesome/free-solid-svg-icons';
+import { faHeart as faHeartRegular } from '@fortawesome/free-regular-svg-icons';
 
 export default function IdeaDetailPage() {
   const params = useParams();
@@ -238,9 +257,7 @@ export default function IdeaDetailPage() {
             onClick={() => router.back()}
             className="inline-flex items-center gap-2 text-[#ff8c42] hover:text-[#ff9a58] mb-4 transition-colors font-medium"
           >
-            <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-            </svg>
+            <FontAwesomeIcon icon={faArrowLeft} style={{ width: 16, height: 16 }} />
             Back to Ideas
           </button>
         </div>
@@ -353,18 +370,14 @@ export default function IdeaDetailPage() {
                   }}
                   className="px-4 py-2 bg-white/20 hover:bg-white/30 backdrop-blur-md border border-white/30 text-white text-sm font-semibold rounded-lg transition-all flex items-center gap-2"
                 >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                  </svg>
+                  <FontAwesomeIcon icon={faPen} className="w-4 h-4" />
                   Edit Idea
                 </button>
                 <button
                   onClick={handleDeleteIdea}
                   className="px-4 py-2 bg-red-500/30 hover:bg-red-500/40 backdrop-blur-md border border-red-500/50 text-white text-sm font-semibold rounded-lg transition-all flex items-center gap-2"
                 >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                  </svg>
+                  <FontAwesomeIcon icon={faXmark} className="w-4 h-4" />
                   Close Idea
                 </button>
               </div>
@@ -438,9 +451,7 @@ export default function IdeaDetailPage() {
               {/* Stop Loss */}
               <div className="bg-gray-50 dark:bg-[#1c2128] rounded-lg p-4 border border-gray-200 dark:border-[#30363d]">
                 <div className="flex items-center gap-2 text-red-600 dark:text-red-400 mb-2">
-                  <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                  </svg>
+                  <FontAwesomeIcon icon={faExclamationTriangle} style={{ width: 18, height: 18 }} />
                   <span className="text-xs font-semibold uppercase">Stop Loss</span>
                 </div>
                 <div className="text-2xl font-semibold text-red-700 dark:text-red-300">₹{idea.stopLoss.toFixed(2)}</div>
@@ -479,9 +490,7 @@ export default function IdeaDetailPage() {
         <div className="bg-white dark:bg-[#161b22] border border-gray-200 dark:border-[#30363d] rounded-2xl shadow-md p-6 md:p-8 mb-6">
           <div className="flex items-center gap-3 mb-6">
             <div className="w-12 h-12 bg-gradient-to-br from-purple-300 to-pink-300 dark:from-purple-500 dark:to-pink-500 rounded-xl flex items-center justify-center">
-              <svg className="w-6 h-6 text-gray-900 dark:text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-              </svg>
+              <FontAwesomeIcon icon={faFileAlt} className="w-6 h-6 text-gray-900 dark:text-white" />
             </div>
             <div>
               <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Analysis & Rationale</h2>
@@ -499,9 +508,7 @@ export default function IdeaDetailPage() {
               {idea.whenToEnter && (
                 <div className="bg-gradient-to-br from-emerald-50 to-green-50 dark:from-emerald-950/20 dark:to-green-950/20 border-2 border-emerald-200 dark:border-emerald-800 rounded-xl p-5">
                   <div className="flex items-center gap-2 text-emerald-600 dark:text-emerald-400 mb-3">
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
-                    </svg>
+                    <FontAwesomeIcon icon={faArrowRight} className="w-5 h-5" />
                     <span className="font-bold uppercase text-sm">When to Enter</span>
                   </div>
                   <p className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed whitespace-pre-wrap">{idea.whenToEnter}</p>
@@ -510,9 +517,7 @@ export default function IdeaDetailPage() {
               {idea.whenToExit && (
                 <div className="bg-gradient-to-br from-orange-50 to-red-50 dark:from-orange-950/20 dark:to-red-950/20 border-2 border-orange-200 dark:border-orange-800 rounded-xl p-5">
                   <div className="flex items-center gap-2 text-orange-600 dark:text-orange-400 mb-3">
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-                    </svg>
+                    <FontAwesomeIcon icon={faRightFromBracket} className="w-5 h-5" />
                     <span className="font-bold uppercase text-sm">When to Exit</span>
                   </div>
                   <p className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed whitespace-pre-wrap">{idea.whenToExit}</p>
@@ -526,9 +531,7 @@ export default function IdeaDetailPage() {
         <div id="comments" className="bg-white dark:bg-[#161b22] border border-gray-200 dark:border-[#30363d] rounded-2xl shadow-md p-6 md:p-8 scroll-mt-20">
           <div className="flex items-center gap-3 mb-6">
             <div className="w-12 h-12 bg-gradient-to-br from-indigo-300 to-purple-300 dark:from-indigo-500 dark:to-purple-500 rounded-xl flex items-center justify-center">
-              <svg className="w-6 h-6 text-gray-900 dark:text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-              </svg>
+              <FontAwesomeIcon icon={faComments} className="w-6 h-6 text-gray-900 dark:text-white" />
             </div>
             <div>
               <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Discussion</h2>
@@ -552,9 +555,7 @@ export default function IdeaDetailPage() {
                   disabled={loading}
                   className="bg-[#ff8c42] hover:bg-[#ff9a58] text-white font-semibold py-2.5 px-8 rounded-xl transition-all shadow-md hover:shadow-lg disabled:opacity-60 disabled:cursor-not-allowed flex items-center gap-2"
                 >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
-                  </svg>
+                  <FontAwesomeIcon icon={faPaperPlane} className="w-4 h-4" />
                   Post Comment
                 </button>
               </div>
@@ -564,9 +565,7 @@ export default function IdeaDetailPage() {
           {comments.length === 0 ? (
             <div className="text-center py-12">
               <div className="w-20 h-20 bg-gray-100 dark:bg-[#1c2128] rounded-full mx-auto mb-4 flex items-center justify-center">
-                <svg className="w-10 h-10 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-                </svg>
+                <FontAwesomeIcon icon={faComments} className="w-10 h-10 text-gray-400" />
               </div>
               <p className="text-gray-600 dark:text-[#8b949e] font-medium">No comments yet</p>
               <p className="text-gray-500 dark:text-[#6e7681] text-sm mt-1">Be the first to share your thoughts!</p>
@@ -595,9 +594,7 @@ export default function IdeaDetailPage() {
                       onClick={() => setReplyingTo(comment.id)}
                       className="text-gray-600 dark:text-[#8b949e] hover:text-[#ff8c42] dark:hover:text-[#ff8c42] transition-colors font-medium flex items-center gap-1"
                     >
-                      <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" />
-                      </svg>
+                      <FontAwesomeIcon icon={faReply} className="w-3.5 h-3.5" />
                       Reply
                     </button>
                   </div>

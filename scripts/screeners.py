@@ -685,23 +685,24 @@ def detect_bb_squeeze_breakout(symbol, bb_period=20, bb_std=2, keltner_period=14
 
 def detect_darvas_box(symbol, lookback_weeks=52, consolidation_weeks=3, breakout_threshold=0.005):
     """
-    Detect Darvas Box patterns (TRULY CORRECTED per Nicolas Darvas methodology):
+    Detect Darvas Box patterns (SIMPLIFIED - Recent Consolidation Approach):
 
-    CORRECT DARVAS LOGIC:
-    1. Stock makes a NEW HIGH (creates potential box top)
-    2. Price then CONSOLIDATES BELOW that high for 3+ days (Darvas: 3 days no new high)
-    3. Box TOP = The new high
-    4. Box BOTTOM = Lowest point reached AFTER the high during consolidation
-    5. Box must be tight: 4-12% range
-    6. Minimum 2 tests of box top (resistance)
-    7. BREAKOUT = Price breaks ABOVE the box top again with volume
-    8. Confirmation: Price stays above box for 1+ days
+    SIMPLIFIED DARVAS LOGIC:
+    1. FILTER: Stock must be near 52-week high (within 10%)
+    2. Look at recent 60 days (last ~3 months)
+    3. Test consolidation periods: 5-8 weeks
+    4. Box High = Highest high in that period
+    5. Box Low = Lowest low in that period
+    6. Box must be tight: 4-12% range
+    7. Minimum 2 tests of box top (resistance)
+    8. BREAKOUT = Current price breaks ABOVE box high with volume
+    9. Confirmation: Price stays above box for 1+ days
 
     Parameters:
         symbol: Stock symbol
-        lookback_weeks: Period to check for highs (default 52 weeks = 1 year)
-        consolidation_weeks: Minimum weeks of consolidation (default 3, max recommended 8)
-        breakout_threshold: % above box to confirm breakout (default 0.5%)
+        lookback_weeks: Period to check for 52W highs (default 52 weeks)
+        consolidation_weeks: Not used (kept for compatibility)
+        breakout_threshold: Not used (kept for compatibility)
 
     Returns:
         dict with box details or None (error) or 'no_box'
@@ -739,204 +740,149 @@ def detect_darvas_box(symbol, lookback_weeks=52, consolidation_weeks=3, breakout
         current_price = float(df['Close'].iloc[-1])
         current_52w_high = float(df['52W_High'].iloc[-1])
 
-        # RULE 1: Stock must be within 10% of 52-week high
+        # RULE 1: Stock must be within 10% of 52-week high (strong stock filter)
         if pd.isna(current_52w_high) or current_price < current_52w_high * 0.90:
             return {'type': 'no_box'}
 
-        # FIND NEW HIGHS: Points where stock made 52-week highs
+        # SIMPLIFIED APPROACH: Look at recent 60 days only
+        # IMPORTANT: Exclude today to calculate historical box, then check if today breaks out
+        recent_df = df.tail(61).copy()  # Get 61 days
+
+        if len(recent_df) < 30:
+            return {'type': 'no_box'}
+
+        # Exclude today (last row) for box calculation
+        historical_df = recent_df.iloc[:-1].copy()
+
         valid_boxes = []
 
-        # Look backwards through recent data
-        for i in range(len(df) - 1, max(0, len(df) - 100), -1):
-            if pd.isna(df['52W_High'].iloc[i]):
+        # Test different consolidation periods (5-8 weeks preferred)
+        for weeks in range(5, 9):
+            consolidation_period = weeks * 5
+
+            if len(historical_df) < consolidation_period:
                 continue
 
-            high_val = float(df['High'].iloc[i])
-            high_52w = float(df['52W_High'].iloc[i])
+            # Get the consolidation period data (EXCLUDING today)
+            consolidation_df = historical_df.tail(consolidation_period).copy()
 
-            # Check if this was a new 52-week high (within 0.5%)
-            if high_val < high_52w * 0.995:
+            # Box High = Highest high in this period
+            box_high = float(consolidation_df['High'].max())
+
+            # Box Low = Lowest low in this period
+            box_low = float(consolidation_df['Low'].min())
+
+            box_height = box_high - box_low
+            box_range_percent = (box_height / box_low) * 100
+
+            # RULE 2: Box range must be 4-12% (tight consolidation)
+            if box_range_percent < 4 or box_range_percent > 12:
                 continue
 
-            # Found a new high at index i - this becomes potential BOX TOP
-            box_top_idx = i
-            box_top = high_val
-            box_top_date = df['Date'].iloc[i]
+            # RULE 3: Count resistance touches (tests of box high)
+            # Look for highs within 1% of box high
+            touches = (consolidation_df['High'] >= box_high * 0.99).sum()
+            if touches < 2:
+                continue
 
-            # DARVAS RULE: Wait for 3 days where price doesn't exceed this high
-            # Check the next 3 days
-            if box_top_idx + 3 >= len(df):
-                continue  # Not enough data after this high
+            # Found a valid box! Now check breakout status
+            # Find when box high was made
+            box_high_idx = consolidation_df[consolidation_df['High'] == box_high].index[0]
+            box_high_date = df.loc[box_high_idx, 'Date']
 
-            next_3_days = df.iloc[box_top_idx + 1 : box_top_idx + 4]
-            if (next_3_days['High'] > box_top).any():
-                continue  # High was exceeded in next 3 days, not a valid top
+            # Check if current price is breaking out
+            is_breakout = current_price > box_high
 
-            # Box top is confirmed! Now find consolidation period AFTER this high
-            # Look at 3-8 weeks AFTER the box top
-            for weeks in range(3, 9):
-                consol_period = weeks * 5
+            # Calculate average volumes
+            consolidation_avg_volume = consolidation_df['Volume'].mean()
+            current_volume = int(df['Volume'].iloc[-1])
+            avg_volume_20 = float(df['Volume_MA20'].iloc[-1]) if not pd.isna(df['Volume_MA20'].iloc[-1]) else consolidation_avg_volume
 
-                if box_top_idx + consol_period >= len(df):
-                    continue  # Not enough data
+            volume_vs_20ma = current_volume / avg_volume_20 if avg_volume_20 > 0 else 0
+            volume_vs_consol = current_volume / consolidation_avg_volume if consolidation_avg_volume > 0 else 0
 
-                # Consolidation period: [box_top_idx : box_top_idx + consol_period]
-                consolidation_df = df.iloc[box_top_idx : box_top_idx + consol_period + 1].copy()
+            # Determine status
+            if is_breakout:
+                # Check volume confirmation
+                volume_confirmed = volume_vs_20ma >= 1.3
+                volume_expansion = volume_vs_consol >= 1.3
 
-                if len(consolidation_df) < 10:
-                    continue
+                # For multi-day confirmation, check if we stayed above box
+                # (only if breakout happened earlier)
+                days_above_box = 0
+                if len(df) >= 2:
+                    # Check last 2 days
+                    recent_closes = df.tail(2)['Close']
+                    days_above_box = (recent_closes > box_high).sum()
 
-                # IMPROVED: Find ACTUAL resistance level (highest high in consolidation)
-                # This captures the true resistance where price gets rejected, not just initial high
-                box_high = float(consolidation_df['High'].max())
+                price_confirmed = days_above_box >= 1
 
-                # Box low = lowest point during consolidation AFTER the high
-                box_low = float(consolidation_df['Low'].min())
-                box_height = box_high - box_low
-                box_range_percent = (box_height / box_low) * 100
-
-                # RULE 3: Box range must be 4-12% (tight consolidation)
-                if box_range_percent < 4 or box_range_percent > 12:
-                    continue
-
-                # RULE 4: Count resistance touches (tests of box top)
-                # Look for highs within 1% of box top during consolidation
-                touches = (consolidation_df['High'] >= box_high * 0.99).sum()
-                if touches < 2:
-                    continue
-
-                # Check if there was a BREAKOUT after the consolidation
-                # Look for days where price exceeded box_high after consolidation period
-                after_consol_idx = box_top_idx + consol_period + 1
-                breakout_idx = None
-                breakout_high = None
-                breakout_volume = None
-
-                if after_consol_idx < len(df):
-                    # Look at next 20 days for breakout
-                    search_end = min(after_consol_idx + 20, len(df))
-                    after_df = df.iloc[after_consol_idx:search_end]
-
-                    # Find first day that breaks above box high
-                    breakout_days = after_df[after_df['High'] > box_high]
-                    if not breakout_days.empty:
-                        breakout_idx = breakout_days.index[0]
-                        breakout_high = float(df['High'].iloc[breakout_idx])
-                        breakout_volume = int(df['Volume'].iloc[breakout_idx])
-
-                # Calculate consolidation average volume
-                consolidation_avg_volume = consolidation_df['Volume'].mean()
-
-                if breakout_idx is not None:
-                    # BREAKOUT OCCURRED - check volume and confirmation
-                    avg_volume_20 = float(df['Volume_MA20'].iloc[breakout_idx]) if not pd.isna(df['Volume_MA20'].iloc[breakout_idx]) else 0
-
-                    volume_vs_20ma = breakout_volume / avg_volume_20 if avg_volume_20 > 0 else 0
-                    volume_vs_consol = breakout_volume / consolidation_avg_volume if consolidation_avg_volume > 0 else 0
-
-                    # RULE 5: Breakout volume > 1.3x average
-                    volume_confirmed = volume_vs_20ma >= 1.3
-
-                    # RULE 6: Volume expansion vs consolidation
-                    volume_expansion = volume_vs_consol >= 1.3
-
-                    # RULE 7: Price confirmation - check if price stayed above box after breakout
-                    days_after = min(5, len(df) - breakout_idx - 1)
-                    days_above_box = 0
-
-                    if days_after > 0:
-                        after_breakout_df = df.iloc[breakout_idx + 1 : breakout_idx + 1 + days_after]
-                        days_above_box = (after_breakout_df['Close'] > box_high).sum()
-
-                    price_confirmed = days_above_box >= 1
-
-                    # Determine status
-                    if volume_confirmed and volume_expansion and price_confirmed:
-                        status = 'buy'  # Successful breakout - BUY signal
-                    elif breakout_high > box_high * 1.005:
-                        status = 'false_breakout'  # Broke out but weak
-                    else:
-                        status = 'consolidating'  # Breakout but not confirmed yet
-
-                    breakout_date = df['Date'].iloc[breakout_idx]
+                # Strong buy signal if all confirmations met
+                if volume_confirmed and volume_expansion and price_confirmed:
+                    status = 'buy'
+                elif current_price > box_high * 1.01:
+                    # Broke out more than 1% but weak volume
+                    status = 'false_breakout'
                 else:
-                    # NO BREAKOUT YET - still in consolidation or consolidation ended
-                    # Check if we're still in the consolidation period
-                    if after_consol_idx >= len(df) - 5:
-                        # Near current date, might still be consolidating
-                        status = 'consolidating'
-                        breakout_idx = len(df) - 1
-                        breakout_high = current_price
-                        breakout_volume = int(df['Volume'].iloc[-1])
-                        breakout_date = None  # No breakout yet
-                        volume_confirmed = False
-                        volume_expansion = False
-                        days_above_box = 0
-                        volume_vs_20ma = 0
-                        avg_volume_20 = consolidation_avg_volume  # Use consolidation average
-                        price_confirmed = False
-                    else:
-                        # Consolidation ended long ago without breakout
-                        continue
+                    # Just breaking out, not confirmed
+                    status = 'consolidating'
 
-                # Store this valid box
-                formation_date = box_top_date
-                if isinstance(formation_date, pd.Timestamp):
-                    formation_date = formation_date.strftime('%Y-%m-%d')
+                breakout_date = df['Date'].iloc[-1].strftime('%Y-%m-%d')
+            else:
+                # Still consolidating
+                status = 'consolidating'
+                breakout_date = ''
+                volume_confirmed = False
+                volume_expansion = False
+                days_above_box = 0
+                price_confirmed = False
 
-                if breakout_date is not None and isinstance(breakout_date, pd.Timestamp):
-                    breakout_date = breakout_date.strftime('%Y-%m-%d')
-                elif breakout_date is None:
-                    breakout_date = ''  # Empty string for no breakout
+            # Format dates
+            formation_date = box_high_date
+            if isinstance(formation_date, pd.Timestamp):
+                formation_date = formation_date.strftime('%Y-%m-%d')
 
-                valid_boxes.append({
-                    'box_top_idx': box_top_idx,
-                    'formation_date': formation_date,
-                    'box_high': box_high,
-                    'box_low': box_low,
-                    'box_height': box_height,
-                    'box_range_percent': box_range_percent,
-                    'touches': touches,
-                    'weeks': weeks,
-                    'status': status,
-                    'breakout_date': breakout_date,
-                    'breakout_high': breakout_high,
-                    'breakout_volume': breakout_volume,
-                    'avg_volume': int(avg_volume_20) if 'avg_volume_20' in locals() else 0,
-                    'volume_confirmed': volume_confirmed,
-                    'volume_expansion': volume_expansion,
-                    'volume_ratio': volume_vs_20ma if 'volume_vs_20ma' in locals() else 0,
-                    'days_above_box': days_above_box,
-                    'price_confirmed': price_confirmed,
-                    'consolidation_days': len(consolidation_df)
-                })
-
-                # Found valid box for this top, move to next high
-                break
+            valid_boxes.append({
+                'formation_date': formation_date,
+                'box_high': box_high,
+                'box_low': box_low,
+                'box_height': box_height,
+                'box_range_percent': box_range_percent,
+                'touches': touches,
+                'weeks': weeks,
+                'status': status,
+                'breakout_date': breakout_date,
+                'breakout_high': current_price if is_breakout else None,
+                'breakout_volume': current_volume,
+                'avg_volume': int(avg_volume_20),
+                'volume_confirmed': volume_confirmed,
+                'volume_expansion': volume_expansion,
+                'volume_ratio': volume_vs_20ma,
+                'days_above_box': days_above_box,
+                'price_confirmed': price_confirmed,
+                'consolidation_days': len(consolidation_df)
+            })
 
         if not valid_boxes:
             return {'type': 'no_box'}
 
         # Return the BEST box based on priority:
-        # 1. First priority: 'buy' (successful breakout with all rules satisfied)
-        # 2. Second priority: 'consolidating' (consolidating, waiting for breakout)
-        # 3. Last priority: 'false_breakout' (broke out but failed volume/confirmation)
+        # 1. 'buy' (successful breakout)
+        # 2. 'consolidating' (waiting for breakout)
+        # 3. 'false_breakout' (weak breakout)
         best_box = None
 
-        # First, look for any 'buy' status boxes (highest priority)
         for box in valid_boxes:
             if box['status'] == 'buy':
                 best_box = box
                 break
 
-        # If no 'buy' found, look for 'consolidating' boxes
         if best_box is None:
             for box in valid_boxes:
                 if box['status'] == 'consolidating':
                     best_box = box
                     break
 
-        # If still nothing, take any 'false_breakout'
         if best_box is None:
             best_box = valid_boxes[0]
 
@@ -958,11 +904,11 @@ def detect_darvas_box(symbol, lookback_weeks=52, consolidation_weeks=3, breakout
             'formation_date': best_box['formation_date'],
             'breakout_date': best_box['breakout_date'],
             'consolidation_days': best_box['consolidation_days'],
-            'breakout_price': best_box['box_high'],  # Use actual resistance, not buffered
-            'is_breakout': best_box['breakout_high'] > best_box['box_high'] if best_box['breakout_high'] else False,
+            'breakout_price': best_box['box_high'],
+            'is_breakout': best_box['breakout_high'] is not None and best_box['breakout_high'] > best_box['box_high'],
             'volume_confirmed': best_box['volume_confirmed'],
             'volume_expansion': best_box['volume_expansion'],
-            'current_volume': best_box['breakout_volume'] if best_box['breakout_volume'] else 0,
+            'current_volume': best_box['breakout_volume'],
             'avg_volume': best_box['avg_volume'],
             'week_52_high': current_52w_high,
             'risk_reward_ratio': risk_reward_ratio,
