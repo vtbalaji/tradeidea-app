@@ -2,7 +2,10 @@
 """
 Weekly Fundamentals Analysis Batch Job (Python)
 
-Fetches fundamental data from Yahoo Finance and updates Firebase Firestore.
+Fetches fundamental data from Yahoo Finance and updates:
+1. Firebase Firestore (for web app)
+2. DuckDB (for forensic analysis)
+
 Run this weekly (e.g., every Sunday) to update fundamental metrics.
 """
 
@@ -12,6 +15,14 @@ from firebase_admin import credentials, firestore
 from datetime import datetime
 import sys
 import os
+
+# Add scripts directory to path for imports
+sys.path.insert(0, os.path.join(os.path.dirname(__file__)))
+
+# Import Yahoo DuckDB fetcher, PEG calculator, and XBRL enricher
+from yahoo_fundamentals_fetcher import YahooFundamentalsFetcher
+from peg_calculator import PEGCalculator
+from yahoo_xbrl_enricher import YahooXBRLEnricher
 
 # Initialize Firebase
 cred_path = os.path.join(os.getcwd(), 'serviceAccountKey.json')
@@ -27,6 +38,11 @@ except ValueError:
     pass
 
 db = firestore.client()
+
+# Initialize DuckDB storage, PEG calculator, and XBRL enricher
+duckdb_fetcher = YahooFundamentalsFetcher()
+peg_calculator = PEGCalculator()
+xbrl_enricher = YahooXBRLEnricher()
 
 def fetch_fundamentals(symbol):
     """Fetch fundamental data from Yahoo Finance"""
@@ -116,9 +132,22 @@ def fetch_fundamentals(symbol):
                 else:
                     fundamentals[field] = round(fundamentals[field] * 100, 2)  # Convert to percentage
 
-        # Don't calculate PEG - Yahoo data is unreliable for Indian stocks
-        # Screener.in uses 3-year CAGR which we don't have access to
-        fundamentals['pegRatio'] = None
+        # Calculate PEG using 3-year CAGR (Indian market standard)
+        print(f'  📊 Calculating PEG Ratio...')
+        try:
+            peg_data = peg_calculator.calculate_hybrid_peg(symbol)
+            if peg_data and 'pegHybrid' in peg_data and peg_data['pegHybrid'] is not None:
+                fundamentals['pegRatio'] = round(peg_data['pegHybrid'], 2)
+                fundamentals['earningsGrowth3Y'] = peg_data.get('earningsCagr3Y')  # Store 3-year CAGR
+                fundamentals['pegHistorical'] = peg_data.get('pegHistorical3Y')  # Historical PEG
+                fundamentals['pegForward'] = peg_data.get('pegForward1Y')  # Forward PEG
+                print(f'  ✅ PEG Ratio: {fundamentals["pegRatio"]} (3Y CAGR: {peg_data.get("earningsCagr3Y")}%)')
+            else:
+                fundamentals['pegRatio'] = None
+                print(f'  ⚠️  PEG calculation failed - insufficient data')
+        except Exception as e:
+            fundamentals['pegRatio'] = None
+            print(f'  ⚠️  PEG calculation error: {str(e)[:50]}')
 
         # Convert Debt-to-Equity from percentage to ratio
         # Yahoo returns it as percentage (e.g., 63.93 for 63.93%)
@@ -585,6 +614,25 @@ def save_to_firestore(symbol, fundamentals):
     }, merge=True)  # merge=True preserves technical data if it exists
 
 
+def save_to_duckdb(symbol, fundamentals):
+    """Save fundamentals to DuckDB (for forensic analysis)"""
+    try:
+        # Use the yahoo_fundamentals_fetcher to store in DuckDB
+        # It will fetch fresh data and store it properly
+        duckdb_fetcher.fetch_and_store(symbol)
+
+        # Enrich XBRL data with Yahoo Finance data for forensic calculations
+        # This adds market_cap and current_price to existing XBRL records
+        print(f'  🔄 Enriching XBRL data with Yahoo Finance...')
+        enrich_result = xbrl_enricher.enrich_symbol(symbol, verbose=False)
+        if enrich_result['success']:
+            print(f'  💾 Saved to DuckDB (enriched {enrich_result.get("enriched_count", 0)} XBRL records)')
+        else:
+            print(f'  💾 Saved to DuckDB (XBRL enrichment skipped)')
+    except Exception as e:
+        print(f'  ⚠️  DuckDB save failed: {str(e)}')
+
+
 def analyze_fundamentals():
     """Main analysis function"""
     print('🚀 Starting Fundamentals Analysis (Python)\n')
@@ -623,6 +671,9 @@ def analyze_fundamentals():
                 # Save to Firestore
                 print(f'  💾 Saving to Firestore...')
                 save_to_firestore(symbol, fundamentals)
+
+                # Save to DuckDB
+                save_to_duckdb(symbol, fundamentals)
 
                 # Display summary
                 print(f'  ✅ {symbol} - {fundamental_analysis["rating"]} (Score: {fundamental_analysis["score"]})')
@@ -691,6 +742,9 @@ if __name__ == '__main__':
             # Save to Firestore
             print(f'\n💾 Saving to Firestore...')
             save_to_firestore(symbol_clean, fundamentals)
+
+            # Save to DuckDB
+            save_to_duckdb(symbol_clean, fundamentals)
 
             # Display summary
             print('\n' + '=' * 60)

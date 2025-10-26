@@ -20,12 +20,57 @@ from datetime import datetime
 import re
 
 class XBRLParser:
-    """Parse XBRL files and extract financial data"""
+    """Parse XBRL files and extract financial data with multi-schema support"""
 
-    # Common XBRL element mappings (Indian taxonomy + BSE format)
-    ELEMENT_MAPPING = {
+    # SEBI 2025 format (new format) - in-capmkt namespace
+    SEBI_2025_MAPPING = {
         # Balance Sheet - Assets
-        'Assets': ['Assets', 'TotalAssets', 'AssetsCurrent'],
+        'Assets': ['Assets', 'TotalAssets'],
+        'CurrentAssets': ['CurrentAssets', 'TotalCurrentAssets'],
+        'NonCurrentAssets': ['NoncurrentAssets', 'NonCurrentAssets', 'TotalNonCurrentAssets'],
+        'FixedAssets': ['PropertyPlantAndEquipment', 'FixedAssets', 'TangibleAssets'],
+        'Investments': ['Investments', 'TotalInvestments'],
+        'CashAndCashEquivalents': ['CashAndCashEquivalents', 'Cash'],
+        'TradeReceivables': ['TradeReceivables', 'Receivables'],
+        'Inventories': ['Inventories', 'Inventory'],
+
+        # Balance Sheet - Liabilities & Equity
+        'EquityAndLiabilities': ['EquityAndLiabilities', 'TotalEquityAndLiabilities'],
+        'Equity': ['Equity', 'EquityAttributableToOwnersOfParent', 'TotalEquity'],
+        'ShareCapital': ['EquityShareCapital', 'PaidUpValueOfEquityShareCapital'],
+        'Reserves': ['OtherEquity', 'ReservesAndSurplus', 'Reserves'],
+        'TotalDebt': ['Borrowings', 'TotalBorrowings'],
+        'CurrentLiabilities': ['CurrentLiabilities', 'TotalCurrentLiabilities'],
+        'NonCurrentLiabilities': ['NoncurrentLiabilities', 'NonCurrentLiabilities'],
+        'TradePayables': ['TradePayables', 'Payables'],
+
+        # P&L Statement
+        'Revenue': ['RevenueFromOperations', 'Revenue', 'TotalRevenue'],
+        'OtherIncome': ['OtherIncome'],
+        'TotalIncome': ['TotalIncome', 'Income'],
+        'OperatingExpenses': ['TotalExpenses', 'OperatingExpenses', 'Expenses'],
+        'EmployeeBenefits': ['EmployeeBenefitExpense', 'EmployeeCosts'],
+        'Depreciation': ['DepreciationAndAmortisation', 'Depreciation'],
+        'FinanceCosts': ['FinanceCosts', 'InterestExpense', 'FinanceCost'],
+        'ProfitBeforeTax': ['ProfitBeforeTax', 'PBT'],
+        'TaxExpense': ['TaxExpense', 'IncomeTaxExpense'],
+        'NetProfit': ['ProfitLoss', 'NetProfit', 'ProfitForPeriod', 'ProfitLossForPeriod'],
+        'EPS': ['BasicEarningsPerShare', 'EarningsPerShare', 'BasicEPS'],
+
+        # Cash Flow
+        'OperatingCashFlow': ['CashFlowFromOperatingActivities', 'NetCashFlowFromOperatingActivities'],
+        'InvestingCashFlow': ['CashFlowFromInvestingActivities', 'NetCashFlowFromInvestingActivities'],
+        'FinancingCashFlow': ['CashFlowFromFinancingActivities', 'NetCashFlowFromFinancingActivities'],
+
+        # Other
+        'NumberOfShares': ['NumberOfShares', 'WeightedAverageNumberOfEquityShares'],
+        'DividendPerShare': ['DividendPerShare', 'DividendDeclared'],
+    }
+
+    # BSE 2020 format (old format) - in-bse-fin namespace
+    BSE_2020_MAPPING = {
+        # Balance Sheet - Assets
+        'Assets': ['Assets', 'TotalAssets'],
         'CurrentAssets': ['CurrentAssets', 'TotalCurrentAssets'],
         'NonCurrentAssets': ['NoncurrentAssets', 'NonCurrentAssets', 'TotalNonCurrentAssets'],
         'FixedAssets': ['PropertyPlantAndEquipment', 'FixedAssets', 'TangibleAssets'],
@@ -34,54 +79,52 @@ class XBRLParser:
         'TradeReceivables': ['TradeReceivables', 'Receivables', 'Debtors'],
         'Inventories': ['Inventories', 'Inventory'],
 
-        # Balance Sheet - Liabilities & Equity
+        # Balance Sheet - Liabilities & Equity (BSE format doesn't have direct Equity element)
         'EquityAndLiabilities': ['EquityAndLiabilities', 'TotalEquityAndLiabilities'],
-        'Equity': ['Equity', 'ShareholdersFunds', 'TotalShareholdersFunds'],
-        'ShareCapital': ['ShareCapital', 'EquityShareCapital'],
-        'Reserves': ['ReservesAndSurplus', 'Reserves', 'OtherEquity'],
+        'Equity': None,  # Will be calculated from ShareCapital + Reserves
+        'ShareCapital': ['PaidUpValueOfEquityShareCapital', 'ShareCapital', 'EquityShareCapital'],
+        'Reserves': ['ReservesAndSurplus', 'Reserves', 'OtherEquity', 'ReserveExcludingRevaluationReserves'],
         'TotalDebt': ['Borrowings', 'TotalBorrowings'],
         'CurrentLiabilities': ['CurrentLiabilities', 'TotalCurrentLiabilities'],
         'NonCurrentLiabilities': ['NoncurrentLiabilities', 'NonCurrentLiabilities'],
         'TradePayables': ['TradePayables', 'Payables', 'Creditors'],
 
-        # P&L Statement - Standard names first, then BSE-specific
+        # P&L Statement
         'Revenue': ['RevenueFromOperations', 'Revenue', 'TotalRevenue'],
         'OtherIncome': ['OtherIncome'],
-        'TotalIncome': ['TotalIncome', 'TotalRevenue', 'Income'],
+        'TotalIncome': ['TotalIncome', 'Income', 'TotalRevenue'],
         'OperatingExpenses': ['TotalExpenses', 'CostOfGoodsSold', 'OperatingExpenses', 'Expenses'],
         'EmployeeBenefits': ['EmployeeBenefitExpense', 'EmployeeCosts'],
         'Depreciation': ['DepreciationAndAmortisation', 'Depreciation', 'DepreciationDepletionAndAmortisationExpense'],
         'FinanceCosts': ['FinanceCosts', 'InterestExpense', 'FinanceCost'],
         'ProfitBeforeTax': ['ProfitBeforeTax', 'PBT', 'ProfitBeforeExceptionalItemsAndTax'],
         'TaxExpense': ['TaxExpense', 'IncomeTaxExpense', 'TaxExpenseRelatingToContinuingOperations'],
-
-        # NetProfit - BSE uses very specific names
-        'NetProfit': [
-            'ProfitLoss',
-            'NetProfit',
-            'ProfitForPeriod',
-            'ProfitLossForPeriod',  # BSE format
-            'ProfitLossForPeriodFromContinuingOperations',  # BSE quarterly format
-        ],
-
-        # EPS - BSE uses very specific names
-        'EPS': [
-            'BasicEarningsPerShare',
-            'EarningsPerShare',
-            'BasicEPS',
-            'BasicEarningsLossPerShareFromContinuingOperations',  # BSE quarterly format
-            'BasicEarningsLossPerShareFromContinuingAndDiscontinuedOperations',  # BSE annual format
-        ],
+        'NetProfit': ['ProfitLoss', 'NetProfit', 'ProfitForPeriod', 'ProfitLossForPeriod', 'ProfitLossForPeriodFromContinuingOperations'],
+        'EPS': ['BasicEarningsPerShare', 'EarningsPerShare', 'BasicEPS', 'BasicEarningsLossPerShareFromContinuingOperations', 'BasicEarningsLossPerShareFromContinuingAndDiscontinuedOperations'],
 
         # Cash Flow
-        'OperatingCashFlow': ['CashFlowFromOperatingActivities', 'OperatingCashFlow'],
-        'InvestingCashFlow': ['CashFlowFromInvestingActivities', 'InvestingCashFlow'],
-        'FinancingCashFlow': ['CashFlowFromFinancingActivities', 'FinancingCashFlow'],
+        'OperatingCashFlow': ['CashFlowFromOperatingActivities', 'CashFlowsFromUsedInOperatingActivities', 'NetCashFlowFromOperatingActivities'],
+        'InvestingCashFlow': ['CashFlowFromInvestingActivities', 'CashFlowsFromUsedInInvestingActivities', 'NetCashFlowFromInvestingActivities'],
+        'FinancingCashFlow': ['CashFlowFromFinancingActivities', 'CashFlowsFromUsedInFinancingActivities', 'NetCashFlowFromFinancingActivities'],
 
         # Other
         'NumberOfShares': ['NumberOfShares', 'WeightedAverageNumberOfEquityShares'],
         'DividendPerShare': ['DividendPerShare', 'DividendDeclared'],
     }
+
+    # Banking-specific mappings (common across formats)
+    BANKING_MAPPING = {
+        'InterestIncome': ['InterestIncome', 'InterestEarned', 'InterestAndSimilarIncome', 'IncomeOnInvestments'],
+        'InterestExpense': ['InterestExpended', 'InterestAndSimilarExpense'],
+        'NetInterestIncome': ['NetInterestIncome'],
+        'NonInterestIncome': ['NonInterestIncome', 'OtherOperatingIncome'],
+        'FeeIncome': ['FeeAndCommissionIncome', 'FeesAndCommissions'],
+        'Provisions': ['ProvisionsAndContingencies', 'ProvisionForBadDebts', 'Provisions', 'ProvisionForNPAs', 'ProvisionForContingencies'],
+        'OperatingExpensesBank': ['OperatingExpenses', 'OtherExpenses', 'TotalExpenses'],
+    }
+
+    # Fallback to common mapping (for backwards compatibility)
+    ELEMENT_MAPPING = SEBI_2025_MAPPING
 
     def __init__(self, xbrl_file_path):
         """Initialize parser with XBRL file path"""
@@ -91,6 +134,8 @@ class XBRLParser:
         self.namespaces = {}
         self.facts = {}
         self.contexts = {}
+        self.schema_version = None
+        self.active_mapping = None
 
     def parse(self):
         """Parse the XBRL XML file"""
@@ -100,6 +145,9 @@ class XBRLParser:
 
             # Extract namespaces
             self._extract_namespaces()
+
+            # Detect schema version and set active mapping
+            self._detect_schema_version()
 
             # Extract contexts (periods)
             self._extract_contexts()
@@ -113,13 +161,46 @@ class XBRLParser:
             print(f"Error parsing XBRL file: {str(e)}")
             return False
 
+    def _detect_schema_version(self):
+        """Detect XBRL schema version from namespaces"""
+        # Check for SEBI 2025 format (in-capmkt)
+        if 'in-capmkt' in self.namespaces or any('sebi.gov.in' in uri for uri in self.namespaces.values()):
+            self.schema_version = 'SEBI_2025'
+            self.active_mapping = self.SEBI_2025_MAPPING
+            print(f"  📋 Detected schema: SEBI 2025 (in-capmkt)")
+        # Check for BSE 2020 format (in-bse-fin)
+        elif 'in-bse-fin' in self.namespaces or any('bseindia.com' in uri for uri in self.namespaces.values()):
+            self.schema_version = 'BSE_2020'
+            self.active_mapping = self.BSE_2020_MAPPING
+            print(f"  📋 Detected schema: BSE 2020 (in-bse-fin)")
+        else:
+            # Fallback to SEBI 2025 for unknown schemas
+            self.schema_version = 'UNKNOWN'
+            self.active_mapping = self.SEBI_2025_MAPPING
+            print(f"  ⚠️  Unknown schema, using SEBI 2025 mapping as fallback")
+
     def _extract_namespaces(self):
         """Extract XML namespaces from XBRL file"""
-        # Get all namespaces from root element
+        # Method 1: Get namespaces from root element attributes
         for prefix, uri in self.root.attrib.items():
             if prefix.startswith('{http://www.w3.org/2000/xmlns/}'):
                 ns_prefix = prefix.split('}')[1]
                 self.namespaces[ns_prefix] = uri
+
+        # Method 2: Use ElementTree's built-in namespace detection
+        # This catches xmlns: declarations in the root tag
+        import re
+        # Find all xmlns declarations in the XML string
+        with open(self.file_path, 'r', encoding='utf-8') as f:
+            first_line = f.readline()
+            # Read a bit more to get namespace declarations
+            header = first_line + ''.join([f.readline() for _ in range(5)])
+
+        # Extract xmlns:prefix="uri" declarations
+        xmlns_pattern = r'xmlns:([a-zA-Z0-9_-]+)="([^"]+)"'
+        for match in re.finditer(xmlns_pattern, header):
+            prefix, uri = match.groups()
+            self.namespaces[prefix] = uri
 
     def _extract_contexts(self):
         """Extract context information (reporting periods)"""
@@ -211,6 +292,24 @@ class XBRLParser:
 
         return None
 
+    def _is_banking_company(self, data):
+        """
+        Detect if this is a banking/financial services company
+        based on presence of banking-specific elements
+        """
+        banking_indicators = [
+            'InterestIncome',
+            'NetInterestIncome',
+            'NonInterestIncome',
+            'Provisions',
+            'FeeIncome'
+        ]
+
+        # If we have 2 or more banking-specific elements, it's likely a bank
+        banking_element_count = sum(1 for indicator in banking_indicators if indicator in data)
+
+        return banking_element_count >= 2
+
     def extract_all(self):
         """Extract all financial data in a structured format"""
         if not self.root:
@@ -219,11 +318,58 @@ class XBRLParser:
 
         data = {}
 
+        # Use active mapping based on detected schema
+        mapping_to_use = self.active_mapping if self.active_mapping else self.ELEMENT_MAPPING
+
         # Extract all mapped elements
-        for key, element_names in self.ELEMENT_MAPPING.items():
+        for key, element_names in mapping_to_use.items():
+            # Skip None mappings (like Equity in BSE_2020)
+            if element_names is None:
+                continue
+
             value = self._get_latest_value(element_names)
             if value is not None:
                 data[key] = value
+
+        # Add banking-specific elements (common across all schemas)
+        for key, element_names in self.BANKING_MAPPING.items():
+            if key not in data:  # Don't override if already extracted
+                value = self._get_latest_value(element_names)
+                if value is not None:
+                    data[key] = value
+
+        # BSE 2020 specific: Calculate Equity from ShareCapital + Reserves
+        if self.schema_version == 'BSE_2020' and 'Equity' not in data:
+            share_capital = data.get('ShareCapital', 0)
+            reserves = data.get('Reserves', 0)
+
+            if share_capital and reserves:
+                data['Equity'] = share_capital + reserves
+                print(f"  💡 Calculated Equity = ShareCapital ({share_capital:,.0f}) + Reserves ({reserves:,.0f}) = {data['Equity']:,.0f}")
+            elif share_capital or reserves:
+                # Even if one is missing, use what we have
+                data['Equity'] = share_capital + reserves
+                print(f"  ⚠️  Partial Equity calculation (ShareCapital: {share_capital}, Reserves: {reserves})")
+
+        # Detect if this is a banking company
+        is_bank = self._is_banking_company(data)
+
+        # Banking-specific revenue calculation
+        if is_bank:
+            # For banks: Revenue = Net Interest Income + Non-Interest Income
+            if 'NetInterestIncome' in data and 'NonInterestIncome' in data:
+                data['Revenue'] = data['NetInterestIncome'] + data['NonInterestIncome']
+            elif 'InterestIncome' in data and 'InterestExpense' in data:
+                # Calculate NII if not directly available
+                net_interest = data['InterestIncome'] - data['InterestExpense']
+                non_interest = data.get('NonInterestIncome', 0) or data.get('FeeIncome', 0)
+                data['Revenue'] = net_interest + non_interest
+                data['NetInterestIncome'] = net_interest
+
+            # For banks: Operating Expenses includes provisions
+            if 'OperatingExpensesBank' in data:
+                provisions = data.get('Provisions', 0)
+                data['OperatingExpenses'] = data['OperatingExpensesBank'] + provisions
 
         # Calculate derived metrics if base values are available
 

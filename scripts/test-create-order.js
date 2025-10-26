@@ -38,7 +38,7 @@ async function testCreateOrder() {
     // Try creating a test order
     console.log('Creating test order...');
     const order = await razorpay.orders.create({
-      amount: 299900, // ₹2999 in paise
+      amount: 36500, // ₹365 in paise (Introductory Offer)
       currency: 'INR',
       receipt: `test_${Date.now()}`,
       notes: {

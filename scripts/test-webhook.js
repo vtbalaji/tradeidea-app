@@ -29,7 +29,7 @@ async function testWebhook() {
         entity: {
           id: 'pay_test_123',
           entity: 'payment',
-          amount: 299900,
+          amount: 36500, // ₹365 in paise (Introductory Offer)
           currency: 'INR',
           status: 'captured',
           order_id: 'order_test_123',

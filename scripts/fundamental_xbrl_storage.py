@@ -209,6 +209,30 @@ class XBRLStorage:
             CREATE INDEX IF NOT EXISTS idx_pf_status ON xbrl_processed_files(status)
         """)
 
+        # Download tracking table (tracks NSE downloads to prevent re-downloading)
+        self.conn.execute("""
+            CREATE TABLE IF NOT EXISTS xbrl_downloads (
+                symbol VARCHAR NOT NULL,
+                fy VARCHAR NOT NULL,
+                quarter VARCHAR NOT NULL,
+                statement_type VARCHAR NOT NULL,
+                source_url VARCHAR NOT NULL,
+                file_path VARCHAR NOT NULL,
+                file_name VARCHAR NOT NULL,
+                file_size_bytes BIGINT,
+                download_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                PRIMARY KEY (symbol, fy, quarter, statement_type)
+            )
+        """)
+
+        # Create indexes for download tracking
+        self.conn.execute("""
+            CREATE INDEX IF NOT EXISTS idx_dl_symbol ON xbrl_downloads(symbol)
+        """)
+        self.conn.execute("""
+            CREATE INDEX IF NOT EXISTS idx_dl_date ON xbrl_downloads(download_date)
+        """)
+
         print('✅ XBRL database schema initialized')
 
     def store_data(self, symbol, fy, quarter, statement_type, xbrl_data, fundamentals, period_info, source_file):
@@ -260,7 +284,7 @@ class XBRLStorage:
                 ?, ?, ?,
                 ?, ?, ?, ?, ?,
                 ?, ?,
-                ?, ?, CURRENT_TIMESTAMP
+                ?, ?, ?, ?
             )
         """, [
             # Primary key
@@ -380,6 +404,8 @@ class XBRLStorage:
             # Metadata
             'xbrl',
             source_file,
+            datetime.now(),  # processed_at
+            None,  # yahoo_enriched_at
         ])
 
         print(f'  ✅ Stored in xbrl_data: {symbol} {fy} {quarter} ({statement_type})')
@@ -520,6 +546,98 @@ class XBRLStorage:
             columns = ['file_name', 'symbol', 'statement_type', 'fy', 'quarter', 'status', 'processed_at']
 
         return [dict(zip(columns, row)) for row in result]
+
+    def track_download(self, symbol, fy, quarter, statement_type, source_url, file_path, file_name, file_size_bytes):
+        """
+        Track a downloaded XBRL file to prevent re-downloading
+
+        Args:
+            symbol: Stock symbol (e.g., 'TCS')
+            fy: Financial year (e.g., 'FY2025')
+            quarter: Quarter (e.g., 'Q2')
+            statement_type: 'standalone' or 'consolidated'
+            source_url: URL where file was downloaded from
+            file_path: Full path to saved file
+            file_name: Filename only
+            file_size_bytes: File size in bytes
+        """
+        self.conn.execute("""
+            INSERT OR REPLACE INTO xbrl_downloads
+            (symbol, fy, quarter, statement_type, source_url, file_path, file_name, file_size_bytes)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        """, [
+            symbol,
+            fy,
+            quarter,
+            statement_type,
+            source_url,
+            file_path,
+            file_name,
+            file_size_bytes
+        ])
+
+    def is_already_downloaded(self, symbol, fy, quarter, statement_type):
+        """
+        Check if a file has already been downloaded
+
+        Args:
+            symbol: Stock symbol
+            fy: Financial year
+            quarter: Quarter
+            statement_type: 'standalone' or 'consolidated'
+
+        Returns:
+            (is_downloaded, file_name) - True if already downloaded, with filename
+        """
+        result = self.conn.execute("""
+            SELECT file_name, download_date FROM xbrl_downloads
+            WHERE symbol = ? AND fy = ? AND quarter = ? AND statement_type = ?
+        """, [symbol, fy, quarter, statement_type]).fetchone()
+
+        if result:
+            return True, result[0]
+        return False, None
+
+    def get_download_history(self, symbol=None):
+        """Get download history for a symbol or all symbols"""
+        if symbol:
+            result = self.conn.execute("""
+                SELECT symbol, fy, quarter, statement_type, file_name, download_date
+                FROM xbrl_downloads
+                WHERE symbol = ?
+                ORDER BY download_date DESC
+            """, [symbol]).fetchall()
+        else:
+            result = self.conn.execute("""
+                SELECT symbol, fy, quarter, statement_type, file_name, download_date
+                FROM xbrl_downloads
+                ORDER BY download_date DESC
+            """).fetchall()
+
+        columns = ['symbol', 'fy', 'quarter', 'statement_type', 'file_name', 'download_date']
+        return [dict(zip(columns, row)) for row in result]
+
+    def get_download_stats(self):
+        """Get download statistics"""
+        result = self.conn.execute("""
+            SELECT
+                COUNT(*) as total_downloads,
+                COUNT(DISTINCT symbol) as unique_symbols,
+                COUNT(DISTINCT fy) as unique_years,
+                MIN(download_date) as first_download,
+                MAX(download_date) as last_download
+            FROM xbrl_downloads
+        """).fetchone()
+
+        if result:
+            return {
+                'total_downloads': result[0],
+                'unique_symbols': result[1],
+                'unique_years': result[2],
+                'first_download': result[3],
+                'last_download': result[4]
+            }
+        return None
 
     def close(self):
         """Close database connection"""

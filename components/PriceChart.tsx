@@ -170,8 +170,9 @@ export default function PriceChart({ symbol, days = 365, height = '400px' }: Pri
         displayColors: false,
         callbacks: {
           title: function(context: any) {
-            // Show full date in tooltip
-            return data[context[0].dataIndex].date;
+            // Show full date in tooltip in dd MMM yyyy format
+            const dateStr = data[context[0].dataIndex].date;
+            return formatFullDate(dateStr);
           },
           label: function(context: any) {
             const dataPoint = data[context.dataIndex];

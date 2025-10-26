@@ -112,7 +112,7 @@ export const SUBSCRIPTION_PLANS: SubscriptionPlan[] = [
   {
     id: 'premium_yearly',
     name: 'Premium Yearly',
-    price: 2999, // in INR
+    price: 365, // in INR - Introductory Offer!
     currency: 'INR',
     duration: 365,
     popular: true,

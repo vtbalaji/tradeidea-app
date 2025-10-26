@@ -31,6 +31,13 @@ export function PricingCard({ plan, isCurrentPlan = false }: PricingCardProps) {
         </div>
       )}
 
+      {/* Introductory Offer Badge */}
+      <div className="absolute -top-4 right-4">
+        <span className="px-3 py-1 bg-gradient-to-r from-green-500 to-emerald-600 text-white text-xs font-bold rounded-full shadow-lg animate-pulse">
+          🎉 INTRODUCTORY OFFER
+        </span>
+      </div>
+
       <div className="text-center mb-6">
         <h3
           className={`text-2xl font-bold mb-2 ${
@@ -39,16 +46,27 @@ export function PricingCard({ plan, isCurrentPlan = false }: PricingCardProps) {
         >
           {plan.name}
         </h3>
+
+        {/* Show original price crossed out */}
+        <div className="mb-2">
+          <span className={`text-xl line-through ${isDarkMode ? 'text-gray-500' : 'text-gray-400'}`}>
+            ₹2,999
+          </span>
+        </div>
+
         <div className="flex items-baseline justify-center gap-2">
-          <span className="text-4xl font-bold text-blue-500">
+          <span className="text-4xl font-bold text-green-500">
             ₹{plan.price.toLocaleString()}
           </span>
           <span className={`${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
             /year
           </span>
         </div>
-        <p className={`mt-2 text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-          ₹{Math.round(plan.price / 12).toLocaleString()}/month
+        <p className={`mt-2 text-sm font-semibold ${isDarkMode ? 'text-green-400' : 'text-green-600'}`}>
+          Save ₹{(2999 - plan.price).toLocaleString()} (88% OFF)
+        </p>
+        <p className={`mt-1 text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+          Just ₹{Math.round(plan.price / 12).toLocaleString()}/month • Limited Time Only
         </p>
       </div>
 

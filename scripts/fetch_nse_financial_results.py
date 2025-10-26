@@ -12,6 +12,12 @@ Usage:
     # Multiple symbols
     python3 scripts/fetch_nse_financial_results.py TCS RELIANCE INFY
 
+    # Top 250 symbols by market cap
+    python3 scripts/fetch_nse_financial_results.py --top250
+
+    # Top N symbols by market cap
+    python3 scripts/fetch_nse_financial_results.py --top 100
+
     # From file (one symbol per line)
     python3 scripts/fetch_nse_financial_results.py --file symbols.txt
 
@@ -31,6 +37,19 @@ import re
 from datetime import datetime
 from pathlib import Path
 from urllib.parse import urljoin
+
+# Add current directory to path for imports
+current_dir = os.path.dirname(os.path.abspath(__file__))
+sys.path.insert(0, current_dir)
+
+from fundamental_xbrl_storage import XBRLStorage
+
+try:
+    import firebase_admin
+    from firebase_admin import credentials, firestore
+    FIREBASE_AVAILABLE = True
+except ImportError:
+    FIREBASE_AVAILABLE = False
 
 try:
     from selenium import webdriver
@@ -65,7 +84,7 @@ class NSEFinancialResultsFetcher:
         'Cache-Control': 'max-age=0',
     }
 
-    def __init__(self, output_dir='xbrl'):
+    def __init__(self, output_dir='xbrl', enable_tracking=True):
         """Initialize fetcher with output directory"""
         self.output_dir = Path(output_dir)
         self.output_dir.mkdir(parents=True, exist_ok=True)
@@ -73,6 +92,10 @@ class NSEFinancialResultsFetcher:
         # Create session for cookie persistence
         self.session = requests.Session()
         self.session.headers.update(self.HEADERS)
+
+        # Initialize DuckDB storage for download tracking
+        self.enable_tracking = enable_tracking
+        self.storage = XBRLStorage() if enable_tracking else None
 
         # Initialize cookies by visiting homepage
         self._init_session()
@@ -212,6 +235,41 @@ class NSEFinancialResultsFetcher:
         except Exception as e:
             print(f'  ❌ Download failed: {str(e)}')
             return False
+
+    def quarter_to_fy_and_q(self, month, year):
+        """
+        Convert month and year to Financial Year and Quarter
+        Indian FY runs April-March
+
+        Args:
+            month: Month number (1-12)
+            year: Year (e.g., 2024)
+
+        Returns:
+            (fy, quarter) - e.g., ('FY2025', 'Q2')
+        """
+        # Determine FY (ends in March)
+        if month <= 3:
+            fy_year = year
+        else:
+            fy_year = year + 1
+
+        fy = f'FY{fy_year}'
+
+        # Determine Quarter
+        if month == 6:
+            quarter = 'Q1'
+        elif month == 9:
+            quarter = 'Q2'
+        elif month == 12:
+            quarter = 'Q3'
+        elif month == 3:
+            quarter = 'Q4'
+        else:
+            # Best guess based on month
+            quarter = f'Q{(month - 1) // 3 + 1}'
+
+        return (fy, quarter)
 
     def parse_quarter_year(self, result_description):
         """
@@ -438,6 +496,7 @@ class NSEFinancialResultsFetcher:
 
                 # Download files
                 downloaded = 0
+                skipped = 0
 
                 for i, result in enumerate(results):
                     print(f'\n[{i+1}/{len(results)}] Processing result...')
@@ -458,25 +517,57 @@ class NSEFinancialResultsFetcher:
 
                     if month_abbr and year:
                         filename = f'{symbol}_{type_str}_{month_abbr}_{year}.xml'
+                        # Determine FY and Quarter for tracking
+                        fy, quarter = self.quarter_to_fy_and_q(month, year)
                     else:
                         filename = f'{symbol}_{type_str}_{i+1}.xml'
+                        fy, quarter = None, None
 
                     output_path = self.output_dir / filename
 
+                    # Check if already downloaded in database
+                    if self.storage and fy and quarter:
+                        already_downloaded, existing_file = self.storage.is_already_downloaded(
+                            symbol, fy, quarter, type_str
+                        )
+                        if already_downloaded:
+                            print(f'  ⏭️  Already downloaded in DB: {existing_file}')
+                            skipped += 1
+                            continue
+
+                    # Check if file exists on disk
                     if output_path.exists():
-                        print(f'  ⏭️  Already exists: {filename}')
+                        print(f'  ⏭️  File already exists: {filename}')
+                        # Track in DB if not already tracked
+                        if self.storage and fy and quarter:
+                            file_size = os.path.getsize(output_path)
+                            self.storage.track_download(
+                                symbol, fy, quarter, type_str,
+                                result['url'], str(output_path), filename, file_size
+                            )
+                        skipped += 1
                         continue
 
                     print(f'  📥 Downloading: {filename}')
 
                     if self.download_file(result['url'], output_path):
                         downloaded += 1
-                        print(f'  ✅ Saved: {filename}')
+                        file_size = os.path.getsize(output_path)
+                        print(f'  ✅ Saved: {filename} ({file_size:,} bytes)')
+
+                        # Track download in database
+                        if self.storage and fy and quarter:
+                            self.storage.track_download(
+                                symbol, fy, quarter, type_str,
+                                result['url'], str(output_path), filename, file_size
+                            )
+                            print(f'  📝 Tracked in DB: {fy} {quarter}')
                     else:
                         print(f'  ❌ Download failed')
 
                     time.sleep(0.5)
 
+                print(f'\n📊 Downloaded: {downloaded}, Skipped: {skipped}')
                 return downloaded
 
             except json.JSONDecodeError as je:
@@ -494,7 +585,230 @@ class NSEFinancialResultsFetcher:
                 driver.quit()
             return 0
 
-    def fetch_symbol_results(self, symbol, limit=None, use_selenium=False):
+    def fetch_symbol_results_webpage(self, symbol, limit=None):
+        """
+        Fetch financial results from NSE download_xbrl API (used by webpage)
+        Uses Selenium to intercept network calls and extract download URLs
+
+        This source may have different/additional historical data compared to corp-info API.
+
+        Args:
+            symbol: Stock symbol
+            limit: Maximum number of results to download (None for all)
+
+        Returns:
+            Number of files downloaded
+        """
+        if not SELENIUM_AVAILABLE:
+            print('❌ Selenium is required')
+            print('   Install with: pip install selenium')
+            return 0
+
+        print(f'\n🌐 Using webpage download API for {symbol}...')
+        print(f'   Source: NSE download_xbrl API (via browser inspection)')
+
+        # Setup Chrome options with network logging
+        chrome_options = Options()
+        chrome_options.add_argument('--headless=new')
+        chrome_options.add_argument('--no-sandbox')
+        chrome_options.add_argument('--disable-dev-shm-usage')
+        chrome_options.add_argument('--disable-blink-features=AutomationControlled')
+        chrome_options.add_argument('--disable-gpu')
+        chrome_options.add_argument('--window-size=1920,1080')
+        chrome_options.add_argument('user-agent=Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36')
+
+        # Enable performance logging to capture network requests
+        chrome_options.set_capability('goog:loggingPrefs', {'performance': 'ALL'})
+
+        chrome_path = '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome'
+        if os.path.exists(chrome_path):
+            chrome_options.binary_location = chrome_path
+
+        try:
+            from selenium.webdriver.chrome.service import Service as ChromeService
+
+            try:
+                driver = webdriver.Chrome(options=chrome_options)
+            except Exception as e1:
+                print(f'   ⚠️  System chromedriver failed: {str(e1)[:80]}')
+                try:
+                    from webdriver_manager.chrome import ChromeDriverManager
+                    service = ChromeService(ChromeDriverManager().install())
+                    driver = webdriver.Chrome(service=service, options=chrome_options)
+                except ImportError:
+                    print('   💡 Install: pip install webdriver-manager')
+                    raise e1
+
+            driver.set_page_load_timeout(30)
+
+            # Step 1: Visit equity quote page to establish cookies (REQUIRED!)
+            equity_url = f'https://www.nseindia.com/get-quotes/equity?symbol={symbol}'
+            print(f'   Visiting equity page to set cookies: {equity_url[:60]}...')
+            driver.get(equity_url)
+            time.sleep(3)  # Wait for cookies to be set
+
+            # Step 2: Navigate to financial results page
+            page_url = f'https://www.nseindia.com/companies-listing/corporate-filings-financial-results?symbol={symbol}&tabIndex=equity'
+            print(f'   Loading financial results page: {page_url[:60]}...')
+            driver.get(page_url)
+            time.sleep(10)  # Wait for table to load with financial data
+
+            # Extract XBRL download links from table
+            print(f'   Extracting XBRL download links from table...')
+
+            xbrl_downloads = []
+
+            # Find all links to nsearchives.nseindia.com (direct XBRL file URLs)
+            all_links = driver.find_elements(By.TAG_NAME, 'a')
+
+            for link in all_links:
+                href = link.get_attribute('href') or ''
+
+                # Look for direct nsearchives XBRL links
+                if 'nsearchives.nseindia.com/corporate/xbrl/' in href:
+                    # Get the row data for metadata
+                    try:
+                        parent_row = link.find_element(By.XPATH, './ancestor::tr')
+                        cells = parent_row.find_elements(By.TAG_NAME, 'td')
+
+                        if len(cells) >= 7:  # Typical financial results row
+                            # Extract metadata from table cells
+                            company = cells[0].text.strip()
+                            audited = cells[1].text.strip()
+                            cumulative = cells[2].text.strip()
+                            consolidated = cells[3].text.strip()  # Consolidated/Non-Consolidated
+                            indas = cells[4].text.strip()
+                            period_type = cells[5].text.strip() if len(cells) > 5 else ''
+                            date = cells[6].text.strip() if len(cells) > 6 else ''
+
+                            # Build description for parsing
+                            row_text = f"{consolidated} - {period_type} - {date}"
+
+                            xbrl_downloads.append({
+                                'actual_file_url': href,
+                                'row_text': row_text,
+                                'type': consolidated,
+                                'audited': audited,
+                                'date': date,
+                                'period': period_type
+                            })
+                    except Exception as e:
+                        # Fallback: use link without metadata
+                        xbrl_downloads.append({
+                            'actual_file_url': href,
+                            'row_text': '',
+                            'type': '',
+                            'audited': '',
+                            'date': '',
+                            'period': ''
+                        })
+
+            driver.quit()
+
+            if not xbrl_downloads:
+                print(f'   ⚠️  No XBRL download URLs found')
+                return 0
+
+            print(f'   ✅ Found {len(xbrl_downloads)} XBRL files')
+
+            # Limit results
+            if limit:
+                xbrl_downloads = xbrl_downloads[:limit]
+
+            # Download files
+            downloaded = 0
+            skipped = 0
+
+            for i, download_info in enumerate(xbrl_downloads):
+                print(f'\n[{i+1}/{len(xbrl_downloads)}] Processing XBRL file...')
+
+                # Use the actual file URL (from nsearchives.nseindia.com)
+                actual_url = download_info['actual_file_url']
+                row_text = download_info.get('row_text', '')
+
+                # Extract filename from URL
+                from urllib.parse import urlparse
+                url_path = urlparse(actual_url).path
+                original_filename = os.path.basename(url_path)
+
+                print(f'  📄 {row_text[:100] if row_text else original_filename}')
+                print(f'  🔗 {actual_url[:80]}...')
+
+                # Parse metadata from row text or filename
+                month, year, month_abbr = self.parse_quarter_year(row_text if row_text else original_filename)
+
+                # Determine type from row text or filename
+                combined_text = (row_text + ' ' + original_filename).lower()
+                if 'standalone' in combined_text or 'sa_' in combined_text:
+                    type_str = 'standalone'
+                elif 'consolidated' in combined_text or 'ca_' in combined_text:
+                    type_str = 'consolidated'
+                else:
+                    type_str = 'combined'
+
+                if month_abbr and year:
+                    filename = f'{symbol}_{type_str}_{month_abbr}_{year}.xml'
+                    fy, quarter = self.quarter_to_fy_and_q(month, year)
+                else:
+                    # Use original filename with symbol prefix
+                    filename = f'{symbol}_{type_str}_{original_filename}'
+                    fy, quarter = None, None
+
+                output_path = self.output_dir / filename
+
+                # Check if already downloaded in database
+                if self.storage and fy and quarter:
+                    already_downloaded, existing_file = self.storage.is_already_downloaded(
+                        symbol, fy, quarter, type_str
+                    )
+                    if already_downloaded:
+                        print(f'  ⏭️  Already downloaded in DB: {existing_file}')
+                        skipped += 1
+                        continue
+
+                # Check if file exists on disk
+                if output_path.exists():
+                    print(f'  ⏭️  File already exists: {filename}')
+                    if self.storage and fy and quarter:
+                        file_size = os.path.getsize(output_path)
+                        self.storage.track_download(
+                            symbol, fy, quarter, type_str,
+                            actual_url, str(output_path), filename, file_size
+                        )
+                    skipped += 1
+                    continue
+
+                print(f'  📥 Downloading: {filename}')
+
+                # Download from actual file URL
+                if self.download_file(actual_url, output_path):
+                    downloaded += 1
+                    file_size = os.path.getsize(output_path)
+                    print(f'  ✅ Saved: {filename} ({file_size:,} bytes)')
+
+                    if self.storage and fy and quarter:
+                        self.storage.track_download(
+                            symbol, fy, quarter, type_str,
+                            actual_url, str(output_path), filename, file_size
+                        )
+                        print(f'  📝 Tracked in DB: {fy} {quarter}')
+                else:
+                    print(f'  ❌ Download failed')
+
+                time.sleep(0.5)
+
+            print(f'\n📊 Downloaded: {downloaded}, Skipped: {skipped}')
+            return downloaded
+
+        except Exception as e:
+            print(f'❌ Webpage API error: {str(e)}')
+            import traceback
+            traceback.print_exc()
+            if 'driver' in locals():
+                driver.quit()
+            return 0
+
+    def fetch_symbol_results(self, symbol, limit=None, use_selenium=False, source='api'):
         """
         Fetch and download all financial results for a symbol
 
@@ -502,16 +816,122 @@ class NSEFinancialResultsFetcher:
             symbol: Stock symbol
             limit: Maximum number of results to download (None for all)
             use_selenium: Force use of Selenium (not needed with API)
+            source: Data source - 'api', 'webpage', or 'both' (default: 'api')
 
         Returns:
             Number of files downloaded
         """
-        # Always use Selenium with API endpoint (most reliable)
-        return self.fetch_symbol_results_selenium(symbol, limit)
+        if source == 'both':
+            print(f'\n📥 Fetching from BOTH sources for {symbol}')
+            print(f'{"="*70}')
+
+            # Try API first
+            print('\n🔹 Source 1: NSE API')
+            count_api = self.fetch_symbol_results_selenium(symbol, limit)
+
+            # Then webpage
+            print('\n🔹 Source 2: NSE Webpage')
+            count_webpage = self.fetch_symbol_results_webpage(symbol, limit)
+
+            total = count_api + count_webpage
+            print(f'\n📊 Total from both sources: {total} files')
+            return total
+
+        elif source == 'webpage':
+            return self.fetch_symbol_results_webpage(symbol, limit)
+
+        else:  # 'api' (default)
+            return self.fetch_symbol_results_selenium(symbol, limit)
+
+    def get_download_stats(self):
+        """Get download statistics from database"""
+        if self.storage:
+            return self.storage.get_download_stats()
+        return None
+
+    def get_symbol_downloads(self, symbol):
+        """Get download history for a symbol"""
+        if self.storage:
+            return self.storage.get_download_history(symbol)
+        return []
 
     def close(self):
-        """Close session"""
+        """Close session and storage"""
         self.session.close()
+        if self.storage:
+            self.storage.close()
+
+
+def initialize_firebase():
+    """Initialize Firebase (if not already initialized)"""
+    if not FIREBASE_AVAILABLE:
+        return False
+    try:
+        firebase_admin.get_app()
+        return True
+    except ValueError:
+        cred_path = os.path.join(os.getcwd(), 'serviceAccountKey.json')
+        if os.path.exists(cred_path):
+            cred = credentials.Certificate(cred_path)
+            firebase_admin.initialize_app(cred)
+            return True
+        return False
+
+
+def get_top_symbols_by_market_cap(limit=250):
+    """
+    Get top N symbols by market cap from Firebase
+    Uses the same logic as generate-chart-data.py
+
+    Args:
+        limit: Number of top symbols to return (default 250)
+
+    Returns:
+        List of symbol names sorted by market cap (highest first)
+    """
+    if not initialize_firebase():
+        print('❌ Firebase not available. Install with: pip install firebase-admin')
+        print('❌ Also ensure serviceAccountKey.json exists in project root')
+        return None
+
+    try:
+        db = firestore.client()
+
+        # Get all symbols with market cap data
+        symbols_ref = db.collection('symbols')
+        docs = symbols_ref.stream()
+
+        symbols_with_mcap = []
+
+        for doc in docs:
+            symbol = doc.id.replace('NS_', '')
+            data = doc.to_dict()
+
+            # Skip ETFs and BEES for financial results (they don't have quarterly results)
+            is_etf_bees = 'ETF' in symbol.upper() or 'BEES' in symbol.upper()
+            if is_etf_bees:
+                continue
+
+            if 'fundamental' in data and data['fundamental']:
+                market_cap = data['fundamental'].get('marketCap', 0)
+                if market_cap and market_cap > 0:
+                    symbols_with_mcap.append({
+                        'symbol': symbol,
+                        'marketCap': market_cap
+                    })
+
+        # Sort by market cap (descending) and take top N
+        symbols_with_mcap.sort(key=lambda x: x['marketCap'], reverse=True)
+        top_symbols = [s['symbol'] for s in symbols_with_mcap[:limit]]
+
+        print(f'📊 Found {len(symbols_with_mcap)} symbols with market cap data')
+        print(f'🎯 Selected top {limit} by market cap')
+
+        return top_symbols
+
+    except Exception as e:
+        print(f'⚠️  Error fetching market cap data: {str(e)}')
+        return None
 
 
 def main():
@@ -529,6 +949,12 @@ Examples:
     # Download for multiple symbols
     python3 scripts/fetch_nse_financial_results.py TCS RELIANCE INFY
 
+    # Download for top 250 symbols by market cap
+    python3 scripts/fetch_nse_financial_results.py --top250
+
+    # Download for top 100 symbols by market cap
+    python3 scripts/fetch_nse_financial_results.py --top 100
+
     # Limit to 4 most recent results per symbol
     python3 scripts/fetch_nse_financial_results.py TCS --limit 4
 
@@ -539,13 +965,41 @@ Examples:
 
     parser.add_argument('symbols', nargs='*', help='Stock symbols (e.g., TCS RELIANCE)')
     parser.add_argument('--file', dest='symbols_file', help='File containing symbols (one per line)')
+    parser.add_argument('--top250', action='store_true', help='Fetch financial results for top 250 symbols by market cap')
+    parser.add_argument('--top', type=int, help='Fetch financial results for top N symbols by market cap')
     parser.add_argument('--limit', type=int, help='Limit number of results per symbol')
     parser.add_argument('--output', default='xbrl', help='Output directory (default: xbrl)')
+    parser.add_argument('--source', choices=['api', 'webpage', 'both'], default='api',
+                        help='Data source: "api" (NSE API), "webpage" (corporate filings page), or "both" (default: api)')
     parser.add_argument('--selenium', action='store_true', help='Force use of Selenium web scraping (requires selenium package and Chrome)')
+    parser.add_argument('--show-history', dest='show_history', action='store_true', help='Show download history for specified symbols')
+    parser.add_argument('--stats', action='store_true', help='Show download statistics')
+    parser.add_argument('--no-tracking', dest='no_tracking', action='store_true', help='Disable download tracking in database')
 
     args = parser.parse_args()
 
-    # Collect symbols
+    # Create fetcher (needed for stats/history modes)
+    enable_tracking = not args.no_tracking
+    fetcher = NSEFinancialResultsFetcher(output_dir=args.output, enable_tracking=enable_tracking)
+
+    # Show stats mode (doesn't require symbols)
+    if args.stats:
+        print('📊 Download Statistics')
+        print('=' * 70)
+        stats = fetcher.get_download_stats()
+        if stats and stats['total_downloads'] > 0:
+            print(f'Total downloads: {stats["total_downloads"]}')
+            print(f'Unique symbols: {stats["unique_symbols"]}')
+            print(f'Unique years: {stats["unique_years"]}')
+            print(f'First download: {stats["first_download"]}')
+            print(f'Last download: {stats["last_download"]}')
+        else:
+            print('No downloads tracked yet')
+        print('=' * 70)
+        fetcher.close()
+        sys.exit(0)
+
+    # Collect symbols for history and download modes
     symbols = []
 
     if args.symbols:
@@ -554,29 +1008,75 @@ Examples:
     if args.symbols_file:
         if not os.path.exists(args.symbols_file):
             print(f'❌ Symbols file not found: {args.symbols_file}')
+            fetcher.close()
             sys.exit(1)
 
         with open(args.symbols_file, 'r') as f:
             file_symbols = [line.strip().upper() for line in f if line.strip() and not line.startswith('#')]
             symbols.extend(file_symbols)
 
-    if not symbols:
-        parser.print_help()
-        sys.exit(1)
+    # Add top symbols by market cap
+    if args.top250:
+        top_symbols = get_top_symbols_by_market_cap(limit=250)
+        if top_symbols:
+            symbols.extend(top_symbols)
+        else:
+            print('❌ Failed to fetch top 250 symbols')
+            fetcher.close()
+            sys.exit(1)
+
+    if args.top:
+        top_symbols = get_top_symbols_by_market_cap(limit=args.top)
+        if top_symbols:
+            symbols.extend(top_symbols)
+        else:
+            print(f'❌ Failed to fetch top {args.top} symbols')
+            fetcher.close()
+            sys.exit(1)
 
     # Remove duplicates while preserving order
     symbols = list(dict.fromkeys(symbols))
+
+    # Show history mode
+    if args.show_history:
+        if not symbols:
+            print('❌ Please provide at least one symbol to show history')
+            parser.print_help()
+            fetcher.close()
+            sys.exit(1)
+
+        for symbol in symbols:
+            print(f'\n📜 Download History: {symbol}')
+            print('=' * 70)
+            history = fetcher.get_symbol_downloads(symbol)
+            if history:
+                for h in history:
+                    print(f'{h["fy"]} {h["quarter"]} ({h["statement_type"]}) - {h["file_name"]}')
+                    print(f'  Downloaded: {h["download_date"]}')
+            else:
+                print(f'No downloads found for {symbol}')
+            print('=' * 70)
+        fetcher.close()
+        sys.exit(0)
+
+    # Regular download mode - requires symbols
+    if not symbols:
+        parser.print_help()
+        fetcher.close()
+        sys.exit(1)
 
     print('🚀 NSE Financial Results Fetcher')
     print('=' * 70)
     print(f'Symbols: {", ".join(symbols)}')
     print(f'Output directory: {args.output}')
+    print(f'Data source: {args.source}')
     if args.limit:
         print(f'Limit: {args.limit} results per symbol')
+    if enable_tracking:
+        print('Download tracking: Enabled')
+    else:
+        print('Download tracking: Disabled')
     print('=' * 70)
-
-    # Create fetcher
-    fetcher = NSEFinancialResultsFetcher(output_dir=args.output)
 
     # Process each symbol
     total_downloaded = 0
@@ -588,7 +1088,7 @@ Examples:
         print(f'{"="*70}')
 
         try:
-            count = fetcher.fetch_symbol_results(symbol, limit=args.limit, use_selenium=args.selenium)
+            count = fetcher.fetch_symbol_results(symbol, limit=args.limit, use_selenium=args.selenium, source=args.source)
             total_downloaded += count
             print(f'\n✅ Downloaded {count} files for {symbol}')
         except Exception as e:
