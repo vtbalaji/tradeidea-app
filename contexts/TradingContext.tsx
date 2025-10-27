@@ -97,7 +97,7 @@ export const TradingProvider = ({ children }: { children: ReactNode }) => {
   const unreadCount = (notifications || []).filter(n => !n.read).length;
 
   // Fetch ideas
-  const fetchIdeas = async (filter?: string, status: string = 'active') => {
+  const fetchIdeas = async (filter?: string, status?: string) => {
     if (!user) {
       setLoading(false);
       return;

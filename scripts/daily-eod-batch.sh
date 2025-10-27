@@ -59,7 +59,7 @@ if [ ! -f "serviceAccountKey.json" ]; then
 fi
 
 # 1. Fetch NSE EOD Data
-log "📥 Step 1/8: Fetching NSE EOD Data..."
+log "📥 Step 1/10: Fetching NSE EOD Data..."
 START_TIME=$(date +%s)
 if $PYTHON scripts/fetch-eod-data.py >> "$LOG_FILE" 2>&1; then
     END_TIME=$(date +%s)
@@ -73,7 +73,7 @@ fi
 
 # 1.5 Fetch Nifty 50 Index Data
 log ""
-log "📊 Step 1.5/8: Fetching Nifty 50 Index Data..."
+log "📊 Step 2/10: Fetching Nifty 50 Index Data..."
 START_TIME=$(date +%s)
 if $PYTHON scripts/fetch-nifty50-index.py >> "$LOG_FILE" 2>&1; then
     END_TIME=$(date +%s)
@@ -88,7 +88,7 @@ fi
 
 # 2. Run Technical Analysis
 log ""
-log "📊 Step 2/8: Running Technical Analysis..."
+log "📊 Step 3/10: Running Technical Analysis..."
 START_TIME=$(date +%s)
 if $PYTHON scripts/analyze-symbols-duckdb.py >> "$LOG_FILE" 2>&1; then
     END_TIME=$(date +%s)
@@ -102,7 +102,7 @@ fi
 
 # 3. Run Screeners
 log ""
-log "🔍 Step 3/8: Running Screeners..."
+log "🔍 Step 4/10: Running Screeners..."
 START_TIME=$(date +%s)
 if $PYTHON scripts/screeners.py >> "$LOG_FILE" 2>&1; then
     END_TIME=$(date +%s)
@@ -116,7 +116,7 @@ fi
 
 # 3.5 Cleanup Old Firebase Data
 log ""
-log "🧹 Step 3.5/8: Cleaning up old Firebase data..."
+log "🧹 Step 5/10: Cleaning up old Firebase data..."
 START_TIME=$(date +%s)
 if $PYTHON scripts/cleanup-firebase.py >> "$LOG_FILE" 2>&1; then
     END_TIME=$(date +%s)
@@ -131,7 +131,7 @@ fi
 
 # 4. Generate Chart Data
 log ""
-log "📈 Step 4/8: Generating Chart Data..."
+log "📈 Step 6/10: Generating Chart Data..."
 START_TIME=$(date +%s)
 if $PYTHON scripts/generate-chart-data.py --priority --top 250 >> "$LOG_FILE" 2>&1; then
     END_TIME=$(date +%s)
@@ -145,7 +145,7 @@ fi
 
 # 5. Manage Portfolio Stop-Loss
 log ""
-log "🛡️  Step 5/8: Managing Portfolio Stop-Loss..."
+log "🛡️  Step 7/10: Managing Portfolio Stop-Loss..."
 START_TIME=$(date +%s)
 if $PYTHON scripts/manage-portfolio-stoploss.py >> "$LOG_FILE" 2>&1; then
     END_TIME=$(date +%s)
@@ -159,7 +159,7 @@ fi
 
 # 6. Check and Generate Alerts
 log ""
-log "🔔 Step 6/8: Checking and Generating Alerts..."
+log "🔔 Step 8/10: Checking and Generating Alerts..."
 START_TIME=$(date +%s)
 if $PYTHON scripts/check-and-generate-alerts.py >> "$LOG_FILE" 2>&1; then
     END_TIME=$(date +%s)
@@ -169,6 +169,36 @@ else
     EXIT_CODE=$?
     log_error "Alert generation failed with exit code $EXIT_CODE"
     exit 1
+fi
+
+# 7. Expire Old Trading Ideas
+log ""
+log "⏰ Step 9/10: Expiring old trading ideas..."
+# START_TIME=$(date +%s)
+# if $PYTHON scripts/expire-ideas.py >> "$LOG_FILE" 2>&1; then
+#     END_TIME=$(date +%s)
+#     DURATION=$((END_TIME - START_TIME))
+#     log "✅ Idea expiry check completed in ${DURATION}s"
+# else
+#     EXIT_CODE=$?
+#     log_error "Idea expiry check failed with exit code $EXIT_CODE"
+#     # Don't exit - this is not critical, continue with other steps
+#     log "⚠️  Continuing despite expiry check failure..."
+# fi
+
+# 8. Check Idea Entry/Exit Triggers
+log ""
+log "🔔 Step 10/10: Checking idea triggers and sending alerts..."
+START_TIME=$(date +%s)
+if $PYTHON scripts/check-idea-triggers.py >> "$LOG_FILE" 2>&1; then
+    END_TIME=$(date +%s)
+    DURATION=$((END_TIME - START_TIME))
+    log "✅ Idea trigger check completed in ${DURATION}s"
+else
+    EXIT_CODE=$?
+    log_error "Idea trigger check failed with exit code $EXIT_CODE"
+    # Don't exit - this is not critical
+    log "⚠️  Continuing despite trigger check failure..."
 fi
 
 log ""

@@ -13,11 +13,15 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const filter = searchParams.get('filter'); // 'following', 'trending', 'recent', 'all'
     const limit = parseInt(searchParams.get('limit') || '50');
-    const status = searchParams.get('status') || 'active';
+    const status = searchParams.get('status'); // Optional: filter by specific status
 
-    let query = db.collection('tradingIdeas')
-      .where('status', '==', status)
-      .orderBy('createdAt', 'desc');
+    // Build query - fetch all non-cancelled ideas unless specific status requested
+    let query = db.collection('tradingIdeas').orderBy('createdAt', 'desc');
+
+    // Only filter by status if specifically requested (not 'all' or undefined)
+    if (status && status !== 'all') {
+      query = query.where('status', '==', status);
+    }
 
     // Apply filters
     if (filter === 'following') {
@@ -27,12 +31,15 @@ export async function GET(request: NextRequest) {
     // Fetch ideas
     const snapshot = await query.limit(limit).get();
 
-    let ideas = snapshot.docs.map(doc => ({
-      id: doc.id,
-      ...doc.data(),
-      createdAt: doc.data().createdAt?.toDate?.()?.toISOString() || null,
-      updatedAt: doc.data().updatedAt?.toDate?.()?.toISOString() || null,
-    }));
+    let ideas = snapshot.docs
+      .map(doc => ({
+        id: doc.id,
+        ...doc.data(),
+        createdAt: doc.data().createdAt?.toDate?.()?.toISOString() || null,
+        updatedAt: doc.data().updatedAt?.toDate?.()?.toISOString() || null,
+      }))
+      // Filter out cancelled ideas unless specifically requested
+      .filter((idea: any) => status === 'cancelled' || idea.status !== 'cancelled');
 
     // Sort for trending and recent on server-side
     if (filter === 'trending') {

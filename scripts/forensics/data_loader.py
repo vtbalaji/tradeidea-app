@@ -126,6 +126,20 @@ class ForensicDataLoader:
             is_bank = symbol.upper() in ['HDFCBANK', 'ICICIBANK', 'SBIN', 'AXISBANK', 'KOTAKBANK',
                                           'INDUSINDBK', 'FEDERALBNK', 'BANDHANBNK', 'PNB', 'BANKBARODA']
 
+            # Helper: Find first non-null value across all quarters
+            def get_first_available(field_name):
+                """Get first non-null value for a field across all quarters (prioritize latest)"""
+                # Check latest quarter first
+                value = latest_quarter.get(field_name)
+                if value is not None and value != 0:
+                    return value
+                # Then check all quarters
+                for q in quarters:
+                    value = q.get(field_name)
+                    if value is not None and value != 0:
+                        return value
+                return None
+
             # Sum income statement items (cumulative)
             aggregated = {
                 'symbol': symbol,
@@ -173,10 +187,12 @@ class ForensicDataLoader:
                 'raw_non_current_liabilities': latest_quarter['raw_non_current_liabilities'],
                 'raw_trade_payables': latest_quarter['raw_trade_payables'],
 
-                # Use latest quarter's per-share data and market data
-                'raw_eps': latest_quarter['raw_eps'],
-                'raw_dividend_per_share': latest_quarter['raw_dividend_per_share'],
-                'raw_number_of_shares': latest_quarter['raw_number_of_shares'],
+                # Sum per-share P&L items (accumulated over the year)
+                'raw_eps': sum(q['raw_eps'] or 0 for q in quarters),
+                'raw_dividend_per_share': sum(q['raw_dividend_per_share'] or 0 for q in quarters),
+
+                # Use latest quarter's point-in-time data (with fallback to any quarter for shares)
+                'raw_number_of_shares': get_first_available('raw_number_of_shares'),
                 'current_price': latest_quarter['current_price'],
                 'market_cap': latest_quarter['market_cap'],
             }
@@ -223,8 +239,15 @@ class ForensicDataLoader:
 
         # EPS (from raw or calculated)
         data['eps'] = data.get('raw_eps')
-        if not data['eps'] and data.get('raw_number_of_shares', 0) > 0:
+        if not data.get('eps') and data.get('raw_number_of_shares') and data.get('raw_number_of_shares', 0) > 0:
             data['eps'] = round(raw_net_profit / data['raw_number_of_shares'], 2)
+
+        # Book Value per share = Equity / Number of Shares
+        raw_shares = data.get('raw_number_of_shares') or 0
+        if raw_equity > 0 and raw_shares > 0:
+            data['raw_book_value'] = round(raw_equity / raw_shares, 2)
+        else:
+            data['raw_book_value'] = None
 
         # P/E ratio
         current_price = data.get('current_price')

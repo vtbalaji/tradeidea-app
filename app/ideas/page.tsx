@@ -18,52 +18,13 @@ import AddPositionModal from '@/components/portfolio/modals/AddPositionModal';
 import RatingGuide from '@/components/RatingGuide';
 import PiotroskiGuide from '@/components/PiotroskiGuide';
 
-// Calculate badge status for an idea
-const calculateBadgeStatus = (idea: any) => {
-  // Check if we have required data
-  if (!idea.technicals || !idea.fundamentals || !idea.entryPrice) {
-    return { text: 'Waiting', color: 'bg-gray-500/20 text-gray-500 dark:text-gray-400', type: 'waiting' as const };
-  }
-
-  const lastPrice = idea.technicals.lastPrice;
-  if (!lastPrice) {
-    return { text: 'Waiting', color: 'bg-gray-500/20 text-gray-500 dark:text-gray-400', type: 'waiting' as const };
-  }
-
-  // Check if entry price is higher than LTP (price is below entry) AND fundamentals are EXCELLENT
-  if (lastPrice < idea.entryPrice && idea.fundamentals.fundamentalRating === 'EXCELLENT') {
-    return { text: 'You can Enter', color: 'bg-orange-500/20 text-orange-500 dark:text-orange-400', type: 'canEnter' as const };
-  }
-
-  // Check technical condition: overallSignal is BUY or STRONG_BUY
-  const technicalReady =
-    idea.technicals.overallSignal === 'BUY' ||
-    idea.technicals.overallSignal === 'STRONG_BUY';
-
-  // Check fundamental condition: AVERAGE or better
-  const fundamentalReady =
-    idea.fundamentals.fundamentalRating === 'AVERAGE' ||
-    idea.fundamentals.fundamentalRating === 'GOOD' ||
-    idea.fundamentals.fundamentalRating === 'EXCELLENT';
-
-  // Check price condition: within 2% of entry price
-  const priceReady = Math.abs((lastPrice - idea.entryPrice) / idea.entryPrice) <= 0.02;
-
-  // All conditions must be met for "Ready to Enter"
-  if (technicalReady && priceReady && fundamentalReady) {
-    return { text: 'Ready to Enter', color: 'bg-green-500/20 text-green-500 dark:text-green-400', type: 'ready' as const };
-  }
-
-  return { text: 'Waiting', color: 'bg-gray-500/20 text-gray-500 dark:text-gray-400', type: 'waiting' as const };
-};
-
 export default function IdeasHubPage() {
   const router = useRouter();
   const { ideas, loading, addToPortfolio, toggleLike } = useTrading();
   const { user } = useAuth();
   const [searchQuery, setSearchQuery] = useState('');
   const [activeTab, setActiveTab] = useState('all');
-  const [statusFilter, setStatusFilter] = useState<'all' | 'ready' | 'canEnter' | 'waiting'>('all');
+  const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'TRIGGERED' | 'PROFIT_BOOKED' | 'STOP_LOSS' | 'expired'>('all');
   const [showAnalysisModal, setShowAnalysisModal] = useState<string | null>(null);
   const [currentRecommendation, setCurrentRecommendation] = useState<any>(null);
   const [showAddPositionModal, setShowAddPositionModal] = useState(false);
@@ -81,8 +42,8 @@ export default function IdeasHubPage() {
   }, [user, router]);
 
   // Filter ideas based on search and tab
-  // Only show active ideas (filter out cancelled)
-  let filteredIdeas = ideas.filter(idea => idea.status === 'active');
+  // Show all ideas except cancelled (cooking/draft ideas are also included)
+  let filteredIdeas = ideas.filter(idea => idea.status !== 'cancelled');
 
   if (searchQuery) {
     filteredIdeas = filteredIdeas.filter(idea =>
@@ -115,25 +76,29 @@ export default function IdeasHubPage() {
       });
   }
 
-  // Calculate status counts (before applying status filter)
+  // Calculate database status counts (before applying status filter)
   const statusCounts = {
-    ready: 0,
-    canEnter: 0,
-    waiting: 0
+    active: 0,
+    TRIGGERED: 0,
+    PROFIT_BOOKED: 0,
+    STOP_LOSS: 0,
+    expired: 0
   };
 
   filteredIdeas.forEach(idea => {
-    const badgeStatus = calculateBadgeStatus(idea);
-    if (badgeStatus.type === 'ready') statusCounts.ready++;
-    else if (badgeStatus.type === 'canEnter') statusCounts.canEnter++;
-    else if (badgeStatus.type === 'waiting') statusCounts.waiting++;
+    const status = idea.status || 'active';
+    if (status === 'active') statusCounts.active++;
+    else if (status === 'TRIGGERED') statusCounts.TRIGGERED++;
+    else if (status === 'PROFIT_BOOKED') statusCounts.PROFIT_BOOKED++;
+    else if (status === 'STOP_LOSS') statusCounts.STOP_LOSS++;
+    else if (status === 'expired') statusCounts.expired++;
   });
 
   // Apply status filter
   if (statusFilter !== 'all') {
     filteredIdeas = filteredIdeas.filter(idea => {
-      const badgeStatus = calculateBadgeStatus(idea);
-      return badgeStatus.type === statusFilter;
+      const status = idea.status || 'active';
+      return status === statusFilter;
     });
   }
 
@@ -176,7 +141,17 @@ export default function IdeasHubPage() {
       ? (((idea.target1 - idea.entryPrice) / idea.entryPrice) * 100).toFixed(1)
       : null;
 
-    const badgeStatus = calculateBadgeStatus(idea);
+    // Get database status badge
+    const status = idea.status || 'active';
+    const statusBadgeMap: Record<string, { text: string; color: string }> = {
+      'cooking': { text: 'Draft', color: 'bg-gray-500/20 text-gray-600 dark:text-gray-400' },
+      'active': { text: 'Active', color: 'bg-green-500/20 text-green-600 dark:text-green-400' },
+      'TRIGGERED': { text: 'Triggered', color: 'bg-blue-500/20 text-blue-600 dark:text-blue-400' },
+      'PROFIT_BOOKED': { text: 'Profit Booked', color: 'bg-green-500/20 text-green-600 dark:text-green-400' },
+      'STOP_LOSS': { text: 'Stop Loss', color: 'bg-red-500/20 text-red-600 dark:text-red-400' },
+      'expired': { text: 'Expired', color: 'bg-gray-500/20 text-gray-600 dark:text-gray-400' }
+    };
+    const statusBadge = statusBadgeMap[status] || statusBadgeMap['active'];
 
     return (
       <div
@@ -199,8 +174,8 @@ export default function IdeasHubPage() {
               </p>
             )}
           </div>
-          <span className={`px-2 py-1 ${badgeStatus.color} text-xs font-semibold rounded`}>
-            {badgeStatus.text}
+          <span className={`px-2 py-1 ${statusBadge.color} text-xs font-semibold rounded`}>
+            {statusBadge.text}
           </span>
         </div>
 
@@ -475,46 +450,72 @@ export default function IdeasHubPage() {
           >
             <span>All Status</span>
             <span className="px-1.5 py-0.5 bg-gray-500/20 rounded-full text-[10px]">
-              {statusCounts.ready + statusCounts.canEnter + statusCounts.waiting}
+              {statusCounts.active + statusCounts.TRIGGERED + statusCounts.PROFIT_BOOKED + statusCounts.STOP_LOSS + statusCounts.expired}
             </span>
           </button>
           <button
-            onClick={() => setStatusFilter('ready')}
+            onClick={() => setStatusFilter('active')}
             className={`px-3 py-1.5 rounded-md text-xs font-semibold transition-colors whitespace-nowrap flex items-center gap-1.5 ${
-              statusFilter === 'ready'
+              statusFilter === 'active'
                 ? 'bg-green-500/20 text-green-600 dark:text-green-400 border border-green-500/30'
                 : 'bg-gray-50 dark:bg-[#1c2128] text-gray-600 dark:text-[#8b949e] hover:bg-green-500/10'
             }`}
           >
-            <span>✓ Ready to Enter</span>
+            <span>🟢 Active</span>
             <span className="px-1.5 py-0.5 bg-green-500/20 text-green-600 dark:text-green-400 rounded-full text-[10px]">
-              {statusCounts.ready}
+              {statusCounts.active}
             </span>
           </button>
           <button
-            onClick={() => setStatusFilter('canEnter')}
+            onClick={() => setStatusFilter('TRIGGERED')}
             className={`px-3 py-1.5 rounded-md text-xs font-semibold transition-colors whitespace-nowrap flex items-center gap-1.5 ${
-              statusFilter === 'canEnter'
-                ? 'bg-orange-500/20 text-orange-600 dark:text-orange-400 border border-orange-500/30'
-                : 'bg-gray-50 dark:bg-[#1c2128] text-gray-600 dark:text-[#8b949e] hover:bg-orange-500/10'
+              statusFilter === 'TRIGGERED'
+                ? 'bg-blue-500/20 text-blue-600 dark:text-blue-400 border border-blue-500/30'
+                : 'bg-gray-50 dark:bg-[#1c2128] text-gray-600 dark:text-[#8b949e] hover:bg-blue-500/10'
             }`}
           >
-            <span>⚡ You can Enter</span>
-            <span className="px-1.5 py-0.5 bg-orange-500/20 text-orange-600 dark:text-orange-400 rounded-full text-[10px]">
-              {statusCounts.canEnter}
+            <span>🔵 Triggered</span>
+            <span className="px-1.5 py-0.5 bg-blue-500/20 text-blue-600 dark:text-blue-400 rounded-full text-[10px]">
+              {statusCounts.TRIGGERED}
             </span>
           </button>
           <button
-            onClick={() => setStatusFilter('waiting')}
+            onClick={() => setStatusFilter('PROFIT_BOOKED')}
             className={`px-3 py-1.5 rounded-md text-xs font-semibold transition-colors whitespace-nowrap flex items-center gap-1.5 ${
-              statusFilter === 'waiting'
+              statusFilter === 'PROFIT_BOOKED'
+                ? 'bg-green-500/20 text-green-600 dark:text-green-400 border border-green-500/30'
+                : 'bg-gray-50 dark:bg-[#1c2128] text-gray-600 dark:text-[#8b949e] hover:bg-green-500/10'
+            }`}
+          >
+            <span>✅ Profit Booked</span>
+            <span className="px-1.5 py-0.5 bg-green-500/20 text-green-600 dark:text-green-400 rounded-full text-[10px]">
+              {statusCounts.PROFIT_BOOKED}
+            </span>
+          </button>
+          <button
+            onClick={() => setStatusFilter('STOP_LOSS')}
+            className={`px-3 py-1.5 rounded-md text-xs font-semibold transition-colors whitespace-nowrap flex items-center gap-1.5 ${
+              statusFilter === 'STOP_LOSS'
+                ? 'bg-red-500/20 text-red-600 dark:text-red-400 border border-red-500/30'
+                : 'bg-gray-50 dark:bg-[#1c2128] text-gray-600 dark:text-[#8b949e] hover:bg-red-500/10'
+            }`}
+          >
+            <span>🔴 Stop Loss</span>
+            <span className="px-1.5 py-0.5 bg-red-500/20 text-red-600 dark:text-red-400 rounded-full text-[10px]">
+              {statusCounts.STOP_LOSS}
+            </span>
+          </button>
+          <button
+            onClick={() => setStatusFilter('expired')}
+            className={`px-3 py-1.5 rounded-md text-xs font-semibold transition-colors whitespace-nowrap flex items-center gap-1.5 ${
+              statusFilter === 'expired'
                 ? 'bg-gray-500/20 text-gray-600 dark:text-gray-400 border border-gray-500/30'
                 : 'bg-gray-50 dark:bg-[#1c2128] text-gray-600 dark:text-[#8b949e] hover:bg-gray-500/10'
             }`}
           >
-            <span>⏳ Waiting</span>
+            <span>⏰ Expired</span>
             <span className="px-1.5 py-0.5 bg-gray-500/20 text-gray-600 dark:text-gray-400 rounded-full text-[10px]">
-              {statusCounts.waiting}
+              {statusCounts.expired}
             </span>
           </button>
         </div>

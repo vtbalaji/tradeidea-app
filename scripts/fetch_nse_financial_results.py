@@ -5,8 +5,10 @@ NSE Financial Results Fetcher
 Scrapes and downloads quarterly and annual financial results from NSE India website.
 Downloads both standalone and consolidated financial statements in XBRL/PDF format.
 
+By default, only downloads data from the last 7 years to reduce download size.
+
 Usage:
-    # Single symbol
+    # Single symbol (default: last 7 years)
     python3 scripts/fetch_nse_financial_results.py TCS
 
     # Multiple symbols
@@ -20,6 +22,12 @@ Usage:
 
     # From file (one symbol per line)
     python3 scripts/fetch_nse_financial_results.py --file symbols.txt
+
+    # Download ALL historical data (no year limit)
+    python3 scripts/fetch_nse_financial_results.py TCS --years 0
+
+    # Limit to last 10 years
+    python3 scripts/fetch_nse_financial_results.py TCS --years 10
 
     # Limit number of results per symbol
     python3 scripts/fetch_nse_financial_results.py TCS --limit 4
@@ -84,7 +92,7 @@ class NSEFinancialResultsFetcher:
         'Cache-Control': 'max-age=0',
     }
 
-    def __init__(self, output_dir='xbrl', enable_tracking=True):
+    def __init__(self, output_dir='xbrl', enable_tracking=True, years_limit=None):
         """Initialize fetcher with output directory"""
         self.output_dir = Path(output_dir)
         self.output_dir.mkdir(parents=True, exist_ok=True)
@@ -96,6 +104,9 @@ class NSEFinancialResultsFetcher:
         # Initialize DuckDB storage for download tracking
         self.enable_tracking = enable_tracking
         self.storage = XBRLStorage() if enable_tracking else None
+
+        # Set years limit (e.g., 7 means only download data from last 7 years)
+        self.years_limit = years_limit
 
         # Initialize cookies by visiting homepage
         self._init_session()
@@ -270,6 +281,34 @@ class NSEFinancialResultsFetcher:
             quarter = f'Q{(month - 1) // 3 + 1}'
 
         return (fy, quarter)
+
+    def is_within_years_limit(self, month, year):
+        """
+        Check if a date (month, year) is within the years_limit
+
+        Args:
+            month: Month number (1-12)
+            year: Year (e.g., 2024)
+
+        Returns:
+            True if within limit or no limit set, False otherwise
+        """
+        if not self.years_limit:
+            return True
+
+        from datetime import datetime
+        current_year = datetime.now().year
+        cutoff_year = current_year - self.years_limit
+
+        # If the year is after cutoff, include it
+        if year > cutoff_year:
+            return True
+
+        # If same year as cutoff, always include (conservative approach)
+        if year == cutoff_year:
+            return True
+
+        return False
 
     def parse_quarter_year(self, result_description):
         """
@@ -477,16 +516,30 @@ class NSEFinancialResultsFetcher:
                 print(f'   ✅ Found {len(data)} financial result records')
 
                 results = []
+                filtered_by_date = 0
                 for record in data:
                     xbrl_url = record.get('gfrXbrlFname')
                     if xbrl_url and xbrl_url.startswith('http'):
+                        quarter_str = record.get('gfrQuaterEnded', '')
+
+                        # Apply years filter if set
+                        if self.years_limit:
+                            month, year, _ = self.parse_quarter_year(quarter_str)
+                            if month and year:
+                                if not self.is_within_years_limit(month, year):
+                                    filtered_by_date += 1
+                                    continue
+
                         results.append({
                             'url': xbrl_url,
-                            'quarter': record.get('gfrQuaterEnded', ''),
+                            'quarter': quarter_str,
                             'type': record.get('gfrConsolidated', '').lower(),
                             'audited': record.get('gfrAuditedUnaudited', ''),
                             'description': f"{record.get('gfrQuaterEnded', '')} - {record.get('gfrConsolidated', '')} - {record.get('gfrAuditedUnaudited', '')}"
                         })
+
+                if filtered_by_date > 0:
+                    print(f'   📅 Filtered out {filtered_by_date} results older than {self.years_limit} years')
 
                 # Limit results
                 if limit:
@@ -710,6 +763,30 @@ class NSEFinancialResultsFetcher:
                 return 0
 
             print(f'   ✅ Found {len(xbrl_downloads)} XBRL files')
+
+            # Apply years filter if set
+            if self.years_limit:
+                filtered_downloads = []
+                filtered_by_date = 0
+                for download_info in xbrl_downloads:
+                    row_text = download_info.get('row_text', '')
+                    original_filename = os.path.basename(download_info['actual_file_url'])
+                    combined_text = row_text if row_text else original_filename
+
+                    month, year, _ = self.parse_quarter_year(combined_text)
+                    if month and year:
+                        if self.is_within_years_limit(month, year):
+                            filtered_downloads.append(download_info)
+                        else:
+                            filtered_by_date += 1
+                    else:
+                        # Can't parse date, include it to be safe
+                        filtered_downloads.append(download_info)
+
+                xbrl_downloads = filtered_downloads
+                if filtered_by_date > 0:
+                    print(f'   📅 Filtered out {filtered_by_date} results older than {self.years_limit} years')
+                    print(f'   ✅ {len(xbrl_downloads)} files remain after filtering')
 
             # Limit results
             if limit:
@@ -943,7 +1020,7 @@ def main():
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
-    # Download results for single symbol
+    # Download results for single symbol (default: last 7 years)
     python3 scripts/fetch_nse_financial_results.py TCS
 
     # Download for multiple symbols
@@ -954,6 +1031,12 @@ Examples:
 
     # Download for top 100 symbols by market cap
     python3 scripts/fetch_nse_financial_results.py --top 100
+
+    # Download ALL historical data (no year limit)
+    python3 scripts/fetch_nse_financial_results.py TCS --years 0
+
+    # Limit to last 10 years
+    python3 scripts/fetch_nse_financial_results.py TCS --years 10
 
     # Limit to 4 most recent results per symbol
     python3 scripts/fetch_nse_financial_results.py TCS --limit 4
@@ -968,6 +1051,7 @@ Examples:
     parser.add_argument('--top250', action='store_true', help='Fetch financial results for top 250 symbols by market cap')
     parser.add_argument('--top', type=int, help='Fetch financial results for top N symbols by market cap')
     parser.add_argument('--limit', type=int, help='Limit number of results per symbol')
+    parser.add_argument('--years', type=int, default=7, help='Limit downloads to last N years (default: 7, use --years 0 to download all)')
     parser.add_argument('--output', default='xbrl', help='Output directory (default: xbrl)')
     parser.add_argument('--source', choices=['api', 'webpage', 'both'], default='api',
                         help='Data source: "api" (NSE API), "webpage" (corporate filings page), or "both" (default: api)')
@@ -980,7 +1064,13 @@ Examples:
 
     # Create fetcher (needed for stats/history modes)
     enable_tracking = not args.no_tracking
-    fetcher = NSEFinancialResultsFetcher(output_dir=args.output, enable_tracking=enable_tracking)
+    # If years is 0, treat it as None (no limit)
+    years_limit = args.years if args.years > 0 else None
+    fetcher = NSEFinancialResultsFetcher(
+        output_dir=args.output,
+        enable_tracking=enable_tracking,
+        years_limit=years_limit
+    )
 
     # Show stats mode (doesn't require symbols)
     if args.stats:
@@ -1072,6 +1162,10 @@ Examples:
     print(f'Data source: {args.source}')
     if args.limit:
         print(f'Limit: {args.limit} results per symbol')
+    if years_limit:
+        print(f'Years limit: Only download data from last {years_limit} years')
+    else:
+        print(f'Years limit: None (downloading all historical data)')
     if enable_tracking:
         print('Download tracking: Enabled')
     else:

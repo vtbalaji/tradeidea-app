@@ -6,12 +6,12 @@ import { FieldValue } from 'firebase-admin/firestore';
 // GET /api/ideas/[id] - Get a specific idea
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     await verifyAuthToken(request);
     const db = getAdminDb();
-    const { id } = params;
+    const { id } = await params;
 
     const ideaDoc = await db.collection('tradingIdeas').doc(id).get();
 
@@ -45,12 +45,12 @@ export async function GET(
 // PATCH /api/ideas/[id] - Update an idea
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const userId = await verifyAuthToken(request);
     const db = getAdminDb();
-    const { id } = params;
+    const { id } = await params;
     const body = await request.json();
 
     // Get the idea to verify ownership
@@ -132,12 +132,12 @@ export async function PATCH(
 // DELETE /api/ideas/[id] - Delete an idea (set status to cancelled)
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const userId = await verifyAuthToken(request);
     const db = getAdminDb();
-    const { id } = params;
+    const { id } = await params;
 
     // Get the idea to verify ownership
     const ideaDoc = await db.collection('tradingIdeas').doc(id).get();

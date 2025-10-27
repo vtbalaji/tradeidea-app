@@ -6,12 +6,12 @@ import { FieldValue } from 'firebase-admin/firestore';
 // GET /api/ideas/[id]/comments - Get all comments for an idea
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     await verifyAuthToken(request);
     const db = getAdminDb();
-    const { id } = params;
+    const { id } = await params;
 
     // Verify idea exists
     const ideaDoc = await db.collection('tradingIdeas').doc(id).get();
@@ -44,12 +44,12 @@ export async function GET(
 // POST /api/ideas/[id]/comments - Add a comment to an idea
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const userId = await verifyAuthToken(request);
     const db = getAdminDb();
-    const { id } = params;
+    const { id } = await params;
     const body = await request.json();
 
     const { text } = body;

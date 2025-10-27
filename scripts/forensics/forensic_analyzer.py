@@ -58,13 +58,33 @@ class ForensicAnalyzer:
 
         Args:
             symbol: Stock symbol
-            statement_type: 'standalone' or 'consolidated'
+            statement_type: 'standalone', 'consolidated', or 'auto' (auto-detect)
             years: Number of years to analyze
             company_type: 'manufacturing', 'service', or 'emerging_market'
 
         Returns:
             Comprehensive forensic report dict
         """
+        # Auto-detect statement type if set to 'auto'
+        if statement_type == 'auto':
+            import duckdb
+            import os
+            db_path = os.path.join(os.getcwd(), 'data', 'fundamentals.duckdb')
+            conn = duckdb.connect(db_path, read_only=True)
+            counts = conn.execute("""
+                SELECT statement_type, COUNT(*) as count
+                FROM xbrl_data
+                WHERE symbol = ?
+                GROUP BY statement_type
+                ORDER BY count DESC
+            """, [symbol]).fetchall()
+            conn.close()
+
+            if counts and len(counts) > 0:
+                statement_type = counts[0][0]  # Pick the type with most records
+            else:
+                statement_type = 'consolidated'  # Default fallback
+
         print(f'\n{"="*70}')
         print(f'🔍 FORENSIC ANALYSIS: {symbol}')
         print(f'{"="*70}')
@@ -187,11 +207,38 @@ class ForensicAnalyzer:
                         print(f'      • {comp_name}: {comp_value}')
 
         # 2. Altman Z-Score (Bankruptcy Prediction)
-        print('\n💼 Calculating Altman Z-Score (Bankruptcy Risk)...')
-        is_listed = current_year.get('market_cap', 0) > 0
-        report['altman_z_score'] = AltmanZScore.calculate(current_year, company_type, is_listed)
-        print(f'   Z-Score: {report["altman_z_score"]["Z_Score"]}')
-        print(f'   Risk: {report["altman_z_score"]["Risk_Category"]}')
+        # NOTE: Altman Z-Score is NOT applicable for banking/financial companies
+        # Banks have different balance sheet structure (deposits/advances vs assets/liabilities)
+
+        # Check multiple field names for banking detection
+        is_banking = (
+            current_year.get('deposits', 0) > 0 or
+            current_year.get('advances', 0) > 0 or
+            current_year.get('raw_deposits', 0) > 0 or
+            current_year.get('raw_advances', 0) > 0 or
+            current_year.get('interest_income', 0) > 0 or
+            current_year.get('raw_interest_income', 0) > 0 or
+            # Check symbol against known banking stocks
+            symbol.upper() in ['SBIN', 'HDFCBANK', 'ICICIBANK', 'AXISBANK', 'KOTAKBANK',
+                              'INDUSINDBK', 'BANDHANBNK', 'FEDERALBNK', 'IDFCFIRSTB',
+                              'PNB', 'BANKBARODA', 'CANBK']
+        )
+
+        if is_banking:
+            print('\n💼 Altman Z-Score: N/A (Banking Company)')
+            print('   ℹ️  Z-Score is not applicable for banking/financial institutions')
+            print('   ℹ️  Banks require specialized metrics (CAR, NPA, CASA ratio, etc.)')
+            report['altman_z_score'] = {
+                'Z_Score': None,
+                'Risk_Category': 'N/A - Banking Company',
+                'Note': 'Altman Z-Score not applicable for banking institutions. Use banking-specific metrics instead.'
+            }
+        else:
+            print('\n💼 Calculating Altman Z-Score (Bankruptcy Risk)...')
+            is_listed = current_year.get('market_cap', 0) > 0
+            report['altman_z_score'] = AltmanZScore.calculate(current_year, company_type, is_listed)
+            print(f'   Z-Score: {report["altman_z_score"]["Z_Score"]}')
+            print(f'   Risk: {report["altman_z_score"]["Risk_Category"]}')
 
         # Print detailed breakdown of Z-Score components
         if 'Components' in report['altman_z_score']:
@@ -246,11 +293,15 @@ class ForensicAnalyzer:
         report['composite_score'] = self._calculate_composite_score(report)
         print(f'   Overall Risk: {report["composite_score"]["overall_risk"]}')
         print(f'   Composite Score: {report["composite_score"]["score"]}/100')
+        print(f'   Data Coverage: {report["composite_score"]["data_coverage"]:.0f}% ({"Sufficient" if report["composite_score"]["data_coverage"] >= 50 else "Limited"})')
 
         # 7. Final Recommendation
         report['recommendation'] = self._generate_recommendation(report)
         print(f'\n📝 Final Recommendation: {report["recommendation"]["action"]}')
         print(f'   {report["recommendation"]["rationale"]}')
+
+        # 8. Include loaded data in report for reuse (avoid duplicate loading)
+        report['_loaded_data'] = data_timeseries
 
         print(f'\n{"="*70}')
         print('✅ Forensic analysis complete!')
@@ -280,15 +331,22 @@ class ForensicAnalyzer:
             weights_total += 25
 
         # Altman Z-Score (weight: 25)
-        if 'altman_z_score' in report and report['altman_z_score'].get('Z_Score') is not None:
-            z_score = report['altman_z_score']['Z_Score']
-            if z_score < 1.81:
-                score += 75  # High risk
-            elif z_score < 2.99:
-                score += 50  # Medium risk
-            else:
-                score += 25  # Low risk
-            weights_total += 25
+        # Skip for banking companies as Z-Score is not applicable
+        if 'altman_z_score' in report:
+            # Check if this is a banking company (Z-Score = N/A)
+            if report['altman_z_score'].get('Risk_Category') == 'N/A - Banking Company':
+                # For banks, assume neutral score (don't penalize for N/A Z-Score)
+                score += 50  # Neutral - banks need different metrics
+                weights_total += 25
+            elif report['altman_z_score'].get('Z_Score') is not None:
+                z_score = report['altman_z_score']['Z_Score']
+                if z_score < 1.81:
+                    score += 75  # High risk
+                elif z_score < 2.99:
+                    score += 50  # Medium risk
+                else:
+                    score += 25  # Low risk
+                weights_total += 25
 
         # Piotroski F-Score (weight: 20)
         if 'piotroski_f_score' in report and report['piotroski_f_score'].get('F_Score') is not None:
@@ -328,8 +386,12 @@ class ForensicAnalyzer:
             weights_total += 15
 
         # Normalize to 0-100 scale
+        # Each metric scores 1x-3x its weight (low risk=1x, medium=2x, high=3x)
+        # So max possible score is weights_total * 3
+        # Normalize to 0-100: (score / (weights_total * 3)) * 100
         if weights_total > 0:
-            composite = (score / weights_total) * 100
+            max_possible_score = weights_total * 3
+            composite = (score / max_possible_score) * 100
         else:
             composite = None  # No data to calculate
 
@@ -355,12 +417,19 @@ class ForensicAnalyzer:
         composite = report.get('composite_score', {})
         risk_level = composite.get('overall_risk', 'MEDIUM')
         score = composite.get('score', 50)
+        data_coverage = composite.get('data_coverage', 0)
 
         # Count critical issues
         high_severity_flags = len(report.get('red_flags', {}).get('high_severity', []))
         is_manipulator = report.get('beneish_m_score', {}).get('Is_Manipulator', False)
-        is_distressed = report.get('altman_z_score', {}).get('Risk_Category') == 'Distress'
+        # For banking companies, skip Z-Score distress check
+        z_risk_category = report.get('altman_z_score', {}).get('Risk_Category')
+        is_distressed = z_risk_category == 'Distress' if z_risk_category != 'N/A - Banking Company' else False
         is_weak_fundamentals = report.get('piotroski_f_score', {}).get('F_Score', 5) <= 3
+
+        # Check if we have sufficient data for strong recommendations
+        # Need at least 50% data coverage (M-Score OR F-Score available)
+        has_sufficient_data = data_coverage >= 50
 
         # Decision logic
         if high_severity_flags > 0 or is_distressed:
@@ -372,13 +441,24 @@ class ForensicAnalyzer:
                 'Consider exit if currently invested'
             ]
 
-        elif is_manipulator or score >= 70:
+        elif is_manipulator or (score >= 70 and has_sufficient_data):
             action = 'AVOID'
             rationale = 'High forensic risk score indicates potential earnings manipulation or financial distress.'
             priority_actions = [
                 'Detailed review of accounting policies required',
                 'Independent verification of financials recommended',
                 'Wait for improved fundamentals before considering'
+            ]
+
+        elif not has_sufficient_data and risk_level == 'HIGH':
+            # Low data coverage but score looks high - likely insufficient data issue
+            action = 'INSUFFICIENT_DATA'
+            rationale = f'Insufficient historical data for comprehensive analysis (coverage: {data_coverage:.0f}%). Available indicators show no critical issues.'
+            priority_actions = [
+                'Wait for more quarterly reports to be available',
+                'Perform manual review of available financials',
+                'Use alternative analysis methods (technical, peer comparison)',
+                'Re-run analysis when more data becomes available'
             ]
 
         elif is_weak_fundamentals or score >= 55:
@@ -425,12 +505,15 @@ class ForensicAnalyzer:
         if report.get('beneish_m_score', {}).get('Is_Manipulator'):
             concerns.append('⚠️ Beneish M-Score indicates possible earnings manipulation')
 
-        # From Altman Z-Score
+        # From Altman Z-Score (skip for banking companies)
         z_risk = report.get('altman_z_score', {}).get('Risk_Category')
         if z_risk == 'Distress':
             concerns.append('⚠️ High bankruptcy risk (Altman Z-Score in distress zone)')
         elif z_risk == 'Grey Zone':
             concerns.append('⚠️ Uncertain financial health (Altman Z-Score in grey zone)')
+        elif z_risk == 'N/A - Banking Company':
+            # Add note that banking-specific metrics should be reviewed
+            concerns.append('ℹ️  Banking company - review CAR, NPA ratio, and CASA metrics separately')
 
         # From Piotroski F-Score
         f_score = report.get('piotroski_f_score', {}).get('F_Score', 5)

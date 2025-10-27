@@ -100,6 +100,23 @@ class XBRLStorage:
                 raw_dividend_per_share DOUBLE,
                 raw_number_of_shares BIGINT,
 
+                -- ===== RAW DATA: BANKING-SPECIFIC (₹) =====
+                raw_interest_income BIGINT,
+                raw_interest_on_advances BIGINT,
+                raw_interest_on_investments BIGINT,
+                raw_interest_on_rbi_balances BIGINT,
+                raw_interest_expense BIGINT,
+                raw_net_interest_income BIGINT,
+                raw_non_interest_income BIGINT,
+                raw_fee_income BIGINT,
+                raw_trading_income BIGINT,
+                raw_provisions BIGINT,
+                raw_advances BIGINT,
+                raw_deposits BIGINT,
+                raw_cash_with_rbi BIGINT,
+                raw_interbank_funds BIGINT,
+                raw_investments_bank BIGINT,
+
                 -- ===== CALCULATED: VALUES IN CRORES =====
                 revenue_cr DOUBLE,
                 net_profit_cr DOUBLE,
@@ -273,6 +290,7 @@ class XBRLStorage:
                 ?, ?, ?, ?, ?, ?, ?, ?,
                 ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
                 ?, ?, ?,
+                ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
                 ?, ?, ?,
                 ?, ?, ?, ?, ?, ?, ?, ?, ?,
                 ?, ?, ?, ?,
@@ -284,7 +302,7 @@ class XBRLStorage:
                 ?, ?, ?,
                 ?, ?, ?, ?, ?,
                 ?, ?,
-                ?, ?, ?, ?
+                ?, ?, ?
             )
         """, [
             # Primary key
@@ -336,6 +354,23 @@ class XBRLStorage:
             to_float(xbrl_data.get('EPS')),
             to_float(xbrl_data.get('DividendPerShare')),
             to_int(xbrl_data.get('NumberOfShares')),
+
+            # Raw: Banking-Specific
+            to_int(xbrl_data.get('InterestIncome')),
+            to_int(xbrl_data.get('InterestOnAdvances')),
+            to_int(xbrl_data.get('InterestOnInvestments')),
+            to_int(xbrl_data.get('InterestOnRBIBalances')),
+            to_int(xbrl_data.get('InterestExpense')),
+            to_int(xbrl_data.get('NetInterestIncome')),
+            to_int(xbrl_data.get('NonInterestIncome')),
+            to_int(xbrl_data.get('FeeIncome')),
+            to_int(xbrl_data.get('TradingIncome')),
+            to_int(xbrl_data.get('Provisions')),
+            to_int(xbrl_data.get('Advances')),
+            to_int(xbrl_data.get('Deposits')),
+            to_int(xbrl_data.get('CashWithRBI')),
+            to_int(xbrl_data.get('InterBankFunds')),
+            to_int(xbrl_data.get('InvestmentsBank')),
 
             # Calculated: Values in Crores
             to_float(fundamentals.get('revenueCr')),
@@ -405,7 +440,6 @@ class XBRLStorage:
             'xbrl',
             source_file,
             datetime.now(),  # processed_at
-            None,  # yahoo_enriched_at
         ])
 
         print(f'  ✅ Stored in xbrl_data: {symbol} {fy} {quarter} ({statement_type})')

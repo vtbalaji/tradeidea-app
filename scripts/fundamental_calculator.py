@@ -14,6 +14,7 @@ Usage:
 
 import sys
 import os
+import duckdb
 
 # Add experimental directory to path
 current_dir = os.path.dirname(os.path.abspath(__file__))
@@ -25,9 +26,10 @@ from fetch_nse_data import NSEDataFetcher
 class FundamentalCalculator:
     """Calculate fundamental ratios from XBRL data and market prices"""
 
-    def __init__(self):
+    def __init__(self, db_path='data/fundamentals.duckdb'):
         """Initialize calculator"""
         self.fetcher = None
+        self.db_path = db_path
 
     def get_current_price(self, symbol):
         """Get current market price from DuckDB"""
@@ -46,7 +48,113 @@ class FundamentalCalculator:
             print(f"  ⚠️  Error fetching price for {symbol}: {str(e)}")
             return None
 
-    def calculate(self, xbrl_data, symbol, current_price=None):
+    def get_historical_price(self, symbol, date):
+        """
+        Get historical closing price for a specific date from ohlcv table
+
+        Args:
+            symbol: Stock symbol
+            date: Date string in 'YYYY-MM-DD' format
+
+        Returns:
+            float: Closing price on that date, or None if not available
+        """
+        try:
+            # Connect to eod database
+            eod_conn = duckdb.connect('data/eod.duckdb', read_only=True)
+
+            # Try to get price for exact date
+            result = eod_conn.execute("""
+                SELECT close
+                FROM ohlcv
+                WHERE symbol = ?
+                  AND date = ?
+            """, [symbol, date]).fetchone()
+
+            if result and result[0]:
+                eod_conn.close()
+                return float(result[0])
+
+            # If exact date not found, get closest date within 5 days
+            result = eod_conn.execute("""
+                SELECT close
+                FROM ohlcv
+                WHERE symbol = ?
+                  AND date >= ?
+                  AND date <= DATE_ADD(CAST(? AS DATE), INTERVAL 5 DAY)
+                ORDER BY date ASC
+                LIMIT 1
+            """, [symbol, date, date]).fetchone()
+
+            eod_conn.close()
+
+            if result and result[0]:
+                return float(result[0])
+
+            return None
+
+        except Exception as e:
+            print(f"  ⚠️  Error fetching historical price for {symbol} on {date}: {str(e)}")
+            return None
+
+    def get_ttm_eps(self, symbol, db_conn=None):
+        """
+        Get TTM (Trailing Twelve Months) EPS by summing last 4 quarters
+
+        For PE calculation, we need annual EPS, not quarterly.
+        This method fetches the last 4 quarters and calculates EPS from net profit.
+
+        Args:
+            symbol: Stock symbol
+            db_conn: Optional existing database connection to reuse
+
+        Returns:
+            float: TTM EPS or None if not available
+        """
+        try:
+            # Use existing connection or create new one
+            if db_conn:
+                conn = db_conn
+                close_after = False
+            else:
+                conn = duckdb.connect(self.db_path, read_only=True)
+                close_after = True
+
+            # Get last 4 quarters - sum net profit, use latest shares outstanding
+            result = conn.execute("""
+                SELECT
+                    SUM(net_profit_cr) * 10000000 as ttm_net_profit,
+                    MAX(shares_outstanding_cr) * 10000000 as shares
+                FROM (
+                    SELECT net_profit_cr, shares_outstanding_cr
+                    FROM xbrl_data
+                    WHERE symbol = ?
+                      AND is_annual = false
+                      AND net_profit_cr IS NOT NULL
+                      AND net_profit_cr > 0
+                      AND shares_outstanding_cr IS NOT NULL
+                      AND shares_outstanding_cr > 0
+                    ORDER BY end_date DESC
+                    LIMIT 4
+                )
+            """, [symbol]).fetchone()
+
+            if close_after:
+                conn.close()
+
+            if result and result[0] and result[1] and result[1] > 0:
+                ttm_net_profit = float(result[0])
+                shares = float(result[1])
+                ttm_eps = ttm_net_profit / shares
+                return ttm_eps
+
+            return None
+
+        except Exception as e:
+            print(f"  ⚠️  Error fetching TTM EPS for {symbol}: {str(e)}")
+            return None
+
+    def calculate(self, xbrl_data, symbol, current_price=None, db_conn=None, report_date=None, quarter=None, is_annual=False):
         """
         Calculate all fundamental ratios
 
@@ -54,17 +162,32 @@ class FundamentalCalculator:
             xbrl_data: Dictionary of financial data from XBRL parser
             symbol: Stock symbol
             current_price: Current market price (optional, will fetch if not provided)
+            db_conn: Optional existing database connection to reuse
+            report_date: Report date (YYYY-MM-DD) for fetching historical price
+            quarter: Quarter (Q1, Q2, Q3, Q4) - used to determine if TTM EPS needed
+            is_annual: Boolean indicating if this is annual report (Q4)
 
         Returns:
             Dictionary of calculated fundamental ratios
         """
 
-        # Get current price if not provided
+        # Get price (historical or current) if not provided
         if current_price is None:
-            current_price = self.get_current_price(symbol)
+            if report_date:
+                # Use historical price for the report date
+                current_price = self.get_historical_price(symbol, report_date)
+                if current_price:
+                    print(f"  💡 Using historical price ({current_price:.2f}) for {report_date}")
+                else:
+                    # Fallback to current price if historical price not found
+                    print(f"  ⚠️  Historical price not found for {report_date}, using current price")
+                    current_price = self.get_current_price(symbol)
+            else:
+                # Use current price if no report date specified
+                current_price = self.get_current_price(symbol)
 
         if not current_price:
-            print(f"  ⚠️  Could not fetch current price for {symbol}")
+            print(f"  ⚠️  Could not fetch price for {symbol}")
             return None
 
         # Extract values from XBRL (handle missing values gracefully)
@@ -84,6 +207,19 @@ class FundamentalCalculator:
         eps = xbrl_data.get('EPS', 0)
         if eps == 0 and shares_outstanding > 0:
             eps = net_profit / shares_outstanding
+
+        # For PE calculation, use TTM EPS for quarterly reports (Q1/Q2/Q3)
+        # For annual reports (Q4) or unknown, use direct EPS
+        eps_for_pe = eps
+
+        # Only calculate TTM for quarterly reports (not Q4 or annual)
+        if quarter and quarter in ['Q1', 'Q2', 'Q3'] and not is_annual:
+            ttm_eps = self.get_ttm_eps(symbol, db_conn=db_conn)
+            if ttm_eps and ttm_eps > 0:
+                eps_for_pe = ttm_eps
+                print(f"  💡 Using TTM EPS ({ttm_eps:.2f}) for quarterly {quarter} (quarterly EPS: {eps:.2f})")
+            else:
+                print(f"  ⚠️  Could not calculate TTM EPS for {quarter}, using quarterly EPS ({eps:.2f}) - PE may be overstated")
 
         # Calculate shares outstanding if not available
         # Use share capital and face value (typically ₹1, ₹2, or ₹10)
@@ -119,7 +255,7 @@ class FundamentalCalculator:
             'marketCapCr': round(market_cap / 10000000, 2),  # In crores
 
             # Valuation Ratios
-            'PE': round(current_price / eps, 2) if eps > 0 else None,
+            'PE': round(current_price / eps_for_pe, 2) if eps_for_pe > 0 else None,
             'PB': round(current_price / book_value_per_share, 2) if book_value_per_share > 0 else None,
             'PS': round(market_cap / revenue, 2) if revenue > 0 else None,
             'EVEBITDA': round((market_cap + total_debt - cash) / ebitda, 2) if ebitda > 0 else None,
@@ -144,7 +280,7 @@ class FundamentalCalculator:
             'equityMultiplier': round(total_assets / total_equity, 2) if total_equity > 0 else None,
 
             # Per Share Metrics (₹)
-            'EPS': round(eps, 2),
+            'EPS': round(eps_for_pe, 2),  # Use eps_for_pe (TTM for quarterly, direct for annual)
             'bookValuePerShare': round(book_value_per_share, 2),
             'revenuePerShare': round(revenue / shares_outstanding, 2) if shares_outstanding > 0 else None,
             'cashPerShare': round(cash / shares_outstanding, 2) if shares_outstanding > 0 else None,

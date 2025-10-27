@@ -41,7 +41,7 @@ import re
 current_dir = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, current_dir)
 
-from xbrl_parser import XBRLParser
+from xbrl_parser_v3 import EnhancedXBRLParser as XBRLParser
 from fundamental_calculator import FundamentalCalculator
 from fundamental_xbrl_storage import XBRLStorage
 
@@ -50,11 +50,13 @@ def extract_metadata_from_filename(filename):
     """
     Extract symbol, statement_type, month, year from filename
 
-    Expected format: SYMBOL_type_month_year.xml
-    Example: TCS_consolidated_may_2025.xml
+    Handles multiple filename formats:
+    1. Standard: SYMBOL_type_month_year.xml (e.g., TCS_consolidated_may_2025.xml)
+    2. Webpage: SYMBOL_type_INDAS_numbers.xml (e.g., TCS_consolidated_INDAS_12345_6789.xml)
 
     Returns:
-        dict with 'symbol', 'statement_type', 'month', 'year' or None
+        dict with 'symbol', 'statement_type', 'month', 'year' or None if can't parse
+        For non-standard formats, returns minimal metadata (symbol, statement_type)
     """
     basename = os.path.basename(filename)
     name_without_ext = os.path.splitext(basename)[0]
@@ -62,21 +64,48 @@ def extract_metadata_from_filename(filename):
     # Split by underscore
     parts = name_without_ext.split('_')
 
-    if len(parts) < 4:
+    if len(parts) < 2:
         return None
 
-    result = {
-        'symbol': parts[0].upper(),
-        'statement_type': parts[1].lower(),  # standalone or consolidated
-        'month': parts[2].lower(),
-        'year': parts[3]
+    # Extract symbol (always first part)
+    symbol = parts[0].upper()
+
+    # Try to detect statement_type
+    statement_type = None
+    for part in parts[1:]:
+        part_lower = part.lower()
+        if part_lower in ['standalone', 'consolidated']:
+            statement_type = part_lower
+            break
+
+    # If no valid statement_type found, try to infer from filename
+    if not statement_type:
+        filename_lower = basename.lower()
+        if 'standalone' in filename_lower or '_sa_' in filename_lower:
+            statement_type = 'standalone'
+        elif 'consolidated' in filename_lower or '_ca_' in filename_lower:
+            statement_type = 'consolidated'
+        else:
+            # Default to consolidated if uncertain
+            statement_type = 'consolidated'
+
+    # Try standard format: SYMBOL_type_month_year.xml
+    if len(parts) >= 4 and parts[1].lower() in ['standalone', 'consolidated']:
+        return {
+            'symbol': symbol,
+            'statement_type': statement_type,
+            'month': parts[2].lower(),
+            'year': parts[3]
+        }
+
+    # For non-standard formats (e.g., SYMBOL_type_INDAS_...), return minimal metadata
+    # The XBRL parser will extract the actual period from the file content
+    return {
+        'symbol': symbol,
+        'statement_type': statement_type,
+        'month': None,
+        'year': None
     }
-
-    # Validate statement_type
-    if result['statement_type'] not in ['standalone', 'consolidated']:
-        return None
-
-    return result
 
 
 def find_xbrl_files(symbol=None, directory='./xbrl', statement_type=None):
@@ -115,10 +144,11 @@ def find_xbrl_files(symbol=None, directory='./xbrl', statement_type=None):
         })
 
     # Sort by symbol, then by year/month (newest first)
+    # Handle None values for year and month (put them at the end)
     results.sort(key=lambda x: (
         x['metadata']['symbol'],
-        x['metadata']['year'],
-        x['metadata']['month']
+        x['metadata'].get('year') or '0000',  # None -> '0000' for sorting
+        x['metadata'].get('month') or 'zzz'   # None -> 'zzz' for sorting
     ), reverse=True)
 
     return results
@@ -199,7 +229,16 @@ def process_xbrl_file(xbrl_file_path, storage, skip_if_processed=True):
         # Step 2: Calculate fundamental ratios
         print(f'  📊 Calculating fundamental ratios...')
         calculator = FundamentalCalculator()
-        fundamentals = calculator.calculate(xbrl_data, symbol)
+        # Pass database connection to avoid connection conflicts
+        # Also pass end_date to get historical price for accurate PE calculation
+        # Pass quarter and is_annual for correct TTM EPS calculation
+        fundamentals = calculator.calculate(
+            xbrl_data, symbol,
+            db_conn=storage.conn,
+            report_date=end_date,
+            quarter=quarter,
+            is_annual=period_info.get('isAnnual', False)
+        )
 
         if not fundamentals:
             error_msg = 'Failed to calculate fundamental ratios'

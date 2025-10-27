@@ -364,7 +364,8 @@ export default function IdeaDetailPage() {
                       analysis: idea.analysis,
                       entryPrice: idea.entryPrice,
                       target1: idea.target1,
-                      stopLoss: idea.stopLoss
+                      stopLoss: idea.stopLoss,
+                      status: idea.status || 'active'
                     });
                     setShowEditModal(true);
                   }}
@@ -852,6 +853,30 @@ export default function IdeaDetailPage() {
                     rows={6}
                     className="w-full bg-white dark:bg-[#0f1419] border border-gray-200 dark:border-[#30363d] rounded-lg px-3 py-2 text-gray-900 dark:text-white placeholder-[#8b949e] outline-none focus:border-[#ff8c42] transition-colors resize-none"
                   />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-600 dark:text-[#8b949e] mb-2">
+                    Status
+                  </label>
+                  <select
+                    value={editFormData.status}
+                    onChange={(e) =>
+                      setEditFormData({ ...editFormData, status: e.target.value })
+                    }
+                    className="w-full bg-white dark:bg-[#0f1419] border border-gray-200 dark:border-[#30363d] rounded-lg px-3 py-2 text-gray-900 dark:text-white outline-none focus:border-[#ff8c42] transition-colors"
+                  >
+                    <option value="cooking">Cooking (Draft - Not public)</option>
+                    <option value="active">Active (Public - Looking for entry)</option>
+                    <option value="TRIGGERED">Triggered (Entry taken)</option>
+                    <option value="PROFIT_BOOKED">Profit Booked (Target hit)</option>
+                    <option value="STOP_LOSS">Stop Loss (SL hit)</option>
+                    <option value="expired">Expired (Entry never hit)</option>
+                    <option value="cancelled">Cancelled (Closed by owner)</option>
+                  </select>
+                  <p className="mt-1 text-xs text-gray-500 dark:text-[#6e7681]">
+                    Change the status based on your trade progress
+                  </p>
                 </div>
 
                 <div className="grid grid-cols-3 gap-4">

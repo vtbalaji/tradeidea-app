@@ -48,6 +48,16 @@ class DataQualityScorer:
             'preferred_source': 'xbrl',
             'critical_fields': ['raw_revenue', 'raw_net_profit', 'raw_assets', 'raw_operating_cash_flow'],
         },
+        'Healthcare': {
+            'min_quality': 85,  # XBRL generally good for hospitals
+            'preferred_source': 'xbrl',
+            'critical_fields': ['raw_revenue', 'raw_net_profit', 'raw_assets'],
+        },
+        'Pharma': {
+            'min_quality': 85,  # XBRL generally good
+            'preferred_source': 'xbrl',
+            'critical_fields': ['raw_revenue', 'raw_net_profit', 'raw_assets', 'raw_operating_cash_flow'],
+        },
         'Manufacturing': {
             'min_quality': 85,
             'preferred_source': 'xbrl',
@@ -72,6 +82,17 @@ class DataQualityScorer:
             'ADANIGREEN', 'ADANIENT', 'TATAMOTORS', 'TATAPOWER'
         ]
 
+        self.healthcare_symbols = [
+            'APOLLOHOSP', 'FORTIS', 'MAXHEALTH', 'NARAYANHEALTH',
+            'MEDICAMEQ', 'STARHEALTH', 'RAINBOWHSP', 'GLAXO'
+        ]
+
+        self.pharma_symbols = [
+            'SUNPHARMA', 'DRREDDY', 'CIPLA', 'AUROPHARMA', 'DIVISLAB',
+            'TORNTPHARM', 'LUPIN', 'BIOCON', 'ALKEM', 'GRANULES',
+            'GLENMARK', 'CADILAHC', 'IPCALAB', 'ABBOTINDIA', 'PFIZER'
+        ]
+
     def detect_sector(self, symbol):
         """Detect sector based on symbol"""
         symbol_upper = symbol.upper()
@@ -80,10 +101,14 @@ class DataQualityScorer:
             return 'Banking'
         elif symbol_upper in self.conglomerate_symbols:
             return 'Conglomerate'
+        elif symbol_upper in self.healthcare_symbols:
+            return 'Healthcare'
+        elif symbol_upper in self.pharma_symbols:
+            return 'Pharma'
         elif symbol_upper in ['TCS', 'INFY', 'WIPRO', 'HCLTECH', 'TECHM', 'LTI', 'LTTS', 'COFORGE']:
             return 'IT Services'
         else:
-            return 'Manufacturing'  # Default
+            return 'Manufacturing'  # Default for unlisted sectors
 
     def score_xbrl_data(self, data, symbol):
         """
@@ -334,9 +359,16 @@ class MultiSourceDataLoader(ForensicDataLoader):
             yahoo_year = None
             yahoo_score = 0
 
+            # Log XBRL availability and quality
+            if xbrl_year and xbrl_score > 0:
+                print(f'     📊 {fy}: XBRL data found (quality: {xbrl_score:.0f}%)')
+            elif xbrl_year:
+                print(f'     ⚠️  {fy}: XBRL data incomplete (quality: {xbrl_score:.0f}%)')
+
             # Use XBRL if quality is good (>= 80%)
             if xbrl_score >= 80 and xbrl_year:
                 # XBRL is good - use it
+                print(f'     ✅ {fy}: Using XBRL (high quality)')
                 xbrl_year['data_source'] = 'XBRL'
                 xbrl_year['quality_score'] = xbrl_score
                 annual_results.append(xbrl_year)
@@ -348,10 +380,12 @@ class MultiSourceDataLoader(ForensicDataLoader):
 
                 if yahoo_score >= 80:
                     # Yahoo can fill gaps - merge
+                    print(f'     ✅ {fy}: Using XBRL + Yahoo enrichment')
                     merged = self.merge_data_sources(xbrl_year, yahoo_year, prefer='xbrl')
                     annual_results.append(merged)
                 else:
                     # Just use XBRL even if not perfect
+                    print(f'     ✅ {fy}: Using XBRL (acceptable quality)')
                     xbrl_year['data_source'] = 'XBRL'
                     xbrl_year['quality_score'] = xbrl_score
                     annual_results.append(xbrl_year)
@@ -360,23 +394,29 @@ class MultiSourceDataLoader(ForensicDataLoader):
                 # XBRL has minimal data (30-60%) - old BSE format files often fall here
                 # They have revenue & profit but missing balance sheet (assets, equity, cash flow)
                 # Use it but mark as lower quality
+                print(f'     ✅ {fy}: Using XBRL (limited - old BSE format, quality: {xbrl_score:.0f}%)')
                 xbrl_year['data_source'] = 'XBRL (limited)'
                 xbrl_year['quality_score'] = xbrl_score
                 annual_results.append(xbrl_year)
-                print(f'     ℹ️  Using XBRL for {fy} despite low quality ({xbrl_score:.0f}%) - old BSE format')
 
             else:
                 # XBRL is missing or very poor quality (< 30%) - use Yahoo as fallback
+                if xbrl_score > 0:
+                    print(f'     ⚠️  {fy}: XBRL quality too low ({xbrl_score:.0f}%), trying Yahoo fallback...')
+                else:
+                    print(f'     ℹ️  {fy}: XBRL not aggregated (insufficient quarterly data), trying Yahoo fallback...')
+
                 yahoo_year = self.get_yahoo_annual_data(symbol, fy)
                 yahoo_score = self.scorer.score_yahoo_data(yahoo_year) if yahoo_year else 0
 
                 if yahoo_year:
+                    print(f'     ✅ {fy}: Using Yahoo Finance (quality: {yahoo_score:.0f}%)')
                     yahoo_year['data_source'] = 'Yahoo (XBRL unavailable)'
                     yahoo_year['quality_score'] = yahoo_score
                     annual_results.append(yahoo_year)
                 else:
-                    # No data available for this year
-                    print(f'     ⚠️  No data available for {fy}')
+                    # No data available for this year from any source
+                    print(f'     ❌ {fy}: No data available from XBRL or Yahoo')
                     # Don't append None - just skip this year
 
         if annual_results:
