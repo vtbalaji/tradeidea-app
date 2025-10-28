@@ -172,6 +172,7 @@ class XBRLStorage:
 
                 -- ===== CALCULATED: PER SHARE METRICS (₹) =====
                 eps DOUBLE,
+                eps_ttm DOUBLE,  -- TTM EPS for quarterly reports (Q1-Q3)
                 book_value_per_share DOUBLE,
                 revenue_per_share DOUBLE,
                 cash_per_share DOUBLE,
@@ -427,6 +428,7 @@ class XBRLStorage:
 
             # Calculated: Per Share Metrics
             to_float(fundamentals.get('EPS')),
+            to_float(fundamentals.get('EPS_TTM')),  # TTM EPS
             to_float(fundamentals.get('bookValuePerShare')),
             to_float(fundamentals.get('revenuePerShare')),
             to_float(fundamentals.get('cashPerShare')),

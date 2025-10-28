@@ -211,15 +211,17 @@ class FundamentalCalculator:
         # For PE calculation, use TTM EPS for quarterly reports (Q1/Q2/Q3)
         # For annual reports (Q4) or unknown, use direct EPS
         eps_for_pe = eps
+        ttm_eps_value = None  # Store TTM EPS separately
 
         # Only calculate TTM for quarterly reports (not Q4 or annual)
         if quarter and quarter in ['Q1', 'Q2', 'Q3'] and not is_annual:
             ttm_eps = self.get_ttm_eps(symbol, db_conn=db_conn)
             if ttm_eps and ttm_eps > 0:
+                ttm_eps_value = ttm_eps  # Store for separate field
                 eps_for_pe = ttm_eps
-                print(f"  💡 Using TTM EPS ({ttm_eps:.2f}) for quarterly {quarter} (quarterly EPS: {eps:.2f})")
+                print(f"  💡 Using TTM EPS ({ttm_eps:.2f}) for PE calculation in {quarter} (quarterly EPS: {eps:.2f})")
             else:
-                print(f"  ⚠️  Could not calculate TTM EPS for {quarter}, using quarterly EPS ({eps:.2f}) - PE may be overstated")
+                print(f"  ⚠️  Could not calculate TTM EPS for {quarter}, using quarterly EPS ({eps:.2f}) for PE - may be overstated")
 
         # Calculate shares outstanding if not available
         # Use share capital and face value (typically ₹1, ₹2, or ₹10)
@@ -280,7 +282,8 @@ class FundamentalCalculator:
             'equityMultiplier': round(total_assets / total_equity, 2) if total_equity > 0 else None,
 
             # Per Share Metrics (₹)
-            'EPS': round(eps_for_pe, 2),  # Use eps_for_pe (TTM for quarterly, direct for annual)
+            'EPS': round(eps, 2),  # FIXED: Store actual quarterly/annual EPS, not TTM
+            'EPS_TTM': round(ttm_eps_value, 2) if ttm_eps_value else None,  # Store TTM EPS separately for PE calculation
             'bookValuePerShare': round(book_value_per_share, 2),
             'revenuePerShare': round(revenue / shares_outstanding, 2) if shares_outstanding > 0 else None,
             'cashPerShare': round(cash / shares_outstanding, 2) if shares_outstanding > 0 else None,

@@ -101,7 +101,8 @@ class QuarterlyFinancialReport:
                     raw_net_profit / 10000000 as net_profit_cr,
 
                     -- Per Share Metrics
-                    raw_eps as eps,
+                    eps,
+                    eps_ttm,
 
                     -- Raw values for calculations
                     raw_revenue,
@@ -132,7 +133,7 @@ class QuarterlyFinancialReport:
             columns = [
                 'fy', 'quarter', 'end_date', 'start_date', 'is_annual',
                 'revenue_cr', 'operating_expenses_cr', 'operating_profit_cr', 'operating_profit_margin',
-                'depreciation_cr', 'interest_cr', 'pbt_cr', 'tax_cr', 'net_profit_cr', 'eps',
+                'depreciation_cr', 'interest_cr', 'pbt_cr', 'tax_cr', 'net_profit_cr', 'eps', 'eps_ttm',
                 'raw_revenue', 'raw_operating_expenses', 'raw_operating_profit', 'raw_depreciation',
                 'raw_interest_expense', 'raw_profit_before_tax', 'raw_tax_expense', 'raw_net_profit',
                 'net_profit_margin'
@@ -141,8 +142,6 @@ class QuarterlyFinancialReport:
             data = []
             for row in result:
                 record = dict(zip(columns, row))
-                # Add raw_eps as alias for eps (for compatibility)
-                record['raw_eps'] = record['eps']
                 data.append(record)
 
             # Calculate YoY growth for each quarter
@@ -533,7 +532,7 @@ class QuarterlyFinancialReport:
             ('Net Profit (Cr)', 'net_profit_cr', 0),
             ('OPM %', 'operating_profit_margin', 2),
             ('NPM %', 'net_profit_margin', 2),
-            ('EPS (₹)', 'raw_eps', 2),  # Use raw_eps for accuracy
+            ('EPS (₹)', 'eps', 2),  # Now using correct eps from database
         ]
 
         for label, key, decimals in metrics:
