@@ -24,7 +24,7 @@ export default function IdeasHubPage() {
   const { user } = useAuth();
   const [searchQuery, setSearchQuery] = useState('');
   const [activeTab, setActiveTab] = useState('all');
-  const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'TRIGGERED' | 'PROFIT_BOOKED' | 'STOP_LOSS' | 'expired'>('all');
+  const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'performance' | 'expired'>('all');
   const [showAnalysisModal, setShowAnalysisModal] = useState<string | null>(null);
   const [currentRecommendation, setCurrentRecommendation] = useState<any>(null);
   const [showAddPositionModal, setShowAddPositionModal] = useState(false);
@@ -82,15 +82,25 @@ export default function IdeasHubPage() {
     TRIGGERED: 0,
     PROFIT_BOOKED: 0,
     STOP_LOSS: 0,
+    performance: 0, // Aggregate of TRIGGERED + PROFIT_BOOKED + STOP_LOSS
     expired: 0
   };
 
   filteredIdeas.forEach(idea => {
     const status = idea.status || 'active';
     if (status === 'active') statusCounts.active++;
-    else if (status === 'TRIGGERED') statusCounts.TRIGGERED++;
-    else if (status === 'PROFIT_BOOKED') statusCounts.PROFIT_BOOKED++;
-    else if (status === 'STOP_LOSS') statusCounts.STOP_LOSS++;
+    else if (status === 'TRIGGERED') {
+      statusCounts.TRIGGERED++;
+      statusCounts.performance++;
+    }
+    else if (status === 'PROFIT_BOOKED') {
+      statusCounts.PROFIT_BOOKED++;
+      statusCounts.performance++;
+    }
+    else if (status === 'STOP_LOSS') {
+      statusCounts.STOP_LOSS++;
+      statusCounts.performance++;
+    }
     else if (status === 'expired') statusCounts.expired++;
   });
 
@@ -98,6 +108,10 @@ export default function IdeasHubPage() {
   if (statusFilter !== 'all') {
     filteredIdeas = filteredIdeas.filter(idea => {
       const status = idea.status || 'active';
+      if (statusFilter === 'performance') {
+        // Performance filter includes TRIGGERED, PROFIT_BOOKED, and STOP_LOSS
+        return status === 'TRIGGERED' || status === 'PROFIT_BOOKED' || status === 'STOP_LOSS';
+      }
       return status === statusFilter;
     });
   }
@@ -141,6 +155,15 @@ export default function IdeasHubPage() {
       ? (((idea.target1 - idea.entryPrice) / idea.entryPrice) * 100).toFixed(1)
       : null;
 
+    // Calculate performance (LTP vs Entry)
+    const performance = idea.entryPrice && idea.technicals?.lastPrice
+      ? (((idea.technicals.lastPrice - idea.entryPrice) / idea.entryPrice) * 100)
+      : null;
+    const performanceText = performance !== null ? `${performance >= 0 ? '+' : ''}${performance.toFixed(2)}%` : null;
+    const performanceColor = performance !== null
+      ? (performance >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400')
+      : '';
+
     // Get database status badge
     const status = idea.status || 'active';
     const statusBadgeMap: Record<string, { text: string; color: string }> = {
@@ -152,6 +175,10 @@ export default function IdeasHubPage() {
       'expired': { text: 'Expired', color: 'bg-gray-500/20 text-gray-600 dark:text-gray-400' }
     };
     const statusBadge = statusBadgeMap[status] || statusBadgeMap['active'];
+
+    // Show performance on cards when in performance view or when status is a performance status
+    const showPerformance = statusFilter === 'performance' ||
+      status === 'TRIGGERED' || status === 'PROFIT_BOOKED' || status === 'STOP_LOSS';
 
     return (
       <div
@@ -167,7 +194,14 @@ export default function IdeasHubPage() {
         {/* Header */}
         <div className="flex justify-between items-center mb-3">
           <div>
-            <h3 className="text-xl font-bold text-gray-900 dark:text-white">{idea.symbol}</h3>
+            <div className="flex items-center gap-2">
+              <h3 className="text-xl font-bold text-gray-900 dark:text-white">{idea.symbol}</h3>
+              {showPerformance && performanceText && (
+                <span className={`text-sm font-bold ${performanceColor}`}>
+                  {performanceText}
+                </span>
+              )}
+            </div>
             {(idea.fundamentals?.industry || idea.fundamentals?.sector) && (
               <p className="text-sm text-gray-600 dark:text-[#8b949e] mt-0.5">
                 {idea.fundamentals?.industry || idea.fundamentals?.sector}
@@ -450,7 +484,7 @@ export default function IdeasHubPage() {
           >
             <span>All Status</span>
             <span className="px-1.5 py-0.5 bg-gray-500/20 rounded-full text-[10px]">
-              {statusCounts.active + statusCounts.TRIGGERED + statusCounts.PROFIT_BOOKED + statusCounts.STOP_LOSS + statusCounts.expired}
+              {statusCounts.active + statusCounts.performance + statusCounts.expired}
             </span>
           </button>
           <button
@@ -461,48 +495,29 @@ export default function IdeasHubPage() {
                 : 'bg-gray-50 dark:bg-[#1c2128] text-gray-600 dark:text-[#8b949e] hover:bg-green-500/10'
             }`}
           >
-            <span>🟢 Active</span>
+            <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20">
+              <circle cx="10" cy="10" r="8" opacity="0.3"/>
+              <circle cx="10" cy="10" r="4"/>
+            </svg>
+            <span>Active</span>
             <span className="px-1.5 py-0.5 bg-green-500/20 text-green-600 dark:text-green-400 rounded-full text-[10px]">
               {statusCounts.active}
             </span>
           </button>
           <button
-            onClick={() => setStatusFilter('TRIGGERED')}
+            onClick={() => setStatusFilter('performance')}
             className={`px-3 py-1.5 rounded-md text-xs font-semibold transition-colors whitespace-nowrap flex items-center gap-1.5 ${
-              statusFilter === 'TRIGGERED'
-                ? 'bg-blue-500/20 text-blue-600 dark:text-blue-400 border border-blue-500/30'
-                : 'bg-gray-50 dark:bg-[#1c2128] text-gray-600 dark:text-[#8b949e] hover:bg-blue-500/10'
+              statusFilter === 'performance'
+                ? 'bg-orange-500/20 text-orange-600 dark:text-orange-400 border border-orange-500/30'
+                : 'bg-gray-50 dark:bg-[#1c2128] text-gray-600 dark:text-[#8b949e] hover:bg-orange-500/10'
             }`}
           >
-            <span>🔵 Triggered</span>
-            <span className="px-1.5 py-0.5 bg-blue-500/20 text-blue-600 dark:text-blue-400 rounded-full text-[10px]">
-              {statusCounts.TRIGGERED}
-            </span>
-          </button>
-          <button
-            onClick={() => setStatusFilter('PROFIT_BOOKED')}
-            className={`px-3 py-1.5 rounded-md text-xs font-semibold transition-colors whitespace-nowrap flex items-center gap-1.5 ${
-              statusFilter === 'PROFIT_BOOKED'
-                ? 'bg-green-500/20 text-green-600 dark:text-green-400 border border-green-500/30'
-                : 'bg-gray-50 dark:bg-[#1c2128] text-gray-600 dark:text-[#8b949e] hover:bg-green-500/10'
-            }`}
-          >
-            <span>✅ Profit Booked</span>
-            <span className="px-1.5 py-0.5 bg-green-500/20 text-green-600 dark:text-green-400 rounded-full text-[10px]">
-              {statusCounts.PROFIT_BOOKED}
-            </span>
-          </button>
-          <button
-            onClick={() => setStatusFilter('STOP_LOSS')}
-            className={`px-3 py-1.5 rounded-md text-xs font-semibold transition-colors whitespace-nowrap flex items-center gap-1.5 ${
-              statusFilter === 'STOP_LOSS'
-                ? 'bg-red-500/20 text-red-600 dark:text-red-400 border border-red-500/30'
-                : 'bg-gray-50 dark:bg-[#1c2128] text-gray-600 dark:text-[#8b949e] hover:bg-red-500/10'
-            }`}
-          >
-            <span>🔴 Stop Loss</span>
-            <span className="px-1.5 py-0.5 bg-red-500/20 text-red-600 dark:text-red-400 rounded-full text-[10px]">
-              {statusCounts.STOP_LOSS}
+            <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20">
+              <path d="M2 11a1 1 0 011-1h2a1 1 0 011 1v5a1 1 0 01-1 1H3a1 1 0 01-1-1v-5zM8 7a1 1 0 011-1h2a1 1 0 011 1v9a1 1 0 01-1 1H9a1 1 0 01-1-1V7zM14 4a1 1 0 011-1h2a1 1 0 011 1v12a1 1 0 01-1 1h-2a1 1 0 01-1-1V4z"/>
+            </svg>
+            <span>Idea Performance</span>
+            <span className="px-1.5 py-0.5 bg-orange-500/20 text-orange-600 dark:text-orange-400 rounded-full text-[10px]">
+              {statusCounts.performance}
             </span>
           </button>
           <button
@@ -513,7 +528,10 @@ export default function IdeasHubPage() {
                 : 'bg-gray-50 dark:bg-[#1c2128] text-gray-600 dark:text-[#8b949e] hover:bg-gray-500/10'
             }`}
           >
-            <span>⏰ Expired</span>
+            <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20">
+              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clipRule="evenodd"/>
+            </svg>
+            <span>Expired</span>
             <span className="px-1.5 py-0.5 bg-gray-500/20 text-gray-600 dark:text-gray-400 rounded-full text-[10px]">
               {statusCounts.expired}
             </span>
