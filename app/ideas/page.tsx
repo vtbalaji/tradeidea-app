@@ -17,6 +17,7 @@ import AnalysisButton from '@/components/AnalysisButton';
 import AddPositionModal from '@/components/portfolio/modals/AddPositionModal';
 import RatingGuide from '@/components/RatingGuide';
 import PiotroskiGuide from '@/components/PiotroskiGuide';
+import PriceProgressBar from '@/components/PriceProgressBar';
 
 export default function IdeasHubPage() {
   const router = useRouter();
@@ -151,10 +152,6 @@ export default function IdeasHubPage() {
   };
 
   const renderIdeaCard = (idea: any) => {
-    const target1Percent = idea.entryPrice
-      ? (((idea.target1 - idea.entryPrice) / idea.entryPrice) * 100).toFixed(1)
-      : null;
-
     // Calculate performance (LTP vs Entry)
     const performance = idea.entryPrice && idea.technicals?.lastPrice
       ? (((idea.technicals.lastPrice - idea.entryPrice) / idea.entryPrice) * 100)
@@ -194,14 +191,7 @@ export default function IdeasHubPage() {
         {/* Header */}
         <div className="flex justify-between items-center mb-3">
           <div>
-            <div className="flex items-center gap-2">
-              <h3 className="text-xl font-bold text-gray-900 dark:text-white">{idea.symbol}</h3>
-              {showPerformance && performanceText && (
-                <span className={`text-sm font-bold ${performanceColor}`}>
-                  {performanceText}
-                </span>
-              )}
-            </div>
+            <h3 className="text-xl font-bold text-gray-900 dark:text-white">{idea.symbol}</h3>
             {(idea.fundamentals?.industry || idea.fundamentals?.sector) && (
               <p className="text-sm text-gray-600 dark:text-[#8b949e] mt-0.5">
                 {idea.fundamentals?.industry || idea.fundamentals?.sector}
@@ -226,35 +216,17 @@ export default function IdeasHubPage() {
           </span>
         </div>
 
-        {/* Trade Details */}
-        <div className="grid grid-cols-4 gap-3 mb-3">
-          <div className="text-center">
-            <div className="text-sm text-gray-600 dark:text-[#8b949e] mb-1">LTP</div>
-            <div className={`text-base font-bold ${
-              idea.technicals?.lastPrice
-                ? 'text-gray-900 dark:text-white'
-                : 'text-gray-500 dark:text-[#8b949e]'
-            }`}>
-              {idea.technicals?.lastPrice ? `₹${Math.round(idea.technicals.lastPrice).toLocaleString('en-IN')}` : 'N/A'}
-            </div>
-          </div>
-          <div className="text-center">
-            <div className="text-sm text-gray-600 dark:text-[#8b949e] mb-1">Entry</div>
-            <div className="text-base font-bold text-gray-900 dark:text-white">
-              {typeof idea.entryPrice === 'number' ? `₹${Math.round(idea.entryPrice).toLocaleString('en-IN')}` : idea.entryPrice}
-            </div>
-          </div>
-          <div className="text-center">
-            <div className="text-sm text-gray-600 dark:text-[#8b949e] mb-1">Target</div>
-            <div className="text-base font-bold text-gray-900 dark:text-white">
-              ₹{Math.round(idea.target1).toLocaleString('en-IN')} {target1Percent && <span className="text-xs text-gray-600 dark:text-[#8b949e]">+{target1Percent}%</span>}
-            </div>
-          </div>
-          <div className="text-center">
-            <div className="text-sm text-gray-600 dark:text-[#8b949e] mb-1">Stop Loss</div>
-            <div className="text-base font-bold text-gray-900 dark:text-white">₹{Math.round(idea.stopLoss).toLocaleString('en-IN')}</div>
-          </div>
-        </div>
+        {/* Price Progress Bar Component */}
+        <PriceProgressBar
+          currentPrice={idea.technicals?.lastPrice || idea.entryPrice}
+          entryPrice={idea.entryPrice}
+          stopLoss={idea.stopLoss}
+          target={idea.target1}
+          showCurrentPrice={true}
+          showPerformance={showPerformance}
+          performanceText={performanceText}
+          performanceColor={performanceColor}
+        />
 
         {/* Warning if no technical data available */}
         {!idea.technicals && (
