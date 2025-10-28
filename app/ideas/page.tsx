@@ -334,6 +334,7 @@ export default function IdeasHubPage() {
           showPerformance={showPerformance}
           performanceText={performanceText}
           performanceColor={performanceColor}
+          isActiveStatus={status === 'active'}
         />
 
         {/* Warning if no technical data available */}

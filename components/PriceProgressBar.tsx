@@ -11,6 +11,7 @@ interface PriceProgressBarProps {
   showPerformance?: boolean;
   performanceText?: string;
   performanceColor?: string;
+  isActiveStatus?: boolean;
 }
 
 export default function PriceProgressBar({
@@ -21,7 +22,8 @@ export default function PriceProgressBar({
   showCurrentPrice = true,
   showPerformance = false,
   performanceText,
-  performanceColor
+  performanceColor,
+  isActiveStatus = false
 }: PriceProgressBarProps) {
   // Calculate positions (0-100%)
   const totalRange = target - stopLoss;
@@ -39,20 +41,32 @@ export default function PriceProgressBar({
 
   return (
     <div>
-      {/* Current Price Display */}
+      {/* Price Display - Entry Price for Active, Current Price for Others */}
       {showCurrentPrice && (
         <div className="flex items-center justify-center gap-3 mb-2">
-          <div className="text-sm text-gray-600 dark:text-[#8b949e] font-semibold">Current Price</div>
-          <div className="text-4xl font-bold text-gray-900 dark:text-white">
-            ₹{Math.round(currentPrice)}
-          </div>
-          {showPerformance && performanceText && (
-            <span className={`text-base font-bold ${performanceColor}`}>
-              {performanceText} from entry
-            </span>
+          {isActiveStatus ? (
+            <>
+              <div className="text-sm text-gray-600 dark:text-[#8b949e] font-semibold">Entry Price</div>
+              <div className="text-4xl font-bold text-gray-900 dark:text-white">
+                ₹{Math.round(entryPrice)}
+              </div>
+            </>
+          ) : (
+            <>
+              <div className="text-sm text-gray-600 dark:text-[#8b949e] font-semibold">Current Price</div>
+              <div className="text-4xl font-bold text-gray-900 dark:text-white">
+                ₹{Math.round(currentPrice)}
+              </div>
+              {showPerformance && performanceText && (
+                <span className={`text-base font-bold ${performanceColor}`}>
+                  {performanceText} from entry
+                </span>
+              )}
+            </>
           )}
         </div>
       )}
+
 
       {/* Visual Progress Bar */}
       <div className="mb-3">
@@ -97,10 +111,14 @@ export default function PriceProgressBar({
             <div className="text-gray-600 dark:text-[#8b949e]">Risk: ₹{Math.round(riskAmount)}</div>
           </div>
 
-          {/* Entry */}
+          {/* Entry / Current Price */}
           <div className="flex-1 text-center">
-            <div className="text-blue-600 dark:text-blue-400 font-semibold mb-1">Entry</div>
-            <div className="font-bold text-gray-900 dark:text-white">₹{Math.round(entryPrice)}</div>
+            <div className="text-blue-600 dark:text-blue-400 font-semibold mb-1">
+              {isActiveStatus ? 'Current Price' : 'Entry'}
+            </div>
+            <div className="font-bold text-gray-900 dark:text-white">
+              ₹{Math.round(isActiveStatus ? currentPrice : entryPrice)}
+            </div>
           </div>
 
           {/* Target */}
