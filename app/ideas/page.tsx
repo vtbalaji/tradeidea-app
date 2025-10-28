@@ -8,6 +8,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { IdeaIcon, TargetIcon, EntryIcon, HeartIcon, HeartFilledIcon, EditIcon } from '@/components/icons';
 import { formatIndianDate, getCurrentISTDate, formatDateForDisplay, formatDateForStorage } from '@/lib/dateUtils';
 import { createInvestmentEngine } from '@/lib/investment-rules';
+import { getOverallRecommendation } from '@/lib/exitCriteriaAnalysis';
 import { trackPositionAdded } from '@/lib/analytics';
 import InvestorAnalysisModal from '@/components/InvestorAnalysisModal';
 import TechnicalLevelsCard from '@/components/TechnicalLevelsCard';
@@ -30,6 +31,8 @@ export default function IdeasHubPage() {
   const [currentRecommendation, setCurrentRecommendation] = useState<any>(null);
   const [showAddPositionModal, setShowAddPositionModal] = useState(false);
   const [selectedIdeaForPosition, setSelectedIdeaForPosition] = useState<any>(null);
+  const [openMenuId, setOpenMenuId] = useState<string | null>(null);
+  const [expandedAnalyticsId, setExpandedAnalyticsId] = useState<string | null>(null);
 
   // Check authentication and email verification
   useEffect(() => {
@@ -41,6 +44,21 @@ export default function IdeasHubPage() {
       router.push('/verify');
     }
   }, [user, router]);
+
+  // Close menu when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as HTMLElement;
+      if (!target.closest('.menu-dropdown') && !target.closest('button[title="More actions"]')) {
+        setOpenMenuId(null);
+      }
+    };
+
+    if (openMenuId) {
+      document.addEventListener('mousedown', handleClickOutside);
+      return () => document.removeEventListener('mousedown', handleClickOutside);
+    }
+  }, [openMenuId]);
 
   // Filter ideas based on search and tab
   // Show all ideas except cancelled (cooking/draft ideas are also included)
@@ -180,17 +198,17 @@ export default function IdeasHubPage() {
     return (
       <div
         key={idea.id}
-        className="bg-gray-50 dark:bg-[#1c2128] border border-gray-200 dark:border-[#30363d] rounded-xl p-4 hover:border-[#ff8c42] transition-colors cursor-pointer"
+        className="bg-gray-50 dark:bg-[#1c2128] border border-gray-200 dark:border-[#30363d] rounded-xl p-4 hover:border-[#ff8c42] transition-colors cursor-pointer relative"
         onClick={(e) => {
-          // Only trigger if not clicking on buttons
-          if (!(e.target as HTMLElement).closest('button')) {
+          // Only trigger if not clicking on buttons or menu
+          if (!(e.target as HTMLElement).closest('button') && !(e.target as HTMLElement).closest('.menu-dropdown')) {
             handleAnalyze(e, idea);
           }
         }}
       >
         {/* Header */}
-        <div className="flex justify-between items-center mb-3">
-          <div>
+        <div className="flex justify-between items-start mb-3">
+          <div className="flex-1">
             <h3 className="text-xl font-bold text-gray-900 dark:text-white">{idea.symbol}</h3>
             {(idea.fundamentals?.industry || idea.fundamentals?.sector) && (
               <p className="text-sm text-gray-600 dark:text-[#8b949e] mt-0.5">
@@ -198,9 +216,99 @@ export default function IdeasHubPage() {
               </p>
             )}
           </div>
-          <span className={`px-2 py-1 ${statusBadge.color} text-xs font-semibold rounded`}>
-            {statusBadge.text}
-          </span>
+          <div className="flex items-center gap-2">
+            <span className={`px-2 py-1 ${statusBadge.color} text-xs font-semibold rounded`}>
+              {statusBadge.text}
+            </span>
+
+            {/* Kebab Menu Button */}
+            <div className="relative">
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setOpenMenuId(openMenuId === idea.id ? null : idea.id);
+                }}
+                className="p-1.5 rounded-lg hover:bg-orange-500/10 text-[#ff8c42] transition-colors"
+                title="More actions"
+              >
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                  <circle cx="12" cy="5" r="2"/>
+                  <circle cx="12" cy="12" r="2"/>
+                  <circle cx="12" cy="19" r="2"/>
+                </svg>
+              </button>
+
+              {/* Dropdown Menu */}
+              {openMenuId === idea.id && (
+                <div
+                  className="menu-dropdown absolute right-0 top-full mt-1 w-48 bg-white dark:bg-[#1c2128] border border-gray-200 dark:border-[#30363d] rounded-lg shadow-lg z-50 overflow-hidden"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  {/* Analyze */}
+                  <button
+                    onClick={(e) => {
+                      handleAnalyze(e, idea);
+                      setOpenMenuId(null);
+                    }}
+                    disabled={!idea.technicals || !idea.fundamentals}
+                    className="w-full flex items-center gap-3 px-4 py-3 hover:bg-orange-500/10 text-gray-700 dark:text-gray-300 hover:text-[#ff8c42] transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-left"
+                  >
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"/>
+                    </svg>
+                    <span className="font-medium">Analysis</span>
+                  </button>
+
+                  {/* To Portfolio */}
+                  <button
+                    onClick={(e) => {
+                      handleConvertToPosition(e, idea);
+                      setOpenMenuId(null);
+                    }}
+                    className="w-full flex items-center gap-3 px-4 py-3 hover:bg-orange-500/10 text-gray-700 dark:text-gray-300 hover:text-[#ff8c42] transition-colors text-left"
+                  >
+                    <svg width="18" height="18" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
+                      <path d="M2 8h12M8 2v12" strokeLinecap="round" strokeLinejoin="round"/>
+                    </svg>
+                    <span className="font-medium">To Portfolio</span>
+                  </button>
+
+                  {/* Share */}
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      const shareUrl = `${window.location.origin}/share/${idea.id}`;
+                      navigator.clipboard.writeText(shareUrl);
+                      alert('Share link copied! Anyone can view this idea without logging in.');
+                      setOpenMenuId(null);
+                    }}
+                    className="w-full flex items-center gap-3 px-4 py-3 hover:bg-orange-500/10 text-gray-700 dark:text-gray-300 hover:text-[#ff8c42] transition-colors text-left"
+                  >
+                    <svg width="18" height="18" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
+                      <circle cx="4" cy="8" r="2"/>
+                      <circle cx="12" cy="4" r="2"/>
+                      <circle cx="12" cy="12" r="2"/>
+                      <path d="M5.5 7L10.5 5M5.5 9L10.5 11"/>
+                    </svg>
+                    <span className="font-medium">Share</span>
+                  </button>
+
+                  {/* Edit */}
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      router.push(`/ideas/${idea.id}`);
+                      setOpenMenuId(null);
+                    }}
+                    className="w-full flex items-center gap-3 px-4 py-3 hover:bg-orange-500/10 text-gray-700 dark:text-gray-300 hover:text-[#ff8c42] transition-colors text-left"
+                  >
+                    <EditIcon size={18} className="w-4.5 h-4.5" />
+                    <span className="font-medium">Edit</span>
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
         </div>
 
         {/* Tags */}
@@ -237,84 +345,68 @@ export default function IdeasHubPage() {
           </div>
         )}
 
-        {/* Technical Levels, Fundamentals & Financial */}
+        {/* Analytics Section */}
         {(idea.technicals || idea.fundamentals) && (
-          <div className="mb-3 p-3 bg-white dark:bg-[#0f1419] border border-gray-200 dark:border-[#30363d] rounded-lg">
-            {idea.technicals && (
-              <TechnicalLevelsCard technicals={idea.technicals} className="mb-3" />
-            )}
-            {idea.fundamentals && (
-              <FundamentalsCard
-                fundamentals={idea.fundamentals}
-                showBorder={!!idea.technicals}
-                className="mb-3"
-              />
-            )}
-            {idea.fundamentals && (idea.fundamentals.debtToEquity !== undefined || idea.fundamentals.piotroskiScore !== undefined) && (
-              <FinancialCard
-                financial={{
-                  debtToEquity: idea.fundamentals.debtToEquity,
-                  piotroskiScore: idea.fundamentals.piotroskiScore
+          <>
+            {/* Expandable Analytics Button */}
+            <div className="flex justify-center mb-3">
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setExpandedAnalyticsId(expandedAnalyticsId === idea.id ? null : idea.id);
                 }}
-                showBorder={!!(idea.technicals || idea.fundamentals)}
-              />
+                className="p-2 hover:bg-orange-500/10 rounded-full transition-colors text-[#ff8c42] hover:text-[#ff7a2e]"
+                title={expandedAnalyticsId === idea.id ? "Hide details" : "Show details"}
+              >
+                <svg
+                  width="24"
+                  height="24"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  className={`transform transition-transform duration-200 ${
+                    expandedAnalyticsId === idea.id ? 'rotate-180' : ''
+                  }`}
+                >
+                  <path d="M6 9l6 6 6-6"/>
+                </svg>
+              </button>
+            </div>
+
+            {/* Expanded Detailed View */}
+            {expandedAnalyticsId === idea.id && (
+              <div className="mb-3 p-3 bg-white dark:bg-[#0f1419] border border-gray-200 dark:border-[#30363d] rounded-lg">
+                {idea.technicals && (
+                  <TechnicalLevelsCard technicals={idea.technicals} className="mb-3" defaultExpanded={true} />
+                )}
+                {idea.fundamentals && (
+                  <FundamentalsCard
+                    fundamentals={idea.fundamentals}
+                    showBorder={!!idea.technicals}
+                    className="mb-3"
+                    defaultExpanded={true}
+                  />
+                )}
+                {idea.fundamentals && (idea.fundamentals.debtToEquity !== undefined || idea.fundamentals.piotroskiScore !== undefined) && (
+                  <FinancialCard
+                    financial={{
+                      debtToEquity: idea.fundamentals.debtToEquity,
+                      piotroskiScore: idea.fundamentals.piotroskiScore
+                    }}
+                    showBorder={!!(idea.technicals || idea.fundamentals)}
+                    defaultExpanded={true}
+                  />
+                )}
+              </div>
             )}
-          </div>
+          </>
         )}
 
         {/* Footer */}
         <div className="pt-3 border-t border-gray-200 dark:border-[#30363d]">
-          {/* Action Buttons */}
-          <div className="grid grid-cols-4 gap-2 mb-3">
-            {/* Analyze Button */}
-            <AnalysisButton
-              onClick={(e) => handleAnalyze(e, idea)}
-              disabled={!idea.technicals || !idea.fundamentals}
-            />
-
-            {/* Convert to Position Button */}
-            <button
-              onClick={(e) => handleConvertToPosition(e, idea)}
-              className="flex items-center justify-center gap-1.5 px-3 py-1.5 bg-gray-100 dark:bg-[#30363d] hover:bg-gray-200 dark:hover:bg-[#3c444d] border border-gray-200 dark:border-[#444c56] text-gray-700 dark:text-gray-300 text-xs font-semibold rounded-lg transition-colors"
-            >
-              <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
-                <path d="M2 8h12M8 2v12" strokeLinecap="round" strokeLinejoin="round"/>
-              </svg>
-              <span>To Portfolio</span>
-            </button>
-
-            {/* Share Button */}
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                const shareUrl = `${window.location.origin}/share/${idea.id}`;
-                navigator.clipboard.writeText(shareUrl);
-                alert('Share link copied! Anyone can view this idea without logging in.');
-              }}
-              className="flex items-center justify-center gap-1.5 px-3 py-1.5 bg-gray-100 dark:bg-[#30363d] hover:bg-gray-200 dark:hover:bg-[#3c444d] border border-gray-200 dark:border-[#444c56] text-gray-700 dark:text-gray-300 text-xs font-semibold rounded-lg transition-colors"
-            >
-              <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
-                <circle cx="4" cy="8" r="2"/>
-                <circle cx="12" cy="4" r="2"/>
-                <circle cx="12" cy="12" r="2"/>
-                <path d="M5.5 7L10.5 5M5.5 9L10.5 11"/>
-              </svg>
-              <span>Share</span>
-            </button>
-
-            {/* Edit Button */}
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                router.push(`/ideas/${idea.id}`);
-              }}
-              className="flex items-center justify-center gap-1.5 px-3 py-1.5 bg-gray-100 dark:bg-[#30363d] hover:bg-gray-200 dark:hover:bg-[#3c444d] border border-gray-200 dark:border-[#444c56] text-gray-700 dark:text-gray-300 text-xs font-semibold rounded-lg transition-colors"
-            >
-              <EditIcon size={14} className="w-3.5 h-3.5" />
-              <span>Edit</span>
-            </button>
-          </div>
-
           {/* Stats and Creator Info */}
           <div className="flex justify-between items-center">
             <div className="flex gap-3 text-sm text-gray-600 dark:text-[#8b949e]">
