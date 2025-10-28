@@ -35,10 +35,10 @@ export function checkMomentumTraderEntry(
     priceAboveSMA20: (technical.sma20 !== undefined && technical.sma20 !== null) && technical.lastPrice > technical.sma20,
     priceAboveSMA50: (technical.sma50 !== undefined && technical.sma50 !== null) && technical.lastPrice > technical.sma50,
     rsiNotOverbought: (rsi !== undefined && rsi !== null) && rsi > 50,
-    withinOrAboveBollingerBands: (bollingerMiddle !== undefined && bollingerMiddle !== null &&
-                                  bollingerUpper !== undefined && bollingerUpper !== null) &&
-                                  technical.lastPrice > bollingerMiddle &&
-                                  technical.lastPrice <= (bollingerUpper * 1.05),
+    withinBollingerBands: (bollingerMiddle !== undefined && bollingerMiddle !== null &&
+                           bollingerUpper !== undefined && bollingerUpper !== null) &&
+                           technical.lastPrice > bollingerMiddle &&
+                           technical.lastPrice <= (bollingerUpper * 1.05),
     volumeConfirmation: signals.volumeSpike === true ||
                         ((technical.volume !== undefined && technical.volume !== null &&
                           technical.avgVolume20 !== undefined && technical.avgVolume20 !== null) &&
