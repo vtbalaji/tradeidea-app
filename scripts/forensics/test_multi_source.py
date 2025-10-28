@@ -5,7 +5,16 @@ Test Multi-Source Data Loading
 Shows how XBRL + Yahoo fallback works for different sectors
 """
 
-from multi_source_loader import MultiSourceDataLoader, DataQualityScorer
+import sys
+import os
+
+# Add scripts directory to path for cross-folder imports
+current_dir = os.path.dirname(os.path.abspath(__file__))
+scripts_dir = os.path.dirname(current_dir)
+if scripts_dir not in sys.path:
+    sys.path.insert(0, scripts_dir)
+
+from forensics.multi_source_loader import MultiSourceDataLoader, DataQualityScorer
 
 def test_company(symbol, years=3):
     """Test multi-source loading for a company"""

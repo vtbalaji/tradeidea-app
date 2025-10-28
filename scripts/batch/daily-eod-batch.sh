@@ -8,9 +8,9 @@
 set -e  # Exit on error
 set -o pipefail  # Catch errors in pipes
 
-# Change to project root
+# Change to project root (script is now in scripts/batch/, need to go up 2 levels)
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+PROJECT_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 cd "$PROJECT_ROOT"
 
 # Setup logging
@@ -61,7 +61,7 @@ fi
 # 1. Fetch NSE EOD Data
 log "📥 Step 1/10: Fetching NSE EOD Data..."
 START_TIME=$(date +%s)
-if $PYTHON scripts/fetch-eod-data.py >> "$LOG_FILE" 2>&1; then
+if $PYTHON scripts/technical/fetch-eod-data.py >> "$LOG_FILE" 2>&1; then
     END_TIME=$(date +%s)
     DURATION=$((END_TIME - START_TIME))
     log "✅ EOD fetch completed in ${DURATION}s"
@@ -75,7 +75,7 @@ fi
 log ""
 log "📊 Step 2/10: Fetching Nifty 50 Index Data..."
 START_TIME=$(date +%s)
-if $PYTHON scripts/fetch-nifty50-index.py >> "$LOG_FILE" 2>&1; then
+if $PYTHON scripts/technical/fetch-nifty50-index.py >> "$LOG_FILE" 2>&1; then
     END_TIME=$(date +%s)
     DURATION=$((END_TIME - START_TIME))
     log "✅ Nifty 50 fetch completed in ${DURATION}s"
@@ -90,7 +90,7 @@ fi
 log ""
 log "📊 Step 3/10: Running Technical Analysis..."
 START_TIME=$(date +%s)
-if $PYTHON scripts/analyze-symbols-duckdb.py >> "$LOG_FILE" 2>&1; then
+if $PYTHON scripts/technical/analyze-symbols-duckdb.py >> "$LOG_FILE" 2>&1; then
     END_TIME=$(date +%s)
     DURATION=$((END_TIME - START_TIME))
     log "✅ Technical analysis completed in ${DURATION}s"
@@ -104,7 +104,7 @@ fi
 log ""
 log "🔍 Step 4/10: Running Screeners..."
 START_TIME=$(date +%s)
-if $PYTHON scripts/screeners.py >> "$LOG_FILE" 2>&1; then
+if $PYTHON scripts/analysis/screeners.py >> "$LOG_FILE" 2>&1; then
     END_TIME=$(date +%s)
     DURATION=$((END_TIME - START_TIME))
     log "✅ Screeners completed in ${DURATION}s"
@@ -118,7 +118,7 @@ fi
 log ""
 log "🧹 Step 5/10: Cleaning up old Firebase data..."
 START_TIME=$(date +%s)
-if $PYTHON scripts/cleanup-firebase.py >> "$LOG_FILE" 2>&1; then
+if $PYTHON scripts/technical/cleanup-firebase.py >> "$LOG_FILE" 2>&1; then
     END_TIME=$(date +%s)
     DURATION=$((END_TIME - START_TIME))
     log "✅ Firebase cleanup completed in ${DURATION}s"
@@ -133,7 +133,7 @@ fi
 log ""
 log "📈 Step 6/10: Generating Chart Data..."
 START_TIME=$(date +%s)
-if $PYTHON scripts/generate-chart-data.py --priority --top 250 >> "$LOG_FILE" 2>&1; then
+if $PYTHON scripts/technical/generate-chart-data.py --priority --top 500 >> "$LOG_FILE" 2>&1; then
     END_TIME=$(date +%s)
     DURATION=$((END_TIME - START_TIME))
     log "✅ Chart data generation completed in ${DURATION}s"
@@ -147,7 +147,7 @@ fi
 log ""
 log "🛡️  Step 7/10: Managing Portfolio Stop-Loss..."
 START_TIME=$(date +%s)
-if $PYTHON scripts/manage-portfolio-stoploss.py >> "$LOG_FILE" 2>&1; then
+if $PYTHON scripts/portfolio/manage-portfolio-stoploss.py >> "$LOG_FILE" 2>&1; then
     END_TIME=$(date +%s)
     DURATION=$((END_TIME - START_TIME))
     log "✅ Stop-loss management completed in ${DURATION}s"
@@ -161,7 +161,7 @@ fi
 log ""
 log "🔔 Step 8/10: Checking and Generating Alerts..."
 START_TIME=$(date +%s)
-if $PYTHON scripts/check-and-generate-alerts.py >> "$LOG_FILE" 2>&1; then
+if $PYTHON scripts/portfolio/check-and-generate-alerts.py >> "$LOG_FILE" 2>&1; then
     END_TIME=$(date +%s)
     DURATION=$((END_TIME - START_TIME))
     log "✅ Alert generation completed in ${DURATION}s"
@@ -174,23 +174,23 @@ fi
 # 7. Expire Old Trading Ideas
 log ""
 log "⏰ Step 9/10: Expiring old trading ideas..."
-# START_TIME=$(date +%s)
-# if $PYTHON scripts/expire-ideas.py >> "$LOG_FILE" 2>&1; then
-#     END_TIME=$(date +%s)
-#     DURATION=$((END_TIME - START_TIME))
-#     log "✅ Idea expiry check completed in ${DURATION}s"
-# else
-#     EXIT_CODE=$?
-#     log_error "Idea expiry check failed with exit code $EXIT_CODE"
-#     # Don't exit - this is not critical, continue with other steps
-#     log "⚠️  Continuing despite expiry check failure..."
-# fi
+START_TIME=$(date +%s)
+if $PYTHON scripts/portfolio/expire-ideas.py >> "$LOG_FILE" 2>&1; then
+    END_TIME=$(date +%s)
+    DURATION=$((END_TIME - START_TIME))
+    log "✅ Idea expiry check completed in ${DURATION}s"
+else
+    EXIT_CODE=$?
+    log_error "Idea expiry check failed with exit code $EXIT_CODE"
+    # Don't exit - this is not critical, continue with other steps
+    log "⚠️  Continuing despite expiry check failure..."
+fi
 
 # 8. Check Idea Entry/Exit Triggers
 log ""
 log "🔔 Step 10/10: Checking idea triggers and sending alerts..."
 START_TIME=$(date +%s)
-if $PYTHON scripts/check-idea-triggers.py >> "$LOG_FILE" 2>&1; then
+if $PYTHON scripts/portfolio/check-idea-triggers.py >> "$LOG_FILE" 2>&1; then
     END_TIME=$(date +%s)
     DURATION=$((END_TIME - START_TIME))
     log "✅ Idea trigger check completed in ${DURATION}s"

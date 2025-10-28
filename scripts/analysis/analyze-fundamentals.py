@@ -16,13 +16,16 @@ from datetime import datetime
 import sys
 import os
 
-# Add scripts directory to path for imports
-sys.path.insert(0, os.path.join(os.path.dirname(__file__)))
+# Add scripts directory to path for cross-folder imports
+current_dir = os.path.dirname(os.path.abspath(__file__))
+scripts_dir = os.path.dirname(current_dir)
+if scripts_dir not in sys.path:
+    sys.path.insert(0, scripts_dir)
 
-# Import Yahoo DuckDB fetcher, PEG calculator, and XBRL enricher
-from yahoo_fundamentals_fetcher import YahooFundamentalsFetcher
-from peg_calculator import PEGCalculator
-from yahoo_xbrl_enricher import YahooXBRLEnricher
+# Import from reorganized folders
+from technical.yahoo_fundamentals_fetcher import YahooFundamentalsFetcher
+from analysis.peg_calculator import PEGCalculator
+from fundamental.yahoo_xbrl_enricher import YahooXBRLEnricher
 
 # Initialize Firebase
 cred_path = os.path.join(os.getcwd(), 'serviceAccountKey.json')

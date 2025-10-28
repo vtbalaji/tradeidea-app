@@ -3,8 +3,8 @@
 Trading Ideas Trigger Detection Batch Job
 
 Checks ACTIVE trading ideas for entry/exit conditions and sends notifications:
-1. ACTIVE ideas: Check if entry price is near current price (within 2%)
-2. TRIGGERED ideas: Check if target or stop-loss is hit
+1. ACTIVE ideas: Check if entry price is within day's high/low range → Auto-trigger
+2. TRIGGERED ideas: Check if target or stop-loss is hit → Auto-update status
 
 Runs as part of daily EOD batch process.
 """
@@ -14,6 +14,7 @@ from firebase_admin import credentials, firestore
 from datetime import datetime, timedelta
 import sys
 import os
+import duckdb
 
 # Initialize Firebase
 cred_path = os.path.join(os.getcwd(), 'serviceAccountKey.json')
@@ -29,6 +30,76 @@ except ValueError:
     pass
 
 db = firestore.client()
+
+# Connect to DuckDB for OHLC data
+db_path = os.path.join(os.getcwd(), 'data', 'eod.duckdb')
+duckdb_conn = duckdb.connect(db_path, read_only=True)
+
+def get_today_ohlc(symbol, max_days_back=7):
+    """
+    Fetch recent OHLC data from DuckDB
+    Tries today first, then goes back up to max_days_back days
+    """
+    try:
+        today = datetime.now().date()
+
+        # Try each day going backwards
+        for days_back in range(max_days_back):
+            check_date = today - timedelta(days=days_back)
+
+            # Query DuckDB for this date
+            query = """
+                SELECT open, high, low, close, ltp, date
+                FROM ohlcv
+                WHERE symbol = ? AND date = ?
+                ORDER BY date DESC
+                LIMIT 1
+            """
+            result = duckdb_conn.execute(query, [symbol, check_date]).fetchone()
+
+            if result:
+                ohlc_date = result[5]
+                # If not today's data, log it
+                if days_back > 0:
+                    print(f'  ℹ️  {symbol}: Using data from {ohlc_date} ({days_back} day(s) ago)')
+
+                return {
+                    'open': result[0],
+                    'high': result[1],
+                    'low': result[2],
+                    'close': result[3],
+                    'ltp': result[4] or result[3],  # Use close if ltp is null
+                    'date': ohlc_date
+                }
+
+        # If no data found within max_days_back, try to get the most recent data
+        query = """
+            SELECT open, high, low, close, ltp, date
+            FROM ohlcv
+            WHERE symbol = ?
+            ORDER BY date DESC
+            LIMIT 1
+        """
+        result = duckdb_conn.execute(query, [symbol]).fetchone()
+
+        if result:
+            ohlc_date = result[5]
+            days_diff = (today - ohlc_date).days
+            print(f'  ⚠️  {symbol}: Using old data from {ohlc_date} ({days_diff} days old)')
+
+            return {
+                'open': result[0],
+                'high': result[1],
+                'low': result[2],
+                'close': result[3],
+                'ltp': result[4] or result[3],
+                'date': ohlc_date
+            }
+
+        return None
+    except Exception as e:
+        print(f'  ⚠️  Error fetching OHLC for {symbol}: {str(e)}')
+        return None
 
 def get_symbol_data(symbol):
     """Fetch symbol technical data from symbols collection"""
@@ -77,6 +148,29 @@ def create_notification(notification_data):
         print(f'  ⚠️  Error creating notification: {str(e)}')
         return False
 
+def update_idea_status(idea_id, new_status):
+    """Update idea status in Firestore"""
+    try:
+        db.collection('tradingIdeas').document(idea_id).update({
+            'status': new_status,
+            'updatedAt': firestore.SERVER_TIMESTAMP
+        })
+        return True
+    except Exception as e:
+        print(f'  ⚠️  Error updating idea status: {str(e)}')
+        return False
+
+def check_entry_triggered(entry_price, day_low, day_high, trade_type='Long'):
+    """
+    Check if entry price was triggered during the day
+    Entry is triggered if it falls within day's low/high range
+    """
+    if not entry_price or not day_low or not day_high:
+        return False
+
+    # Entry triggered if entry price is within day's range
+    return day_low <= entry_price <= day_high
+
 def check_entry_alert(symbol, entry_price, current_price, trade_type='Long'):
     """Check if idea entry price is near current price (within 2%)"""
     if not current_price or not entry_price:
@@ -103,6 +197,55 @@ def check_entry_alert(symbol, entry_price, current_price, trade_type='Long'):
                 'message': f'{symbol} near entry price! Current: ₹{current_price:.2f}, Entry: ₹{entry_price:.2f} ({variance:.1f}% diff)',
                 'currentPrice': current_price,
                 'entryPrice': entry_price
+            }
+
+    return None
+
+def check_exit_triggered_during_day(day_low, day_high, targets, stop_loss, trade_type='Long'):
+    """
+    Check if target or stop-loss was hit during the day
+    Returns the new status and alert details
+    """
+    if not day_low or not day_high:
+        return None
+
+    # Check stop-loss first (higher priority)
+    if stop_loss:
+        if trade_type == 'Long' and day_low <= stop_loss:
+            # For Long: SL hit if day's low touched or went below SL
+            return {
+                'new_status': 'STOP_LOSS',
+                'type': 'stoploss_alert',
+                'exitReason': 'STOP_LOSS_HIT'
+            }
+        elif trade_type == 'Short' and day_high >= stop_loss:
+            # For Short: SL hit if day's high touched or went above SL
+            return {
+                'new_status': 'STOP_LOSS',
+                'type': 'stoploss_alert',
+                'exitReason': 'STOP_LOSS_HIT'
+            }
+
+    # Check targets
+    for i, target in enumerate(targets, 1):
+        if not target:
+            continue
+
+        if trade_type == 'Long' and day_high >= target:
+            # For Long: Target hit if day's high touched or exceeded target
+            return {
+                'new_status': 'PROFIT_BOOKED',
+                'type': 'target_alert',
+                'targetNumber': i,
+                'exitReason': f'TARGET_{i}_HIT'
+            }
+        elif trade_type == 'Short' and day_low <= target:
+            # For Short: Target hit if day's low touched or went below target
+            return {
+                'new_status': 'PROFIT_BOOKED',
+                'type': 'target_alert',
+                'targetNumber': i,
+                'exitReason': f'TARGET_{i}_HIT'
             }
 
     return None
@@ -201,49 +344,58 @@ def check_active_ideas():
 
     for symbol, ideas in symbol_ideas.items():
         try:
-            # Get symbol data
-            symbol_data = get_symbol_data(symbol)
-            if not symbol_data or not symbol_data.get('technical'):
-                print(f'  ⚠️  {symbol}: No technical data')
+            # Get today's OHLC data from DuckDB
+            ohlc = get_today_ohlc(symbol)
+            if not ohlc:
+                print(f'  ⚠️  {symbol}: No OHLC data for today')
                 continue
 
-            technical = symbol_data['technical']
-            current_price = technical.get('lastPrice')
+            day_low = ohlc['low']
+            day_high = ohlc['high']
+            current_price = ohlc['ltp']
 
-            if not current_price:
-                print(f'  ⚠️  {symbol}: No current price')
+            if not day_low or not day_high or not current_price:
+                print(f'  ⚠️  {symbol}: Incomplete OHLC data')
                 continue
 
             # Check each idea for this symbol
             for idea in ideas:
                 idea_id = idea['id']
-
-                # Skip if recent alert exists
-                if has_recent_alert(idea_id, 'entry_alert', hours=24):
-                    continue
-
                 entry_price = idea.get('entryPrice')
                 trade_type = idea.get('tradeType', 'Long')
 
                 if not entry_price:
                     continue
 
-                alert = check_entry_alert(symbol, entry_price, current_price, trade_type)
+                # Check if entry was triggered during the day
+                entry_triggered = check_entry_triggered(entry_price, day_low, day_high, trade_type)
 
-                if alert:
+                if entry_triggered:
                     title = idea.get('title', 'Untitled')
-                    print(f'  🎯 {symbol}: {alert["message"]}')
+                    print(f'  ✅ {symbol}: Entry TRIGGERED!')
+                    print(f'     Entry: ₹{entry_price:.2f}, Day Range: ₹{day_low:.2f} - ₹{day_high:.2f}')
                     print(f'     Idea: {title}')
+
+                    # Update status to TRIGGERED
+                    if update_idea_status(idea_id, 'TRIGGERED'):
+                        print(f'     🔄 Status updated: active → TRIGGERED')
+
+                    # Check if we should send alert (not already sent today)
+                    if has_recent_alert(idea_id, 'entry_triggered_alert', hours=24):
+                        print(f'     ⏭️  Alert already sent today, skipping notification')
+                        continue
+
+                    alert_message = f'{symbol} entry triggered! Entry: ₹{entry_price:.2f}, Day Range: ₹{day_low:.2f} - ₹{day_high:.2f}'
 
                     # Notify idea owner
                     create_notification({
                         'userId': idea['userId'],
-                        'type': 'entry_alert',
+                        'type': 'entry_triggered_alert',
                         'fromUserId': 'system',
                         'fromUserName': 'TradeIdea Bot',
                         'ideaId': idea_id,
                         'ideaSymbol': symbol,
-                        'message': alert['message'],
+                        'message': alert_message,
                         'read': False,
                         'createdAt': firestore.SERVER_TIMESTAMP
                     })
@@ -256,12 +408,12 @@ def check_active_ideas():
                         if follower_id != idea['userId']:  # Don't double-notify owner
                             create_notification({
                                 'userId': follower_id,
-                                'type': 'entry_alert',
+                                'type': 'entry_triggered_alert',
                                 'fromUserId': idea['userId'],
                                 'fromUserName': idea.get('userName', 'A trader'),
                                 'ideaId': idea_id,
                                 'ideaSymbol': symbol,
-                                'message': f"{idea.get('userName', 'A trader')}'s idea: {alert['message']}",
+                                'message': f"{idea.get('userName', 'A trader')}'s idea: {alert_message}",
                                 'read': False,
                                 'createdAt': firestore.SERVER_TIMESTAMP
                             })
@@ -314,22 +466,24 @@ def check_triggered_ideas():
 
     for symbol, ideas in symbol_ideas.items():
         try:
-            # Get symbol data
-            symbol_data = get_symbol_data(symbol)
-            if not symbol_data or not symbol_data.get('technical'):
-                print(f'  ⚠️  {symbol}: No technical data')
+            # Get today's OHLC data from DuckDB
+            ohlc = get_today_ohlc(symbol)
+            if not ohlc:
+                print(f'  ⚠️  {symbol}: No OHLC data for today')
                 continue
 
-            technical = symbol_data['technical']
-            current_price = technical.get('lastPrice')
+            day_low = ohlc['low']
+            day_high = ohlc['high']
+            current_price = ohlc['ltp']
 
-            if not current_price:
-                print(f'  ⚠️  {symbol}: No current price')
+            if not day_low or not day_high or not current_price:
+                print(f'  ⚠️  {symbol}: Incomplete OHLC data')
                 continue
 
             # Check each idea
             for idea in ideas:
                 idea_id = idea['id']
+                title = idea.get('title', 'Untitled')
 
                 # Get targets and stop-loss
                 targets = [
@@ -340,29 +494,47 @@ def check_triggered_ideas():
                 stop_loss = idea.get('stopLoss')
                 trade_type = idea.get('tradeType', 'Long')
 
-                alert = check_exit_alert(symbol, current_price, targets, stop_loss, trade_type)
+                # Check if exit was triggered during the day
+                exit_result = check_exit_triggered_during_day(day_low, day_high, targets, stop_loss, trade_type)
 
-                if alert:
-                    # Skip if recent alert
-                    if has_recent_alert(idea_id, alert['type'], hours=24):
-                        continue
+                if exit_result:
+                    new_status = exit_result['new_status']
+                    exit_type = exit_result['type']
+                    exit_reason = exit_result['exitReason']
 
-                    title = idea.get('title', 'Untitled')
-                    print(f'  {alert["message"]}')
+                    # Determine the message
+                    if new_status == 'STOP_LOSS':
+                        message = f'🛑 {symbol} hit Stop Loss! SL: ₹{stop_loss:.2f}, Day Low: ₹{day_low:.2f}'
+                    else:  # PROFIT_BOOKED
+                        target_num = exit_result.get('targetNumber', 1)
+                        target_price = targets[target_num - 1]
+                        message = f'🎯 {symbol} hit Target {target_num}! Target: ₹{target_price:.2f}, Day High: ₹{day_high:.2f}'
+
+                    print(f'  ✅ {symbol}: Exit TRIGGERED!')
+                    print(f'     {message}')
                     print(f'     Idea: {title}')
+
+                    # Update status
+                    if update_idea_status(idea_id, new_status):
+                        print(f'     🔄 Status updated: TRIGGERED → {new_status}')
+
+                    # Skip if recent alert
+                    if has_recent_alert(idea_id, exit_type, hours=24):
+                        print(f'     ⏭️  Alert already sent today, skipping notification')
+                        continue
 
                     # Notify owner
                     create_notification({
                         'userId': idea['userId'],
-                        'type': alert['type'],
+                        'type': exit_type,
                         'fromUserId': 'system',
                         'fromUserName': 'TradeIdea Bot',
                         'ideaId': idea_id,
                         'ideaSymbol': symbol,
-                        'message': alert['message'],
+                        'message': message,
                         'read': False,
                         'createdAt': firestore.SERVER_TIMESTAMP,
-                        'exitReason': alert.get('exitReason')
+                        'exitReason': exit_reason
                     })
                     print(f'     📬 Notified owner: {idea.get("userName", "Unknown")}')
 
@@ -373,15 +545,15 @@ def check_triggered_ideas():
                         if follower_id != idea['userId']:
                             create_notification({
                                 'userId': follower_id,
-                                'type': alert['type'],
+                                'type': exit_type,
                                 'fromUserId': idea['userId'],
                                 'fromUserName': idea.get('userName', 'A trader'),
                                 'ideaId': idea_id,
                                 'ideaSymbol': symbol,
-                                'message': f"{idea.get('userName', 'A trader')}'s idea: {alert['message']}",
+                                'message': f"{idea.get('userName', 'A trader')}'s idea: {message}",
                                 'read': False,
                                 'createdAt': firestore.SERVER_TIMESTAMP,
-                                'exitReason': alert.get('exitReason')
+                                'exitReason': exit_reason
                             })
                             follower_count += 1
 
@@ -421,6 +593,10 @@ def main():
         import traceback
         traceback.print_exc()
         sys.exit(1)
+    finally:
+        # Close DuckDB connection
+        if duckdb_conn:
+            duckdb_conn.close()
 
 if __name__ == '__main__':
     main()

@@ -1,0 +1,7 @@
+[2025-10-28 10:46:08] 🚀 Starting Daily EOD Batch Process
+[2025-10-28 10:46:08] ====================================
+[2025-10-28 10:46:08] Project Root: /Volumes/ssd-backup/git/SmartFarm/myportfolio-web/scripts
+[2025-10-28 10:46:08] Log File: /Volumes/ssd-backup/git/SmartFarm/myportfolio-web/scripts/logs/eod-batch-20251028_104608.log
+[2025-10-28 10:46:08] 
+[2025-10-28 10:46:08] ERROR: Virtual environment not found!
+[2025-10-28 10:46:08] ERROR: Please run: ./scripts/setup-venv.sh

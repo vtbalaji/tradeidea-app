@@ -16,11 +16,13 @@ import sys
 import os
 from datetime import datetime, timedelta
 
-# Add experimental directory to path
+# Add scripts directory to path for cross-folder imports
 current_dir = os.path.dirname(os.path.abspath(__file__))
-sys.path.insert(0, os.path.join(current_dir, 'experimental'))
+scripts_dir = os.path.dirname(current_dir)
+if scripts_dir not in sys.path:
+    sys.path.insert(0, scripts_dir)
 
-from fetch_nse_data import NSEDataFetcher
+from experimental.fetch_nse_data import NSEDataFetcher
 
 def fetch_nifty50_data():
     """Fetch Nifty 50 index data and store in DuckDB"""

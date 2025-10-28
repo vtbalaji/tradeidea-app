@@ -14,11 +14,13 @@ import sys
 import glob
 from pathlib import Path
 
-# Add current directory to path
+# Add scripts directory to path for cross-folder imports
 current_dir = os.path.dirname(os.path.abspath(__file__))
-sys.path.insert(0, current_dir)
+scripts_dir = os.path.dirname(current_dir)
+if scripts_dir not in sys.path:
+    sys.path.insert(0, scripts_dir)
 
-from fundamental_xbrl_storage import XBRLStorage
+from fundamental.fundamental_xbrl_storage import XBRLStorage
 
 
 def parse_filename(filename):

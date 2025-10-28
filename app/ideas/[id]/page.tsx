@@ -204,7 +204,7 @@ export default function IdeaDetailPage() {
   };
 
   const handleDeleteIdea = async () => {
-    if (!confirm('Are you sure you want to close this idea? It will be hidden from the Ideas Hub.')) return;
+    if (!confirm('Are you sure you want to cancel this idea? It will be hidden from the Ideas Hub.')) return;
 
     setLoading(true);
     try {
@@ -379,7 +379,7 @@ export default function IdeaDetailPage() {
                   className="px-4 py-2 bg-red-500/30 hover:bg-red-500/40 backdrop-blur-md border border-red-500/50 text-white text-sm font-semibold rounded-lg transition-all flex items-center gap-2"
                 >
                   <FontAwesomeIcon icon={faXmark} className="w-4 h-4" />
-                  Close Idea
+                  Cancel Idea
                 </button>
               </div>
             )}

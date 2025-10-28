@@ -68,3 +68,8 @@ __pycache__/
 # Output directories (can be safely deleted)
 output/
 output/**
+scripts/tobedelete/**
+scripts/tobedelete/
+scripts/unused/
+scripts/unused/** 
+

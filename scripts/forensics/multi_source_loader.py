@@ -24,13 +24,13 @@ import sys
 import os
 from datetime import datetime
 
-# Add parent directory to path
+# Add scripts directory to path for cross-folder imports
 current_dir = os.path.dirname(os.path.abspath(__file__))
-parent_dir = os.path.dirname(current_dir)
-sys.path.insert(0, current_dir)
-sys.path.insert(0, parent_dir)
+scripts_dir = os.path.dirname(current_dir)
+if scripts_dir not in sys.path:
+    sys.path.insert(0, scripts_dir)
 
-from data_loader import ForensicDataLoader
+from forensics.data_loader import ForensicDataLoader
 
 
 class DataQualityScorer:

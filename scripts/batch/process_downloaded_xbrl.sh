@@ -48,15 +48,15 @@ echo ""
 echo "📋 Step 1: Organizing files..."
 echo "------------------------------------------------------------------------"
 
-if [ -f "./scripts/organize_xbrl_files.py" ]; then
+if [ -f "./scripts/fundamental/organize_xbrl_files.py" ]; then
     # Try auto mode first
     echo "Attempting auto-organization..."
-    ./scripts/organize_xbrl_files.py --dir "$SOURCE_DIR" --auto --dry-run
+    ./scripts/fundamental/organize_xbrl_files.py --dir "$SOURCE_DIR" --auto --dry-run
 
     read -p "Continue with organization? [Y/n] " -n 1 -r
     echo
     if [[ $REPLY =~ ^[Yy]$ ]] || [[ -z $REPLY ]]; then
-        ./scripts/organize_xbrl_files.py --dir "$SOURCE_DIR" --auto
+        ./scripts/fundamental/organize_xbrl_files.py --dir "$SOURCE_DIR" --auto
     else
         echo "⏭️  Skipped organization"
     fi
@@ -70,14 +70,14 @@ echo ""
 echo "📊 Step 2: Processing XBRL files..."
 echo "------------------------------------------------------------------------"
 
-if [ -f "./scripts/xbrl_eod.py" ]; then
+if [ -f "./scripts/fundamental/xbrl_eod.py" ]; then
     XBRL_COUNT=$(find ./xbrl -maxdepth 1 -name "*.xml" -type f 2>/dev/null | wc -l | tr -d ' ')
 
     if [ "$XBRL_COUNT" -eq 0 ]; then
         echo "⚠️  No XML files found in xbrl/ directory"
     else
         echo "Processing $XBRL_COUNT XBRL files..."
-        ./scripts/xbrl_eod.py --dir xbrl/
+        ./scripts/fundamental/xbrl_eod.py --dir xbrl/
     fi
 else
     echo "⚠️  xbrl_eod.py not found, skipping..."

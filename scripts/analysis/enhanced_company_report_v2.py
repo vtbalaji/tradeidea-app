@@ -34,9 +34,9 @@ sys.path.insert(0, forensics_dir)
 sys.path.insert(0, shared_dir)
 sys.path.insert(0, parent_dir)
 
-from multi_source_loader import MultiSourceDataLoader
-from forensic_analyzer import ForensicAnalyzer
-from valuation import ValuationModels
+from forensics.multi_source_loader import MultiSourceDataLoader
+from forensics.forensic_analyzer import ForensicAnalyzer
+from shared.valuation import ValuationModels
 
 
 class EnhancedCompanyReportV2:

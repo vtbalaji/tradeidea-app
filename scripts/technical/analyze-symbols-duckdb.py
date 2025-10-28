@@ -40,11 +40,13 @@ import firebase_admin
 from firebase_admin import credentials, firestore
 from datetime import datetime, timedelta
 
-# Add experimental directory to path
+# Add script directories to path for imports
 current_dir = os.path.dirname(os.path.abspath(__file__))
-sys.path.insert(0, os.path.join(current_dir, 'experimental'))
+scripts_dir = os.path.dirname(current_dir)  # Go up to scripts/
+sys.path.insert(0, scripts_dir)
+sys.path.insert(0, os.path.join(scripts_dir, 'experimental'))
 
-from fetch_nse_data import NSEDataFetcher
+from experimental.fetch_nse_data import NSEDataFetcher
 
 # Initialize Firebase
 cred_path = os.path.join(os.getcwd(), 'serviceAccountKey.json')

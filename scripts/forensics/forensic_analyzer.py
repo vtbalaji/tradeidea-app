@@ -16,20 +16,20 @@ import os
 import json
 from datetime import datetime
 
-# Add parent directory to path
+# Add scripts directory to path for cross-folder imports
 current_dir = os.path.dirname(os.path.abspath(__file__))
-parent_dir = os.path.dirname(current_dir)
-sys.path.insert(0, current_dir)
-sys.path.insert(0, parent_dir)
+scripts_dir = os.path.dirname(current_dir)
+if scripts_dir not in sys.path:
+    sys.path.insert(0, scripts_dir)
 
-from data_loader import ForensicDataLoader
-from multi_source_loader import MultiSourceDataLoader
-from data_validator import DataValidator
-from beneish_m_score import BeneishMScore
-from altman_z_score import AltmanZScore
-from piotroski_f_score import PiotroskiFScore
-from j_score import JScore
-from red_flags import RedFlagsDetector
+from forensics.data_loader import ForensicDataLoader
+from forensics.multi_source_loader import MultiSourceDataLoader
+from forensics.data_validator import DataValidator
+from forensics.beneish_m_score import BeneishMScore
+from forensics.altman_z_score import AltmanZScore
+from forensics.piotroski_f_score import PiotroskiFScore
+from forensics.j_score import JScore
+from forensics.red_flags import RedFlagsDetector
 
 
 class ForensicAnalyzer:
