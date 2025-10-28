@@ -37,6 +37,8 @@ sys.path.insert(0, parent_dir)
 from forensics.multi_source_loader import MultiSourceDataLoader
 from forensics.forensic_analyzer import ForensicAnalyzer
 from shared.valuation import ValuationModels
+from reports.quarterly_financial_report import QuarterlyFinancialReport
+from analysis.report_displays import ReportDisplays
 
 
 class EnhancedCompanyReportV2:
@@ -62,6 +64,9 @@ class EnhancedCompanyReportV2:
 
         # Initialize forensic analyzer
         self.analyzer = ForensicAnalyzer(fundamentals_db)
+
+        # Initialize quarterly report generator
+        self.quarterly_reporter = QuarterlyFinancialReport(fundamentals_db)
 
     def close(self):
         """Close connections"""
@@ -1239,7 +1244,7 @@ class EnhancedCompanyReportV2:
             'reasons': reasons
         }
 
-    def generate_report(self, symbol, years=5, sector='IT'):
+    def generate_report(self, symbol, years=5, sector='IT', peers=None):
         """Generate comprehensive institutional-grade analysis report"""
         print(f'\n{"="*80}')
         print(f'📊 INSTITUTIONAL-GRADE COMPANY ANALYSIS V2: {symbol}')
@@ -1368,6 +1373,46 @@ class EnhancedCompanyReportV2:
             growth_metrics, earnings_quality, credit_quality
         )
 
+        # SECTION 2: Quarterly Financials
+        print('\n' + '='*80)
+        print('📊 SECTION 2: QUARTERLY FINANCIALS')
+        print('='*80)
+        quarterly_data = None
+        try:
+            ReportDisplays.print_quarterly_financials(self.quarterly_reporter, symbol, num_quarters=5)
+            # Also capture the data for JSON output
+            sector_type = self.quarterly_reporter.detect_sector(symbol)
+            if sector_type == 'BANKING':
+                quarterly_data = self.quarterly_reporter.get_banking_quarterly_data(symbol, num_quarters=5)
+            else:
+                quarterly_data = self.quarterly_reporter.get_quarterly_data(symbol, num_quarters=5)
+        except Exception as e:
+            print(f'⚠️  Error displaying quarterly financials: {e}')
+
+        # SECTION 3: Peer Comparison (if peers provided)
+        peer_comparison_details = None
+        if peers and len(peers) > 0:
+            print('\n' + '='*80)
+            print('🤝 SECTION 3: PEER COMPARISON')
+            print('='*80)
+            try:
+                ReportDisplays.print_peer_comparison(self.quarterly_reporter, symbol, peers)
+                # Also capture the data for JSON output
+                all_companies = [symbol] + peers
+                peer_comparison_details = {}
+                sector_type = self.quarterly_reporter.detect_sector(symbol)
+
+                for company in all_companies:
+                    if sector_type == 'BANKING':
+                        company_data = self.quarterly_reporter.get_banking_quarterly_data(company, num_quarters=1)
+                    else:
+                        company_data = self.quarterly_reporter.get_quarterly_data(company, num_quarters=1)
+
+                    if company_data and len(company_data) > 0:
+                        peer_comparison_details[company] = company_data[0]
+            except Exception as e:
+                print(f'⚠️  Error displaying peer comparison: {e}')
+
         # Print comprehensive report
         self._print_comprehensive_report(
             symbol, forensic_report, technical, intrinsic_value, recommendation,
@@ -1382,6 +1427,8 @@ class EnhancedCompanyReportV2:
             'timestamp': datetime.now().isoformat(),
             'forensic': forensic_report,
             'technical': technical,
+            'quarterly_financials': quarterly_data,
+            'peer_comparison_details': peer_comparison_details,
             'growth_metrics': growth_metrics,
             'dividend_analysis': dividend_analysis,
             'earnings_quality': earnings_quality,
@@ -1493,40 +1540,24 @@ class EnhancedCompanyReportV2:
                 print(f'│  💪 Strengths: {", ".join(peer_comp["strengths"])}{" "*50}│')
             print(f'└{"─"*78}┘\n')
 
-        # Forensic Analysis (Compact)
-        print(f'┌{"─"*78}┐')
-        print(f'│  5. FORENSIC SCORES{" "*59}│')
-        print(f'├{"─"*78}┤')
-        if 'beneish_m_score' in forensic:
-            risk = forensic['beneish_m_score'].get('Risk_Category', 'Unknown')
-            emoji = '✅' if risk == 'LOW' else '❌'
-            print(f'│  M-Score: {forensic["beneish_m_score"].get("M_Score", "N/A"):<10} ({risk}) {emoji}{" "*42}│')
+        # Forensic Analysis Section - ENHANCED
+        print(f'\n{"="*80}')
+        print('🔍 SECTION 5: COMPREHENSIVE FORENSIC ANALYSIS')
+        print(f'{"="*80}')
 
-        if 'altman_z_score' in forensic:
-            risk = forensic['altman_z_score'].get('Risk_Category', 'Unknown')
-            z_score = forensic['altman_z_score'].get('Z_Score', 'N/A')
+        try:
+            ReportDisplays.print_detailed_forensics(forensic)
+        except Exception as e:
+            print(f'⚠️  Error displaying detailed forensics: {e}')
+            # Fallback to basic display
+            if 'M_Score' in forensic:
+                print(f"   M-Score: {forensic['M_Score'].get('M_Score', 'N/A')}")
+            if 'Z_Score' in forensic:
+                print(f"   Z-Score: {forensic['Z_Score'].get('Z_Score', 'N/A')}")
+            if 'F_Score' in forensic:
+                print(f"   F-Score: {forensic['F_Score'].get('F_Score', 'N/A')}")
 
-            # Handle banking companies where Z-Score is None
-            if z_score is None or risk == 'N/A - Banking Company':
-                z_score_str = 'N/A'
-                risk_str = 'Banking Co.'
-                emoji = 'ℹ️'
-            elif risk == 'Safe':
-                z_score_str = f'{z_score:.4f}'
-                risk_str = risk
-                emoji = '✅'
-            else:
-                z_score_str = f'{z_score:.4f}' if isinstance(z_score, (int, float)) else 'N/A'
-                risk_str = risk
-                emoji = '❌'
-
-            print(f'│  Z-Score: {z_score_str:<10} ({risk_str}) {emoji}{" "*42}│')
-
-        if 'piotroski_f_score' in forensic:
-            score = forensic['piotroski_f_score'].get('F_Score', 0)
-            emoji = '✅' if score >= 7 else '⚠️'
-            print(f'│  F-Score: {score}/9 {emoji}{" "*61}│')
-        print(f'└{"─"*78}┘\n')
+        print()  # Add newline for spacing
 
         # Earnings Quality
         if earnings_qual:
@@ -1730,6 +1761,8 @@ def main():
     parser.add_argument('symbol', type=str, help='Stock symbol (e.g., TCS, INFY)')
     parser.add_argument('--years', type=int, default=5, help='Number of years to analyze (default: 5)')
     parser.add_argument('--sector', type=str, default='IT', help='Sector for peer comparison (default: IT)')
+    parser.add_argument('--peers', nargs='+', help='Peer companies to compare (e.g., --peers TCS INFY WIPRO)')
+    parser.add_argument('--compare-sector', action='store_true', help='Auto-compare with sector peers')
     parser.add_argument('--output', choices=['text', 'json'], default='text', help='Output format')
 
     args = parser.parse_args()
@@ -1737,7 +1770,14 @@ def main():
     report_gen = EnhancedCompanyReportV2()
 
     try:
-        result = report_gen.generate_report(args.symbol.upper(), years=args.years, sector=args.sector.upper())
+        # Determine peers list
+        peers = args.peers if args.peers else None
+        if args.compare_sector and not peers:
+            # Auto-detect sector and get peers
+            sector_peers = report_gen.SECTOR_PEERS.get(args.sector.upper(), [])
+            peers = [p for p in sector_peers if p != args.symbol.upper()][:3]  # Top 3 peers
+
+        result = report_gen.generate_report(args.symbol.upper(), years=args.years, sector=args.sector.upper(), peers=peers)
 
         if result and args.output == 'json':
             filename = f'enhanced_report_v2_{args.symbol.upper()}_{datetime.now().strftime("%Y%m%d_%H%M%S")}.json'

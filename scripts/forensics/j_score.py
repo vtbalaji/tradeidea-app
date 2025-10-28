@@ -170,8 +170,20 @@ class JScore:
     def _check_receivables_growth(current, previous):
         """Check if receivables growing faster than revenue"""
         try:
-            rev_growth = (current['revenue'] - previous['revenue']) / (previous['revenue'] + 0.01)
-            rec_growth = (current['receivables'] - previous['receivables']) / (previous['receivables'] + 0.01)
+            # Data quality check: Skip if receivables data is missing or negligible
+            # (common for IT services companies with quarterly snapshots)
+            MIN_RECEIVABLES = 10000000  # 1 Crore minimum threshold
+
+            if (not current.get('receivables') or current['receivables'] < MIN_RECEIVABLES or
+                not previous.get('receivables') or previous['receivables'] < MIN_RECEIVABLES):
+                return None, 0
+
+            # Also skip if revenue is too low
+            if previous['revenue'] < MIN_RECEIVABLES:
+                return None, 0
+
+            rev_growth = (current['revenue'] - previous['revenue']) / previous['revenue']
+            rec_growth = (current['receivables'] - previous['receivables']) / previous['receivables']
 
             if rec_growth > rev_growth * 1.5 and rec_growth > 0.1:
                 return {
@@ -191,8 +203,8 @@ class JScore:
                     'severity': 'MEDIUM',
                     'description': f"Receivables growing faster than revenue - watch collection efficiency",
                     'values': {
-                        'revenue_growth': round(rev_growth * 100, 2),
-                        'receivables_growth': round(rec_growth * 100, 2)
+                        'revenue_growth': round(rev_growth, 2),
+                        'receivables_growth': round(rec_growth, 2)
                     }
                 }, 2
             else:
@@ -205,10 +217,27 @@ class JScore:
     def _check_inventory_turnover(current, previous):
         """Check if inventory turnover is declining"""
         try:
-            current_turnover = current['cogs'] / (current['inventory'] + 0.01)
-            previous_turnover = previous['cogs'] / (previous['inventory'] + 0.01)
+            # Data quality check: Skip if inventory data is missing or negligible
+            # This is common for service companies (IT, consulting, etc.)
+            MIN_INVENTORY = 10000000  # 1 Crore minimum threshold
 
-            change_pct = ((current_turnover - previous_turnover) / (previous_turnover + 0.01)) * 100
+            if (not current.get('inventory') or current['inventory'] < MIN_INVENTORY or
+                not previous.get('inventory') or previous['inventory'] < MIN_INVENTORY):
+                return None, 0
+
+            # Also need valid COGS data
+            if not current.get('cogs') or not previous.get('cogs'):
+                return None, 0
+
+            current_turnover = current['cogs'] / current['inventory']
+            previous_turnover = previous['cogs'] / previous['inventory']
+
+            # Sanity check: Turnover should be reasonable (not astronomical)
+            # For most companies, turnover between 1x to 100x is normal
+            if current_turnover > 1000 or previous_turnover > 1000:
+                return None, 0  # Likely bad data
+
+            change_pct = ((current_turnover - previous_turnover) / previous_turnover) * 100
 
             if current_turnover < previous_turnover * 0.85:
                 return {
