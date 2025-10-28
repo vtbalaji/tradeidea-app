@@ -33,6 +33,7 @@ function ShareIdeaForm() {
     visibility: 'public',
     timeframe: 'short term',
     riskLevel: 'medium',
+    tradeType: 'Long',
     entryPrice: '',
     stopLoss: '',
     target1: '',
@@ -97,9 +98,9 @@ function ShareIdeaForm() {
     const target2 = formData.target2 ? parseFloat(formData.target2) : null;
     const target3 = formData.target3 ? parseFloat(formData.target3) : null;
 
-    // Basic validation - assuming long positions
-    if (entryPrice <= stopLoss) {
-      setError('Entry Price must be greater than Stop Loss');
+    // Validate: stopLoss < entryPrice < target1 < target2 < target3
+    if (stopLoss >= entryPrice) {
+      setError('Stop Loss must be less than Entry Price');
       return;
     }
     if (target1 <= entryPrice) {
@@ -125,6 +126,7 @@ function ShareIdeaForm() {
         visibility: formData.visibility,
         timeframe: formData.timeframe,
         riskLevel: formData.riskLevel,
+        tradeType: formData.tradeType,
         entryPrice,
         stopLoss,
         target1,
@@ -262,7 +264,27 @@ function ShareIdeaForm() {
             <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-5 flex items-center gap-2"><TargetIcon size={24} /> Trade Details</h2>
 
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+              <div>
+                <label className="block text-sm font-semibold text-gray-600 dark:text-[#8b949e] mb-2">Trade Type *</label>
+                <div className="flex gap-2">
+                  {['Long', 'Short'].map((type) => (
+                    <button
+                      key={type}
+                      type="button"
+                      onClick={() => setFormData({ ...formData, tradeType: type })}
+                      className={`flex-1 py-2 px-3 rounded-md text-sm font-semibold transition-colors ${
+                        formData.tradeType === type
+                          ? 'bg-[#ff8c42] text-gray-900 dark:text-white border-[#ff8c42]'
+                          : 'bg-white dark:bg-[#0f1419] text-gray-600 dark:text-[#8b949e] border-gray-200 dark:border-[#30363d]'
+                      } border`}
+                    >
+                      {type}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
               <div>
                 <label className="block text-sm font-semibold text-gray-600 dark:text-[#8b949e] mb-2">Timeframe</label>
                 <div className="flex gap-2">
@@ -282,7 +304,6 @@ function ShareIdeaForm() {
                   ))}
                 </div>
               </div>
-
 
               <div>
                 <label className="block text-sm font-semibold text-gray-600 dark:text-[#8b949e] mb-2">Risk Level</label>

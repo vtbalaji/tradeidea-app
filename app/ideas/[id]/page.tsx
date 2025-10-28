@@ -192,7 +192,38 @@ export default function IdeaDetailPage() {
   const handleEditIdea = async () => {
     if (!editFormData) return;
 
+    // Validate required fields
+    if (!editFormData.entryPrice || !editFormData.target1 || !editFormData.stopLoss) {
+      setError('Please fill in all required fields (Entry, Target, Stop Loss)');
+      return;
+    }
+
+    // Price validation: stopLoss < entryPrice < target1 < target2 < target3
+    const entryPrice = parseFloat(editFormData.entryPrice);
+    const stopLoss = parseFloat(editFormData.stopLoss);
+    const target1 = parseFloat(editFormData.target1);
+    const target2 = editFormData.target2 ? parseFloat(editFormData.target2) : null;
+    const target3 = editFormData.target3 ? parseFloat(editFormData.target3) : null;
+
+    if (stopLoss >= entryPrice) {
+      setError('Stop Loss must be less than Entry Price');
+      return;
+    }
+    if (target1 <= entryPrice) {
+      setError('Target 1 must be greater than Entry Price');
+      return;
+    }
+    if (target2 && target2 <= target1) {
+      setError('Target 2 must be greater than Target 1');
+      return;
+    }
+    if (target3 && target2 && target3 <= target2) {
+      setError('Target 3 must be greater than Target 2');
+      return;
+    }
+
     setLoading(true);
+    setError('');
     try {
       await updateIdea(ideaId, editFormData);
       setShowEditModal(false);
