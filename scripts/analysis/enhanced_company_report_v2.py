@@ -83,53 +83,74 @@ class EnhancedCompanyReportV2:
 
     def get_growth_trajectory(self, historical_data):
         """
-        Calculate comprehensive growth metrics (5Y CAGR)
+        Calculate comprehensive growth metrics (3Y CAGR)
         Returns: Dict with revenue/profit/eps growth trends
         """
         if not historical_data or len(historical_data) < 2:
             return None
 
         try:
-            # Sort by year (oldest first)
+            # Sort by year (newest first)
             sorted_data = sorted(historical_data, key=lambda x: x.get('fy', ''), reverse=True)
 
             if len(sorted_data) < 2:
                 return None
 
             latest = sorted_data[0]
-            oldest = sorted_data[-1]
 
-            # Calculate years difference
-            years = len(sorted_data) - 1
-            if years == 0:
-                years = 1
+            # Use 3 years for CAGR calculation (if available)
+            years = 3
+            if len(sorted_data) >= 4:
+                oldest = sorted_data[3]  # 3 years ago (index 3 = 4th item)
+            else:
+                # Fallback to all available years if less than 4 data points
+                oldest = sorted_data[-1]
+                years = len(sorted_data) - 1
+                if years == 0:
+                    years = 1
 
-            # Helper function to calculate CAGR
-            def calculate_cagr(start_val, end_val, periods):
-                if start_val <= 0 or end_val <= 0 or periods == 0:
-                    return 0
-                return (pow(end_val / start_val, 1 / periods) - 1) * 100
+            # Helper function to calculate CAGR or absolute growth
+            def calculate_growth(start_val, end_val, periods):
+                """
+                Returns tuple: (value, is_cagr, is_turnaround)
+                - If CAGR can be calculated: (cagr_%, True, False)
+                - If turnaround (negative to positive): (absolute_change, False, True)
+                - Otherwise: (0, True, False)
+                """
+                if periods == 0:
+                    return (0, True, False)
 
-            # Calculate CAGRs
-            revenue_cagr = calculate_cagr(
+                # Check if it's a turnaround (negative to positive)
+                if start_val <= 0 and end_val > 0:
+                    return (end_val - start_val, False, True)
+
+                # Cannot calculate CAGR if either value is non-positive
+                if start_val <= 0 or end_val <= 0:
+                    return (0, True, False)
+
+                # Calculate CAGR
+                return ((pow(end_val / start_val, 1 / periods) - 1) * 100, True, False)
+
+            # Calculate growth metrics
+            revenue_val, revenue_is_cagr, revenue_turnaround = calculate_growth(
                 oldest.get('raw_revenue', 0) or 0,
                 latest.get('raw_revenue', 0) or 0,
                 years
             )
 
-            profit_cagr = calculate_cagr(
+            profit_val, profit_is_cagr, profit_turnaround = calculate_growth(
                 oldest.get('raw_net_profit', 0) or 0,
                 latest.get('raw_net_profit', 0) or 0,
                 years
             )
 
-            eps_cagr = calculate_cagr(
+            eps_val, eps_is_cagr, eps_turnaround = calculate_growth(
                 oldest.get('raw_eps', 0) or 0,
                 latest.get('raw_eps', 0) or 0,
                 years
             )
 
-            book_value_cagr = calculate_cagr(
+            book_value_val, book_value_is_cagr, book_value_turnaround = calculate_growth(
                 oldest.get('raw_book_value', 0) or 0,
                 latest.get('raw_book_value', 0) or 0,
                 years
@@ -147,14 +168,16 @@ class EnhancedCompanyReportV2:
                 for i in range(len(sorted_data))
             )
 
-            # Check if accelerating (last 3Y growth > overall)
-            if len(sorted_data) >= 4:
-                recent_3y_profit_cagr = calculate_cagr(
-                    sorted_data[3].get('raw_net_profit', 0) or 0,
+            # Check if accelerating (compare recent 2Y vs 3Y)
+            # Since we're now using 3Y, check if last 2Y growth > 3Y CAGR
+            if len(sorted_data) >= 3 and profit_is_cagr:
+                recent_2y_profit_val, recent_2y_is_cagr, _ = calculate_growth(
+                    sorted_data[2].get('raw_net_profit', 0) or 0,
                     sorted_data[0].get('raw_net_profit', 0) or 0,
-                    3
+                    2
                 )
-                is_accelerating = recent_3y_profit_cagr > profit_cagr
+                # Only compare if both are CAGR values
+                is_accelerating = recent_2y_is_cagr and recent_2y_profit_val > profit_val
             else:
                 is_accelerating = False
 
@@ -178,10 +201,17 @@ class EnhancedCompanyReportV2:
                     })
 
             return {
-                'revenue_cagr': revenue_cagr,
-                'profit_cagr': profit_cagr,
-                'eps_cagr': eps_cagr,
-                'book_value_cagr': book_value_cagr,
+                'revenue_cagr': revenue_val,
+                'revenue_is_cagr': revenue_is_cagr,
+                'revenue_turnaround': revenue_turnaround,
+                'profit_cagr': profit_val,
+                'profit_is_cagr': profit_is_cagr,
+                'profit_turnaround': profit_turnaround,
+                'eps_cagr': eps_val,
+                'eps_is_cagr': eps_is_cagr,
+                'eps_turnaround': eps_turnaround,
+                'book_value_cagr': book_value_val,
+                'book_value_is_cagr': book_value_is_cagr,
                 'revenue_consistent': revenue_consistent,
                 'profit_consistent': profit_consistent,
                 'is_accelerating': is_accelerating,
@@ -1515,14 +1545,53 @@ class EnhancedCompanyReportV2:
         # Growth Trajectory
         if growth:
             print(f'┌{"─"*78}┐')
-            print(f'│  3. GROWTH TRAJECTORY ({growth["years_analyzed"]} Years){" "*46}│')
+            print(f'│  3. GROWTH TRAJECTORY (3 Years){" "*46}│')
             print(f'├{"─"*78}┤')
-            print(f'│  Revenue CAGR: {growth["revenue_cagr"]:.1f}%  {"✅" if growth["revenue_cagr"] > 12 else "⚠️"}{" "*52}│')
-            print(f'│  Profit CAGR: {growth["profit_cagr"]:.1f}%  {"✅" if growth["profit_cagr"] > 15 else "⚠️"}{" "*53}│')
-            print(f'│  EPS CAGR: {growth["eps_cagr"]:.1f}%  {"✅" if growth["eps_cagr"] > 15 else "⚠️"}{" "*56}│')
+
+            # Revenue line
+            if growth.get('revenue_is_cagr'):
+                rev_display = f"{growth['revenue_cagr']:.1f}%"
+                rev_icon = "✅" if growth["revenue_cagr"] > 12 else "⚠️"
+            elif growth.get('revenue_turnaround'):
+                # Convert from rupees to crores (1 crore = 10,000,000 rupees)
+                rev_cr = growth['revenue_cagr'] / 10000000
+                rev_display = f"+₹{rev_cr:,.0f} Cr (Turnaround)"
+                rev_icon = "🔄"
+            else:
+                rev_display = "N/A"
+                rev_icon = "⚠️"
+            print(f'│  Revenue CAGR: {rev_display:<30} {rev_icon}{" "*(46-len(rev_display))}│')
+
+            # Profit line
+            if growth.get('profit_is_cagr'):
+                profit_display = f"{growth['profit_cagr']:.1f}%"
+                profit_icon = "✅" if growth["profit_cagr"] > 15 else "⚠️"
+            elif growth.get('profit_turnaround'):
+                # Convert from rupees to crores (1 crore = 10,000,000 rupees)
+                profit_cr = growth['profit_cagr'] / 10000000
+                profit_display = f"+₹{profit_cr:,.0f} Cr (Turnaround)"
+                profit_icon = "🔄"
+            else:
+                profit_display = "N/A"
+                profit_icon = "⚠️"
+            print(f'│  Profit CAGR: {profit_display:<30} {profit_icon}{" "*(47-len(profit_display))}│')
+
+            # EPS line
+            if growth.get('eps_is_cagr'):
+                eps_display = f"{growth['eps_cagr']:.1f}%"
+                eps_icon = "✅" if growth["eps_cagr"] > 15 else "⚠️"
+            elif growth.get('eps_turnaround'):
+                # EPS is already in rupees per share, no conversion needed
+                eps_display = f"+₹{growth['eps_cagr']:.2f} (Turnaround)"
+                eps_icon = "🔄"
+            else:
+                eps_display = "N/A"
+                eps_icon = "⚠️"
+            print(f'│  EPS CAGR: {eps_display:<30} {eps_icon}{" "*(50-len(eps_display))}│')
+
             print(f'│  Quality: {growth["quality"]:<20} {"✅" if growth["quality"] == "High" else "⚠️"}{" "*43}│')
             if growth.get('is_accelerating'):
-                print(f'│  🚀 Growth accelerating (last 3Y > overall){" "*33}│')
+                print(f'│  🚀 Growth accelerating (last 2Y > 3Y CAGR){" "*33}│')
             if growth.get('margin_expansion'):
                 print(f'│  📈 Margin expansion observed{" "*46}│')
             print(f'└{"─"*78}┘\n')

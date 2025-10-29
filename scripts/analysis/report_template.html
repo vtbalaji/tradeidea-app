@@ -1,0 +1,734 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Investment Report - {{ symbol }}</title>
+    <style>
+        @page {
+            size: A4;
+            margin: 1.5cm;
+            @top-right {
+                content: "Page " counter(page) " of " counter(pages);
+                font-size: 9pt;
+                color: #666;
+            }
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', 'Arial', sans-serif;
+            color: #2c3e50;
+            line-height: 1.6;
+            font-size: 10pt;
+        }
+
+        .page-break {
+            page-break-after: always;
+        }
+
+        /* Header */
+        .header {
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            color: white;
+            padding: 30px;
+            margin: -1.5cm -1.5cm 20px -1.5cm;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 28pt;
+            margin-bottom: 5px;
+            font-weight: 600;
+        }
+
+        .header .company-name {
+            font-size: 11pt;
+            opacity: 0.9;
+            margin-bottom: 15px;
+        }
+
+        .header .report-meta {
+            font-size: 9pt;
+            opacity: 0.8;
+            margin-top: 10px;
+        }
+
+        .header .symbol {
+            font-size: 36pt;
+            font-weight: bold;
+            margin: 10px 0;
+            letter-spacing: 2px;
+        }
+
+        /* Disclaimer */
+        .disclaimer {
+            background: #fff3cd;
+            border-left: 4px solid #ffc107;
+            padding: 12px 15px;
+            margin: 20px 0;
+            font-size: 8pt;
+            color: #856404;
+        }
+
+        .disclaimer strong {
+            display: block;
+            margin-bottom: 5px;
+            font-size: 9pt;
+        }
+
+        /* Executive Summary Box */
+        .executive-summary {
+            background: #f8f9fa;
+            border: 2px solid #dee2e6;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+
+        .recommendation-box {
+            text-align: center;
+            padding: 20px;
+            background: white;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .recommendation-box .rating {
+            font-size: 24pt;
+            font-weight: bold;
+            margin: 10px 0;
+        }
+
+        .recommendation-box .score {
+            font-size: 18pt;
+            color: #666;
+            margin: 5px 0;
+        }
+
+        .rating.strong-buy { color: #28a745; }
+        .rating.buy { color: #5cb85c; }
+        .rating.hold { color: #ffc107; }
+        .rating.sell { color: #dc3545; }
+        .rating.strong-sell { color: #c82333; }
+
+        /* Metrics Grid */
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+            margin: 20px 0;
+        }
+
+        .metric-card {
+            background: white;
+            border: 1px solid #dee2e6;
+            border-radius: 6px;
+            padding: 15px;
+            text-align: center;
+        }
+
+        .metric-card .label {
+            font-size: 9pt;
+            color: #6c757d;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 8px;
+        }
+
+        .metric-card .value {
+            font-size: 16pt;
+            font-weight: bold;
+            color: #2c3e50;
+        }
+
+        .metric-card .status {
+            font-size: 10pt;
+            margin-top: 5px;
+        }
+
+        .status.good { color: #28a745; }
+        .status.warning { color: #ffc107; }
+        .status.bad { color: #dc3545; }
+
+        /* Section Headers */
+        .section {
+            margin: 25px 0;
+        }
+
+        .section-header {
+            background: #2c3e50;
+            color: white;
+            padding: 12px 15px;
+            border-radius: 6px 6px 0 0;
+            font-size: 12pt;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+        }
+
+        .section-header .icon {
+            margin-right: 10px;
+            font-size: 14pt;
+        }
+
+        .section-content {
+            border: 1px solid #dee2e6;
+            border-top: none;
+            border-radius: 0 0 6px 6px;
+            padding: 15px;
+            background: white;
+        }
+
+        /* Forensic Scores */
+        .forensic-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+            margin: 15px 0;
+        }
+
+        .forensic-card {
+            background: #f8f9fa;
+            border-left: 4px solid #6c757d;
+            padding: 15px;
+            border-radius: 4px;
+        }
+
+        .forensic-card.low-risk { border-left-color: #28a745; }
+        .forensic-card.medium-risk { border-left-color: #ffc107; }
+        .forensic-card.high-risk { border-left-color: #dc3545; }
+
+        .forensic-card h3 {
+            font-size: 11pt;
+            margin-bottom: 8px;
+            color: #2c3e50;
+        }
+
+        .forensic-card .score-display {
+            font-size: 20pt;
+            font-weight: bold;
+            margin: 10px 0;
+        }
+
+        .forensic-card .risk-label {
+            font-size: 9pt;
+            padding: 4px 10px;
+            border-radius: 12px;
+            display: inline-block;
+            font-weight: 600;
+        }
+
+        .risk-label.low { background: #d4edda; color: #155724; }
+        .risk-label.medium { background: #fff3cd; color: #856404; }
+        .risk-label.high { background: #f8d7da; color: #721c24; }
+
+        /* Progress Bar */
+        .progress-bar {
+            height: 20px;
+            background: #e9ecef;
+            border-radius: 10px;
+            overflow: hidden;
+            margin: 10px 0;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: #28a745;
+            transition: width 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 8pt;
+            font-weight: bold;
+        }
+
+        .progress-fill.good { background: #28a745; }
+        .progress-fill.medium { background: #ffc107; }
+        .progress-fill.bad { background: #dc3545; }
+
+        /* Table Styles */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 15px 0;
+            font-size: 9pt;
+        }
+
+        th {
+            background: #f8f9fa;
+            padding: 10px;
+            text-align: left;
+            font-weight: 600;
+            border-bottom: 2px solid #dee2e6;
+            font-size: 9pt;
+        }
+
+        td {
+            padding: 8px 10px;
+            border-bottom: 1px solid #e9ecef;
+        }
+
+        tr:hover {
+            background: #f8f9fa;
+        }
+
+        /* Red Flags */
+        .red-flags {
+            background: #fff5f5;
+            border: 2px solid #fc8181;
+            border-radius: 6px;
+            padding: 15px;
+            margin: 15px 0;
+        }
+
+        .red-flags h3 {
+            color: #c53030;
+            font-size: 11pt;
+            margin-bottom: 10px;
+        }
+
+        .flag-item {
+            padding: 8px;
+            margin: 5px 0;
+            background: white;
+            border-left: 3px solid #fc8181;
+            border-radius: 3px;
+            font-size: 9pt;
+        }
+
+        .flag-item.high { border-left-color: #c53030; background: #fff5f5; }
+        .flag-item.medium { border-left-color: #ed8936; background: #fffaf0; }
+
+        /* Key Reasons List */
+        .reasons-list {
+            list-style: none;
+            padding: 0;
+        }
+
+        .reasons-list li {
+            padding: 10px;
+            margin: 8px 0;
+            background: #f8f9fa;
+            border-left: 4px solid #28a745;
+            border-radius: 3px;
+            font-size: 9pt;
+        }
+
+        /* Scenario Analysis */
+        .scenario-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+            margin: 15px 0;
+        }
+
+        .scenario-card {
+            background: white;
+            border: 2px solid #dee2e6;
+            border-radius: 6px;
+            padding: 15px;
+            text-align: center;
+        }
+
+        .scenario-card.bull { border-color: #28a745; }
+        .scenario-card.base { border-color: #6c757d; }
+        .scenario-card.bear { border-color: #dc3545; }
+
+        .scenario-card h4 {
+            font-size: 10pt;
+            margin-bottom: 10px;
+            color: #6c757d;
+        }
+
+        .scenario-card .target-price {
+            font-size: 18pt;
+            font-weight: bold;
+            margin: 10px 0;
+        }
+
+        .scenario-card .return {
+            font-size: 11pt;
+            font-weight: 600;
+        }
+
+        /* Footer */
+        .footer {
+            margin-top: 30px;
+            padding-top: 15px;
+            border-top: 1px solid #dee2e6;
+            text-align: center;
+            font-size: 8pt;
+            color: #6c757d;
+        }
+
+        /* Utilities */
+        .text-center { text-align: center; }
+        .text-right { text-align: right; }
+        .mb-10 { margin-bottom: 10px; }
+        .mb-20 { margin-bottom: 20px; }
+        .mt-20 { margin-top: 20px; }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <div class="header">
+        <div class="company-name">TradeIdea</div>
+        <div class="symbol">{{ symbol }}</div>
+        <h1>Comprehensive Investment Analysis Report</h1>
+        <div class="report-meta">
+            Generated: {{ timestamp }}<br>
+            Analysis Period: {{ years }} Years
+        </div>
+    </div>
+
+    <!-- Disclaimer -->
+    <div class="disclaimer">
+        <strong>⚠️ IMPORTANT DISCLAIMER</strong>
+        This report is system-generated using automated analysis. No human verification has been performed.
+        The analysis may contain errors, inaccuracies, or incomplete data. This is not investment advice.
+        Always conduct your own due diligence and consult with a qualified financial advisor before making investment decisions.
+    </div>
+
+    <!-- Executive Summary -->
+    <div class="executive-summary">
+        <h2 style="margin-bottom: 15px; font-size: 14pt;">Executive Summary</h2>
+
+        <div class="recommendation-box">
+            <div class="rating {{ recommendation_class }}">
+                {{ recommendation_emoji }} {{ recommendation }}
+            </div>
+            <div class="score">Score: {{ score }}/100</div>
+            {% if target_price %}
+            <div style="margin-top: 15px; font-size: 11pt;">
+                <strong>{% if has_scenarios %}Target Price (3Y):{% else %}Intrinsic Value Target:{% endif %}</strong> ₹{{ target_price }}<br>
+                <strong>{{ upside_label }}:</strong> <span style="color: {{ upside_color }};">{{ upside }}%</span>
+            </div>
+            {% endif %}
+        </div>
+
+        <div class="metrics-grid">
+            <div class="metric-card">
+                <div class="label">Market Cap</div>
+                <div class="value">₹{{ market_cap }} Cr</div>
+            </div>
+            <div class="metric-card">
+                <div class="label">Current Price</div>
+                <div class="value">₹{{ current_price }}</div>
+            </div>
+            <div class="metric-card">
+                <div class="label">Revenue ({{ latest_fy }})</div>
+                <div class="value">₹{{ revenue }} Cr</div>
+            </div>
+            <div class="metric-card">
+                <div class="label">Revenue CAGR ({{ years }}Y)</div>
+                <div class="value">{{ revenue_cagr }}%</div>
+                <div class="status {{ revenue_status }}">{{ revenue_indicator }}</div>
+            </div>
+            <div class="metric-card">
+                <div class="label">Profit CAGR ({{ years }}Y)</div>
+                <div class="value">{{ profit_cagr }}%</div>
+                <div class="status {{ profit_status }}">{{ profit_indicator }}</div>
+            </div>
+            <div class="metric-card">
+                <div class="label">P/E Ratio</div>
+                <div class="value">{{ pe_ratio }}</div>
+                <div class="status {{ pe_status }}">{{ pe_indicator }}</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Key Reasons -->
+    <div class="section">
+        <div class="section-header">
+            <span class="icon">🎯</span> Key Investment Highlights
+        </div>
+        <div class="section-content">
+            <ul class="reasons-list">
+                {% for reason in key_reasons %}
+                <li>{{ reason }}</li>
+                {% endfor %}
+            </ul>
+        </div>
+    </div>
+
+    <div class="page-break"></div>
+
+    <!-- Forensic Analysis -->
+    <div class="section">
+        <div class="section-header">
+            <span class="icon">🔍</span> Comprehensive Forensic Analysis
+        </div>
+        <div class="section-content">
+            <div class="forensic-grid">
+                <!-- Beneish M-Score -->
+                <div class="forensic-card {{ beneish_risk_class }}">
+                    <h3>Beneish M-Score</h3>
+                    <div style="font-size: 8pt; color: #6c757d; margin-bottom: 5px;">Earnings Manipulation Detection</div>
+                    <div class="score-display">{{ beneish_score }}</div>
+                    <span class="risk-label {{ beneish_risk_label }}">{{ beneish_risk }}</span>
+                    <div style="margin-top: 10px; font-size: 8pt; color: #6c757d;">
+                        Threshold: -2.22 (scores > -2.22 indicate manipulation)
+                    </div>
+                </div>
+
+                <!-- Piotroski F-Score -->
+                <div class="forensic-card {{ piotroski_risk_class }}">
+                    <h3>Piotroski F-Score</h3>
+                    <div style="font-size: 8pt; color: #6c757d; margin-bottom: 5px;">Financial Strength</div>
+                    <div class="score-display">{{ piotroski_score }}/9</div>
+                    <span class="risk-label {{ piotroski_risk_label }}">{{ piotroski_strength }}</span>
+                    <div class="progress-bar">
+                        <div class="progress-fill {{ piotroski_bar_class }}" style="width: {{ piotroski_percent }}%;">
+                            {{ piotroski_percent }}%
+                        </div>
+                    </div>
+                </div>
+
+                <!-- J-Score -->
+                <div class="forensic-card {{ jscore_risk_class }}">
+                    <h3>J-Score</h3>
+                    <div style="font-size: 8pt; color: #6c757d; margin-bottom: 5px;">Cash Flow Quality</div>
+                    <div class="score-display">{{ jscore }}</div>
+                    <span class="risk-label {{ jscore_risk_label }}">{{ jscore_risk }}</span>
+                    <div style="margin-top: 10px; font-size: 8pt; color: #6c757d;">
+                        Flags: {{ jscore_flags }} | 0-5: Low | 6-10: Medium | 11+: High
+                    </div>
+                </div>
+
+                <!-- Altman Z-Score -->
+                <div class="forensic-card {{ altman_risk_class }}">
+                    <h3>Altman Z-Score</h3>
+                    <div style="font-size: 8pt; color: #6c757d; margin-bottom: 5px;">Bankruptcy Prediction</div>
+                    <div class="score-display" style="font-size: 14pt;">{{ altman_score }}</div>
+                    <span class="risk-label {{ altman_risk_label }}">{{ altman_risk }}</span>
+                </div>
+            </div>
+
+            <!-- Piotroski F-Score Details -->
+            {% if piotroski_details %}
+            <div style="margin-top: 20px;">
+                <h3 style="font-size: 11pt; margin-bottom: 10px;">Piotroski F-Score Components</h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th style="width: 5%;">✓</th>
+                            <th style="width: 30%;">Component</th>
+                            <th style="width: 65%;">Description</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in piotroski_details %}
+                        <tr>
+                            <td style="text-align: center; font-size: 11pt;">{{ item.status }}</td>
+                            <td><strong>{{ item.name }}</strong></td>
+                            <td style="font-size: 9pt;">{{ item.description }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% endif %}
+
+            <!-- J-Score Flags -->
+            {% if jscore_flag_items %}
+            <div style="margin-top: 20px;">
+                <h3 style="font-size: 11pt; margin-bottom: 10px;">J-Score Quality Flags</h3>
+                {% for flag in jscore_flag_items %}
+                <div class="flag-item {{ flag.severity_class }}">
+                    <strong>{{ flag.emoji }} {{ flag.title }}</strong> - {{ flag.period }}<br>
+                    <span style="color: #6c757d;">{{ flag.description }}</span>
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Red Flags -->
+    {% if red_flags_count > 0 %}
+    <div class="section">
+        <div class="section-header" style="background: #c53030;">
+            <span class="icon">🚩</span> Red Flags & Concerns
+        </div>
+        <div class="section-content">
+            <div class="red-flags">
+                <h3>⚠️ Total Issues: {{ red_flags_count }} | High Severity: {{ red_flags_high }}</h3>
+                {% for flag in red_flag_items %}
+                <div class="flag-item {{ flag.severity_class }}">
+                    {{ flag.icon }} {{ flag.description }}
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <div class="page-break"></div>
+
+    <!-- Valuation -->
+    <div class="section">
+        <div class="section-header">
+            <span class="icon">💰</span> Valuation Analysis
+        </div>
+        <div class="section-content">
+            <div class="metrics-grid">
+                <div class="metric-card">
+                    <div class="label">Current Price</div>
+                    <div class="value">₹{{ current_price }}</div>
+                </div>
+                <div class="metric-card">
+                    <div class="label">Intrinsic Value</div>
+                    <div class="value">₹{{ intrinsic_value }}</div>
+                </div>
+                <div class="metric-card">
+                    <div class="label">Margin of Safety</div>
+                    <div class="value" style="color: {{ mos_color }};">{{ margin_of_safety }}%</div>
+                    <div class="status {{ valuation_status_class }}">{{ valuation_status }}</div>
+                </div>
+                <div class="metric-card">
+                    <div class="label">P/E Ratio</div>
+                    <div class="value">{{ pe_ratio }}</div>
+                    <div class="status {{ pe_status }}">{{ pe_indicator }}</div>
+                </div>
+                <div class="metric-card">
+                    <div class="label">P/B Ratio</div>
+                    <div class="value">{{ pb_ratio }}</div>
+                    <div class="status {{ pb_status }}">{{ pb_indicator }}</div>
+                </div>
+                <div class="metric-card">
+                    <div class="label">P/S Ratio</div>
+                    <div class="value">{{ ps_ratio }}</div>
+                    <div class="status {{ ps_status }}">{{ ps_indicator }}</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scenario Analysis -->
+    {% if has_scenarios %}
+    <div class="section">
+        <div class="section-header">
+            <span class="icon">📊</span> Scenario Analysis (3-Year Horizon)
+        </div>
+        <div class="section-content">
+            <div class="scenario-grid">
+                <div class="scenario-card bull">
+                    <h4>🐂 Bull Case</h4>
+                    <div class="target-price" style="color: #28a745;">₹{{ bull_target }}</div>
+                    <div class="return" style="color: #28a745;">{{ bull_return }}</div>
+                    <div style="font-size: 8pt; color: #6c757d; margin-top: 5px;">{{ bull_scenario }}</div>
+                </div>
+                <div class="scenario-card base">
+                    <h4>📊 Base Case</h4>
+                    <div class="target-price" style="color: #6c757d;">₹{{ base_target }}</div>
+                    <div class="return" style="color: #6c757d;">{{ base_return }}</div>
+                    <div style="font-size: 8pt; color: #6c757d; margin-top: 5px;">{{ base_scenario }}</div>
+                </div>
+                <div class="scenario-card bear">
+                    <h4>🐻 Bear Case</h4>
+                    <div class="target-price" style="color: #dc3545;">₹{{ bear_target }}</div>
+                    <div class="return" style="color: #dc3545;">{{ bear_return }}</div>
+                    <div style="font-size: 8pt; color: #6c757d; margin-top: 5px;">{{ bear_scenario }}</div>
+                </div>
+            </div>
+            <div style="text-align: center; margin-top: 15px; padding: 15px; background: #f8f9fa; border-radius: 6px;">
+                <strong>Probability-Weighted Target:</strong> ₹{{ weighted_target }}
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Earnings Quality -->
+    <div class="section">
+        <div class="section-header">
+            <span class="icon">✅</span> Earnings Quality Assessment
+        </div>
+        <div class="section-content">
+            <div class="metrics-grid">
+                <div class="metric-card">
+                    <div class="label">Cash Conversion</div>
+                    <div class="value">{{ cash_conversion }}%</div>
+                    <div class="status {{ cash_conversion_status }}">{{ cash_conversion_indicator }}</div>
+                </div>
+                <div class="metric-card">
+                    <div class="label">Accruals Ratio</div>
+                    <div class="value">{{ accruals_ratio }}%</div>
+                    <div class="status {{ accruals_status }}">{{ accruals_indicator }}</div>
+                </div>
+                <div class="metric-card">
+                    <div class="label">Quality Score</div>
+                    <div class="value">{{ quality_score }}/10</div>
+                    <div class="status {{ quality_score_status }}">{{ quality_assessment }}</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Credit Quality -->
+    <div class="section">
+        <div class="section-header">
+            <span class="icon">💳</span> Credit Quality & Leverage
+        </div>
+        <div class="section-content">
+            <div class="metrics-grid">
+                <div class="metric-card">
+                    <div class="label">Debt/Equity Ratio</div>
+                    <div class="value">{{ debt_equity }}</div>
+                    <div class="status {{ debt_equity_status }}">{{ debt_equity_indicator }}</div>
+                </div>
+                <div class="metric-card">
+                    <div class="label">Interest Coverage</div>
+                    <div class="value">{{ interest_coverage }}x</div>
+                    <div class="status {{ interest_coverage_status }}">{{ interest_coverage_indicator }}</div>
+                </div>
+                <div class="metric-card">
+                    <div class="label">Credit Score</div>
+                    <div class="value">{{ credit_score }}/10</div>
+                    <div class="status {{ credit_score_status }}">{{ credit_assessment }}</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Management Quality -->
+    <div class="section">
+        <div class="section-header">
+            <span class="icon">👔</span> Management Quality
+        </div>
+        <div class="section-content">
+            <div style="text-align: center; padding: 20px;">
+                <div class="score-display" style="font-size: 24pt; color: #2c3e50;">{{ management_score }}/10</div>
+                <div style="font-size: 12pt; color: #6c757d; margin: 10px 0;">{{ management_assessment }}</div>
+                <div class="progress-bar" style="max-width: 400px; margin: 20px auto;">
+                    <div class="progress-fill {{ management_bar_class }}" style="width: {{ management_percent }}%;">
+                        {{ management_percent }}%
+                    </div>
+                </div>
+            </div>
+            {% if management_highlights %}
+            <ul class="reasons-list">
+                {% for highlight in management_highlights %}
+                <li>{{ highlight }}</li>
+                {% endfor %}
+            </ul>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="footer">
+        <strong>TradeIdea Investment Analysis System</strong><br>
+        Report Generated: {{ timestamp }}<br>
+        This is an automated analysis. For informational purposes only. Not financial advice.<br>
+        © {{ year }} TradeIdea. All rights reserved.
+    </div>
+</body>
+</html>

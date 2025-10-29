@@ -28,7 +28,7 @@ This folder contains shell scripts that orchestrate data processing pipelines. T
 ---
 
 ### 2. `weekly-fundamentals-batch.sh`
-**Purpose:** Weekly XBRL fundamental data processing
+**Purpose:** Weekly XBRL fundamental data processing (LEGACY - use weekly-fundamentals-fetch.sh)
 
 **What it does:**
 - Downloads new XBRL files from NSE/BSE
@@ -48,6 +48,54 @@ This folder contains shell scripts that orchestrate data processing pipelines. T
 ```cron
 0 22 * * 0 cd /path/to/project && ./scripts/batch/weekly-fundamentals-batch.sh
 ```
+
+---
+
+### 2b. `weekly-fundamentals-fetch.sh` 🆕 NEW!
+**Purpose:** Automated weekly XBRL download & processing (RECOMMENDED)
+
+**What it does:**
+1. **Smart Symbol Detection** - Gets companies with recent results (3 strategies):
+   - Strategy 1: NSE event calendar API (most accurate)
+   - Strategy 2: Top N companies by market cap (fallback)
+   - Strategy 3: Static list of major companies (last resort)
+2. **Incremental Downloads** - Only fetches recent results (avoids duplicates)
+3. **Parse & Store** - Processes XBRL files → DuckDB
+4. **Full Logging** - Complete audit trail
+
+**When to run:** Weekly (or daily for frequent updates)
+
+**Usage:**
+```bash
+# Run full pipeline
+./scripts/batch/weekly-fundamentals-fetch.sh
+
+# Manual steps (if needed):
+# 1. Get symbols
+./venv/bin/python3 scripts/fundamental/get_recent_results_symbols.py --days 7
+
+# 2. Download
+./venv/bin/python3 scripts/fundamental/fetch_nse_financial_results.py --file symbols_this_week.txt
+
+# 3. Process
+./venv/bin/python3 scripts/fundamental/xbrl_eod.py --dir ./xbrl
+```
+
+**Cron example:**
+```cron
+# Weekly on Sunday at 8 AM
+0 8 * * 0 cd /path/to/project && ./scripts/batch/weekly-fundamentals-fetch.sh
+
+# Or daily for frequent updates
+0 19 * * 1-5 cd /path/to/project && ./scripts/batch/weekly-fundamentals-fetch.sh
+```
+
+**Features:**
+- ✅ Reuses existing scripts (no code duplication)
+- ✅ Smart duplicate prevention (DuckDB tracking)
+- ✅ Multiple fallback strategies
+- ✅ DuckDB only (no Firebase dependency)
+- ✅ Comprehensive logging
 
 ---
 
@@ -124,7 +172,10 @@ XBRL_DIR=/path/to/xbrl/files ./scripts/batch/process_downloaded_xbrl.sh
 
 ### Weekly Workflow:
 ```bash
-# 1. Download and process XBRL data
+# 1. Download and process XBRL data (NEW - RECOMMENDED)
+./scripts/batch/weekly-fundamentals-fetch.sh
+
+# OR use legacy script
 ./scripts/batch/weekly-fundamentals-batch.sh
 
 # 2. Update top companies list

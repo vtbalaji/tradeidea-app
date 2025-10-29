@@ -748,6 +748,34 @@ class EnhancedXBRLParser:
                 except:
                     pass
 
+        # Fallback: If no period found in contexts, look for BSE-specific date fields
+        # Some older BSE XBRL files store dates as data elements instead of in contexts
+        if latest_date is None:
+            try:
+                # Look for BSE-specific reporting period fields
+                for elem in self.root.iter():
+                    tag_name = elem.tag.split('}')[-1] if '}' in elem.tag else elem.tag
+
+                    # Check for end date fields
+                    if tag_name in ['DateOfEndOfReportingPeriod', 'DateOfEndOfFinancialYear']:
+                        if elem.text and elem.text.strip():
+                            try:
+                                date_obj = datetime.strptime(elem.text.strip(), '%Y-%m-%d')
+                                if latest_date is None or date_obj > latest_date:
+                                    latest_date = date_obj
+                            except:
+                                pass
+
+                    # Check for start date fields
+                    if tag_name in ['DateOfStartOfReportingPeriod', 'DateOfStartOfFinancialYear']:
+                        if elem.text and elem.text.strip():
+                            try:
+                                start_date = datetime.strptime(elem.text.strip(), '%Y-%m-%d')
+                            except:
+                                pass
+            except:
+                pass
+
         return {
             'endDate': latest_date.strftime('%Y-%m-%d') if latest_date else None,
             'startDate': start_date.strftime('%Y-%m-%d') if start_date else None,

@@ -295,26 +295,66 @@ class JScore:
 
     @staticmethod
     def _check_reserves_anomaly(current, previous):
-        """Check if reserves increasing without corresponding profit/cash"""
+        """Check if reserves movement is abnormal (without profit/dividends)"""
         try:
+            # Skip if reserves data is missing or zero (data quality issue)
+            if current['reserves'] == 0 or previous['reserves'] == 0:
+                return None, 0
+
             reserves_change = current['reserves'] - previous['reserves']
             net_income = current['net_income']
 
+            # Get dividend data if available
+            total_dividends = 0
+            if 'dividends_paid' in current and current['dividends_paid']:
+                total_dividends = abs(current['dividends_paid'])
+            elif 'dividend_per_share' in current and current['shares_outstanding']:
+                total_dividends = current['dividend_per_share'] * current['shares_outstanding']
+
+            # Case 1: Reserves INCREASED more than profit
             if reserves_change > net_income * 1.3 and reserves_change > 0:
                 return {
                     'year': current.get('fy', 'Unknown'),
-                    'type': 'Reserves Anomaly',
+                    'type': 'Reserves Anomaly - Unexplained Increase',
                     'severity': 'MEDIUM',
-                    'description': f"Reserves increased ₹{int(reserves_change / 10000000)} Cr vs profit ₹{int(net_income / 10000000)} Cr - investigate source",
+                    'description': f"Reserves increased ₹{int(reserves_change / 10000000)} Cr vs profit ₹{int(net_income / 10000000)} Cr - investigate source (revaluation/FX gains?)",
                     'values': {
                         'reserves_change_cr': round(reserves_change / 10000000, 2),
                         'net_income_cr': round(net_income / 10000000, 2)
                     }
                 }, 2
-            else:
-                return None, 0
 
-        except:
+            # Case 2: Reserves DECREASED significantly WITHOUT sufficient dividends
+            # Expected decrease = dividends paid
+            # If actual decrease > expected, it's a red flag
+            elif reserves_change < 0:
+                expected_decrease = total_dividends
+                actual_decrease = abs(reserves_change)
+                unexplained_decrease = actual_decrease - expected_decrease
+
+                # Flag if unexplained decrease > 20% of net income
+                if unexplained_decrease > net_income * 0.2 and unexplained_decrease > 1000000000:  # >100 Cr
+                    if total_dividends > 0:
+                        description = f"Reserves declined ₹{int(actual_decrease / 10000000)} Cr (dividends: ₹{int(expected_decrease / 10000000)} Cr, unexplained: ₹{int(unexplained_decrease / 10000000)} Cr) - investigate losses/write-offs"
+                    else:
+                        description = f"Reserves declined ₹{int(actual_decrease / 10000000)} Cr with no dividends reported - investigate losses/write-offs/adjustments"
+
+                    return {
+                        'year': current.get('fy', 'Unknown'),
+                        'type': 'Reserves Anomaly - Unexplained Decrease',
+                        'severity': 'MEDIUM',
+                        'description': description,
+                        'values': {
+                            'reserves_decrease_cr': round(actual_decrease / 10000000, 2),
+                            'dividends_paid_cr': round(expected_decrease / 10000000, 2),
+                            'unexplained_cr': round(unexplained_decrease / 10000000, 2),
+                            'net_income_cr': round(net_income / 10000000, 2)
+                        }
+                    }, 2
+
+            return None, 0
+
+        except Exception as e:
             return None, 0
 
     @staticmethod

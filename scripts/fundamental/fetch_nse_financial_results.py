@@ -8,6 +8,7 @@ Downloads both standalone and consolidated financial statements in XBRL/PDF form
 By default, only downloads data from the last 7 years to reduce download size.
 
 Usage:
+# ./scripts/fundamental/fetch_nse_financial_results.py --top 250 --skip 500 --limit 5 --source both
     # Single symbol (default: last 7 years)
     python3 scripts/fetch_nse_financial_results.py TCS
 
@@ -19,6 +20,9 @@ Usage:
 
     # Top N symbols by market cap
     python3 scripts/fetch_nse_financial_results.py --top 100
+
+    # Download symbols 251-500 (skip first 250)
+    python3 scripts/fetch_nse_financial_results.py --top 250 --skip 250
 
     # From file (one symbol per line)
     python3 scripts/fetch_nse_financial_results.py --file symbols.txt
@@ -957,13 +961,14 @@ def initialize_firebase():
         return False
 
 
-def get_top_symbols_by_market_cap(limit=250):
+def get_top_symbols_by_market_cap(limit=250, skip=0):
     """
     Get top N symbols by market cap from Firebase
     Uses the same logic as generate-chart-data.py
 
     Args:
         limit: Number of top symbols to return (default 250)
+        skip: Number of top symbols to skip (default 0)
 
     Returns:
         List of symbol names sorted by market cap (highest first)
@@ -1001,10 +1006,17 @@ def get_top_symbols_by_market_cap(limit=250):
 
         # Sort by market cap (descending) and take top N
         symbols_with_mcap.sort(key=lambda x: x['marketCap'], reverse=True)
-        top_symbols = [s['symbol'] for s in symbols_with_mcap[:limit]]
+
+        # Apply skip and limit
+        end_index = skip + limit
+        top_symbols = [s['symbol'] for s in symbols_with_mcap[skip:end_index]]
 
         print(f'📊 Found {len(symbols_with_mcap)} symbols with market cap data')
-        print(f'🎯 Selected top {limit} by market cap')
+        if skip > 0:
+            print(f'⏭️  Skipped first {skip} symbols')
+            print(f'🎯 Selected symbols {skip+1} to {skip+len(top_symbols)} by market cap')
+        else:
+            print(f'🎯 Selected top {len(top_symbols)} by market cap')
 
         return top_symbols
 
@@ -1034,6 +1046,9 @@ Examples:
     # Download for top 100 symbols by market cap
     python3 scripts/fetch_nse_financial_results.py --top 100
 
+    # Download symbols 251-500 (skip first 250)
+    python3 scripts/fetch_nse_financial_results.py --top 250 --skip 250
+
     # Download ALL historical data (no year limit)
     python3 scripts/fetch_nse_financial_results.py TCS --years 0
 
@@ -1052,6 +1067,7 @@ Examples:
     parser.add_argument('--file', dest='symbols_file', help='File containing symbols (one per line)')
     parser.add_argument('--top250', action='store_true', help='Fetch financial results for top 250 symbols by market cap')
     parser.add_argument('--top', type=int, help='Fetch financial results for top N symbols by market cap')
+    parser.add_argument('--skip', type=int, default=0, help='Skip first N symbols when using --top or --top250 (e.g., --top 250 --skip 250 for symbols 251-500)')
     parser.add_argument('--limit', type=int, help='Limit number of results per symbol')
     parser.add_argument('--years', type=int, default=7, help='Limit downloads to last N years (default: 7, use --years 0 to download all)')
     parser.add_argument('--output', default='xbrl', help='Output directory (default: xbrl)')
@@ -1109,7 +1125,7 @@ Examples:
 
     # Add top symbols by market cap
     if args.top250:
-        top_symbols = get_top_symbols_by_market_cap(limit=250)
+        top_symbols = get_top_symbols_by_market_cap(limit=250, skip=args.skip)
         if top_symbols:
             symbols.extend(top_symbols)
         else:
@@ -1118,7 +1134,7 @@ Examples:
             sys.exit(1)
 
     if args.top:
-        top_symbols = get_top_symbols_by_market_cap(limit=args.top)
+        top_symbols = get_top_symbols_by_market_cap(limit=args.top, skip=args.skip)
         if top_symbols:
             symbols.extend(top_symbols)
         else:

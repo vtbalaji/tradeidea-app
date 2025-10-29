@@ -71,6 +71,10 @@ output/**
 scripts/tobedelete/**
 scripts/tobedelete/
 scripts/unused/
-scripts/unused/** 
+scripts/unused/**
 
 /scripts/tobedeleted/
+
+# Test scripts and generated reports in root
+test-*.js
+enhanced_report_*.json

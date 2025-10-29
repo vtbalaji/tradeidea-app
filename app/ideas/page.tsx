@@ -350,30 +350,24 @@ export default function IdeasHubPage() {
         {(idea.technicals || idea.fundamentals) && (
           <>
             {/* Expandable Analytics Button */}
-            <div className="flex justify-center mb-3">
+            <div className="flex justify-center my-1">
               <button
                 onClick={(e) => {
                   e.stopPropagation();
                   setExpandedAnalyticsId(expandedAnalyticsId === idea.id ? null : idea.id);
                 }}
-                className="p-2 hover:bg-orange-500/10 rounded-full transition-colors text-[#ff8c42] hover:text-[#ff7a2e]"
+                className="px-3 py-1 hover:bg-orange-500/10 rounded-lg transition-colors text-[#ff8c42] hover:text-[#ff7a2e]"
                 title={expandedAnalyticsId === idea.id ? "Hide details" : "Show details"}
               >
-                <svg
-                  width="24"
-                  height="24"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  className={`transform transition-transform duration-200 ${
-                    expandedAnalyticsId === idea.id ? 'rotate-180' : ''
-                  }`}
-                >
-                  <path d="M6 9l6 6 6-6"/>
-                </svg>
+                <div className={`transform transition-transform duration-200 ${
+                  expandedAnalyticsId === idea.id ? 'rotate-180' : ''
+                }`}>
+                  {/* Double Chevron */}
+                  <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M6 8l6 6 6-6"/>
+                    <path d="M6 12l6 6 6-6"/>
+                  </svg>
+                </div>
               </button>
             </div>
 
