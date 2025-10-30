@@ -282,169 +282,294 @@ class XBRLStorage:
             except (ValueError, TypeError):
                 return default
 
-        # Store complete data (raw + calculated)
-        self.conn.execute("""
-            INSERT OR REPLACE INTO xbrl_data VALUES (
-                ?, ?, ?, ?,
-                ?, ?, ?,
-                ?, ?, ?, ?, ?, ?, ?, ?,
-                ?, ?, ?, ?, ?, ?, ?, ?,
-                ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
-                ?, ?, ?,
-                ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
-                ?, ?, ?,
-                ?, ?, ?, ?, ?, ?, ?, ?, ?,
-                ?, ?, ?, ?,
-                ?, ?, ?, ?,
-                ?, ?, ?, ?, ?, ?,
-                ?, ?,
-                ?, ?, ?, ?,
-                ?, ?, ?, ?, ?,
-                ?, ?, ?,
-                ?, ?, ?, ?, ?,
-                ?, ?,
-                ?, ?, ?
-            )
-        """, [
+        # Build data dictionary with all values mapped to column names
+        data_dict = {
             # Primary key
-            symbol, fy, quarter, statement_type,
+            'symbol': symbol,
+            'fy': fy,
+            'quarter': quarter,
+            'statement_type': statement_type,
 
             # Period info
-            period_info['endDate'], period_info.get('startDate'), period_info.get('isAnnual', False),
+            'end_date': period_info['endDate'],
+            'start_date': period_info.get('startDate'),
+            'is_annual': period_info.get('isAnnual', False),
 
             # Raw: Balance Sheet - Assets
-            to_int(xbrl_data.get('Assets')),
-            to_int(xbrl_data.get('CurrentAssets')),
-            to_int(xbrl_data.get('NonCurrentAssets')),
-            to_int(xbrl_data.get('FixedAssets')),
-            to_int(xbrl_data.get('Investments')),
-            to_int(xbrl_data.get('CashAndCashEquivalents')),
-            to_int(xbrl_data.get('TradeReceivables')),
-            to_int(xbrl_data.get('Inventories')),
+            'raw_assets': to_int(xbrl_data.get('Assets')),
+            'raw_current_assets': to_int(xbrl_data.get('CurrentAssets')),
+            'raw_non_current_assets': to_int(xbrl_data.get('NonCurrentAssets')),
+            'raw_fixed_assets': to_int(xbrl_data.get('FixedAssets')),
+            'raw_investments': to_int(xbrl_data.get('Investments')),
+            'raw_cash_and_equivalents': to_int(xbrl_data.get('CashAndCashEquivalents')),
+            'raw_trade_receivables': to_int(xbrl_data.get('TradeReceivables')),
+            'raw_inventories': to_int(xbrl_data.get('Inventories')),
 
             # Raw: Balance Sheet - Liabilities & Equity
-            to_int(xbrl_data.get('EquityAndLiabilities')),
-            to_int(xbrl_data.get('Equity')),
-            to_int(xbrl_data.get('ShareCapital')),
-            to_int(xbrl_data.get('Reserves')),
-            to_int(xbrl_data.get('TotalDebt')),
-            to_int(xbrl_data.get('CurrentLiabilities')),
-            to_int(xbrl_data.get('NonCurrentLiabilities')),
-            to_int(xbrl_data.get('TradePayables')),
+            'raw_equity_and_liabilities': to_int(xbrl_data.get('EquityAndLiabilities')),
+            'raw_equity': to_int(xbrl_data.get('Equity')),
+            'raw_share_capital': to_int(xbrl_data.get('ShareCapital')),
+            'raw_reserves': to_int(xbrl_data.get('Reserves')),
+            'raw_total_debt': to_int(xbrl_data.get('TotalDebt')),
+            'raw_current_liabilities': to_int(xbrl_data.get('CurrentLiabilities')),
+            'raw_non_current_liabilities': to_int(xbrl_data.get('NonCurrentLiabilities')),
+            'raw_trade_payables': to_int(xbrl_data.get('TradePayables')),
 
             # Raw: P&L Statement
-            to_int(xbrl_data.get('Revenue')),
-            to_int(xbrl_data.get('OtherIncome')),
-            to_int(xbrl_data.get('TotalIncome')),
-            to_int(xbrl_data.get('OperatingExpenses')),
-            to_int(xbrl_data.get('EmployeeBenefits')),
-            to_int(xbrl_data.get('Depreciation')),
-            to_int(xbrl_data.get('FinanceCosts')),
-            to_int(xbrl_data.get('OperatingProfit')),
-            to_int(xbrl_data.get('EBITDA')),
-            to_int(xbrl_data.get('ProfitBeforeTax')),
-            to_int(xbrl_data.get('TaxExpense')),
-            to_int(xbrl_data.get('NetProfit')),
+            'raw_revenue': to_int(xbrl_data.get('Revenue')),
+            'raw_other_income': to_int(xbrl_data.get('OtherIncome')),
+            'raw_total_income': to_int(xbrl_data.get('TotalIncome')),
+            'raw_operating_expenses': to_int(xbrl_data.get('OperatingExpenses')),
+            'raw_employee_benefits': to_int(xbrl_data.get('EmployeeBenefits')),
+            'raw_depreciation': to_int(xbrl_data.get('Depreciation')),
+            'raw_finance_costs': to_int(xbrl_data.get('FinanceCosts')),
+            'raw_operating_profit': to_int(xbrl_data.get('OperatingProfit')),
+            'raw_ebitda': to_int(xbrl_data.get('EBITDA')),
+            'raw_profit_before_tax': to_int(xbrl_data.get('ProfitBeforeTax')),
+            'raw_tax_expense': to_int(xbrl_data.get('TaxExpense')),
+            'raw_net_profit': to_int(xbrl_data.get('NetProfit')),
 
             # Raw: Cash Flow
-            to_int(xbrl_data.get('OperatingCashFlow')),
-            to_int(xbrl_data.get('InvestingCashFlow')),
-            to_int(xbrl_data.get('FinancingCashFlow')),
+            'raw_operating_cash_flow': to_int(xbrl_data.get('OperatingCashFlow')),
+            'raw_investing_cash_flow': to_int(xbrl_data.get('InvestingCashFlow')),
+            'raw_financing_cash_flow': to_int(xbrl_data.get('FinancingCashFlow')),
 
             # Raw: Per Share & Shares
-            to_float(xbrl_data.get('EPS')),
-            to_float(xbrl_data.get('DividendPerShare')),
-            to_int(xbrl_data.get('NumberOfShares')),
+            'raw_eps': to_float(xbrl_data.get('EPS')),
+            'raw_dividend_per_share': to_float(xbrl_data.get('DividendPerShare')),
+            'raw_number_of_shares': to_int(xbrl_data.get('NumberOfShares')),
 
             # Raw: Banking-Specific
-            to_int(xbrl_data.get('InterestIncome')),
-            to_int(xbrl_data.get('InterestOnAdvances')),
-            to_int(xbrl_data.get('InterestOnInvestments')),
-            to_int(xbrl_data.get('InterestOnRBIBalances')),
-            to_int(xbrl_data.get('InterestExpense')),
-            to_int(xbrl_data.get('NetInterestIncome')),
-            to_int(xbrl_data.get('NonInterestIncome')),
-            to_int(xbrl_data.get('FeeIncome')),
-            to_int(xbrl_data.get('TradingIncome')),
-            to_int(xbrl_data.get('Provisions')),
-            to_int(xbrl_data.get('Advances')),
-            to_int(xbrl_data.get('Deposits')),
-            to_int(xbrl_data.get('CashWithRBI')),
-            to_int(xbrl_data.get('InterBankFunds')),
-            to_int(xbrl_data.get('InvestmentsBank')),
+            'raw_interest_income': to_int(xbrl_data.get('InterestIncome')),
+            'raw_interest_on_advances': to_int(xbrl_data.get('InterestOnAdvances')),
+            'raw_interest_on_investments': to_int(xbrl_data.get('InterestOnInvestments')),
+            'raw_interest_on_rbi_balances': to_int(xbrl_data.get('InterestOnRBIBalances')),
+            'raw_interest_expense': to_int(xbrl_data.get('InterestExpense')),
+            'raw_net_interest_income': to_int(xbrl_data.get('NetInterestIncome')),
+            'raw_non_interest_income': to_int(xbrl_data.get('NonInterestIncome')),
+            'raw_fee_income': to_int(xbrl_data.get('FeeIncome')),
+            'raw_trading_income': to_int(xbrl_data.get('TradingIncome')),
+            'raw_provisions': to_int(xbrl_data.get('Provisions')),
+            'raw_advances': to_int(xbrl_data.get('Advances')),
+            'raw_deposits': to_int(xbrl_data.get('Deposits')),
+            'raw_cash_with_rbi': to_int(xbrl_data.get('CashWithRBI')),
+            'raw_interbank_funds': to_int(xbrl_data.get('InterBankFunds')),
+            'raw_investments_bank': to_int(xbrl_data.get('InvestmentsBank')),
+
+            # Raw: New Banking Fields
+            'raw_operating_profit_before_provisions': to_int(xbrl_data.get('OperatingProfitBeforeProvisions')),
+            'raw_gross_npa': to_int(xbrl_data.get('GrossNPA')),
+            'raw_net_npa': to_int(xbrl_data.get('NetNPA')),
+            'raw_cet1_ratio': to_float(xbrl_data.get('CET1Ratio')),
+            'raw_tier1_ratio': to_float(xbrl_data.get('Tier1Ratio')),
+            'raw_cost_to_income_ratio': to_float(xbrl_data.get('CostToIncomeRatio')),
+            'raw_casa_ratio': to_float(None),  # Will be calculated below
+
+            # Raw: General Additional Fields
+            'raw_extraordinary_items': to_int(xbrl_data.get('ExtraordinaryItems')),
+            'raw_exceptional_items': to_int(xbrl_data.get('ExceptionalItems')),
+            'raw_minority_interest': to_int(xbrl_data.get('MinorityInterest')),
+
+            # Industry Classification
+            'raw_industry': None,  # Will be set below
 
             # Calculated: Values in Crores
-            to_float(fundamentals.get('revenueCr')),
-            to_float(fundamentals.get('netProfitCr')),
-            to_float(fundamentals.get('ebitdaCr')),
-            to_float(fundamentals.get('operatingProfitCr')),
-            to_float(fundamentals.get('totalAssetsCr')),
-            to_float(fundamentals.get('totalEquityCr')),
-            to_float(fundamentals.get('totalDebtCr')),
-            to_float(fundamentals.get('cashCr')),
-            to_float(fundamentals.get('sharesOutstandingCr')),
+            'revenue_cr': to_float(fundamentals.get('revenueCr')),
+            'net_profit_cr': to_float(fundamentals.get('netProfitCr')),
+            'ebitda_cr': to_float(fundamentals.get('ebitdaCr')),
+            'operating_profit_cr': to_float(fundamentals.get('operatingProfitCr')),
+            'total_assets_cr': to_float(fundamentals.get('totalAssetsCr')),
+            'total_equity_cr': to_float(fundamentals.get('totalEquityCr')),
+            'total_debt_cr': to_float(fundamentals.get('totalDebtCr')),
+            'cash_cr': to_float(fundamentals.get('cashCr')),
+            'shares_outstanding_cr': to_float(fundamentals.get('sharesOutstandingCr')),
 
             # Calculated: Market Data
-            to_float(fundamentals.get('currentPrice')),
-            to_float(fundamentals.get('marketCap')),
-            to_float(fundamentals.get('marketCapCr')),
-            to_float(fundamentals.get('enterpriseValueCr')),
+            'current_price': to_float(fundamentals.get('currentPrice')),
+            'market_cap': to_float(fundamentals.get('marketCap')),
+            'market_cap_cr': to_float(fundamentals.get('marketCapCr')),
+            'enterprise_value_cr': to_float(fundamentals.get('enterpriseValueCr')),
 
             # Calculated: Valuation Ratios
-            to_float(fundamentals.get('PE')),
-            to_float(fundamentals.get('PB')),
-            to_float(fundamentals.get('PS')),
-            to_float(fundamentals.get('EVEBITDA')),
+            'pe': to_float(fundamentals.get('PE')),
+            'pb': to_float(fundamentals.get('PB')),
+            'ps': to_float(fundamentals.get('PS')),
+            'ev_ebitda': to_float(fundamentals.get('EVEBITDA')),
 
             # Calculated: Profitability Ratios
-            to_float(fundamentals.get('ROE')),
-            to_float(fundamentals.get('ROA')),
-            to_float(fundamentals.get('ROCE')),
-            to_float(fundamentals.get('netProfitMargin')),
-            to_float(fundamentals.get('operatingProfitMargin')),
-            to_float(fundamentals.get('EBITDAMargin')),
+            'roe': to_float(fundamentals.get('ROE')),
+            'roa': to_float(fundamentals.get('ROA')),
+            'roce': to_float(fundamentals.get('ROCE')),
+            'net_profit_margin': to_float(fundamentals.get('netProfitMargin')),
+            'operating_profit_margin': to_float(fundamentals.get('operatingProfitMargin')),
+            'ebitda_margin': to_float(fundamentals.get('EBITDAMargin')),
 
             # Calculated: Liquidity Ratios
-            to_float(fundamentals.get('currentRatio')),
-            to_float(fundamentals.get('quickRatio')),
+            'current_ratio': to_float(fundamentals.get('currentRatio')),
+            'quick_ratio': to_float(fundamentals.get('quickRatio')),
 
             # Calculated: Leverage Ratios
-            to_float(fundamentals.get('debtToEquity')),
-            to_float(fundamentals.get('debtToAssets')),
-            to_float(fundamentals.get('equityMultiplier')),
-            to_float(fundamentals.get('interestCoverage')),
+            'debt_to_equity': to_float(fundamentals.get('debtToEquity')),
+            'debt_to_assets': to_float(fundamentals.get('debtToAssets')),
+            'equity_multiplier': to_float(fundamentals.get('equityMultiplier')),
+            'interest_coverage': to_float(fundamentals.get('interestCoverage')),
 
             # Calculated: Efficiency Ratios
-            to_float(fundamentals.get('receivablesTurnover')),
-            to_float(fundamentals.get('inventoryTurnover')),
-            to_float(fundamentals.get('payablesTurnover')),
-            to_float(fundamentals.get('cashConversionCycle')),
-            to_float(fundamentals.get('assetTurnover')),
+            'receivables_turnover': to_float(fundamentals.get('receivablesTurnover')),
+            'inventory_turnover': to_float(fundamentals.get('inventoryTurnover')),
+            'payables_turnover': to_float(fundamentals.get('payablesTurnover')),
+            'cash_conversion_cycle': to_float(fundamentals.get('cashConversionCycle')),
+            'asset_turnover': to_float(fundamentals.get('assetTurnover')),
 
             # Calculated: Quality Metrics
-            to_float(fundamentals.get('otherIncomePct')),
-            to_float(fundamentals.get('effectiveTaxRate')),
-            to_float(fundamentals.get('employeeCostPct')),
+            'other_income_pct': to_float(fundamentals.get('otherIncomePct')),
+            'effective_tax_rate': to_float(fundamentals.get('effectiveTaxRate')),
+            'employee_cost_pct': to_float(fundamentals.get('employeeCostPct')),
 
             # Calculated: Per Share Metrics
-            to_float(fundamentals.get('EPS')),
-            to_float(fundamentals.get('EPS_TTM')),  # TTM EPS
-            to_float(fundamentals.get('bookValuePerShare')),
-            to_float(fundamentals.get('revenuePerShare')),
-            to_float(fundamentals.get('cashPerShare')),
-            to_float(fundamentals.get('dividendPerShare')),
+            'eps': to_float(fundamentals.get('EPS')),
+            'book_value_per_share': to_float(fundamentals.get('bookValuePerShare')),
+            'revenue_per_share': to_float(fundamentals.get('revenuePerShare')),
+            'cash_per_share': to_float(fundamentals.get('cashPerShare')),
+            'dividend_per_share': to_float(fundamentals.get('dividendPerShare')),
 
             # Calculated: Dividend Metrics
-            to_float(fundamentals.get('dividendYield')),
-            to_float(fundamentals.get('dividendPayoutRatio')),
+            'dividend_yield': to_float(fundamentals.get('dividendYield')),
+            'dividend_payout_ratio': to_float(fundamentals.get('dividendPayoutRatio')),
 
             # Metadata
-            'xbrl',
-            source_file,
-            datetime.now(),  # processed_at
-        ])
+            'source': 'xbrl',
+            'source_file': source_file,
+            'processed_at': datetime.now(),
+
+            # TTM EPS (added later via ALTER TABLE, so it's at the end in actual DB)
+            'eps_ttm': to_float(fundamentals.get('EPS_TTM')),
+
+            # TTM calculations
+            'revenue_ttm': to_float(None),  # Will be calculated in data_loader
+            'net_profit_ttm': to_float(None),  # Will be calculated in data_loader
+        }
+
+        # ============================================
+        # POST-PROCESSING: Calculate missing fields
+        # ============================================
+
+        # 1. FIX: Calculate Net Interest Income if missing
+        if not data_dict.get('raw_net_interest_income'):
+            interest_income = data_dict.get('raw_interest_income') or 0
+            interest_expense = data_dict.get('raw_interest_expense') or 0
+            if interest_income > 0 or interest_expense > 0:
+                data_dict['raw_net_interest_income'] = interest_income - interest_expense
+                print(f"  💡 Calculated NII: {interest_income:,.0f} - {interest_expense:,.0f} = {data_dict['raw_net_interest_income']:,.0f}")
+
+        # 2. NEW: Detect and store industry classification
+        data_dict['raw_industry'] = self._detect_industry(xbrl_data)
+
+        # 3. NEW: Calculate CASA ratio for banks (Current + Savings / Total Deposits)
+        current_deposits = to_int(xbrl_data.get('CurrentAccountDeposits')) or 0
+        savings_deposits = to_int(xbrl_data.get('SavingsAccountDeposits')) or 0
+        total_deposits = data_dict.get('raw_deposits') or 0
+        if total_deposits > 0 and (current_deposits > 0 or savings_deposits > 0):
+            casa = current_deposits + savings_deposits
+            data_dict['raw_casa_ratio'] = round((casa / total_deposits) * 100, 2)
+            print(f"  💡 Calculated CASA Ratio: {data_dict['raw_casa_ratio']:.2f}%")
+
+        # 4. NEW: Data Validation Warnings
+        self._validate_data(data_dict, symbol, fy, quarter)
+
+        # Get column names in the order they exist in the database
+        columns = list(data_dict.keys())
+        values = [data_dict[col] for col in columns]
+
+        # Build INSERT statement dynamically
+        placeholders = ', '.join(['?'] * len(columns))
+        columns_str = ', '.join(columns)
+
+        # Store complete data using dynamic INSERT (order-independent)
+        self.conn.execute(f"""
+            INSERT OR REPLACE INTO xbrl_data ({columns_str})
+            VALUES ({placeholders})
+        """, values)
 
         print(f'  ✅ Stored in xbrl_data: {symbol} {fy} {quarter} ({statement_type})')
+
+    def _detect_industry(self, xbrl_data):
+        """
+        Detect industry classification based on XBRL data
+
+        Returns: 'BANKING', 'NBFC', 'INSURANCE', 'MANUFACTURING', 'SERVICES', or None
+        """
+        # Banking: Has interest income AND deposits (core banking indicator)
+        has_interest_income = xbrl_data.get('InterestIncome') is not None
+        has_deposits = xbrl_data.get('Deposits') is not None
+        has_advances = xbrl_data.get('Advances') is not None
+
+        if has_interest_income and has_deposits:
+            return 'BANKING'
+
+        # NBFC: Has interest income but no deposits (lends but doesn't take deposits)
+        if has_interest_income and has_advances and not has_deposits:
+            return 'NBFC'
+
+        # Insurance: Check for insurance-specific fields
+        # (Would need insurance-specific XBRL fields like PremiumIncome)
+        # For now, skip insurance detection
+
+        # Manufacturing: Has inventory and COGS
+        has_inventory = xbrl_data.get('Inventories') is not None
+        has_revenue = xbrl_data.get('Revenue') is not None
+
+        if has_inventory and has_revenue:
+            return 'MANUFACTURING'
+
+        # Services: Everything else with revenue
+        if has_revenue:
+            return 'SERVICES'
+
+        return None
+
+    def _validate_data(self, data_dict, symbol, fy, quarter):
+        """
+        Validate data and print warnings for potential issues
+        """
+        warnings = []
+
+        # Check for extremely high debt-to-equity
+        debt_to_equity = data_dict.get('debt_to_equity')
+        if debt_to_equity and debt_to_equity > 100:
+            warnings.append(f"Extremely high D/E ratio: {debt_to_equity:.2f}")
+
+        # Check for negative equity
+        raw_equity = data_dict.get('raw_equity')
+        if raw_equity and raw_equity < 0:
+            warnings.append(f"Negative equity: {raw_equity:,.0f}")
+
+        # Check for negative revenue (shouldn't happen)
+        raw_revenue = data_dict.get('raw_revenue')
+        if raw_revenue and raw_revenue < 0:
+            warnings.append(f"Negative revenue: {raw_revenue:,.0f}")
+
+        # Check for missing critical fields
+        if not raw_revenue and data_dict.get('raw_industry') not in ['BANKING']:
+            warnings.append("Missing revenue")
+
+        if not data_dict.get('raw_net_profit'):
+            warnings.append("Missing net profit")
+
+        if not data_dict.get('raw_assets'):
+            warnings.append("Missing assets")
+
+        # Check sign validation: expenses should typically be positive
+        # (representing money going out)
+        tax_expense = data_dict.get('raw_tax_expense')
+        if tax_expense and tax_expense < 0:
+            warnings.append(f"Negative tax expense (unusual): {tax_expense:,.0f}")
+
+        # Print warnings if any
+        if warnings:
+            print(f"  ⚠️  Data Validation Warnings for {symbol} {fy} {quarter}:")
+            for warning in warnings:
+                print(f"     - {warning}")
 
     def mark_file_processed(self, file_name, file_path, symbol, statement_type, fy, quarter, end_date,
                            file_size_bytes, status='success', error_message=None):

@@ -56,28 +56,49 @@ export async function POST(request: NextRequest) {
       notes,
     } = body;
 
-    // Validate required fields
+    // Validate required fields before any DB calls
     if (!symbol || !direction || !quantity || !entryPrice || !entryDate) {
       return createErrorResponse('Missing required fields', 400);
     }
 
-    // Verify account belongs to user if accountId is provided
-    if (accountId) {
-      const accountDoc = await db.collection('accounts').doc(accountId).get();
+    // OPTIMIZATION: Parallelize independent DB reads
+    const parallelOperations = [
+      // 1. Fetch user data (for subscription check)
+      db.collection('users').doc(userId).get(),
+      // 2. Count open positions
+      db.collection('portfolios')
+        .where('userId', '==', userId)
+        .where('status', '==', 'open')
+        .get(),
+      // 3. Verify account ownership if accountId provided
+      accountId ? db.collection('accounts').doc(accountId).get() : Promise.resolve(null),
+    ];
+
+    const [userDoc, openPositionsSnapshot, accountDoc] = await Promise.all(parallelOperations);
+
+    // Verify user exists
+    if (!userDoc.exists) {
+      return createErrorResponse('User not found', 404);
+    }
+
+    // Verify account belongs to user if accountId was provided
+    if (accountId && accountDoc) {
       if (!accountDoc.exists || accountDoc.data()?.userId !== userId) {
         return createErrorResponse('Invalid account', 400);
       }
     }
 
-    // Check subscription and position limits
-    const openPositionsSnapshot = await db
-      .collection('portfolios')
-      .where('userId', '==', userId)
-      .where('status', '==', 'open')
-      .get();
+    // Check subscription and position limits inline (avoid duplicate DB read)
+    const userData = userDoc.data();
+    const subscription = {
+      subscriptionStatus: userData?.subscriptionStatus || 'free',
+      subscriptionTier: userData?.subscriptionTier || 'free',
+      subscriptionEndDate: userData?.subscriptionEndDate || null,
+    };
 
+    const { canCreatePosition } = await import('@/lib/featureGate');
     const currentOpenPositions = openPositionsSnapshot.size;
-    const canCreate = await verifyCanCreatePosition(userId, currentOpenPositions);
+    const canCreate = canCreatePosition(subscription, currentOpenPositions);
 
     if (!canCreate.allowed) {
       return createErrorResponse(

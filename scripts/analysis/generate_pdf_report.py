@@ -368,6 +368,188 @@ def extract_template_data(json_data):
     data['management_bar_class'] = 'good' if mgmt_score >= 7 else 'medium' if mgmt_score >= 5 else 'bad'
     data['management_highlights'] = management.get('highlights', [])[:5]
 
+    # Sector Analysis
+    sector_analysis = json_data.get('sector_analysis', {})
+    data['has_sector_analysis'] = bool(sector_analysis and sector_analysis.get('sector'))
+    if data['has_sector_analysis']:
+        data['sector_name'] = sector_analysis.get('sector', 'N/A')
+
+        # Extract key metrics based on sector
+        key_metrics = sector_analysis.get('key_metrics', {})
+
+        # Banking-specific metrics
+        if 'asset_quality' in key_metrics:
+            asset_quality = key_metrics.get('asset_quality', {})
+            profitability = key_metrics.get('profitability', {})
+            funding = key_metrics.get('funding', {})
+            capital = key_metrics.get('capital', {})
+
+            data['banking_gnpa'] = format_number(asset_quality.get('gross_npa', 0), 2)
+            data['banking_gnpa_status'] = asset_quality.get('gross_npa_status', '⚪')
+            data['banking_nnpa'] = format_number(asset_quality.get('net_npa', 0), 2)
+            data['banking_pcr'] = format_number(asset_quality.get('provision_coverage_ratio', 0), 1)
+
+            data['banking_nim'] = format_number(profitability.get('net_interest_margin', 0), 2)
+            data['banking_nim_status'] = profitability.get('nim_status', '⚪')
+            data['banking_roa'] = format_number(profitability.get('roa', 0), 2)
+
+            data['banking_casa'] = format_number(funding.get('casa_ratio', 0), 1)
+            data['banking_casa_status'] = funding.get('casa_status', '⚪')
+
+            data['banking_car'] = format_number(capital.get('capital_adequacy_ratio', 0), 1)
+            data['banking_car_status'] = capital.get('car_status', '⚪')
+
+        # IT-specific metrics
+        if 'productivity' in key_metrics:
+            productivity = key_metrics.get('productivity', {})
+            profitability = key_metrics.get('profitability', {})
+            people = key_metrics.get('people_metrics', {})
+            digital = key_metrics.get('digital', {})
+
+            data['it_revenue_per_emp'] = format_number(productivity.get('revenue_per_employee', 0), 1)
+            data['it_revenue_per_emp_status'] = productivity.get('status', '⚪')
+
+            data['it_ebitda_margin'] = format_number(profitability.get('ebitda_margin', 0), 1)
+            data['it_ebitda_status'] = profitability.get('status', '⚪')
+
+            data['it_attrition'] = format_number(people.get('attrition_rate'), 1) if people.get('attrition_rate') is not None else 'N/A'
+            data['it_attrition_status'] = people.get('attrition_status', '⚪')
+            data['it_utilization'] = format_number(people.get('utilization_rate'), 1) if people.get('utilization_rate') is not None else 'N/A'
+            data['it_utilization_status'] = people.get('utilization_status', '⚪')
+
+            data['it_digital_pct'] = format_number(digital.get('digital_revenue_pct'), 1) if digital.get('digital_revenue_pct') is not None else 'N/A'
+            data['it_digital_status'] = digital.get('digital_status', '⚪')
+
+        # Capital Goods-specific metrics
+        if 'order_book' in key_metrics:
+            order_book = key_metrics.get('order_book', {})
+            execution = key_metrics.get('execution', {})
+            profitability = key_metrics.get('profitability', {})
+            working_capital = key_metrics.get('working_capital', {})
+            financial_health = key_metrics.get('financial_health', {})
+
+            # Handle None values for order book (data may not be available)
+            data['cg_order_book_ratio'] = format_number(order_book.get('order_book_to_sales'), 2) if order_book.get('order_book_to_sales') is not None else 'N/A'
+            data['cg_order_book_status'] = order_book.get('order_book_rating', '⚪')
+            data['cg_visibility_months'] = format_number(order_book.get('visibility_months'), 0) if order_book.get('visibility_months') is not None else 'N/A'
+            data['cg_order_inflow_growth'] = format_number(order_book.get('order_inflow_growth'), 1) if order_book.get('order_inflow_growth') is not None else 'N/A'
+
+            data['cg_revenue_cagr'] = format_number(execution.get('revenue_cagr_3y', 0), 1)
+            data['cg_asset_turnover'] = format_number(execution.get('asset_turnover', 0), 2)
+            data['cg_asset_turnover_status'] = execution.get('asset_turnover_rating', '⚪')
+
+            data['cg_ebitda_margin'] = format_number(profitability.get('ebitda_margin', 0), 1)
+            data['cg_ebitda_status'] = profitability.get('ebitda_rating', '⚪')
+            data['cg_roc'] = format_number(profitability.get('return_on_capital', 0), 1)
+            data['cg_roc_status'] = profitability.get('roc_rating', '⚪')
+
+            data['cg_ccc'] = format_number(working_capital.get('cash_conversion_cycle', 0), 0)
+            data['cg_ccc_status'] = working_capital.get('ccc_rating', '⚪')
+
+            data['cg_debt_equity'] = format_number(financial_health.get('debt_equity', 0), 2)
+            data['cg_debt_equity_status'] = financial_health.get('de_rating', '⚪')
+            data['cg_interest_coverage'] = format_number(financial_health.get('interest_coverage', 0), 1)
+            data['cg_interest_coverage_status'] = financial_health.get('ic_rating', '⚪')
+
+        # Overall score
+        overall = key_metrics.get('overall_score', {})
+        data['sector_health_score'] = overall.get('score_percentage', 0)
+        data['sector_rating'] = overall.get('rating', 'N/A')
+        data['sector_rating_emoji'] = overall.get('rating_emoji', '⚪')
+
+        # Industry context
+        industry = sector_analysis.get('industry_context', {})
+        data['sector_trends'] = industry.get('key_trends', [])[:5]  # Top 5 trends
+        data['sector_outlook'] = industry.get('outlook', 'N/A')
+
+        # Growth catalysts
+        data['growth_catalysts'] = sector_analysis.get('growth_catalysts', [])[:5]  # Top 5
+
+    # Technical Analysis
+    data['has_technical'] = bool(technical and technical.get('current_price', 0) > 0)
+    if data['has_technical']:
+        data['tech_trend'] = technical.get('trend', 'Unknown')
+        data['tech_trend_emoji'] = technical.get('trend_emoji', '⚪')
+        data['tech_last_updated'] = technical.get('last_updated', 'N/A')
+
+        # Moving Averages
+        data['tech_ma_20'] = format_number(technical.get('ma_20', 0))
+        data['tech_ma_50'] = format_number(technical.get('ma_50', 0))
+        data['tech_ma_200'] = format_number(technical.get('ma_200', 0))
+
+        # RSI
+        rsi = technical.get('rsi', 50)
+        data['tech_rsi'] = format_number(rsi, 1)
+        if rsi > 70:
+            data['tech_rsi_status'] = 'bad'
+            data['tech_rsi_label'] = 'Overbought'
+            data['tech_rsi_color'] = '#dc3545'
+        elif rsi < 30:
+            data['tech_rsi_status'] = 'good'
+            data['tech_rsi_label'] = 'Oversold'
+            data['tech_rsi_color'] = '#28a745'
+        else:
+            data['tech_rsi_status'] = 'good'
+            data['tech_rsi_label'] = 'Neutral'
+            data['tech_rsi_color'] = '#6c757d'
+
+        # MACD
+        macd = technical.get('macd', 0)
+        macd_signal = technical.get('macd_signal', 0)
+        data['tech_macd'] = format_number(macd, 2)
+        data['tech_macd_signal'] = format_number(macd_signal, 2)
+        data['tech_macd_status'] = 'good' if macd > macd_signal else 'bad'
+        data['tech_macd_label'] = 'Bullish' if macd > macd_signal else 'Bearish'
+
+        # Bollinger Bands
+        bb_upper = technical.get('bb_upper', 0)
+        bb_lower = technical.get('bb_lower', 0)
+        data['tech_bb_upper'] = format_number(bb_upper)
+        data['tech_bb_lower'] = format_number(bb_lower)
+
+        # Support/Resistance
+        support = technical.get('support_52w', 0)
+        resistance = technical.get('resistance_52w', 0)
+        data['tech_support'] = format_number(support)
+        data['tech_resistance'] = format_number(resistance)
+
+        # Distance from support/resistance
+        if current_price > 0 and support > 0:
+            support_dist = ((current_price - support) / support) * 100
+            data['tech_support_dist'] = format_number(support_dist, 1)
+        else:
+            data['tech_support_dist'] = 'N/A'
+
+        if current_price > 0 and resistance > 0:
+            resistance_dist = ((resistance - current_price) / current_price) * 100
+            data['tech_resistance_dist'] = format_number(resistance_dist, 1)
+        else:
+            data['tech_resistance_dist'] = 'N/A'
+
+        # Volume
+        vol_ratio = technical.get('volume_ratio', 1)
+        data['tech_volume_ratio'] = format_number(vol_ratio, 2)
+        data['tech_volume_status'] = 'good' if vol_ratio > 1.5 else 'warning' if vol_ratio > 0.8 else 'bad'
+        data['tech_volume_label'] = 'High' if vol_ratio > 1.5 else 'Normal' if vol_ratio > 0.8 else 'Low'
+
+        # Performance
+        data['tech_perf_1m'] = format_number(technical.get('perf_1m', 0), 1)
+        data['tech_perf_3m'] = format_number(technical.get('perf_3m', 0), 1)
+        data['tech_perf_6m'] = format_number(technical.get('perf_6m', 0), 1)
+        data['tech_perf_1y'] = format_number(technical.get('perf_1y', 0), 1)
+
+        # Performance colors
+        data['tech_perf_1m_color'] = '#28a745' if technical.get('perf_1m', 0) > 0 else '#dc3545'
+        data['tech_perf_3m_color'] = '#28a745' if technical.get('perf_3m', 0) > 0 else '#dc3545'
+        data['tech_perf_6m_color'] = '#28a745' if technical.get('perf_6m', 0) > 0 else '#dc3545'
+        data['tech_perf_1y_color'] = '#28a745' if technical.get('perf_1y', 0) > 0 else '#dc3545'
+
+        # Volatility
+        volatility = technical.get('volatility', 0)
+        data['tech_volatility'] = format_number(volatility, 1)
+        data['tech_volatility_status'] = 'bad' if volatility > 40 else 'warning' if volatility > 25 else 'good'
+        data['tech_volatility_label'] = 'High' if volatility > 40 else 'Moderate' if volatility > 25 else 'Low'
+
     return data
 
 def generate_pdf_report(json_file, output_pdf=None):

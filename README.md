@@ -180,74 +180,77 @@ Open [http://localhost:3000](http://localhost:3000) to view the app.
 
 ## Batch Jobs
 
-The project includes two Python batch jobs for comprehensive stock analysis:
+The project includes two comprehensive batch processes that run automatically to keep your stock data fresh:
 
-### 1. Technical Analysis Batch Job (Daily)
+---
 
-Fetches EOD (End of Day) data from Yahoo Finance and calculates technical indicators.
+### 1. Daily EOD Batch (OHLC & Technical Analysis)
 
-### Running the Batch Job
+**Purpose**: Updates End-of-Day (EOD) OHLC price data and calculates technical indicators
 
-**Quick Start (Recommended)**
+**Location**: `scripts/batch/daily-eod-batch.sh`
+
+**Frequency**: Daily (after market close at 4:15 PM IST)
+
+### Running the Daily EOD Batch
+
+**Quick Start:**
 
 ```bash
-./eod_batch.sh
+./scripts/batch/daily-eod-batch.sh
 ```
 
-**Manual Method**
+### What the Daily EOD Batch Does (10 Steps)
 
-```bash
-# Activate Python virtual environment and run batch
-source venv/bin/activate && python3 scripts/analyze-symbols.py
-```
+1. **Fetches NSE EOD Data** (OHLC prices from Yahoo Finance)
+   - Downloads latest End-of-Day data for all tracked symbols
+   - Stores in DuckDB for fast analysis
 
-### What the Batch Job Does
+2. **Fetches Nifty 50 Index Data**
+   - Benchmark index data for market context
 
-1. **Fetches symbols** from Firestore collections:
-   - `ideas`
-   - `tradingIdeas`
-   - `portfolio`
-   - `portfolios`
-
-2. **Downloads 365 days** of historical data from Yahoo Finance (NSE)
-
-3. **Calculates technical indicators**:
-   - Moving Averages: SMA20, SMA50, SMA200, EMA9, EMA21, EMA50
+3. **Runs Technical Analysis**
+   - Moving Averages: SMA20, SMA50, SMA100, SMA200, EMA9, EMA21, EMA50
    - Oscillators: RSI14
-   - Volatility: Bollinger Bands (20, 2σ)
-   - Trend: MACD (12, 26, 9)
-   - Volume: 20-day average
+   - Volatility: Bollinger Bands (20, 2σ), ATR
+   - Trend: MACD (12, 26, 9), Supertrend
+   - Volume: 20-day average, volume spikes
 
-4. **Detects signals**:
-   - Price vs SMA200 (above/below)
-   - Price vs EMA50 (above/below)
-   - **50 EMA/200 MA Crossover** (new!)
-   - Golden Cross (SMA50 > SMA200)
-   - Death Cross (SMA50 < SMA200)
-   - RSI Overbought/Oversold
-   - MACD Bullish/Bearish
-   - Volume Spikes
+4. **Runs Stock Screeners**
+   - Golden Cross / Death Cross detection
+   - 50 EMA/200 MA Crossover
+   - RSI Oversold/Overbought
+   - Breakout patterns
+   - High growth stocks
 
-5. **Saves results** to Firebase:
-   - `technicals` collection (one document per symbol)
-   - Embeds `technicals` object in matching idea/portfolio documents
+5. **Cleans up old Firebase data** (removes stale records)
 
-### Output Example
+6. **Generates Chart Data**
+   - Pre-computes candlestick chart data for top 500 stocks
+   - Stores in Firebase for fast UI loading
 
-```
-[1/5] Processing RELIANCE...
-  📥 Fetching data for RELIANCE...
-  ✅ Fetched 251 rows
-  📈 Calculating indicators...
-  💾 Saving to Firestore...
-  ✅ RELIANCE - BUY
-     Price: ₹1375.00 (+0.85%)
-     RSI: 46.0 | SMA200: ₹1340.11 | EMA50: ₹1390.59
-     🔥 50 EMA/200 MA CROSSOVER!
-     ⭐ GOLDEN CROSS!
-```
+7. **Manages Portfolio Stop-Loss**
+   - Checks if any positions hit stop-loss levels
+   - Creates alerts for triggered stop-losses
 
-### Scheduling Technical Analysis
+8. **Generates Trading Alerts**
+   - Entry/Exit signal notifications
+   - Technical indicator alerts
+
+9. **Expires Old Trading Ideas**
+   - Marks expired ideas based on timeframe
+
+10. **Checks Idea Entry/Exit Triggers**
+    - Monitors trading ideas for trigger conditions
+    - Sends notifications when conditions are met
+
+### Output Saved To:
+
+- **Firebase Collections**: `technicals`, `chart_data`, `portfolio`, `alerts`
+- **DuckDB**: `data/market_data.duckdb` (OHLC data)
+- **Logs**: `logs/eod-batch-YYYYMMDD_HHMMSS.log`
+
+### Scheduling Daily EOD Batch
 
 Run daily after market close using cron:
 
@@ -255,62 +258,87 @@ Run daily after market close using cron:
 # Edit crontab
 crontab -e
 
-# Add daily run at 6 PM IST (after market close)
-0 18 * * * cd /path/to/project && ./eod_batch.sh >> logs/technical.log 2>&1
+# Add daily run at 4:15 PM IST (after market close)
+15 16 * * * cd /path/to/myportfolio-web && ./scripts/batch/daily-eod-batch.sh >> logs/cron.log 2>&1
 ```
 
 ---
 
-### 2. Fundamentals Analysis Batch Job (Weekly)
+### 2. Weekly Fundamentals Batch (Fundamental Analysis)
 
-Fetches fundamental data from Yahoo Finance for long-term investment analysis.
+**Purpose**: Updates fundamental data (PE, ROE, PEG ratio, financial health, etc.) and stores to Firebase for UI
+
+**Location**: `fundamentals_batch.sh` (root) OR `scripts/batch/weekly-fundamentals-batch.sh`
+
+**Frequency**: Weekly (Sunday mornings)
 
 ### Running the Fundamentals Batch
 
-**Quick Start (Recommended)**
+**Quick Start:**
 
 ```bash
+# From project root
 ./fundamentals_batch.sh
+
+# OR from scripts/batch
+./scripts/batch/weekly-fundamentals-batch.sh
 ```
 
-**Manual Method**
+**Single Stock:**
 
 ```bash
-source venv/bin/activate && python3 scripts/analyze-fundamentals.py
+source venv/bin/activate && python3 scripts/analysis/analyze-fundamentals.py HDFCBANK
 ```
 
 ### What the Fundamentals Batch Does
 
-1. **Fetches fundamental data** for all symbols in Firestore
+1. **Fetches fundamental data from Yahoo Finance** for all symbols in Firestore
 
-2. **Collects key metrics**:
-   - **Valuation**: PE Ratio, Forward PE, PEG Ratio, Price-to-Book, Price-to-Sales
+2. **Collects comprehensive metrics**:
+   - **Valuation**: PE Ratio, Forward PE, **PEG Ratio (3-year CAGR)**, Price-to-Book, Price-to-Sales, Graham Number
    - **Financial Health**: Debt-to-Equity, Current Ratio, Quick Ratio
    - **Profitability**: ROE, ROA, Profit Margins, Operating Margins
-   - **Growth**: Earnings Growth, Revenue Growth, Quarterly Growth
+   - **Growth**: Earnings Growth, Revenue Growth, Quarterly Growth, 3-Year CAGR
    - **Dividends**: Dividend Yield, Payout Ratio
-   - **Market Data**: Market Cap, Enterprise Value, Beta
+   - **Market Data**: Market Cap, Enterprise Value, Beta, Sector, Industry
+   - **Quality Score**: **Piotroski F-Score (0-9)**
 
-3. **Calculates Fundamental Score** (0-100):
-   - Analyzes PE, PEG, ROE, D/E, margins, growth rates
+3. **Calculates PEG Ratio using hybrid approach**:
+   - 70% weight on 3-year historical CAGR (conservative, audited data)
+   - 30% weight on forward estimates (growth momentum)
+   - Uses `peg_calculator.py` with Yahoo Finance annual income statements
+   - **Does NOT rely on limited XBRL data**
+
+4. **Calculates Piotroski F-Score**:
+   - 9-point quality score based on profitability, leverage, and efficiency
+   - Helps identify financially healthy companies
+
+5. **Calculates Fundamental Score** (0-100):
+   - Analyzes all metrics holistically
    - Assigns rating: EXCELLENT, GOOD, AVERAGE, POOR, WEAK
 
-4. **Saves to Firebase**:
-   - `fundamentals` collection (one document per symbol)
-   - Embeds in idea/portfolio documents
+6. **Saves to Firebase AND DuckDB**:
+   - **Firebase**: `fundamentals` collection (for UI)
+   - **DuckDB**: `data/fundamentals.duckdb` (for analysis)
+   - Embeds fundamental data in `ideas` and `portfolio` documents
 
 ### Output Example
 
 ```
-[1/5] Processing RELIANCE...
-  📥 Fetching fundamentals for RELIANCE...
+[1/5] Processing HDFCBANK...
+  📥 Fetching fundamentals for HDFCBANK...
+  📊 Calculating PEG Ratio...
+  ✅ PEG Ratio: 1.85 (3Y CAGR: 18.5%)
+  📊 Calculating Piotroski F-Score...
+  ✅ Piotroski F-Score: 7/9
   ✅ Fetched fundamentals
   💾 Saving to Firestore...
-  ✅ RELIANCE - GOOD (Score: 72.5)
-     PE: 24.50 | PEG: 1.85 | ROE: 14.2% | D/E: 45.3
+  💾 Saving to DuckDB...
+  ✅ HDFCBANK - GOOD (Score: 72.5)
+     PE: 24.50 | PEG: 1.85 | ROE: 14.2% | D/E: 0.45 | Piotroski: 7/9
 ```
 
-### Scheduling Fundamentals Analysis
+### Scheduling Fundamentals Batch
 
 Run weekly (e.g., every Sunday) using cron:
 
@@ -318,9 +346,19 @@ Run weekly (e.g., every Sunday) using cron:
 # Edit crontab
 crontab -e
 
-# Add weekly run every Sunday at 10 AM
-0 10 * * 0 cd /path/to/project && ./fundamentals_batch.sh >> logs/fundamentals.log 2>&1
+# Add weekly run every Sunday at 10 AM IST
+0 10 * * 0 cd /path/to/myportfolio-web && ./fundamentals_batch.sh >> logs/fundamentals.log 2>&1
 ```
+
+### Additional Fundamental Scripts
+
+**Fetch recent XBRL results from NSE (optional)**:
+
+```bash
+./scripts/batch/weekly-fundamentals-fetch.sh
+```
+
+This downloads and processes XBRL files for companies with recent quarterly results. However, the main `analyze-fundamentals.py` uses Yahoo Finance data, which is more comprehensive.
 
 ## Project Structure
 
@@ -332,36 +370,68 @@ crontab -e
 ├── components/            # React components
 ├── contexts/              # React contexts (Auth, Trading)
 ├── lib/                   # Utilities and Firebase config
-├── scripts/               # Batch jobs
-│   ├── analyze-symbols.py         # Daily technical analysis (Python)
-│   ├── analyze-fundamentals.py   # Weekly fundamentals analysis (Python)
-│   ├── analyze-symbols.ts         # TypeScript version (has DuckDB issues)
-│   └── load-symbols-from-csv.ts   # Load NSE symbols
+├── scripts/               # Python scripts
+│   ├── batch/             # Batch job runners
+│   │   ├── daily-eod-batch.sh            # Daily EOD & technical analysis
+│   │   ├── weekly-fundamentals-batch.sh  # Weekly fundamentals
+│   │   └── weekly-fundamentals-fetch.sh  # XBRL download & processing
+│   ├── technical/         # Technical analysis scripts
+│   │   ├── fetch-eod-data.py             # Fetch OHLC from Yahoo
+│   │   ├── analyze-symbols-duckdb.py     # Calculate indicators
+│   │   ├── generate-chart-data.py        # Pre-compute chart data
+│   │   └── yahoo_fundamentals_fetcher.py # Yahoo to DuckDB
+│   ├── analysis/          # Analysis scripts
+│   │   ├── analyze-fundamentals.py       # Fundamentals → Firebase
+│   │   ├── peg_calculator.py             # PEG ratio calculation
+│   │   └── screeners.py                  # Stock screeners
+│   ├── portfolio/         # Portfolio management
+│   │   ├── manage-portfolio-stoploss.py
+│   │   ├── check-and-generate-alerts.py
+│   │   ├── expire-ideas.py
+│   │   └── check-idea-triggers.py
+│   └── fundamental/       # Fundamental data scripts
+│       ├── xbrl_parser_v3.py             # Parse XBRL files
+│       ├── fundamental_xbrl_storage.py   # Store to DuckDB
+│       └── yahoo_xbrl_enricher.py        # Combine Yahoo + XBRL
+├── data/                  # DuckDB databases
+│   ├── market_data.duckdb      # OHLC data
+│   └── fundamentals.duckdb     # Fundamental data
 ├── venv/                  # Python virtual environment
-├── eod_batch.sh           # Daily technical analysis runner
-├── fundamentals_batch.sh  # Weekly fundamentals analysis runner
+├── fundamentals_batch.sh  # Weekly fundamentals runner (root)
 └── serviceAccountKey.json # Firebase admin credentials (gitignored)
 ```
 
 ## Firebase Collections
 
-- **technicals**: Technical analysis data (one doc per symbol)
-- **fundamentals**: Fundamental analysis data (one doc per symbol)
+### Analysis Data
+- **technicals**: Technical analysis data (OHLC, indicators, signals) - one doc per symbol
+- **fundamentals**: Fundamental analysis data (PE, PEG, ROE, Piotroski, etc.) - one doc per symbol
+- **chart_data**: Pre-computed candlestick chart data for fast UI loading
+
+### Trading & Portfolio
 - **ideas**: User trading ideas
-- **tradingIdeas**: Trading ideas
+- **tradingIdeas**: Trading ideas collection
 - **portfolio**: User portfolio positions
 - **portfolios**: Alternative portfolio storage
-- **symbols**: NSE symbol master list (2,147 symbols)
+- **alerts**: Stop-loss alerts, entry/exit triggers
+
+### Master Data
+- **symbols**: NSE symbol master list (2,147+ symbols)
 - **users**: User profiles
 - **comments**: Idea comments
+
+### Data Flow
+- Daily EOD Batch → Updates `technicals`, `chart_data`, `alerts`
+- Weekly Fundamentals Batch → Updates `fundamentals`
+- Both batches embed data into `ideas` and `portfolio` documents for fast access
 
 ## Quick Reference
 
 ### Daily Operations
 
 ```bash
-# Run technical analysis (after market close)
-./eod_batch.sh
+# Run EOD batch (OHLC + Technical Analysis) - after market close
+./scripts/batch/daily-eod-batch.sh
 
 # Start dev server
 npm run dev
@@ -374,16 +444,22 @@ PORT=3001 npm run dev
 ```bash
 # Run fundamentals analysis (Sunday mornings)
 ./fundamentals_batch.sh
+
+# Single stock fundamental analysis
+source venv/bin/activate && python3 scripts/analysis/analyze-fundamentals.py HDFCBANK
+
+# Optional: Fetch recent XBRL results from NSE
+./scripts/batch/weekly-fundamentals-fetch.sh
 ```
 
 ### Cron Schedule (Recommended)
 
 ```bash
-# Daily technical at 6 PM IST (after market close)
-0 18 * * * cd /path/to/project && ./eod_batch.sh >> logs/technical.log 2>&1
+# Daily EOD at 4:15 PM IST (after market close at 3:30 PM + data availability buffer)
+15 16 * * * cd /path/to/myportfolio-web && ./scripts/batch/daily-eod-batch.sh >> logs/cron.log 2>&1
 
-# Weekly fundamentals every Sunday at 10 AM
-0 10 * * 0 cd /path/to/project && ./fundamentals_batch.sh >> logs/fundamentals.log 2>&1
+# Weekly fundamentals every Sunday at 10 AM IST
+0 10 * * 0 cd /path/to/myportfolio-web && ./fundamentals_batch.sh >> logs/fundamentals.log 2>&1
 ```
 
 ## Learn More

@@ -261,30 +261,29 @@ export default function PortfolioPage() {
   }, []);
 
   const handleDelete = useCallback(async (position: any) => {
+    // Confirm deletion
+    if (!confirm(`Are you sure you want to delete ${position.symbol}?`)) {
+      return;
+    }
+
+    // OPTIMIZATION: Optimistic UI update - remove from UI immediately
+    const previousPortfolio = [...myPortfolio];
+    setMyPortfolio(prev => prev.filter(p => p.id !== position.id));
+
     try {
-      const token = await user?.getIdToken();
-      if (!token) {
-        throw new Error('Not authenticated');
-      }
+      // Use apiClient for better caching and error handling
+      await apiClient.portfolio.delete(position.id);
 
-      const response = await fetch(`/api/portfolio/${position.id}`, {
-        method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to delete position');
-      }
-
-      // Refresh portfolio data
-      fetchPortfolio();
+      // Success - portfolio already updated optimistically
+      console.log(`✅ Deleted ${position.symbol} successfully`);
     } catch (error) {
       console.error('Error deleting position:', error);
+
+      // ROLLBACK: Restore the position on error
+      setMyPortfolio(previousPortfolio);
       alert('Failed to delete position. Please try again.');
     }
-  }, [user]);
+  }, [myPortfolio]);
 
   const handleToggleExpand = useCallback((positionId: string) => {
     setExpandedPositionId(prev => prev === positionId ? null : positionId);

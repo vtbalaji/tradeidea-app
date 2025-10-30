@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Work_Sans, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { AuthProvider } from "../contexts/AuthContext";
 import { SubscriptionProvider } from "../contexts/SubscriptionContext";
@@ -9,9 +9,10 @@ import { SymbolsProvider } from "../contexts/SymbolsContext";
 import { ThemeProvider } from "../contexts/ThemeContext";
 import GoogleAnalytics from "../components/GoogleAnalytics";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+const workSans = Work_Sans({
+  variable: "--font-work-sans",
   subsets: ["latin"],
+  weight: ["400", "500", "600", "700", "800"],
 });
 
 const geistMono = Geist_Mono({
@@ -121,7 +122,7 @@ export default function RootLayout({
         />
       </head>
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+        className={`${workSans.variable} ${geistMono.variable} antialiased`}
       >
         <GoogleAnalytics />
         <ThemeProvider>

@@ -19,6 +19,27 @@ class PiotroskiFScore:
     """Calculate Piotroski F-Score for fundamental strength assessment"""
 
     @staticmethod
+    def _is_bank(data):
+        """
+        Detect if company is a bank/financial institution
+        Banks have different balance sheet structure (no current assets/liabilities split)
+        and different income statement (net interest income, provisions, etc.)
+        """
+        # Primary indicator: Banks don't have current assets/liabilities split
+        # Check if both are zero or None (typical for banks)
+        current_assets = data.get('current_assets') or 0
+        current_liabilities = data.get('current_liabilities') or 0
+        no_current_split = (current_assets == 0 and current_liabilities == 0)
+
+        # Secondary check: Has significant investments (banks have large investment portfolios)
+        total_assets = data.get('total_assets') or 1
+        investments = data.get('investments') or 0
+        high_investment_ratio = (investments / total_assets) > 0.20  # Banks typically >20%
+
+        # Detect bank if no current ratio AND high investments
+        return no_current_split and high_investment_ratio
+
+    @staticmethod
     def calculate(current_year, previous_year):
         """
         Calculate Piotroski F-Score
@@ -33,6 +54,9 @@ class PiotroskiFScore:
         try:
             score = 0
             details = {}
+
+            # Detect if this is a bank/financial institution
+            is_bank = PiotroskiFScore._is_bank(current_year)
 
             # PROFITABILITY SIGNALS (4 possible points)
             # 1. Positive Return on Assets
@@ -54,7 +78,17 @@ class PiotroskiFScore:
             details['ROA_Improvement'] = roa_imp_detail
 
             # 4. Quality of Earnings (OCF > Net Income)
-            quality_earnings, quality_detail = PiotroskiFScore._check_accruals_quality(current_year)
+            # Note: This test is NOT applicable for banks due to provisions, MTM adjustments, etc.
+            if is_bank:
+                # For banks, auto-pass this test (banks have different accrual patterns)
+                quality_earnings = True
+                quality_detail = {
+                    'score': 1,
+                    'description': 'Quality earnings test skipped for bank (auto-pass)'
+                }
+            else:
+                quality_earnings, quality_detail = PiotroskiFScore._check_accruals_quality(current_year)
+
             if quality_earnings:
                 score += 1
             details['Quality_Earnings'] = quality_detail
@@ -67,7 +101,17 @@ class PiotroskiFScore:
             details['Debt_Decrease'] = debt_detail
 
             # 6. Improvement in Current Ratio
-            liquidity_improved, liq_detail = PiotroskiFScore._check_liquidity_improvement(current_year, previous_year)
+            # Note: Banks don't have traditional current assets/liabilities split
+            if is_bank:
+                # For banks, skip this test (auto-pass)
+                liquidity_improved = True
+                liq_detail = {
+                    'score': 1,
+                    'description': 'Liquidity test skipped for bank (no current ratio for banks)'
+                }
+            else:
+                liquidity_improved, liq_detail = PiotroskiFScore._check_liquidity_improvement(current_year, previous_year)
+
             if liquidity_improved:
                 score += 1
             details['Liquidity_Improvement'] = liq_detail
@@ -80,7 +124,12 @@ class PiotroskiFScore:
 
             # OPERATING EFFICIENCY (2 possible points)
             # 8. Improvement in Gross Margin
-            margin_improved, margin_detail = PiotroskiFScore._check_margin_improvement(current_year, previous_year)
+            # Note: For banks, "gross margin" doesn't apply; check operating profit margin instead
+            if is_bank:
+                margin_improved, margin_detail = PiotroskiFScore._check_margin_improvement_bank(current_year, previous_year)
+            else:
+                margin_improved, margin_detail = PiotroskiFScore._check_margin_improvement(current_year, previous_year)
+
             if margin_improved:
                 score += 1
             details['Margin_Improvement'] = margin_detail
@@ -254,6 +303,24 @@ class PiotroskiFScore:
                 'previous': round(previous_margin * 100, 2),
                 'change': round(change, 2),
                 'description': f"Gross margin {'improved' if improved else 'declined'} from {round(previous_margin * 100, 2)}% to {round(current_margin * 100, 2)}%"
+            }
+        except:
+            return False, {'score': 0, 'description': 'Unable to calculate'}
+
+    @staticmethod
+    def _check_margin_improvement_bank(current, previous):
+        """Check if operating profit margin improved (for banks)"""
+        try:
+            current_margin = current['operating_profit'] / (current['revenue'] + 0.01)
+            previous_margin = previous['operating_profit'] / (previous['revenue'] + 0.01)
+            improved = current_margin > previous_margin
+            change = (current_margin - previous_margin) * 100
+            return improved, {
+                'score': 1 if improved else 0,
+                'current': round(current_margin * 100, 2),
+                'previous': round(previous_margin * 100, 2),
+                'change': round(change, 2),
+                'description': f"Operating margin {'improved' if improved else 'declined'} from {round(previous_margin * 100, 2)}% to {round(current_margin * 100, 2)}%"
             }
         except:
             return False, {'score': 0, 'description': 'Unable to calculate'}

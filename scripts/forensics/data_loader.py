@@ -124,8 +124,8 @@ class ForensicDataLoader:
 
             # Detect if this is a banking/financial sector company
             # Banks report cash flows differently (net basis, not cumulative)
-            is_bank = symbol.upper() in ['HDFCBANK', 'ICICIBANK', 'SBIN', 'AXISBANK', 'KOTAKBANK',
-                                          'INDUSINDBK', 'FEDERALBNK', 'BANDHANBNK', 'PNB', 'BANKBARODA']
+            # Use industry classification from database instead of hardcoded list
+            is_bank = latest_quarter.get('raw_industry') == 'BANKING'
 
             # Helper: Find first non-null value across all quarters
             def get_first_available(field_name):
@@ -376,7 +376,9 @@ class ForensicDataLoader:
             'reserves': raw_data.get('raw_reserves') or 0,
             'retained_earnings': raw_data.get('raw_reserves') or 0,  # Approximation
             'total_debt': raw_data.get('raw_total_debt') or 0,
-            'long_term_debt': raw_data.get('raw_non_current_liabilities') or 0,  # Approximation
+            # For banks/financials, use total_debt; for others, use non_current_liabilities
+            'long_term_debt': (raw_data.get('raw_total_debt') or
+                             raw_data.get('raw_non_current_liabilities') or 0),
             'trade_payables': raw_data.get('raw_trade_payables') or 0,
 
             # Cash Flow Statement

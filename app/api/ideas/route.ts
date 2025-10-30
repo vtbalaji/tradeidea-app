@@ -114,17 +114,9 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const userId = await verifyAuthToken(request);
-
-    // Check premium access - only premium users can create ideas
-    const hasPremium = await verifyPremiumAccess(userId);
-    if (!hasPremium) {
-      return createErrorResponse(
-        'Creating trading ideas requires a premium subscription. Upgrade to Premium to share your ideas with the community.',
-        403
-      );
-    }
-
     const db = getAdminDb();
+
+    // Parse body first for early validation (no DB calls needed)
     const body = await request.json();
 
     const {
@@ -142,14 +134,38 @@ export async function POST(request: NextRequest) {
       tags,
     } = body;
 
-    // Validate required fields
+    // Validate required fields before any DB calls
     if (!symbol || !title || !analysis || !entryPrice || !target1 || !stopLoss) {
       return createErrorResponse('Missing required fields', 400);
     }
 
-    // Get user info
+    // OPTIMIZATION: Fetch user data once instead of twice
+    // This single read replaces both verifyPremiumAccess() and separate user fetch
     const userDoc = await db.collection('users').doc(userId).get();
+
+    if (!userDoc.exists) {
+      return createErrorResponse('User not found', 404);
+    }
+
     const userData = userDoc.data();
+
+    // Check premium access inline (avoid duplicate DB read)
+    const subscription = {
+      subscriptionStatus: userData?.subscriptionStatus || 'free',
+      subscriptionTier: userData?.subscriptionTier || 'free',
+      subscriptionEndDate: userData?.subscriptionEndDate || null,
+    };
+
+    // Import isSubscriptionActive from featureGate for inline check
+    const { isSubscriptionActive } = await import('@/lib/featureGate');
+    const hasPremium = isSubscriptionActive(subscription);
+
+    if (!hasPremium) {
+      return createErrorResponse(
+        'Creating trading ideas requires a premium subscription. Upgrade to Premium to share your ideas with the community.',
+        403
+      );
+    }
 
     const ideaData = {
       userId,

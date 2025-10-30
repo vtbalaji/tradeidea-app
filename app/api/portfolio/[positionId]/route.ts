@@ -9,14 +9,17 @@ export async function PATCH(
   { params }: { params: Promise<{ positionId: string }> }
 ) {
   try {
-    const userId = await verifyAuthToken(request);
     const db = getAdminDb();
     const { positionId } = await params;
-    const body = await request.json();
+
+    // OPTIMIZATION: Parallelize auth, params, body, and position fetch
+    const [userId, body, positionDoc] = await Promise.all([
+      verifyAuthToken(request),
+      request.json(),
+      db.collection('portfolios').doc(positionId).get()
+    ]);
 
     // Verify the position belongs to the user
-    const positionDoc = await db.collection('portfolios').doc(positionId).get();
-
     if (!positionDoc.exists) {
       return createErrorResponse('Position not found', 404);
     }
@@ -81,12 +84,14 @@ export async function DELETE(
   { params }: { params: Promise<{ positionId: string }> }
 ) {
   try {
-    const userId = await verifyAuthToken(request);
     const db = getAdminDb();
     const { positionId } = await params;
 
-    // Verify the position belongs to the user
-    const positionDoc = await db.collection('portfolios').doc(positionId).get();
+    // OPTIMIZATION: Parallelize auth verification and position fetch
+    const [userId, positionDoc] = await Promise.all([
+      verifyAuthToken(request),
+      db.collection('portfolios').doc(positionId).get()
+    ]);
 
     if (!positionDoc.exists) {
       return createErrorResponse('Position not found', 404);
@@ -97,6 +102,7 @@ export async function DELETE(
       return createErrorResponse('Unauthorized: Position does not belong to user', 403);
     }
 
+    // Delete the position
     await db.collection('portfolios').doc(positionId).delete();
 
     return createSuccessResponse({ message: 'Position deleted successfully' });

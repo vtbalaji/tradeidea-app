@@ -459,6 +459,295 @@
         </div>
     </div>
 
+    <!-- Sector-Specific Analysis -->
+    {% if has_sector_analysis %}
+    <div class="section">
+        <div class="section-header">
+            <span class="icon">🎯</span> {{ sector_name }} - Sector Analysis
+        </div>
+        <div class="section-content">
+            <!-- Overall Sector Health -->
+            <div style="text-align: center; padding: 15px; background: #f8f9fa; border-radius: 6px; margin-bottom: 20px;">
+                <div style="font-size: 24pt; margin: 10px 0;">{{ sector_rating_emoji }}</div>
+                <div style="font-size: 14pt; font-weight: bold; color: #2c3e50;">{{ sector_rating }}</div>
+                <div style="font-size: 18pt; color: #6c757d; margin-top: 5px;">{{ sector_health_score }}%</div>
+            </div>
+
+            <!-- Banking Metrics -->
+            {% if banking_gnpa %}
+            <h3 style="font-size: 11pt; margin-bottom: 10px;">Banking Metrics</h3>
+            <div class="metrics-grid">
+                <div class="metric-card">
+                    <div class="label">Gross NPA</div>
+                    <div class="value">{{ banking_gnpa }}%</div>
+                    <div class="status">{{ banking_gnpa_status }}</div>
+                </div>
+                <div class="metric-card">
+                    <div class="label">Net NPA</div>
+                    <div class="value">{{ banking_nnpa }}%</div>
+                    <div class="status">Asset Quality</div>
+                </div>
+                <div class="metric-card">
+                    <div class="label">PCR</div>
+                    <div class="value">{{ banking_pcr }}%</div>
+                    <div class="status">Provision Cover</div>
+                </div>
+                <div class="metric-card">
+                    <div class="label">NIM</div>
+                    <div class="value">{{ banking_nim }}%</div>
+                    <div class="status">{{ banking_nim_status }}</div>
+                </div>
+                <div class="metric-card">
+                    <div class="label">CASA Ratio</div>
+                    <div class="value">{{ banking_casa }}%</div>
+                    <div class="status">{{ banking_casa_status }}</div>
+                </div>
+                <div class="metric-card">
+                    <div class="label">CAR</div>
+                    <div class="value">{{ banking_car }}%</div>
+                    <div class="status">{{ banking_car_status }}</div>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- IT Metrics -->
+            {% if it_revenue_per_emp %}
+            <h3 style="font-size: 11pt; margin-bottom: 10px;">IT Sector Metrics</h3>
+            <div class="metrics-grid">
+                <div class="metric-card">
+                    <div class="label">Revenue/Employee</div>
+                    <div class="value">₹{{ it_revenue_per_emp }}L</div>
+                    <div class="status">{{ it_revenue_per_emp_status }}</div>
+                </div>
+                <div class="metric-card">
+                    <div class="label">EBITDA Margin</div>
+                    <div class="value">{{ it_ebitda_margin }}%</div>
+                    <div class="status">{{ it_ebitda_status }}</div>
+                </div>
+                <div class="metric-card">
+                    <div class="label">Attrition</div>
+                    <div class="value">{{ it_attrition }}%</div>
+                    <div class="status">{{ it_attrition_status }}</div>
+                </div>
+                <div class="metric-card">
+                    <div class="label">Utilization</div>
+                    <div class="value">{{ it_utilization }}%</div>
+                    <div class="status">{{ it_utilization_status }}</div>
+                </div>
+                <div class="metric-card">
+                    <div class="label">Digital Revenue</div>
+                    <div class="value">{{ it_digital_pct }}%</div>
+                    <div class="status">{{ it_digital_status }}</div>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Capital Goods Metrics -->
+            {% if cg_order_book_ratio %}
+            <h3 style="font-size: 11pt; margin-bottom: 10px;">Capital Goods Metrics</h3>
+            <div class="metrics-grid">
+                <div class="metric-card">
+                    <div class="label">Order Book / Sales</div>
+                    <div class="value">{{ cg_order_book_ratio }}x</div>
+                    <div class="status">{{ cg_order_book_status }}</div>
+                </div>
+                <div class="metric-card">
+                    <div class="label">Visibility</div>
+                    <div class="value">{{ cg_visibility_months }} months</div>
+                    <div class="status">Revenue Visibility</div>
+                </div>
+                <div class="metric-card">
+                    <div class="label">Order Inflow Growth</div>
+                    <div class="value">{{ cg_order_inflow_growth }}%</div>
+                    <div class="status">YoY</div>
+                </div>
+                <div class="metric-card">
+                    <div class="label">EBITDA Margin</div>
+                    <div class="value">{{ cg_ebitda_margin }}%</div>
+                    <div class="status">{{ cg_ebitda_status }}</div>
+                </div>
+                <div class="metric-card">
+                    <div class="label">Return on Capital</div>
+                    <div class="value">{{ cg_roc }}%</div>
+                    <div class="status">{{ cg_roc_status }}</div>
+                </div>
+                <div class="metric-card">
+                    <div class="label">Asset Turnover</div>
+                    <div class="value">{{ cg_asset_turnover }}x</div>
+                    <div class="status">{{ cg_asset_turnover_status }}</div>
+                </div>
+                <div class="metric-card">
+                    <div class="label">Cash Cycle</div>
+                    <div class="value">{{ cg_ccc }} days</div>
+                    <div class="status">{{ cg_ccc_status }}</div>
+                </div>
+                <div class="metric-card">
+                    <div class="label">Debt/Equity</div>
+                    <div class="value">{{ cg_debt_equity }}</div>
+                    <div class="status">{{ cg_debt_equity_status }}</div>
+                </div>
+                <div class="metric-card">
+                    <div class="label">Interest Coverage</div>
+                    <div class="value">{{ cg_interest_coverage }}x</div>
+                    <div class="status">{{ cg_interest_coverage_status }}</div>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Growth Catalysts -->
+            {% if growth_catalysts %}
+            <div style="margin: 20px 0;">
+                <h3 style="font-size: 11pt; margin-bottom: 10px;">Growth Catalysts</h3>
+                <ul class="reasons-list">
+                    {% for catalyst in growth_catalysts %}
+                    <li>{{ catalyst }}</li>
+                    {% endfor %}
+                </ul>
+            </div>
+            {% endif %}
+
+            <!-- Sector Trends -->
+            {% if sector_trends %}
+            <div style="margin: 20px 0;">
+                <h3 style="font-size: 11pt; margin-bottom: 10px;">Key Sector Trends</h3>
+                <ul class="reasons-list">
+                    {% for trend in sector_trends %}
+                    <li>{{ trend }}</li>
+                    {% endfor %}
+                </ul>
+            </div>
+            {% endif %}
+
+            <!-- Sector Outlook -->
+            {% if sector_outlook and sector_outlook != 'N/A' %}
+            <div style="margin: 20px 0; padding: 15px; background: #f8f9fa; border-radius: 6px;">
+                <h3 style="font-size: 11pt; margin-bottom: 10px;">Sector Outlook</h3>
+                <p style="font-size: 9pt; line-height: 1.6;">{{ sector_outlook }}</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Technical Analysis -->
+    {% if has_technical %}
+    <div class="section">
+        <div class="section-header">
+            <span class="icon">📈</span> Technical Outlook
+        </div>
+        <div class="section-content">
+            <!-- Trend Status -->
+            <div style="text-align: center; padding: 15px; background: #f8f9fa; border-radius: 6px; margin-bottom: 20px;">
+                <div style="font-size: 24pt; margin: 10px 0;">{{ tech_trend_emoji }}</div>
+                <div style="font-size: 14pt; font-weight: bold; color: #2c3e50;">{{ tech_trend }}</div>
+                <div style="font-size: 9pt; color: #6c757d; margin-top: 5px;">Last Updated: {{ tech_last_updated }}</div>
+            </div>
+
+            <!-- Key Technical Metrics -->
+            <div class="metrics-grid">
+                <div class="metric-card">
+                    <div class="label">RSI (14)</div>
+                    <div class="value" style="color: {{ tech_rsi_color }};">{{ tech_rsi }}</div>
+                    <div class="status" style="color: {{ tech_rsi_color }};">{{ tech_rsi_label }}</div>
+                </div>
+                <div class="metric-card">
+                    <div class="label">MACD Signal</div>
+                    <div class="value">{{ tech_macd }}</div>
+                    <div class="status {{ tech_macd_status }}">{{ tech_macd_label }}</div>
+                </div>
+                <div class="metric-card">
+                    <div class="label">Volume Trend</div>
+                    <div class="value">{{ tech_volume_ratio }}x</div>
+                    <div class="status {{ tech_volume_status }}">{{ tech_volume_label }}</div>
+                </div>
+            </div>
+
+            <!-- Price Levels -->
+            <div style="margin: 20px 0;">
+                <h3 style="font-size: 11pt; margin-bottom: 10px;">Key Price Levels</h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Level</th>
+                            <th>Price</th>
+                            <th>Distance</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>52-Week High (Resistance)</strong></td>
+                            <td>₹{{ tech_resistance }}</td>
+                            <td style="color: #dc3545;">+{{ tech_resistance_dist }}%</td>
+                        </tr>
+                        <tr>
+                            <td>Bollinger Upper Band</td>
+                            <td>₹{{ tech_bb_upper }}</td>
+                            <td>-</td>
+                        </tr>
+                        <tr>
+                            <td>MA 200</td>
+                            <td>₹{{ tech_ma_200 }}</td>
+                            <td>-</td>
+                        </tr>
+                        <tr>
+                            <td>MA 50</td>
+                            <td>₹{{ tech_ma_50 }}</td>
+                            <td>-</td>
+                        </tr>
+                        <tr>
+                            <td>MA 20</td>
+                            <td>₹{{ tech_ma_20 }}</td>
+                            <td>-</td>
+                        </tr>
+                        <tr>
+                            <td>Bollinger Lower Band</td>
+                            <td>₹{{ tech_bb_lower }}</td>
+                            <td>-</td>
+                        </tr>
+                        <tr>
+                            <td><strong>52-Week Low (Support)</strong></td>
+                            <td>₹{{ tech_support }}</td>
+                            <td style="color: #28a745;">+{{ tech_support_dist }}%</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Price Performance -->
+            <div style="margin: 20px 0;">
+                <h3 style="font-size: 11pt; margin-bottom: 10px;">Price Performance</h3>
+                <div class="metrics-grid" style="grid-template-columns: repeat(4, 1fr);">
+                    <div class="metric-card">
+                        <div class="label">1 Month</div>
+                        <div class="value" style="color: {{ tech_perf_1m_color }};">{{ tech_perf_1m }}%</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="label">3 Months</div>
+                        <div class="value" style="color: {{ tech_perf_3m_color }};">{{ tech_perf_3m }}%</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="label">6 Months</div>
+                        <div class="value" style="color: {{ tech_perf_6m_color }};">{{ tech_perf_6m }}%</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="label">1 Year</div>
+                        <div class="value" style="color: {{ tech_perf_1y_color }};">{{ tech_perf_1y }}%</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Volatility -->
+            <div style="margin: 20px 0;">
+                <div class="metric-card">
+                    <div class="label">Annualized Volatility</div>
+                    <div class="value">{{ tech_volatility }}%</div>
+                    <div class="status {{ tech_volatility_status }}">{{ tech_volatility_label }} Risk</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
     <div class="page-break"></div>
 
     <!-- Forensic Analysis -->

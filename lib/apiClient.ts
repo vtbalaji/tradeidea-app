@@ -14,6 +14,9 @@ export class ApiError extends Error {
 const cache = new Map<string, { data: any; timestamp: number }>();
 const CACHE_TTL = 30000; // 30 seconds
 
+// Request deduplication: Track pending POST/PATCH/DELETE requests to prevent duplicates
+const pendingRequests = new Map<string, Promise<any>>();
+
 function getCached(key: string) {
   const cached = cache.get(key);
   if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
@@ -61,6 +64,17 @@ async function fetchWithAuth(url: string, options: RequestInit = {}, useCache = 
     }
   }
 
+  // OPTIMIZATION: Request deduplication for mutations
+  // If the same request is already in-flight, return that promise instead of making a duplicate
+  if (method !== 'GET') {
+    const requestKey = `${method}:${url}:${options.body || ''}`;
+    const pendingRequest = pendingRequests.get(requestKey);
+    if (pendingRequest) {
+      console.log(`🔄 Deduplicating ${method} ${url} - returning existing promise`);
+      return pendingRequest;
+    }
+  }
+
   const token = await getAuthToken();
 
   if (!token) {
@@ -76,32 +90,51 @@ async function fetchWithAuth(url: string, options: RequestInit = {}, useCache = 
     ...options.headers,
   };
 
-  const response = await fetch(url, {
-    ...options,
-    headers,
-  });
+  // Execute request and track it if it's a mutation
+  const requestPromise = (async () => {
+    try {
+      const response = await fetch(url, {
+        ...options,
+        headers,
+      });
 
-  if (!response.ok) {
-    const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
-    const errorMessage = errorData.error || `HTTP ${response.status}`;
-    console.error(`API Error [${response.status}] ${url}:`, errorMessage);
-    throw new ApiError(response.status, errorMessage);
-  }
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
+        const errorMessage = errorData.error || `HTTP ${response.status}`;
+        console.error(`API Error [${response.status}] ${url}:`, errorMessage);
+        throw new ApiError(response.status, errorMessage);
+      }
 
-  const data = await response.json();
+      const data = await response.json();
 
-  // Cache GET responses
-  if (method === 'GET' && useCache) {
-    setCache(cacheKey, data);
-  }
+      // Cache GET responses
+      if (method === 'GET' && useCache) {
+        setCache(cacheKey, data);
+      }
 
-  // Invalidate cache on mutations
+      // Invalidate cache on mutations
+      if (method !== 'GET') {
+        const resource = url.split('/')[2]; // Extract resource (accounts/portfolio)
+        invalidateCache(resource);
+      }
+
+      return data;
+    } finally {
+      // Clean up pending request tracking
+      if (method !== 'GET') {
+        const requestKey = `${method}:${url}:${options.body || ''}`;
+        pendingRequests.delete(requestKey);
+      }
+    }
+  })();
+
+  // Track pending mutations
   if (method !== 'GET') {
-    const resource = url.split('/')[2]; // Extract resource (accounts/portfolio)
-    invalidateCache(resource);
+    const requestKey = `${method}:${url}:${options.body || ''}`;
+    pendingRequests.set(requestKey, requestPromise);
   }
 
-  return data;
+  return requestPromise;
 }
 
 export const apiClient = {

@@ -69,7 +69,9 @@ class EnhancedXBRLParser:
         'NetProfit': ['ProfitLoss', 'NetProfit', 'ProfitForPeriod', 'ProfitLossForPeriod',
                      'ProfitOrLossAttributableToOwnersOfParent', 'ProfitLossForPeriodFromContinuingOperations'],
         'EPS': ['BasicEarningsPerShare', 'EarningsPerShare', 'BasicEPS',
-               'BasicEarningsLossPerShareFromContinuingAndDiscontinuedOperations'],
+               'BasicEarningsLossPerShareFromContinuingAndDiscontinuedOperations',
+               'BasicEarningsPerShareAfterExtraordinaryItems',
+               'BasicEarningsPerShareBeforeExtraordinaryItems'],
 
         # Cash Flow (DURATION context)
         'OperatingCashFlow': ['CashFlowFromOperatingActivities', 'NetCashFlowFromOperatingActivities',
@@ -114,7 +116,8 @@ class EnhancedXBRLParser:
 
         # Operating Expenses (P&L - DURATION context)
         'OperatingExpensesBank': ['OperatingExpenses', 'OtherExpenses', 'TotalExpenses',
-                                 'OtherOperatingExpenses', 'ExpenditureExcludingProvisionsAndContingencies'],
+                                 'OtherOperatingExpenses'],
+        'ExpenditureExcludingProvisions': ['ExpenditureExcludingProvisionsAndContingencies'],
 
         # Banking Revenue (P&L - DURATION context)
         'RevenueBank': ['Income', 'SegmentRevenueFromOperations', 'TotalIncome'],
@@ -125,6 +128,18 @@ class EnhancedXBRLParser:
                          'ProfitLossForPeriodFromContinuingOperations'],
         'ProfitBeforeTaxBank': ['ProfitLossFromOrdinaryActivitiesBeforeTax', 'ProfitBeforeTax'],
         'OperatingProfitBank': ['OperatingProfitBeforeProvisionAndContingencies'],
+        'OperatingProfitBeforeProvisions': ['OperatingProfitBeforeProvisionAndContingencies'],
+
+        # Asset Quality & NPAs (INSTANT or DURATION)
+        'GrossNPA': ['GrossNonPerformingAssets', 'GrossNPAs'],
+        'NetNPA': ['NetNonPerformingAssets', 'NetNPAs'],
+
+        # Capital Adequacy Ratios (INSTANT or DURATION)
+        'CET1Ratio': ['CET1Ratio', 'CommonEquityTier1Ratio'],
+        'Tier1Ratio': ['AdditionalTier1Ratio', 'Tier1CapitalRatio'],
+
+        # Efficiency Ratios (calculated or reported)
+        'CostToIncomeRatio': ['CostToIncomeRatio', 'CostIncomeRatio'],
 
         # Banking Assets (INSTANT context)
         'CashWithRBI': ['CashAndBalancesWithReserveBankOfIndia', 'CashAndBankBalanceWithReserveBankOfIndia'],
@@ -135,6 +150,19 @@ class EnhancedXBRLParser:
         # Banking Liabilities (INSTANT context)
         'Deposits': ['Deposits', 'DepositsFromCustomers', 'CustomerDeposits'],
         'BorrowingsBank': ['Borrowings', 'BorrowingsFromBanks', 'BorrowingsFromOtherBanks'],
+        'CurrentAccountDeposits': ['CurrentAccountDeposits', 'CurrentDeposits'],
+        'SavingsAccountDeposits': ['SavingsAccountDeposits', 'SavingsDeposits'],
+    }
+
+    # General additional mappings for all companies
+    ADDITIONAL_MAPPING = {
+        # Extraordinary and Exceptional Items (P&L - DURATION context)
+        'ExtraordinaryItems': ['ExtraordinaryItems', 'ExtraOrdinaryItems'],
+        'ExceptionalItems': ['ExceptionalItems', 'ExceptionalItemsIncome', 'ExceptionalItemsExpense'],
+
+        # Minority Interest (P&L - DURATION context)
+        'MinorityInterest': ['ProfitLossOfMinorityInterest', 'MinorityInterest',
+                            'NonControllingInterests', 'MinorityInterestInProfit'],
     }
 
     # Concepts that should typically be negative (expenses, liabilities growth)
@@ -627,12 +655,14 @@ class EnhancedXBRLParser:
 
         # Add banking-specific elements
         banking_instant_items = ['Advances', 'Deposits', 'InvestmentsBank', 'BorrowingsBank',
-                                 'CashWithRBI', 'InterBankFunds']
+                                 'CashWithRBI', 'InterBankFunds', 'CurrentAccountDeposits',
+                                 'SavingsAccountDeposits']
         banking_duration_items = ['InterestIncome', 'InterestOnAdvances', 'InterestOnInvestments',
                                   'InterestOnRBIBalances', 'OtherInterestIncome', 'InterestExpense',
                                   'NetInterestIncome', 'NonInterestIncome', 'FeeIncome', 'TradingIncome',
                                   'Provisions', 'OperatingExpensesBank', 'RevenueBank',
-                                  'NetProfitBank', 'ProfitBeforeTaxBank', 'OperatingProfitBank']
+                                  'NetProfitBank', 'ProfitBeforeTaxBank', 'OperatingProfitBank',
+                                  'OperatingProfitBeforeProvisions', 'ExpenditureExcludingProvisions']
 
         for key, element_names in self.BANKING_MAPPING.items():
             if key not in data:
@@ -646,6 +676,13 @@ class EnhancedXBRLParser:
                     context_type = 'any'
 
                 value = self._get_latest_value(element_names, context_type=context_type)
+                if value is not None:
+                    data[key] = value
+
+        # Add general additional mappings (for all companies)
+        for key, element_names in self.ADDITIONAL_MAPPING.items():
+            if key not in data:
+                value = self._get_latest_value(element_names, context_type='duration')
                 if value is not None:
                     data[key] = value
 

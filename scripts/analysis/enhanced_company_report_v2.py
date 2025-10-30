@@ -40,6 +40,18 @@ from shared.valuation import ValuationModels
 from reports.quarterly_financial_report import QuarterlyFinancialReport
 from analysis.report_displays import ReportDisplays
 
+# Import sector analyzers
+from sectors.banking_sector import BankingSectorAnalyzer
+try:
+    from sectors.it_sector import ITSectorAnalyzer
+except ImportError:
+    ITSectorAnalyzer = None  # Will be created
+
+try:
+    from sectors.capital_goods_sector import CapitalGoodsSectorAnalyzer
+except ImportError:
+    CapitalGoodsSectorAnalyzer = None
+
 
 class EnhancedCompanyReportV2:
     """Generate comprehensive institutional-grade company analysis reports"""
@@ -48,6 +60,7 @@ class EnhancedCompanyReportV2:
     SECTOR_PEERS = {
         'IT': ['TCS', 'INFY', 'WIPRO', 'HCLTECH', 'TECHM', 'LTI', 'COFORGE', 'MPHASIS', 'PERSISTENT', 'LTTS'],
         'BANKING': ['HDFCBANK', 'ICICIBANK', 'AXISBANK', 'KOTAKBANK', 'SBIN', 'INDUSINDBK', 'FEDERALBNK', 'BANKBARODA'],
+        'CAPITAL_GOODS': ['BHEL', 'LT', 'ABB', 'SIEMENS', 'THERMAX', 'CUMMINSIND', 'VOLTAS', 'HAVELLS', 'CROMPTON'],
         'AUTO': ['MARUTI', 'TATAMOTORS', 'M&M', 'BAJAJ-AUTO', 'EICHERMOT', 'HEROMOTOCO', 'TVSMOTOR', 'ASHOKLEY'],
         'PHARMA': ['SUNPHARMA', 'DRREDDY', 'CIPLA', 'DIVISLAB', 'AUROPHARMA', 'LUPIN', 'BIOCON', 'TORNTPHARM'],
         'FMCG': ['HINDUNILVR', 'ITC', 'NESTLEIND', 'BRITANNIA', 'DABUR', 'MARICO', 'GODREJCP', 'COLPAL'],
@@ -1136,6 +1149,54 @@ class EnhancedCompanyReportV2:
         latest = data[0]
         return ValuationModels.calculate_intrinsic_value(latest, current_price)
 
+    def detect_sector(self, symbol):
+        """Auto-detect sector for a symbol"""
+        # Check SECTOR_PEERS mapping
+        for sector, symbols in self.SECTOR_PEERS.items():
+            if symbol in symbols:
+                return sector
+
+        # Default to IT if unknown
+        return 'IT'
+
+    def get_sector_analysis(self, symbol, data, sector=None):
+        """
+        Get sector-specific analysis
+
+        Args:
+            symbol: Stock symbol
+            data: Historical financial data
+            sector: Sector name (auto-detected if None)
+
+        Returns:
+            Dict with sector analysis or None
+        """
+        if not data or len(data) == 0:
+            return None
+
+        if not sector:
+            sector = self.detect_sector(symbol)
+
+        try:
+            if sector == 'BANKING':
+                # Get peer list
+                peers = [s for s in self.SECTOR_PEERS.get('BANKING', []) if s != symbol][:4]
+                analyzer = BankingSectorAnalyzer(symbol, data, peers)
+                return analyzer.analyze()
+            elif sector == 'IT' and ITSectorAnalyzer:
+                peers = [s for s in self.SECTOR_PEERS.get('IT', []) if s != symbol][:4]
+                analyzer = ITSectorAnalyzer(symbol, data, peers)
+                return analyzer.analyze()
+            elif sector == 'CAPITAL_GOODS' and CapitalGoodsSectorAnalyzer:
+                peers = [s for s in self.SECTOR_PEERS.get('CAPITAL_GOODS', []) if s != symbol][:4]
+                analyzer = CapitalGoodsSectorAnalyzer(symbol, data, peers)
+                return analyzer.analyze()
+            else:
+                return None
+        except Exception as e:
+            print(f'  ⚠️  Error in sector analysis: {e}')
+            return None
+
     def generate_recommendation(self, forensic_report, technical, intrinsic_value, current_price,
                                growth_metrics, earnings_quality, credit_quality):
         """Generate enhanced BUY/HOLD/SELL recommendation"""
@@ -1293,31 +1354,54 @@ class EnhancedCompanyReportV2:
         if not fund_data:
             fund_data = self.analyzer.loader.get_annual_data_multi_source(symbol, years=years)
 
-        # Enrich fund_data with valuation ratios from latest DB record
+        # Enrich fund_data with calculated ratios and margins from DB
         if fund_data and len(fund_data) > 0:
-            latest = fund_data[0]
-            # If aggregated data doesn't have PE/PB ratios, fetch from DB
-            if not latest.get('pe') or not latest.get('pb'):
-                # print('  ℹ️  Fetching valuation ratios from latest quarterly record...')
-                try:
-                    query = f"""
-                        SELECT pe, pb, ps, ev_ebitda, current_price, market_cap
-                        FROM xbrl_data
-                        WHERE symbol = '{symbol}'
-                        ORDER BY end_date DESC
-                        LIMIT 1
-                    """
-                    result = self.fund_conn.execute(query).fetchone()
-                    if result:
-                        fund_data[0]['pe'] = result[0]
-                        fund_data[0]['pb'] = result[1]
-                        fund_data[0]['ps'] = result[2]
-                        fund_data[0]['ev_ebitda'] = result[3]
-                        fund_data[0]['current_price'] = result[4]
-                        fund_data[0]['market_cap'] = result[5]
-                        # print(f'  ✅ Added ratios: PE={result[0]:.1f}, PB={result[1]:.1f}' if result[0] and result[1] else '  ⚠️  No ratios in DB')
-                except Exception as e:
-                    print(f'  ⚠️  Error fetching ratios: {e}')
+            try:
+                # Fetch calculated fields for all years in fund_data
+                query = f"""
+                    SELECT fy, quarter,
+                           pe, pb, ps, ev_ebitda, current_price, market_cap,
+                           ebitda_margin, operating_profit_margin, net_profit_margin,
+                           roe, roa, roce,
+                           raw_revenue, raw_operating_profit, raw_assets, raw_current_liabilities
+                    FROM xbrl_data
+                    WHERE symbol = '{symbol}'
+                      AND statement_type = 'consolidated'
+                    ORDER BY fy DESC, quarter DESC
+                    LIMIT {years * 4}
+                """
+                db_records = self.fund_conn.execute(query).fetchall()
+
+                # Create a lookup dict by period
+                db_dict = {}
+                for rec in db_records:
+                    fy = rec[0]
+                    if fy not in db_dict:  # Take latest quarter for each FY
+                        db_dict[fy] = {
+                            'pe': rec[2], 'pb': rec[3], 'ps': rec[4], 'ev_ebitda': rec[5],
+                            'current_price': rec[6], 'market_cap': rec[7],
+                            'ebitda_margin': rec[8], 'operating_profit_margin': rec[9],
+                            'net_profit_margin': rec[10],
+                            'roe': rec[11], 'roa': rec[12], 'roce': rec[13],
+                            'raw_revenue': rec[14], 'raw_operating_profit': rec[15],
+                            'raw_assets': rec[16], 'raw_current_liabilities': rec[17]
+                        }
+
+                # Enrich each record in fund_data
+                for record in fund_data:
+                    period_end = record.get('period_end', '')
+                    fy = period_end[:6] if period_end else None  # Extract FY2025 from period_end
+
+                    if fy and fy in db_dict:
+                        db_data = db_dict[fy]
+                        # Add calculated fields if missing
+                        for key, value in db_data.items():
+                            if value is not None and not record.get(key):
+                                record[key] = value
+
+                # print(f'  ✅ Enriched {len(fund_data)} records with calculated fields')
+            except Exception as e:
+                print(f'  ⚠️  Error enriching data: {e}')
 
         if not fund_data or len(fund_data) == 0:
             print('  ℹ️  No annual data found, fetching latest quarterly data from DB...')
@@ -1392,6 +1476,10 @@ class EnhancedCompanyReportV2:
         print('🏦 Checking banking-specific metrics...')
         banking_metrics = self.get_banking_metrics(symbol)
 
+        # Sector-specific analysis
+        print('🎯 Running sector-specific analysis...')
+        sector_analysis = self.get_sector_analysis(symbol, fund_data, sector)
+
         # Intrinsic value
         print('💰 Calculating intrinsic value...')
         intrinsic_value = self.calculate_intrinsic_value(fund_data, current_price)
@@ -1449,7 +1537,8 @@ class EnhancedCompanyReportV2:
             fund_data, growth_metrics, dividend_analysis, earnings_quality,
             peer_comparison, management_quality, credit_quality, operational_efficiency,
             institutional_holdings, segment_performance, red_flags, scenario_analysis,
-            seasonality, corporate_actions, competitive_moat, sector_context, banking_metrics
+            seasonality, corporate_actions, competitive_moat, sector_context, banking_metrics,
+            sector_analysis
         )
 
         return {
@@ -1474,6 +1563,7 @@ class EnhancedCompanyReportV2:
             'corporate_actions': corporate_actions,
             'competitive_moat': competitive_moat,
             'sector_context': sector_context,
+            'sector_analysis': sector_analysis,
             'intrinsic_value': intrinsic_value,
             'recommendation': recommendation
         }
@@ -1481,7 +1571,8 @@ class EnhancedCompanyReportV2:
     def _print_comprehensive_report(self, symbol, forensic, technical, intrinsic, recommendation,
                                    fundamentals, growth, dividend, earnings_qual, peer_comp,
                                    management, credit, efficiency, institutional, segments,
-                                   red_flags, scenarios, seasonality, corp_actions, moat, sector_ctx, banking_metrics=None):
+                                   red_flags, scenarios, seasonality, corp_actions, moat, sector_ctx, banking_metrics=None,
+                                   sector_analysis=None):
         """Print beautified comprehensive report"""
 
         print(f'\n{"="*80}')
