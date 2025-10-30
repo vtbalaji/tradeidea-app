@@ -517,7 +517,7 @@ class EnhancedCompanyReportV2:
             latest = historical_data[0]
 
             total_debt = latest.get('raw_total_debt', 0) or 0
-            equity = latest.get('raw_total_equity', 0) or 0
+            equity = latest.get('raw_equity', 0) or 0
             ebitda = latest.get('raw_ebitda', 0) or 0
             interest_expense = latest.get('raw_interest_expense', 0) or 0
             ebit = latest.get('raw_operating_profit', 0) or 0
@@ -696,7 +696,7 @@ class EnhancedCompanyReportV2:
                     warnings.append('⚠️ Low cash conversion (<80%)')
 
                 # Debt check
-                debt_equity = (latest.get('raw_total_debt', 0) or 0) / (latest.get('raw_total_equity', 0) or 1)
+                debt_equity = (latest.get('raw_total_debt', 0) or 0) / (latest.get('raw_equity', 0) or 1)
                 if debt_equity > 2:
                     red_flags.append('❌ Very high leverage (D/E > 2.0)')
                 elif debt_equity > 1:
@@ -1363,7 +1363,8 @@ class EnhancedCompanyReportV2:
                            pe, pb, ps, ev_ebitda, current_price, market_cap,
                            ebitda_margin, operating_profit_margin, net_profit_margin,
                            roe, roa, roce,
-                           raw_revenue, raw_operating_profit, raw_assets, raw_current_liabilities
+                           raw_assets, raw_current_liabilities, raw_total_debt, raw_equity,
+                           raw_fixed_assets, raw_current_assets, raw_inventories
                     FROM xbrl_data
                     WHERE symbol = '{symbol}'
                       AND statement_type = 'consolidated'
@@ -1372,7 +1373,7 @@ class EnhancedCompanyReportV2:
                 """
                 db_records = self.fund_conn.execute(query).fetchall()
 
-                # Create a lookup dict by period
+                # Create a lookup dict by FY
                 db_dict = {}
                 for rec in db_records:
                     fy = rec[0]
@@ -1383,14 +1384,17 @@ class EnhancedCompanyReportV2:
                             'ebitda_margin': rec[8], 'operating_profit_margin': rec[9],
                             'net_profit_margin': rec[10],
                             'roe': rec[11], 'roa': rec[12], 'roce': rec[13],
-                            'raw_revenue': rec[14], 'raw_operating_profit': rec[15],
-                            'raw_assets': rec[16], 'raw_current_liabilities': rec[17]
+                            'raw_assets': rec[14], 'raw_current_liabilities': rec[15],
+                            'raw_total_debt': rec[16], 'raw_equity': rec[17],
+                            'raw_fixed_assets': rec[18], 'raw_current_assets': rec[19],
+                            'raw_inventories': rec[20]
                         }
 
                 # Enrich each record in fund_data
+                enriched_count = 0
                 for record in fund_data:
-                    period_end = record.get('period_end', '')
-                    fy = period_end[:6] if period_end else None  # Extract FY2025 from period_end
+                    # Get FY from record (fund_data has 'fy' field directly)
+                    fy = record.get('fy')
 
                     if fy and fy in db_dict:
                         db_data = db_dict[fy]
@@ -1398,8 +1402,10 @@ class EnhancedCompanyReportV2:
                         for key, value in db_data.items():
                             if value is not None and not record.get(key):
                                 record[key] = value
+                                enriched_count += 1
 
-                # print(f'  ✅ Enriched {len(fund_data)} records with calculated fields')
+                if enriched_count > 0:
+                    print(f'  ✅ Enriched {len(fund_data)} records with {enriched_count} calculated fields')
             except Exception as e:
                 print(f'  ⚠️  Error enriching data: {e}')
 

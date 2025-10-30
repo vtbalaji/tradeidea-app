@@ -346,7 +346,7 @@ def extract_template_data(json_data):
 
     # Credit Quality
     credit = json_data.get('credit_quality', {})
-    de = credit.get('debt_equity', 0)
+    de = credit.get('debt_to_equity', 0)
     data['debt_equity'] = format_number(de, 2)
     data['debt_equity_status'], data['debt_equity_indicator'] = get_status_indicator(de, 0.5, 1.0, reverse=True)
 

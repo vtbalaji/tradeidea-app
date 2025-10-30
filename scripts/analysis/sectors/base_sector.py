@@ -100,6 +100,104 @@ class BaseSectorAnalyzer(ABC):
         """Safely get field from latest data"""
         return self.latest.get(field, default) or default
 
+    def _safe_float(self, value: Any) -> float:
+        """Safely convert value to float"""
+        try:
+            if value is None or value == '' or (isinstance(value, str) and value.lower() == 'nan'):
+                return 0.0
+            return float(value)
+        except (ValueError, TypeError):
+            return 0.0
+
+    def _get_rating(self, value: float, metric: str, reverse: bool = False) -> str:
+        """
+        Get rating emoji for a metric value
+
+        Args:
+            value: Metric value
+            metric: Metric name (to look up benchmarks)
+            reverse: If True, lower is better (e.g., debt)
+
+        Returns:
+            Rating emoji
+        """
+        if not hasattr(self, 'BENCHMARKS') or not self.BENCHMARKS:
+            return '⚪'
+
+        try:
+            excellent = self.BENCHMARKS.get('excellent', {}).get(metric)
+            good = self.BENCHMARKS.get('good', {}).get(metric)
+            acceptable = self.BENCHMARKS.get('acceptable', {}).get(metric)
+
+            if excellent is None:
+                return '⚪'
+
+            if reverse:
+                # Lower is better
+                if value <= excellent:
+                    return '✅✅'
+                elif value <= good:
+                    return '✅'
+                elif value <= acceptable:
+                    return '⚠️'
+                else:
+                    return '❌'
+            else:
+                # Higher is better
+                if value >= excellent:
+                    return '✅✅'
+                elif value >= good:
+                    return '✅'
+                elif value >= acceptable:
+                    return '⚠️'
+                else:
+                    return '❌'
+        except Exception:
+            return '⚪'
+
+    def _normalize_score(self, value: float, metric: str, reverse: bool = False) -> float:
+        """
+        Normalize a metric value to a 0-100 score
+
+        Args:
+            value: Metric value
+            metric: Metric name (to look up benchmarks)
+            reverse: If True, lower is better
+
+        Returns:
+            Score from 0-100
+        """
+        if not hasattr(self, 'BENCHMARKS') or not self.BENCHMARKS:
+            return 50.0
+
+        try:
+            excellent = self.BENCHMARKS.get('excellent', {}).get(metric)
+            poor = self.BENCHMARKS.get('poor', {}).get(metric, 0)
+
+            if excellent is None:
+                return 50.0
+
+            if reverse:
+                # Lower is better
+                if value <= excellent:
+                    return 100.0
+                elif value >= poor:
+                    return 0.0
+                else:
+                    # Linear interpolation
+                    return 100 * (poor - value) / (poor - excellent)
+            else:
+                # Higher is better
+                if value >= excellent:
+                    return 100.0
+                elif value <= poor:
+                    return 0.0
+                else:
+                    # Linear interpolation
+                    return 100 * (value - poor) / (excellent - poor)
+        except Exception:
+            return 50.0
+
     def _calculate_trend(self, field: str, years: int = 3) -> Dict[str, Any]:
         """
         Calculate trend for a metric
