@@ -8,6 +8,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useSubscription } from '@/contexts/SubscriptionContext';
 import { SubscriptionBadge } from '@/components/subscription/SubscriptionBadge';
+import { trackFeatureUsed } from '@/lib/analytics';
 
 export default function SubscriptionPage() {
   const router = useRouter();
@@ -25,6 +26,13 @@ export default function SubscriptionPage() {
   useEffect(() => {
     if (!user) {
       router.push('/login');
+    }
+  }, [user, router]);
+
+  // Track subscription page view
+  useEffect(() => {
+    if (user) {
+      trackFeatureUsed('subscription_page_viewed', isPremium ? 'premium' : 'free');
     }
   }, [user, router]);
 

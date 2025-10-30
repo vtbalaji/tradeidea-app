@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from '../../contexts/AuthContext';
 import { MyPortfolioIcon } from '@/components/icons';
 import Logo from '../../components/Logo';
+import { trackSignUp, trackLogin } from '@/lib/analytics';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -71,6 +72,8 @@ export default function LoginPage() {
     try {
       if (isSignUp) {
         await register(email, password, displayName, userMobileNo, '');
+        // Track signup
+        trackSignUp('email');
         // Show success message - user needs to verify email
         setError('');
         alert('Registration successful! Please check your email to verify your account before logging in.');
@@ -86,6 +89,8 @@ export default function LoginPage() {
           setError('Please verify your email before logging in. Check your inbox for the verification link.');
           return;
         }
+        // Track login
+        trackLogin('email');
         router.push('/ideas');
       }
     } catch (error: any) {
@@ -100,6 +105,8 @@ export default function LoginPage() {
     setSuccessMessage('');
     try {
       const result = await signInWithGoogle();
+      // Track Google login/signup
+      trackLogin('google');
       // Google sign-in doesn't require email verification
       // as Google has already verified the email
       router.push('/ideas');

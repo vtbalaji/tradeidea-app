@@ -9,10 +9,18 @@ import Navigation from '../../components/Navigation';
 import { db as firestore } from '@/lib/firebase';
 import { collection, doc, updateDoc, serverTimestamp } from 'firebase/firestore';
 import { apiClient } from '@/lib/apiClient';
+import { trackFeatureUsed } from '@/lib/analytics';
 
 export default function ProfilePage() {
   const router = useRouter();
   const { user, userData, updateUserProfile, logout } = useAuth();
+
+  // Track profile page view
+  useEffect(() => {
+    if (user) {
+      trackFeatureUsed('profile_page_viewed');
+    }
+  }, [user]);
   // Note: Portfolio management moved to dedicated portfolio page
   // const { myPortfolio, exitTrade } = useTrading();
   const [isEditing, setIsEditing] = useState(false);

@@ -1197,11 +1197,81 @@ class EnhancedCompanyReportV2:
             print(f'  ⚠️  Error in sector analysis: {e}')
             return None
 
+    def detect_quarterly_momentum(self, quarterly_data):
+        """Detect recent quarterly turnaround or momentum"""
+        if not quarterly_data or len(quarterly_data) < 2:
+            return None
+
+        try:
+            # Latest quarter (Q0) vs previous quarter (Q1)
+            latest = quarterly_data[0]
+            previous = quarterly_data[1]
+
+            # Handle both formats: Cr values or raw values
+            latest_profit = latest.get('net_profit_cr', latest.get('net_profit', 0)) or 0
+            previous_profit = previous.get('net_profit_cr', previous.get('net_profit', 0)) or 0
+            latest_opm = latest.get('operating_profit_margin', latest.get('opm', 0)) or 0
+            previous_opm = previous.get('operating_profit_margin', previous.get('opm', 0)) or 0
+
+            # Detect turnaround: loss to profit
+            turnaround = False
+            if previous_profit < 0 and latest_profit > 0:
+                turnaround = True
+
+            # Strong improvement
+            strong_improvement = False
+            if previous_profit > 0 and latest_profit > previous_profit * 1.5:
+                strong_improvement = True
+
+            # Margin expansion
+            margin_expansion = (latest_opm - previous_opm) > 2  # 2% expansion
+
+            # QoQ growth
+            qoq_growth = 0
+            latest_rev = latest.get('revenue_cr', latest.get('revenue', 0)) or 0
+            previous_rev = previous.get('revenue_cr', previous.get('revenue', 0)) or 0
+            if previous_rev > 0:
+                qoq_growth = ((latest_rev - previous_rev) / previous_rev) * 100
+
+            return {
+                'turnaround': turnaround,
+                'strong_improvement': strong_improvement,
+                'margin_expansion': margin_expansion,
+                'qoq_growth': qoq_growth,
+                'latest_opm': latest_opm,
+                'previous_opm': previous_opm,
+                'latest_profit': latest_profit,
+                'previous_profit': previous_profit,
+                'latest_quarter': f"{latest.get('fy')} {latest.get('quarter')}",
+                'previous_quarter': f"{previous.get('fy')} {previous.get('quarter')}"
+            }
+        except Exception as e:
+            print(f"  ⚠️ Error detecting quarterly momentum: {e}")
+            return None
+
     def generate_recommendation(self, forensic_report, technical, intrinsic_value, current_price,
-                               growth_metrics, earnings_quality, credit_quality):
+                               growth_metrics, earnings_quality, credit_quality, scenario_analysis=None,
+                               quarterly_data=None):
         """Generate enhanced BUY/HOLD/SELL recommendation"""
         score = 0
         reasons = []
+
+        # Quarterly Momentum Check (15 points) - IMPORTANT for recent trends
+        momentum = self.detect_quarterly_momentum(quarterly_data) if quarterly_data else None
+        if momentum:
+            if momentum['turnaround']:
+                score += 15
+                reasons.append(f'✅ Strong quarterly turnaround (loss to profit)')
+            elif momentum['strong_improvement']:
+                score += 12
+                reasons.append(f'✅ Strong quarterly profit growth (>50% QoQ)')
+            elif momentum['qoq_growth'] > 10:
+                score += 8
+                reasons.append(f'✅ Strong revenue growth ({momentum["qoq_growth"]:.1f}% QoQ)')
+
+            if momentum['margin_expansion']:
+                score += 5
+                reasons.append(f'✅ Margin expansion (+{momentum["latest_opm"] - momentum["previous_opm"]:.1f}% QoQ)')
 
         # Forensic Analysis (30 points)
         if 'beneish_m_score' in forensic_report:
@@ -1308,8 +1378,43 @@ class EnhancedCompanyReportV2:
                 score -= 10
                 reasons.append(f'❌ Significantly overvalued ({abs(value_diff):.1f}% above intrinsic)')
 
+        # CRITICAL: Check target price for overrides
+        # BUT consider recent quarterly momentum - a turnaround changes the game!
+        target_override = None
+        has_turnaround = momentum and momentum.get('turnaround', False)
+
+        if scenario_analysis and 'base_case' in scenario_analysis:
+            base_return = scenario_analysis['base_case'].get('return_pct', 0)
+
+            # If massive downside expected
+            if base_return < -40:
+                # If there's a strong turnaround, be less aggressive - cap at HOLD instead of SELL
+                if has_turnaround and score >= 20:
+                    target_override = 'HOLD'
+                    score = min(score, 25)  # Keep in HOLD range
+                    if not any('overvalued' in r.lower() or 'target price' in r.lower() for r in reasons):
+                        reasons.append(f'⚠️ Valuation concern despite turnaround ({base_return:.1f}% implied downside)')
+                else:
+                    target_override = 'SELL'
+                    score = min(score, -5)  # Cap score to ensure SELL
+                    if not any('Significantly overvalued' in r or 'target price' in r.lower() for r in reasons):
+                        reasons.append(f'❌ Target price shows {base_return:.1f}% downside')
+            # If significant downside, cap at HOLD
+            elif base_return < -20:
+                if score >= 40:  # Would be BUY or STRONG BUY
+                    target_override = 'HOLD'
+                    score = 25  # Cap at HOLD range
+                    if not any('overvalued' in r.lower() or 'target price' in r.lower() for r in reasons):
+                        reasons.append(f'⚠️ Target price shows {base_return:.1f}% downside')
+
         # Determine recommendation
-        if score >= 60:
+        if target_override == 'SELL':
+            recommendation = 'SELL'
+            emoji = '🔴🔴'
+        elif target_override == 'HOLD':
+            recommendation = 'HOLD'
+            emoji = '🟡'
+        elif score >= 60:
             recommendation = 'STRONG BUY'
             emoji = '🟢🟢🟢'
         elif score >= 40:
@@ -1490,14 +1595,7 @@ class EnhancedCompanyReportV2:
         print('💰 Calculating intrinsic value...')
         intrinsic_value = self.calculate_intrinsic_value(fund_data, current_price)
 
-        # Final recommendation
-        print('🎯 Generating enhanced recommendation...\n')
-        recommendation = self.generate_recommendation(
-            forensic_report, technical, intrinsic_value, current_price,
-            growth_metrics, earnings_quality, credit_quality
-        )
-
-        # SECTION 2: Quarterly Financials
+        # SECTION 2: Quarterly Financials - Fetch BEFORE recommendation
         print('\n' + '='*80)
         print('📊 SECTION 2: QUARTERLY FINANCIALS')
         print('='*80)
@@ -1512,6 +1610,13 @@ class EnhancedCompanyReportV2:
                 quarterly_data = self.quarterly_reporter.get_quarterly_data(symbol, num_quarters=5)
         except Exception as e:
             print(f'⚠️  Error displaying quarterly financials: {e}')
+
+        # Final recommendation - Now includes quarterly data
+        print('🎯 Generating enhanced recommendation...\n')
+        recommendation = self.generate_recommendation(
+            forensic_report, technical, intrinsic_value, current_price,
+            growth_metrics, earnings_quality, credit_quality, scenario_analysis, quarterly_data
+        )
 
         # SECTION 3: Peer Comparison (if peers provided)
         peer_comparison_details = None
@@ -1926,7 +2031,7 @@ def main():
     parser = argparse.ArgumentParser(description='Enhanced Company Analysis Report V2 (Institutional-Grade)')
     parser.add_argument('symbol', type=str, help='Stock symbol (e.g., TCS, INFY)')
     parser.add_argument('--years', type=int, default=5, help='Number of years to analyze (default: 5)')
-    parser.add_argument('--sector', type=str, default='IT', help='Sector for peer comparison (default: IT)')
+    parser.add_argument('--sector', type=str, default=None, help='Sector for peer comparison (default: auto-detect)')
     parser.add_argument('--peers', nargs='+', help='Peer companies to compare (e.g., --peers TCS INFY WIPRO)')
     parser.add_argument('--compare-sector', action='store_true', help='Auto-compare with sector peers')
     parser.add_argument('--output', choices=['text', 'json'], default='text', help='Output format')
@@ -1936,14 +2041,17 @@ def main():
     report_gen = EnhancedCompanyReportV2()
 
     try:
+        # Auto-detect sector if not provided
+        sector = args.sector.upper() if args.sector else report_gen.detect_sector(args.symbol.upper())
+
         # Determine peers list
         peers = args.peers if args.peers else None
         if args.compare_sector and not peers:
             # Auto-detect sector and get peers
-            sector_peers = report_gen.SECTOR_PEERS.get(args.sector.upper(), [])
+            sector_peers = report_gen.SECTOR_PEERS.get(sector, [])
             peers = [p for p in sector_peers if p != args.symbol.upper()][:3]  # Top 3 peers
 
-        result = report_gen.generate_report(args.symbol.upper(), years=args.years, sector=args.sector.upper(), peers=peers)
+        result = report_gen.generate_report(args.symbol.upper(), years=args.years, sector=sector, peers=peers)
 
         if result and args.output == 'json':
             filename = f'enhanced_report_v2_{args.symbol.upper()}_{datetime.now().strftime("%Y%m%d_%H%M%S")}.json'

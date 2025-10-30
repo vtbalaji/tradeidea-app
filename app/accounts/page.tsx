@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import Navigation from '../../components/Navigation';
 import { useAuth } from '../../contexts/AuthContext';
 import { useAccounts } from '../../contexts/AccountsContext';
+import { trackAccountCreated, trackAccountSwitched } from '@/lib/analytics';
 
 const ACCOUNT_COLORS = [
   { name: 'Orange', value: '#ff8c42' },
@@ -41,6 +42,8 @@ export default function AccountsPage() {
 
     try {
       await createAccount(formData.name, formData.description, formData.color);
+      // Track account creation
+      trackAccountCreated(formData.name);
       setShowCreateModal(false);
       setFormData({ name: '', description: '', color: '#ff8c42' });
     } catch (error) {
@@ -70,6 +73,11 @@ export default function AccountsPage() {
   const handleSetDefault = async (accountId: string) => {
     try {
       await setDefaultAccount(accountId);
+      // Find account name and track switch
+      const account = accounts.find(a => a.id === accountId);
+      if (account) {
+        trackAccountSwitched(account.name);
+      }
     } catch (error) {
       alert('Failed to set default account');
     }

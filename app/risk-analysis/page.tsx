@@ -11,6 +11,7 @@ import { UpgradePrompt } from '@/components/subscription/UpgradePrompt';
 // import { useTrading } from '@/contexts/TradingContext'; // Removed - use API directly
 import { apiClient } from '@/lib/apiClient';
 import type { PortfolioAnalysis, Position } from '@/lib/portfolioAnalysis';
+import { trackFeatureUsed } from '@/lib/analytics';
 
 export default function RiskAnalysisPage() {
   const router = useRouter();
@@ -106,6 +107,8 @@ export default function RiskAnalysisPage() {
 
         const data = await response.json();
         setAnalysis(data.analysis);
+        // Track risk analysis viewed
+        trackFeatureUsed('risk_analysis', activeAccount.name);
       } catch (err) {
         console.error('Error fetching analysis:', err);
         setError(err instanceof Error ? err.message : 'Unknown error');

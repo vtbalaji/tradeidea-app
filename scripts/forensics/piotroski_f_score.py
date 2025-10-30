@@ -98,7 +98,7 @@ class PiotroskiFScore:
             debt_decreased, debt_detail = PiotroskiFScore._check_debt_decrease(current_year, previous_year)
             if debt_decreased:
                 score += 1
-            details['Debt_Decrease'] = debt_detail
+            details['Debt_Change'] = debt_detail
 
             # 6. Improvement in Current Ratio
             # Note: Banks don't have traditional current assets/liabilities split

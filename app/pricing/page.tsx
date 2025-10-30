@@ -1,16 +1,22 @@
 'use client';
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import Link from 'next/link';
 import Logo from '@/components/Logo';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useSubscription } from '@/contexts/SubscriptionContext';
 import { PricingCard } from '@/components/subscription/PricingCard';
 import { FREE_TIER_LIMITS } from '@/types/subscription';
+import { trackFeatureUsed } from '@/lib/analytics';
 
 export default function PricingPage() {
   const { isDarkMode } = useTheme();
   const { plans, isPremium } = useSubscription();
+
+  // Track pricing page view
+  useEffect(() => {
+    trackFeatureUsed('pricing_page_viewed', isPremium ? 'premium_user' : 'free_user');
+  }, [isPremium]);
 
   return (
     <div className={`min-h-screen ${isDarkMode ? 'bg-gray-900' : 'bg-gray-50'}`}>

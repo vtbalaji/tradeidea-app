@@ -7,6 +7,7 @@ import { useTrading } from '../../../contexts/TradingContext';
 import { useAuth } from '../../../contexts/AuthContext';
 import { useSymbols, Symbol } from '../../../contexts/SymbolsContext';
 import { TargetIcon, SparklesIcon } from '@/components/icons';
+import { trackIdeaCreated } from '@/lib/analytics';
 
 function ShareIdeaForm() {
   const router = useRouter();
@@ -138,6 +139,8 @@ function ShareIdeaForm() {
       };
 
       await createIdea(ideaData);
+      // Track idea creation
+      trackIdeaCreated(formData.symbol.toUpperCase(), formData.tradeType);
       router.push('/ideas');
     } catch (error: any) {
       setError(error.message || 'Failed to create idea');

@@ -569,77 +569,20 @@ class ITSectorAnalyzer(BaseSectorAnalyzer):
         }
 
     def get_industry_context(self) -> Dict[str, Any]:
-        """Get IT industry context"""
+        """Get IT industry context - Data-driven only"""
         return {
             'sector': 'Indian IT Services',
-            'key_trends': [
-                'Digital transformation acceleration across industries',
-                'Cloud migration and modernization driving growth',
-                'AI/ML and automation creating new service lines',
-                'Increased pricing pressure in traditional services',
-                'Shift to platform-based models and as-a-Service offerings',
-                'Attrition stabilizing after COVID spike but remains elevated'
-            ],
-            'regulatory_environment': [
-                'H1-B visa restrictions impacting US onsite delivery',
-                'Data privacy regulations (GDPR, CCPA) creating compliance opportunities',
-                'Increased focus on ESG and diversity metrics',
-                'Pressure on tax structures and permanent establishment rules'
-            ],
-            'outlook': 'Indian IT sector faces a mixed outlook with strong demand for digital services offset by ' +
-                      'macro headwinds in key markets. Companies with strong digital capabilities, ' +
-                      'automation platforms, and vertical expertise are better positioned. ' +
-                      'Margin pressures persist due to wage inflation and currency headwinds.'
+            'key_trends': [],  # Removed hardcoded trends
+            'regulatory_environment': [],  # Removed hardcoded content
+            'outlook': None  # Removed static narrative
         }
 
     def get_growth_catalysts(self) -> List[str]:
-        """Identify IT sector growth catalysts"""
-        catalysts = [
-            'Digital transformation budgets increasing 15-20% annually',
-            'Cloud infrastructure migration creating multi-year revenue streams',
-            'AI/ML and GenAI adoption driving consulting and implementation revenue',
-            'Platform-based offerings improving deal sizes and margins',
-            'Industry-specific solutions (BFSI, healthcare, retail) gaining traction',
-            'Automation and efficiency programs creating high-margin opportunities',
-            'Geographic expansion in Europe and APAC beyond traditional US focus',
-            'Strategic acquisitions in niche capabilities strengthening portfolio'
-        ]
-
-        return catalysts
+        """Identify IT sector growth catalysts - Data-driven only"""
+        # Removed hardcoded catalysts - should be derived from actual data/news if needed
+        return []
 
     def get_risk_factors(self) -> List[Dict[str, str]]:
-        """Identify IT sector risks"""
-        risks = [
-            {
-                'severity': 'HIGH',
-                'factor': 'Demand Slowdown',
-                'description': 'Macro weakness or recession in US/Europe could lead to delayed discretionary spending and project cancellations'
-            },
-            {
-                'severity': 'HIGH',
-                'factor': 'Margin Compression',
-                'description': 'Wage inflation (10-12% annually), visa costs, and pricing pressure compressing EBITDA margins'
-            },
-            {
-                'severity': 'MEDIUM',
-                'factor': 'Attrition and Talent War',
-                'description': 'High attrition (15-20%) increases hiring and training costs, disrupts delivery'
-            },
-            {
-                'severity': 'MEDIUM',
-                'factor': 'Currency Volatility',
-                'description': 'Rupee appreciation against USD/EUR impacts revenue realization and margins'
-            },
-            {
-                'severity': 'MEDIUM',
-                'factor': 'Disruption from AI and Automation',
-                'description': 'Automation and AI could reduce headcount requirements and commoditize traditional services'
-            },
-            {
-                'severity': 'LOW',
-                'factor': 'Geopolitical Risks',
-                'description': 'Visa restrictions, trade tensions, or anti-outsourcing sentiment could impact delivery model'
-            }
-        ]
-
-        return risks
+        """Identify IT sector risks - Data-driven only"""
+        # Removed hardcoded risk narratives - should be derived from actual data/analysis
+        return []

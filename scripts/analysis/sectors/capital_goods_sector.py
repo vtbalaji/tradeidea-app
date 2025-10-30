@@ -559,23 +559,12 @@ class CapitalGoodsSectorAnalyzer(BaseSectorAnalyzer):
 
     def get_industry_context(self) -> Dict[str, Any]:
         """
-        Get industry trends and context for capital goods sector
+        Get industry trends and context for capital goods sector - Data-driven only
         """
         return {
-            'key_trends': [
-                'Government capex focus on infrastructure development',
-                'Push for domestic manufacturing (Make in India)',
-                'Energy transition - renewable energy equipment demand',
-                'Railway modernization and electrification projects',
-                'Defense equipment manufacturing opportunities',
-            ],
-            'outlook': 'Positive - Driven by government infrastructure spending and energy transition initiatives',
-            'challenges': [
-                'Long gestation periods for order execution',
-                'Working capital intensive business model',
-                'Competition from global players',
-                'Margin pressure due to commodity price volatility',
-            ]
+            'key_trends': [],  # Removed hardcoded trends
+            'outlook': None,  # Removed static narrative
+            'challenges': []  # Removed hardcoded challenges
         }
 
     def get_growth_catalysts(self) -> List[str]:
@@ -611,21 +600,10 @@ class CapitalGoodsSectorAnalyzer(BaseSectorAnalyzer):
             if execution.get('execution_score', 0) > 70:
                 catalysts.append("Strong execution track record in order book conversion")
 
-            # Generic catalysts if none specific found
-            if not catalysts:
-                catalysts = [
-                    "Government infrastructure spending creating opportunities",
-                    "Energy transition driving equipment demand",
-                    "Domestic manufacturing focus benefiting local players",
-                ]
-
+            # Return only data-driven catalysts, no generic fallbacks
             return catalysts[:5]  # Top 5
         except Exception as e:
-            return [
-                "Government capex on infrastructure",
-                "Energy sector modernization",
-                "Railway and defense projects",
-            ]
+            return []  # Return empty if error, no hardcoded fallbacks
 
     def get_risk_factors(self) -> List[Dict[str, str]]:
         """
@@ -675,27 +653,10 @@ class CapitalGoodsSectorAnalyzer(BaseSectorAnalyzer):
                     'severity': 'MEDIUM'
                 })
 
-            # Generic sector risks
-            if not risks:
-                risks.append({
-                    'factor': 'Long Execution Cycles',
-                    'description': 'Capital goods projects have long gestation periods',
-                    'severity': 'LOW'
-                })
-
-            risks.append({
-                'factor': 'Commodity Price Volatility',
-                'description': 'Input cost fluctuations can impact margins',
-                'severity': 'MEDIUM'
-            })
-
+            # Return only data-driven risks, no generic hardcoded risks
             return risks
         except Exception as e:
-            return [{
-                'factor': 'Sector Cyclicality',
-                'description': 'Capital goods sector tied to economic cycles',
-                'severity': 'MEDIUM'
-            }]
+            return []  # Return empty if error, no hardcoded fallbacks
 
 
 # Export for convenience

@@ -646,75 +646,20 @@ class BankingSectorAnalyzer(BaseSectorAnalyzer):
         }
 
     def get_industry_context(self) -> Dict[str, Any]:
-        """Get banking industry context"""
+        """Get banking industry context - Data-driven only"""
         return {
             'sector': 'Indian Banking',
-            'key_trends': [
-                'Digital transformation and fintech competition',
-                'Asset quality cleanup post-COVID',
-                'Credit growth recovery driven by retail and SME segments',
-                'Regulatory focus on cybersecurity and data privacy',
-                'Consolidation in PSU banks and stress on smaller private banks'
-            ],
-            'regulatory_environment': [
-                'RBI maintaining accommodative stance on liquidity',
-                'Basel III capital adequacy norms fully implemented',
-                'Increased scrutiny on governance and risk management',
-                'Push towards digital payments and financial inclusion'
-            ],
-            'outlook': 'The Indian banking sector is witnessing robust credit growth with improving asset quality. ' +
-                      'Private sector banks continue to gain market share with superior technology and customer service. ' +
-                      'NIM pressures remain due to competitive intensity, but fee income growth provides cushion.'
+            'key_trends': [],  # Removed hardcoded trends
+            'regulatory_environment': [],  # Removed hardcoded content
+            'outlook': None  # Removed static narrative
         }
 
     def get_growth_catalysts(self) -> List[str]:
-        """Identify banking sector growth catalysts"""
-        catalysts = [
-            'Credit growth acceleration as economy recovers (15-18% industry growth expected)',
-            'Market share gains from PSU banks and weaker private banks',
-            'Digital banking initiatives reducing cost-to-serve and improving customer acquisition',
-            'Fee income growth from wealth management, insurance, and cross-selling',
-            'Branch network expansion in underpenetrated tier 2/3 cities',
-            'Retail loan portfolio mix improvement driving NIM expansion',
-            'Recovery in corporate credit demand after multi-year lull',
-            'CASA ratio improvement through salary account acquisitions'
-        ]
-
-        return catalysts
+        """Identify banking sector growth catalysts - Data-driven only"""
+        # Removed hardcoded catalysts - should be derived from actual data/news if needed
+        return []
 
     def get_risk_factors(self) -> List[Dict[str, str]]:
-        """Identify banking sector risks"""
-        risks = [
-            {
-                'severity': 'HIGH',
-                'factor': 'Credit Quality Deterioration',
-                'description': 'Economic slowdown or sector-specific shocks could lead to NPA spikes, requiring higher provisions'
-            },
-            {
-                'severity': 'HIGH',
-                'factor': 'Interest Rate Volatility',
-                'description': 'Rapid rate movements can compress NIMs and create asset-liability mismatches'
-            },
-            {
-                'severity': 'MEDIUM',
-                'factor': 'Intense Competition',
-                'description': 'Fintech disruption and banking sector consolidation intensifying competition on pricing and customer acquisition costs'
-            },
-            {
-                'severity': 'MEDIUM',
-                'factor': 'Regulatory Changes',
-                'description': 'Stricter capital requirements, lending restrictions, or compliance costs could impact profitability'
-            },
-            {
-                'severity': 'MEDIUM',
-                'factor': 'Technology and Cyber Risks',
-                'description': 'Cybersecurity threats and technology implementation risks as digital banking accelerates'
-            },
-            {
-                'severity': 'LOW',
-                'factor': 'Macroeconomic Headwinds',
-                'description': 'GDP slowdown, inflation, or external shocks affecting overall credit demand and asset quality'
-            }
-        ]
-
-        return risks
+        """Identify banking sector risks - Data-driven only"""
+        # Removed hardcoded risk narratives - should be derived from actual data/analysis
+        return []
